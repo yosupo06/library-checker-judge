@@ -11,12 +11,12 @@ create table problem(
 );
 
 create table submittion(
-  id int primary key, #incremental?
+  id int primary key auto_increment, #incremental?
   submittime DATETIME,
   user int, #null ok
   problem VARCHAR(32) not null,
   lang VARCHAR(32) not null,
-  source MEDIUMBLOB not null,
+  source MEDIUMTEXT not null,
   status VARCHAR(32), # AC, WA, TLE, WJ, ...
   maxtime int,
   maxmemory int,
