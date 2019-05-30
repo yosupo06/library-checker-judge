@@ -24,5 +24,6 @@ create table submittion(
 );
 
 create table queue( # Between front and judge
+  id int primary key auto_increment,
   submittion int not null
 );
