@@ -9,7 +9,7 @@ import pymysql.cursors #pip3 install PyMySQL
 # make case
 tomlpath = os.path.abspath('../library-checker-problems/problems.toml')
 tomldir = os.path.dirname(tomlpath)
-#subprocess.check_call(['../library-checker-problems/generate.py', tomlpath])
+subprocess.check_call(['../library-checker-problems/generate.py', tomlpath])
 problems = toml.load(tomlpath)
 
 
