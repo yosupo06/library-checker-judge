@@ -1,2 +1,2 @@
-docker stop mysql
-docker rm mysql
+docker stop postgresql
+docker rm postgresql

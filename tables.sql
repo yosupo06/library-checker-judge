@@ -1,29 +1,29 @@
-create table user(
+create table users (
   id int primary key,
   name varchar(255) unique not null,
   passhash varchar(255)
 );
 
-create table problem(
+create table problems (
   name varchar(255) primary key,
   testhash varchar(255),
-  testzip longblob
+  testzip bytea
 );
 
-create table submittion(
-  id int primary key auto_increment, #incremental?
-  submittime DATETIME,
-  user int, #null ok
-  problem VARCHAR(32) not null,
-  lang VARCHAR(32) not null,
-  source MEDIUMTEXT not null,
-  status VARCHAR(32), # AC, WA, TLE, WJ, ...
+create table submittions (
+  id serial primary key,
+  submittime timestamp,
+  userid int, -- null ok
+  problem varchar(32) not null,
+  lang varchar(32) not null,
+  source text not null,
+  status varchar(32), -- AC, WA, TLE, WJ, ...
   maxtime int,
   maxmemory int,
   details json
 );
 
-create table queue( # Between front and judge
-  id int primary key auto_increment,
+create table tasks ( -- Between front and judge
+  id serial primary key,
   submittion int not null
 );

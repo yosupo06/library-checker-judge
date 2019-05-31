@@ -1,8 +1,12 @@
-docker run --name mysql -p 3306:3306 -e MYSQL_DATABASE=librarychecker -e MYSQL_ROOT_PASSWORD=passwd -d mysql:8 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+./stop_local.sh
 
-until mysqladmin ping -h 127.0.0.1 --silent; do
+docker run --name postgresql -p 5432:5432 -e POSTGRES_DB=librarychecker -e POSTGRES_PASSWORD=passwd -d postgres:11.3
+
+until PGPASSWORD=passwd psql -c 'select 1;' -U postgres -h localhost 2>&1 > /dev/null; do
     echo 'waiting...'
     sleep 1
 done
 
-mysql -h 127.0.0.1 -uroot --port 3306 -ppasswd librarychecker < tables.sql
+PGPASSWORD=passwd psql -h localhost -U postgres librarychecker < tables.sql
+
+./deploy_problems.py
