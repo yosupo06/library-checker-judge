@@ -6,6 +6,7 @@ create table users (
 
 create table problems (
   name varchar(255) primary key,
+  timelimit int,
   testhash varchar(255),
   testzip bytea
 );
