@@ -4,6 +4,8 @@ import os, toml, glob
 import tempfile, zipfile
 import hashlib
 import subprocess
+import markdown
+import markdown.extensions
 import psycopg2 #pip3 install psycopg2
 
 
@@ -53,11 +55,15 @@ for problem in problems['Problems']:
         m.update(data)
         datahash = m.hexdigest()
 
-        print(len(data), datahash)
+        # convert task
+        statement = ''
+        with open(os.path.join(probdir, 'task.md')) as f:
+            statement = markdown.markdown(f.read(), extensions = ['markdown.extensions.fenced_code'])
 
-        sql = 'insert into problems (name, testhash, testzip) values (%s, %s, %s)'
+        print(statement)
+        sql = 'insert into problems (name, statement, testhash, testzip) values (%s, %s, %s, %s)'
         with conn.cursor() as cursor:
-            cursor.execute(sql, (name, datahash, data))
+            cursor.execute(sql, (name, statement, datahash, data))
         conn.commit()
 conn.close()
 
