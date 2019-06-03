@@ -2,13 +2,13 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>List</title>
+    <title>Problem List</title>
 </head>
 <body>
-    <h1>Unko!</h1>
+    <h1>Hello World!</h1>
     <ul>
         {{range .problems}}
-        <li>{{.Name}}</li>
+        <li><a href="/problem/{{.Name}}">{{.Name}}</a></li>
         {{end}}
     </ul>
 </body>

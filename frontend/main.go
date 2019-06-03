@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -40,35 +42,86 @@ func gormConnect() *gorm.DB {
 }
 
 type Problem struct {
-	Name string
+	Name      string
+	Statement template.HTML
+}
+
+type Submittion struct {
+	Id        int
+	Problem   string
+	Lang      string
+	Status    string
+	Source    string
+	Maxtime   int
+	Maxmemory int
+}
+
+type Task struct {
+	Submittion int
 }
 
 func problemList(ctx *gin.Context) {
 	var problems = make([]Problem, 0)
 	db.Find(&problems)
-	fmt.Println(problems)
 	ctx.HTML(200, "problemlist.html", gin.H{
 		"problems": problems,
 	})
-
 }
 
 func problemInfo(ctx *gin.Context) {
 	name := ctx.Param("name")
+	var problem Problem
+	db.Where("name = ?", name).First(&problem)
 	ctx.HTML(200, "problem.html", gin.H{
-		"Name": name,
+		"Problem": problem,
 	})
 }
 
 func submit(ctx *gin.Context) {
-	file, err := ctx.FormFile("source")
-	fmt.Println(file, err)
+	fileheader, err := ctx.FormFile("source")
+	if err != nil {
+		log.Fatal(err)
+	}
+	file, err := fileheader.Open()
+	if err != nil {
+		log.Fatal(err)
+	}
+	src, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	submittion := Submittion{}
+	submittion.Problem = "unionfind"
+	submittion.Lang = "cpp"
+	submittion.Status = "WJ"
+	submittion.Source = string(src)
+	submittion.Maxtime = -1
+	submittion.Maxmemory = -1
+	db.Create(&submittion)
+
+	task := Task{}
+	task.Submittion = submittion.Id
+	db.Create(&task)
+
+	ctx.HTML(200, "submit.html", gin.H{})
+	//	ctx.Redirect(http.StatusPermanentRedirect, "/submittions")
+}
+
+func submitList(ctx *gin.Context) {
+	var submittions = make([]Submittion, 0)
+	db.Find(&submittions)
+	fmt.Println(submittions)
+	ctx.HTML(200, "submitlist.html", gin.H{
+		"Submittions": submittions,
+	})
 }
 
 func main() {
 	db = gormConnect()
 	defer db.Close()
 	db.AutoMigrate(Problem{})
+	db.AutoMigrate(Submittion{})
+	db.AutoMigrate(Task{})
 
 	router := gin.Default()
 	router.LoadHTMLGlob("templates/*.html")
@@ -77,6 +130,7 @@ func main() {
 	router.GET("/", problemList)
 	router.GET("/problem/:name", problemInfo)
 	router.POST("/submit", submit)
+	router.GET("/submittions", submitList)
 
 	router.Run(":8080")
 }

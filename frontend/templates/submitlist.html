@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Submit List</title>
+</head>
+<body>
+    <h1>Unko!</h1>
+    <table>
+        <tr><th>Status</th><th>Time</th><th>Memory</th></tr>
+        {{range .Submittions}}
+        <tr><td>{{.Status}}</td><td>{{.Maxtime}}</td><td>{{.Maxmemory}}</td></tr>
+        {{end}}
+    </table>
+    <ul>
+        {{range .problems}}
+        <li><a href="/problem/{{.Name}}">{{.Name}}</a></li>
+        {{end}}
+    </ul>
+</body>
+</html>
