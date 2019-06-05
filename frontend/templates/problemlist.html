@@ -1,15 +1,24 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="uft-8">
     <title>Problem List</title>
+    {{template "css.html" .}}
 </head>
 <body>
-    <h1>Hello World!</h1>
-    <ul>
-        {{range .problems}}
-        <li><a href="/problem/{{.Name}}">{{.Name}}</a></li>
-        {{end}}
-    </ul>
+    <section class="uk-section">
+        <div class="uk-container">
+            <h1 class="uk-heading-medium">Library Checker</h1>
+        </div>
+    </section>
+    <section class="uk-section">
+        <div class="uk-container">
+            <ul class="uk-list uk-list-divider uk-list-large">
+                {{range .problems}}
+                <li><a href="/problem/{{.Name}}">{{.Name}}</a></li>
+                {{end}}
+            </ul>
+        </div>
+    </section>
 </body>
 </html>

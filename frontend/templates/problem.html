@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{.Problem.Name}}</title>
+    {{template "css.html" .}}
 
     <!-- Katex -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css"
@@ -25,12 +26,25 @@
         });
     // ]]></script>
 </head>
+
 <body>
-    <h1>Problem {{.Problem.Name}}</h1>
-    {{.Problem.Statement}}
-    <form method="POST" action="/submit" enctype="multipart/form-data">
-        <input name="source" type="file">
-        <button type="submit">Submit</button>
-    </form>
+    <section class="uk-section">
+        <div class="uk-container">
+            <h1 class="uk-heading-medium">{{.Problem.Name}}</h1>
+        </div>
+    </section>
+
+    <section class="uk-section">
+        <div class="uk-container">
+            {{.Problem.Statement}}
+            <form method="POST" action="/submit" enctype="multipart/form-data">
+                <div uk-form-custom="target: true">
+                    <input name="source" type="file">
+                    <input class="uk-input uk-form-width-medium" type="text" placeholder="Select source file" disabled>
+                </div>
+                <button class="uk-button" type="submit">Submit</button>
+            </form>
+        </div>
+    </section>
 </body>
 </html>

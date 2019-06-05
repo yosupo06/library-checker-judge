@@ -3,19 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Submit List</title>
+    {{template "css.html" .}}
 </head>
 <body>
-    <h1>Unko!</h1>
-    <table>
-        <tr><th>Status</th><th>Time</th><th>Memory</th></tr>
-        {{range .Submittions}}
-        <tr><td>{{.Status}}</td><td>{{.Maxtime}}</td><td>{{.Maxmemory}}</td></tr>
-        {{end}}
-    </table>
-    <ul>
-        {{range .problems}}
-        <li><a href="/problem/{{.Name}}">{{.Name}}</a></li>
-        {{end}}
-    </ul>
+    <section class="uk-section">
+        <div class="uk-container">
+            <h1 class="uk-heading-medium">Submittion List</h1>
+        </div>
+    </section>
+    <section class="uk-section">
+        <div class="uk-container">
+            <table class="uk-table">
+                <tr>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th>Memory</th>
+                </tr>
+                {{range .Submittions}}
+                <tr>
+                    <td>{{.Status}}</td>
+                    <td>{{.Maxtime}}</td>
+                    <td>{{.Maxmemory}}</td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+    </section>
 </body>
 </html>
