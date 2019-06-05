@@ -5,7 +5,9 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -103,14 +105,24 @@ func submit(ctx *gin.Context) {
 	task.Submittion = submittion.Id
 	db.Create(&task)
 
-	ctx.HTML(200, "submit.html", gin.H{})
-	//	ctx.Redirect(http.StatusPermanentRedirect, "/submittions")
+	ctx.Redirect(http.StatusFound, "/submittion/"+strconv.Itoa(submittion.Id))
+}
+
+func submittionInfo(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	var submittion Submittion
+	db.Where("id = ?", id).First(&submittion)
+	ctx.HTML(200, "submitinfo.html", gin.H{
+		"Submittion": submittion,
+	})
 }
 
 func submitList(ctx *gin.Context) {
 	var submittions = make([]Submittion, 0)
 	db.Find(&submittions)
-	fmt.Println(submittions)
 	ctx.HTML(200, "submitlist.html", gin.H{
 		"Submittions": submittions,
 	})
@@ -130,6 +142,7 @@ func main() {
 	router.GET("/", problemList)
 	router.GET("/problem/:name", problemInfo)
 	router.POST("/submit", submit)
+	router.GET("/submittion/:id", submittionInfo)
 	router.GET("/submittions", submitList)
 
 	router.Run(":8080")

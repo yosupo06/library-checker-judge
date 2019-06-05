@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Submitted</title>
+    {{template "css.html" .}}
+</head>
+<body>
+    <section class="uk-section">
+        <div class="uk-container">
+            <h1 class="uk-heading-medium">Submit Info #{{.Submittion.Id}}</h1>
+        </div>
+    </section>
+
+    <section class="uk-section">
+        <div class="uk-container">
+            <pre>{{.Submittion.Source}}</pre>
+        </div>
+        <div class="uk-container">
+            <table class="uk-table">
+                <tr>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th>Memory</th>
+                </tr>
+                <tr>
+                    <td>{{.Submittion.Status}}</td>
+                    <td>{{.Submittion.Maxtime}} ms</td>
+                    <td>{{.Submittion.Maxmemory}} bytes</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+</body>
+</html>
