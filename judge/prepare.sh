@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 
+# prepare cgroups
+cgcreate -g cpu,memory:/lib-judge
+cgset -r memory.limit_in_bytes=1G lib-judge
+cgset -r memory.memsw.limit_in_bytes=1G lib-judge
+
+# prepare sandbox
 rm -rf work
 mkdir work
 

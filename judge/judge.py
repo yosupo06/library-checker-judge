@@ -43,6 +43,10 @@ class Result:
 
 
 def run_in_sandbox(execcmd, stdin = None, stdout = None, timelimit = 2.0):
+    memory_max_usage = '/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes'
+    with open(memory_max_usage, 'w') as f:
+        f.write('0')
+
     result = Result('IE', -1, -1)
     start = datetime.now()
     try:
@@ -52,9 +56,11 @@ def run_in_sandbox(execcmd, stdin = None, stdout = None, timelimit = 2.0):
     except CalledProcessError:
         result.result = 'RE'
     else:
-        result.result = 'OK'
         end = datetime.now()
+        result.result = 'OK'
         result.time = (end - start).seconds * 1000 + (end - start).microseconds // 1000
+        with open(memory_max_usage, 'r') as f:
+            result.memory = int(f.read())
 
     return result
 
