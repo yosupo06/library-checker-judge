@@ -4,23 +4,32 @@ import os, argparse
 import psycopg2
 import shutil
 import glob
+import zipfile
 import tempfile
 from time import sleep
 from subprocess import run, check_call, TimeoutExpired, CalledProcessError, DEVNULL
 from termcolor import colored, cprint
 from datetime import datetime
+from logging import getLogger, basicConfig
 
-print('[*] launch judge.py')
+basicConfig(
+    level = os.getenv('LOG_LEVEL', 'DEBUG'),
+    format = "%(asctime)s %(levelname)s %(name)s :%(message)s"
+)
+logger = getLogger(__name__)
 
 curdir = os.path.abspath(os.path.curdir)
+sanddir = os.path.join(curdir, 'sand')
+workdir = os.path.join(curdir, 'work')
 
-# connect sql
-# TODO: .pginit
+logger.info('Launch judge.py')
+
+
+logger.info('Connect SQL')
 hostname = os.environ.get('POSTGRE_HOST', '127.0.0.1')
 port = int(os.environ.get('POSTGRE_PORT', '5432'))
 user = os.environ.get('POSTGRE_USER', 'postgres')
 password = os.environ.get('POSTGRE_PASS', 'passwd')
-
 conn = psycopg2.connect(
     host=hostname,
     port=port,
@@ -29,7 +38,9 @@ conn = psycopg2.connect(
     database='librarychecker'
 )
 
+logger.info('Run prepare.sh')
 run(['./prepare.sh'])
+
 
 
 class Result:
@@ -65,16 +76,17 @@ def run_in_sandbox(execcmd, stdin = None, stdout = None, timelimit = 2.0):
     return result
 
 # TODO: output_checker
-def judgecase(execcmd, inpath, anspath, timelimit = 2.0):
-    check_call(['cp', inpath, 'sand/in.txt'])
+def judgecase(execcmd, inpath, outpath, timelimit = 2.0):
+    anspath = os.path.join(workdir, 'ans.txt')
+    shutil.copy(inpath, os.path.join(sanddir, 'in.txt'))
 
     # run
-    result = run_in_sandbox(execcmd, stdin = open(inpath, 'r'), stdout = open('work/out.txt', 'w'))
+    result = run_in_sandbox(execcmd, stdin = open(inpath, 'r'), stdout = open(anspath, 'w'))
     color = ''
     if result.result == 'OK':
         try:
             # output check
-            check_call(['diff', 'work/out.txt', anspath], stdout=DEVNULL)
+            check_call(['diff', anspath, outpath], stdout=DEVNULL)
         except CalledProcessError:
             result.result = 'WA'
             color = 'on_yellow'
@@ -84,7 +96,7 @@ def judgecase(execcmd, inpath, anspath, timelimit = 2.0):
     else:
         color = 'on_red'
 
-    print('[*] judged {} res={} {} msecs'.format(inpath, colored(result.result, on_color=color), result.time))
+    logger.info('judged {} res={} {} msecs'.format(inpath, colored(result.result, on_color=color), result.time))
     return result
 
 # source must be abspath
@@ -93,7 +105,9 @@ def compilecxx(srcpath):
     run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp')
 
 def judge(subid):    
-    print('[!] judge start id = {}'.format(subid))
+    logger.info('Judge start submittion id = {}'.format(subid))
+
+    logger.info('Fetch data from SQL')
     submittion = None
     problem = None
     with conn.cursor() as cursor:
@@ -106,34 +120,38 @@ def judge(subid):
             return
         problem = cursor.fetchone()
 
-    with open('work/main.cpp', 'w') as f:
+    logger.info('Extact fetched data')
+    srcpath = os.path.join(workdir, 'main.cpp') # Todo: other lang
+    zippath = os.path.join(workdir, 'cases.zip')
+    indir = os.path.join(workdir, 'in')
+    outdir = os.path.join(workdir, 'out')
+    with open(os.path.join(workdir, 'main.cpp'), 'w') as f:
         f.write(submittion[2])
     
-    with open('work/cases.zip', 'wb') as f:
+    with open(zippath, 'wb') as f:
         f.write(problem[0])
 
-    # unzip    
-    if os.path.exists('in'):
-        shutil.rmtree('in')
+    if os.path.exists(indir):
+        shutil.rmtree(indir)
 
-    if os.path.exists('out'):
-        shutil.rmtree('out')
-    check_call(['unzip', 'work/cases.zip'])
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+    
+    with zipfile.ZipFile(zippath, 'r') as f:
+        f.extractall(workdir)
 
 
-    print('[!] end fetch data')
-
-    print('[*] compile main.cpp')
-    compilecxx(os.path.abspath('work/main.cpp'))
+    logger.info('Compile main.cpp')
+    compilecxx(srcpath)
 
     status = 'AC'
     consume_time = -1
     consume_memory = -1
-    file_list = list(sorted(glob.glob(curdir + '/in/*')))
+    file_list = list(sorted(glob.glob(indir + '/*')))
     for i, inpath in enumerate(file_list):
         _, filepath = os.path.split(inpath)
         name, _ = os.path.splitext(filepath)
-        result = judgecase('./main', inpath, curdir + '/out/' + name + '.out')
+        result = judgecase('./main', inpath, os.path.join(outdir, name + '.out'))
 
         with conn.cursor() as cursor:
             cursor.execute('update submittions set status = %s where id = %s',
@@ -150,7 +168,7 @@ def judge(subid):
             (status, consume_time, consume_memory, subid))
         conn.commit()
 
-    print('[!] end judge')
+    logger.info('End judge')
 
 # read sql queue and judge
 while True:
@@ -161,7 +179,6 @@ while True:
         cursor.execute('select id, submittion from tasks limit 1')
         res = cursor.fetchone()
         if res == None:
-            print('waiting...')
             continue            
         cursor.execute('delete from tasks where id = %s', (res[0],))
         conn.commit()
