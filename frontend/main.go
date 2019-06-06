@@ -40,7 +40,6 @@ func gormConnect() *gorm.DB {
 		log.Fatal(err)
 	}
 	return db
-
 }
 
 type Problem struct {
@@ -122,7 +121,7 @@ func submittionInfo(ctx *gin.Context) {
 
 func submitList(ctx *gin.Context) {
 	var submittions = make([]Submittion, 0)
-	db.Find(&submittions)
+	db.Order("id desc").Find(&submittions)
 	ctx.HTML(200, "submitlist.html", gin.H{
 		"Submittions": submittions,
 	})
