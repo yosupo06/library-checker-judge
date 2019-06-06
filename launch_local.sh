@@ -9,4 +9,4 @@ done
 
 PGPASSWORD=passwd psql -h localhost -U postgres librarychecker < tables.sql
 
-./deploy_problems.py
+cd ../library-checker-problems && ./deploy.py
