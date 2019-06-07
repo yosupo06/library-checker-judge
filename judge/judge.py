@@ -55,8 +55,12 @@ class Result:
 
 def run_in_sandbox(execcmd, stdin = None, stdout = None, timelimit = 2.0):
     memory_max_usage = '/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes'
+    with open(memory_max_usage, 'r') as f:
+        print('a', int(f.read()))
     with open(memory_max_usage, 'w') as f:
         f.write('0')
+    with open(memory_max_usage, 'r') as f:
+        print('b', int(f.read()))
 
     result = Result('IE', -1, -1)
     start = datetime.now()
@@ -71,6 +75,8 @@ def run_in_sandbox(execcmd, stdin = None, stdout = None, timelimit = 2.0):
         result.result = 'OK'
         result.time = (end - start).seconds * 1000 + (end - start).microseconds // 1000
         with open(memory_max_usage, 'r') as f:
+            print('c', int(f.read()))
+        with open(memory_max_usage, 'r') as f:
             result.memory = int(f.read())
 
     return result
@@ -81,7 +87,10 @@ def judgecase(execcmd, inpath, outpath, timelimit = 2.0):
     shutil.copy(inpath, os.path.join(sanddir, 'in.txt'))
 
     # run
-    result = run_in_sandbox(execcmd, stdin = open(inpath, 'r'), stdout = open(anspath, 'w'))
+    result = run_in_sandbox('{} < in.txt > out.txt'.format(execcmd))
+
+    shutil.copy(os.path.join(sanddir, 'out.txt'), anspath)
+
     color = ''
     if result.result == 'OK':
         try:
