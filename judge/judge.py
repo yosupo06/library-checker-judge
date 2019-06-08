@@ -30,7 +30,7 @@ logger.info('Launch judge.py')
 
 #executer = Popen(['unshare', '-m', './executer.py'], stdin=PIPE, stdout=PIPE)
 #executer = Popen(['unshare', '-pm', './executer.py'], stdin=PIPE, stdout=PIPE)
-executer = Popen(['unshare', '-fpnm', './executer.py'], stdin=PIPE, stdout=PIPE)
+executer = Popen(['unshare', '-fpnm', '--mount-proc', './executer.py'], stdin=PIPE, stdout=PIPE)
 
 logger.info('Connect SQL')
 hostname = os.environ.get('POSTGRE_HOST', '127.0.0.1')
