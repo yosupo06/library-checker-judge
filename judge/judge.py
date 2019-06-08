@@ -56,7 +56,7 @@ def run_in_sandbox(execcmd, stdinpath='', stdoutpath='', timelimit=2.0):
         data['stdout'] = stdoutpath
 
     logger.info('judge -> executer data: {}'.format(data))
-    with open('comm.json', 'w') as f:
+    with open('work/comm.json', 'w') as f:
         f.write(json.dumps(data))
     executer.stdin.write(b'comm\n')
     executer.stdin.flush()
@@ -66,7 +66,7 @@ def run_in_sandbox(execcmd, stdinpath='', stdoutpath='', timelimit=2.0):
         logger.error('Error executer: {}'.format(s))
         return {}
     logger.info('Return OK')
-    return json.load(open('resp.json', 'r'))
+    return json.load(open('work/resp.json', 'r'))
 
 
 def judgecase(execcmd, inpath, outpath, timelimit=2.0):
