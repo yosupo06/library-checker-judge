@@ -28,8 +28,6 @@ workdir = os.path.join(curdir, 'work')
 
 logger.info('Launch judge.py')
 
-#executer = Popen(['unshare', '-m', './executer.py'], stdin=PIPE, stdout=PIPE)
-#executer = Popen(['unshare', '-pm', './executer.py'], stdin=PIPE, stdout=PIPE)
 executer = Popen(['unshare', '-fpnm', '--mount-proc', './executer.py'], stdin=PIPE, stdout=PIPE)
 
 logger.info('Connect SQL')

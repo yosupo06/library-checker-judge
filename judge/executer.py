@@ -71,8 +71,10 @@ while True:
     if s == 'last':
         break
     comm = json.load(open('work/comm.json', 'r'))
-    logger.info('Command: {}'.format(comm))
-    result = run_in_sandbox(comm['exec'], comm.get('stdin', None))
+    logger.info('Command: {}'.format(comm))    
+    result = run_in_sandbox(comm['exec'],
+        stdinpath=comm.get('stdin', None),
+        timelimit=comm.get('timelimit', 2.0))
     logger.info('Result: {}'.format(result))
     with open('work/resp.json', 'w') as f:
         f.write(json.dumps(result))
