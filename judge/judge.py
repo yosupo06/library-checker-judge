@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 
-import os, argparse
-import psycopg2
-import shutil
+import argparse
 import glob
-import zipfile
+import os
+import shutil
+import json
 import tempfile
-from time import sleep
-from subprocess import run, check_call, TimeoutExpired, CalledProcessError, DEVNULL
-from termcolor import colored, cprint
+import zipfile
 from datetime import datetime
-from logging import getLogger, basicConfig
+from logging import basicConfig, getLogger
+from subprocess import (DEVNULL, CalledProcessError, Popen, TimeoutExpired,
+                        check_call, run, PIPE)
+from time import sleep
+
+import psycopg2
+from termcolor import colored, cprint
 
 basicConfig(
     level = os.getenv('LOG_LEVEL', 'DEBUG'),
@@ -24,6 +28,9 @@ workdir = os.path.join(curdir, 'work')
 
 logger.info('Launch judge.py')
 
+#executer = Popen(['unshare', '-m', './executer.py'], stdin=PIPE, stdout=PIPE)
+#executer = Popen(['unshare', '-pm', './executer.py'], stdin=PIPE, stdout=PIPE)
+executer = Popen(['unshare', '-fpnm', './executer.py'], stdin=PIPE, stdout=PIPE)
 
 logger.info('Connect SQL')
 hostname = os.environ.get('POSTGRE_HOST', '127.0.0.1')
@@ -38,82 +45,65 @@ conn = psycopg2.connect(
     database='librarychecker'
 )
 
-logger.info('Run prepare.sh')
-run(['./prepare.sh'])
+def run_in_sandbox(execcmd, stdinpath='', stdoutpath='', timelimit=2.0):
+    data = {
+        'exec': execcmd,
+        'timelimit': timelimit
+    }
+    if stdinpath:
+        data['stdin'] = stdinpath
+    if stdoutpath:
+        data['stdout'] = stdoutpath
+
+    logger.info('judge -> executer data: {}'.format(data))
+    with open('comm.json', 'w') as f:
+        f.write(json.dumps(data))
+    executer.stdin.write(b'comm\n')
+    executer.stdin.flush()
+
+    s = executer.stdout.readline().decode('utf-8').strip()
+    if s != 'OK':
+        logger.error('Error executer: {}'.format(s))
+        return {}
+    logger.info('Return OK')
+    return json.load(open('resp.json', 'r'))
 
 
-
-class Result:
-    result = ''
-    time = 0
-    memory = 0
-    def __init__(self, result, time, memory):
-        self.result = result
-        self.time = time
-        self.memory = memory
-
-
-def run_in_sandbox(execcmd, stdin = None, stdout = None, timelimit = 2.0):
-    memory_max_usage = '/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes'
-    with open(memory_max_usage, 'r') as f:
-        print('a', int(f.read()))
-    with open(memory_max_usage, 'w') as f:
-        f.write('0')
-    with open(memory_max_usage, 'r') as f:
-        print('b', int(f.read()))
-
-    result = Result('IE', -1, -1)
-    start = datetime.now()
-    try:
-        check_call(['./exec.sh', execcmd], stdin = stdin, stdout = stdout, timeout=timelimit)
-    except TimeoutExpired:
-        result.result = 'TLE'
-    except CalledProcessError:
-        result.result = 'RE'
-    else:
-        end = datetime.now()
-        result.result = 'OK'
-        result.time = (end - start).seconds * 1000 + (end - start).microseconds // 1000
-        with open(memory_max_usage, 'r') as f:
-            print('c', int(f.read()))
-        with open(memory_max_usage, 'r') as f:
-            result.memory = int(f.read())
-
-    return result
-
-# TODO: output_checker
-def judgecase(execcmd, inpath, outpath, timelimit = 2.0):
+def judgecase(execcmd, inpath, outpath, timelimit=2.0):
     anspath = os.path.join(workdir, 'ans.txt')
-    shutil.copy(inpath, os.path.join(sanddir, 'in.txt'))
 
     # run
-    result = run_in_sandbox('{} < in.txt > out.txt'.format(execcmd))
+    result = run_in_sandbox(execcmd, stdinpath=inpath, timelimit=timelimit)
 
-    shutil.copy(os.path.join(sanddir, 'out.txt'), anspath)
+    shutil.copy(os.path.join(workdir, 'out.txt'), anspath)
 
     color = ''
-    if result.result == 'OK':
+    if result['status'] == 'OK':
         try:
             # output check
             check_call(['diff', anspath, outpath], stdout=DEVNULL)
         except CalledProcessError:
-            result.result = 'WA'
+            result['status'] = 'WA'
             color = 'on_yellow'
         else:
-            result.result = 'AC'
+            result['status'] = 'AC'
             color = 'on_green'
     else:
         color = 'on_red'
 
-    logger.info('judged {} res={} {} msecs'.format(inpath, colored(result.result, on_color=color), result.time))
+    logger.info('judged {} res={} {} msecs'.format(
+        inpath, colored(result['status'], on_color=color), result['time']))
     return result
 
-# source must be abspath
-def compilecxx(srcpath):
-    check_call(['cp', srcpath, 'sand/main.cpp'])
-    run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp')
 
-def judge(subid):    
+
+
+def compilecxx(srcpath):
+    shutil.copy(srcpath, os.path.join(sanddir, 'main.cpp'))
+    run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp', timelimit=20.0)
+
+
+def judge(subid):
     logger.info('Judge start submittion id = {}'.format(subid))
 
     logger.info('Fetch data from SQL')
@@ -121,22 +111,22 @@ def judge(subid):
     problem = None
     with conn.cursor() as cursor:
         if cursor.execute('select problem, lang, source from submittions where id = %s', (subid, )) == 0:
-            return        
+            return
         submittion = cursor.fetchone()
 
     with conn.cursor() as cursor:
-        if cursor.execute('select testzip source from problems where name = %s', (submittion[0], )) == 0:
+        if cursor.execute('select testzip from problems where name = %s', (submittion[0], )) == 0:
             return
         problem = cursor.fetchone()
 
     logger.info('Extact fetched data')
-    srcpath = os.path.join(workdir, 'main.cpp') # Todo: other lang
+    srcpath = os.path.join(workdir, 'main.cpp')  # Todo: other lang
     zippath = os.path.join(workdir, 'cases.zip')
     indir = os.path.join(workdir, 'in')
     outdir = os.path.join(workdir, 'out')
     with open(os.path.join(workdir, 'main.cpp'), 'w') as f:
         f.write(submittion[2])
-    
+
     with open(zippath, 'wb') as f:
         f.write(problem[0])
 
@@ -145,10 +135,9 @@ def judge(subid):
 
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
-    
+
     with zipfile.ZipFile(zippath, 'r') as f:
         f.extractall(workdir)
-
 
     logger.info('Compile main.cpp')
     compilecxx(srcpath)
@@ -160,24 +149,26 @@ def judge(subid):
     for i, inpath in enumerate(file_list):
         _, filepath = os.path.split(inpath)
         name, _ = os.path.splitext(filepath)
-        result = judgecase('./main', inpath, os.path.join(outdir, name + '.out'))
+        result = judgecase(
+            './main', inpath, os.path.join(outdir, name + '.out'))
 
         with conn.cursor() as cursor:
             cursor.execute('update submittions set status = %s where id = %s',
-                ('{}/{}'.format(i, len(file_list)), subid))
+                           ('{}/{}'.format(i, len(file_list)), subid))
             conn.commit()
 
-        if result.result != 'AC':
-            status = result.result
-        consume_time = max(consume_time, result.time)
-        consume_memory = max(consume_memory, result.memory)
+        if result['status'] != 'AC':
+            status = result['status']
+        consume_time = max(consume_time, result['time'])
+        consume_memory = max(consume_memory, result['memory'])
 
     with conn.cursor() as cursor:
         cursor.execute('update submittions set status = %s, maxtime = %s, maxmemory = %s where id = %s',
-            (status, consume_time, consume_memory, subid))
+                       (status, consume_time, consume_memory, subid))
         conn.commit()
 
     logger.info('End judge')
+
 
 # read sql queue and judge
 while True:
@@ -188,7 +179,7 @@ while True:
         cursor.execute('select id, submittion from tasks limit 1')
         res = cursor.fetchone()
         if res == None:
-            continue            
+            continue
         cursor.execute('delete from tasks where id = %s', (res[0],))
         conn.commit()
 
@@ -196,3 +187,5 @@ while True:
 
 
 conn.close()
+
+executer.wait()
