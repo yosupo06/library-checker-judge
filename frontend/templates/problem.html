@@ -41,6 +41,7 @@
                 <div uk-form-custom="target: true">
                     <input name="source" type="file">
                     <input class="uk-input uk-form-width-medium" type="text" placeholder="Select source file" disabled>
+                    <input name="problem" type="hidden" value="{{.Problem.Name}}">
                 </div>
                 <button class="uk-button" type="submit">Submit</button>
             </form>

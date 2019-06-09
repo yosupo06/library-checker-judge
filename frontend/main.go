@@ -47,7 +47,7 @@ type Problem struct {
 	Statement template.HTML
 }
 
-type Submittion struct {
+type Submission struct {
 	Id        int
 	Problem   string
 	Lang      string
@@ -58,7 +58,7 @@ type Submittion struct {
 }
 
 type Task struct {
-	Submittion int
+	Submission int
 }
 
 func problemList(ctx *gin.Context) {
@@ -83,6 +83,7 @@ func submit(ctx *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	problem := ctx.PostForm("problem")
 	file, err := fileheader.Open()
 	if err != nil {
 		log.Fatal(err)
@@ -91,39 +92,39 @@ func submit(ctx *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	submittion := Submittion{}
-	submittion.Problem = "unionfind"
-	submittion.Lang = "cpp"
-	submittion.Status = "WJ"
-	submittion.Source = string(src)
-	submittion.Maxtime = -1
-	submittion.Maxmemory = -1
-	db.Create(&submittion)
+	submission := Submission{}
+	submission.Problem = problem
+	submission.Lang = "cpp"
+	submission.Status = "WJ"
+	submission.Source = string(src)
+	submission.Maxtime = -1
+	submission.Maxmemory = -1
+	db.Create(&submission)
 
 	task := Task{}
-	task.Submittion = submittion.Id
+	task.Submission = submission.Id
 	db.Create(&task)
 
-	ctx.Redirect(http.StatusFound, "/submittion/"+strconv.Itoa(submittion.Id))
+	ctx.Redirect(http.StatusFound, "/submission/"+strconv.Itoa(submission.Id))
 }
 
-func submittionInfo(ctx *gin.Context) {
+func submissionInfo(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	var submittion Submittion
-	db.Where("id = ?", id).First(&submittion)
+	var submission Submission
+	db.Where("id = ?", id).First(&submission)
 	ctx.HTML(200, "submitinfo.html", gin.H{
-		"Submittion": submittion,
+		"Submission": submission,
 	})
 }
 
 func submitList(ctx *gin.Context) {
-	var submittions = make([]Submittion, 0)
-	db.Order("id desc").Find(&submittions)
+	var submissions = make([]Submission, 0)
+	db.Order("id desc").Find(&submissions)
 	ctx.HTML(200, "submitlist.html", gin.H{
-		"Submittions": submittions,
+		"Submissions": submissions,
 	})
 }
 
@@ -131,7 +132,7 @@ func main() {
 	db = gormConnect()
 	defer db.Close()
 	db.AutoMigrate(Problem{})
-	db.AutoMigrate(Submittion{})
+	db.AutoMigrate(Submission{})
 	db.AutoMigrate(Task{})
 
 	router := gin.Default()
@@ -141,8 +142,8 @@ func main() {
 	router.GET("/", problemList)
 	router.GET("/problem/:name", problemInfo)
 	router.POST("/submit", submit)
-	router.GET("/submittion/:id", submittionInfo)
-	router.GET("/submittions", submitList)
+	router.GET("/submission/:id", submissionInfo)
+	router.GET("/submissions", submitList)
 
 	router.Run(":8080")
 }

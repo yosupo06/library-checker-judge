@@ -8,13 +8,13 @@
 <body>
     <section class="uk-section">
         <div class="uk-container">
-            <h1 class="uk-heading-medium">Submit Info #{{.Submittion.Id}}</h1>
+            <h1 class="uk-heading-medium">Submit Info #{{.Submission.Id}}</h1>
         </div>
     </section>
 
     <section class="uk-section">
         <div class="uk-container">
-            <pre>{{.Submittion.Source}}</pre>
+            <pre>{{.Submission.Source}}</pre>
         </div>
         <div class="uk-container">
             <table class="uk-table">
@@ -24,9 +24,9 @@
                     <th>Memory</th>
                 </tr>
                 <tr>
-                    <td>{{.Submittion.Status}}</td>
-                    <td>{{.Submittion.Maxtime}} ms</td>
-                    <td>{{.Submittion.Maxmemory}} bytes</td>
+                    <td>{{.Submission.Status}}</td>
+                    <td>{{.Submission.Maxtime}} ms</td>
+                    <td>{{.Submission.Maxmemory}} bytes</td>
                 </tr>
             </table>
         </div>
