@@ -3,7 +3,9 @@
 import argparse
 import glob
 import os
+import sys
 import shutil
+import traceback
 import json
 import tempfile
 import zipfile
@@ -43,11 +45,13 @@ executer = Popen(['unshare', '-fpnm', '--mount-proc',
                   './executer.py'], stdin=PIPE, stdout=PIPE, env=env)
 
 
-def run_in_sandbox(execcmd, stdinpath='', stdoutpath='', timelimit=2.0):
+def run_in_sandbox(execcmd, copyfiles = [], stdinpath='', stdoutpath='', timelimit=2.0):
     data = {
         'exec': execcmd,
-        'timelimit': timelimit
+        'timelimit': timelimit,
     }
+    if len(copyfiles):
+        data['files'] = copyfiles
     if stdinpath:
         data['stdin'] = stdinpath
     if stdoutpath:
@@ -71,7 +75,7 @@ def judgecase(execcmd, inpath, outpath, timelimit=2.0):
     anspath = os.path.join(workdir, 'ans.txt')
 
     # run
-    result = run_in_sandbox(execcmd, stdinpath=inpath, timelimit=timelimit)
+    result = run_in_sandbox(execcmd, copyfiles=['main'], stdinpath=inpath, timelimit=timelimit)
 
     shutil.copy(os.path.join(workdir, 'out.txt'), anspath)
 
@@ -95,10 +99,9 @@ def judgecase(execcmd, inpath, outpath, timelimit=2.0):
 
 
 def compilecxx(srcpath):
-    shutil.copy(srcpath, os.path.join(sanddir, 'main.cpp'))
-    run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp', timelimit=20.0)
-
-# get zip file and return path
+    #shutil.copy(srcpath, os.path.join(sanddir, 'main.cpp'))
+    run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp', copyfiles=['main.cpp'], timelimit=20.0)
+    shutil.copy(os.path.join(sanddir, 'main'), os.path.join(workdir, 'main'))
 
 
 def fetchcases(conn, problemid):
@@ -212,4 +215,13 @@ if __name__ == "__main__":
             cursor.execute('delete from tasks where id = %s', (res[0],))
             conn.commit()
 
-        judge(conn, res[1])
+        subid = res[1]
+        try:
+            judge(conn, subid)
+        except Exception as e:
+            ex, ms, tb = sys.exc_info()            
+            logger.error("Unexpected error: {}".format(traceback.print_tb(tb)))
+            with conn.cursor() as cursor:
+                cursor.execute('update submittions set status = %s where id = %s',
+                            ('IE', subid))
+                conn.commit()

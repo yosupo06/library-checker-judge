@@ -2,7 +2,9 @@
 
 import os
 import sys
+import shutil
 import json
+import glob
 from subprocess import run, check_call, TimeoutExpired, CalledProcessError
 from datetime import datetime
 from logging import basicConfig, getLogger
@@ -35,28 +37,35 @@ class Result:
         self.memory = memory
 
 
-def run_in_sandbox(execcmd, stdinpath=None, timelimit=2.0):
+def run_in_sandbox(execcmd, copyfiles, stdinpath, timelimit):
     result = {
         'status': 'IE',
         'time': -1,
         'memory': -1,
     }
 
+    logger.info('execcmd: {}'.format(execcmd))
+    check_call(['./prepare_exec.sh'])
+
+    fstdin = None
+    if stdinpath:
+        logger.info('stdin: {}'.format(stdinpath))
+        fstdin = open(stdinpath, 'r')
+
+    for f in glob.glob('sand/*'):
+        if os.path.isfile(f):
+            os.remove(f)
+
+    for f in copyfiles:
+        shutil.copy(os.path.join(workdir, f), os.path.join(sanddir, f))
+        
     try:
-        fstdin = None
-        if stdinpath:
-            logger.info('stdin: {}'.format(stdinpath))
-            fstdin = open(stdinpath, 'r')
-        logger.info('execcmd: {}'.format(execcmd))
-        check_call(['./prepare_exec.sh'])
         cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge',
                'chroot', '--userspec=library-checker-user:library-checker-user', 'sand']
         cmd.extend(execcmd.split())
         start = datetime.now()
         check_call(cmd, stdin=fstdin,
                    stdout=open('work/out.txt', 'w'), timeout=timelimit)
-#        check_call(['./exec.sh', execcmd], stdin=fstdin,
-#               stdout=open('work/out.txt', 'w'), timeout=timelimit)
     except TimeoutExpired:
         result['status'] = 'TLE'
     except CalledProcessError:
@@ -80,6 +89,7 @@ while True:
     comm = json.load(open('work/comm.json', 'r'))
     logger.info('Command: {}'.format(comm))
     result = run_in_sandbox(comm['exec'],
+                            copyfiles=comm.get('files', []),
                             stdinpath=comm.get('stdin', None),
                             timelimit=comm.get('timelimit', 2.0))
     logger.info('Result: {}'.format(result))
