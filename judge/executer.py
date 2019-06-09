@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import shutil
-import json
 import glob
-from subprocess import run, check_call, TimeoutExpired, CalledProcessError
+import json
+import os
+import shutil
+import sys
 from datetime import datetime
 from logging import basicConfig, getLogger
+from subprocess import CalledProcessError, TimeoutExpired, check_call, run
 
 basicConfig(
     filename='executer.log',
@@ -58,7 +58,7 @@ def run_in_sandbox(execcmd, copyfiles, stdinpath, timelimit):
 
     for f in copyfiles:
         shutil.copy(os.path.join(workdir, f), os.path.join(sanddir, f))
-        
+
     try:
         cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge',
                'chroot', '--userspec=library-checker-user:library-checker-user', 'sand']

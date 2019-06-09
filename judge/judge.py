@@ -2,17 +2,17 @@
 
 import argparse
 import glob
-import os
-import sys
-import shutil
-import traceback
 import json
+import os
+import shutil
+import sys
 import tempfile
+import traceback
 import zipfile
 from datetime import datetime
 from logging import basicConfig, getLogger
-from subprocess import (DEVNULL, CalledProcessError, Popen, TimeoutExpired,
-                        check_call, run, PIPE)
+from subprocess import (DEVNULL, PIPE, CalledProcessError, Popen,
+                        TimeoutExpired, check_call, run)
 from time import sleep
 
 import psycopg2
@@ -45,7 +45,7 @@ executer = Popen(['unshare', '-fpnm', '--mount-proc',
                   './executer.py'], stdin=PIPE, stdout=PIPE, env=env)
 
 
-def run_in_sandbox(execcmd, copyfiles = [], stdinpath='', stdoutpath='', timelimit=2.0):
+def run_in_sandbox(execcmd, copyfiles=[], stdinpath='', stdoutpath='', timelimit=2.0):
     data = {
         'exec': execcmd,
         'timelimit': timelimit,
@@ -75,7 +75,8 @@ def judgecase(execcmd, inpath, outpath, timelimit=2.0):
     anspath = os.path.join(workdir, 'ans.txt')
 
     # run
-    result = run_in_sandbox(execcmd, copyfiles=['main'], stdinpath=inpath, timelimit=timelimit)
+    result = run_in_sandbox(
+        execcmd, copyfiles=['main'], stdinpath=inpath, timelimit=timelimit)
 
     shutil.copy(os.path.join(workdir, 'out.txt'), anspath)
 
@@ -99,8 +100,8 @@ def judgecase(execcmd, inpath, outpath, timelimit=2.0):
 
 
 def compilecxx(srcpath):
-    #shutil.copy(srcpath, os.path.join(sanddir, 'main.cpp'))
-    run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp', copyfiles=['main.cpp'], timelimit=20.0)
+    run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp',
+                   copyfiles=['main.cpp'], timelimit=20.0)
     shutil.copy(os.path.join(sanddir, 'main'), os.path.join(workdir, 'main'))
 
 
@@ -219,9 +220,9 @@ if __name__ == "__main__":
         try:
             judge(conn, subid)
         except Exception as e:
-            ex, ms, tb = sys.exc_info()            
+            ex, ms, tb = sys.exc_info()
             logger.error("Unexpected error: {}".format(traceback.print_tb(tb)))
             with conn.cursor() as cursor:
                 cursor.execute('update submittions set status = %s where id = %s',
-                            ('IE', subid))
+                               ('IE', subid))
                 conn.commit()
