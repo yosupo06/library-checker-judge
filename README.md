@@ -1,0 +1,66 @@
+# Recommended Environment
+
+- Ubuntu 18.04
+- Debian 9(stretch)
+
+# 動かすのに必要なもの
+
+- docker
+
+```
+sudo apt install postgresql-client postgresql-dev python3 python3-dev g++ cgroups-bin libcap2-bin
+
+pip3 install termcolor toml psycopg2
+```
+
+など
+
+# 準備
+
+
+## cgroupでmemory swapを管理する
+/etc/default/grubに以下を書き、reboot
+```
+GRUB_CMDLINE_LINUX="swapaccount=1"
+```
+
+- References: https://unix.stackexchange.com/questions/147158/how-to-enable-swap-accounting-for-memory-cgroup-in-archlinux
+
+
+## ジャッジ用のシステムユーザーを作成する
+
+```
+sudo useradd library-checker-user -r -s /sbin/nologin -M
+```
+
+# 手元実行
+
+- library-checker-problems / library-chcker-judgeは同じディレクトリにcloneする
+- library-checker-frontendはどこでもよい, go getとかするとよい？(TODO)
+
+## SQL立ち上げ
+```
+cd /your/path/of/library-checker-judge
+./launch_local
+```
+
+dockerでpostgre SQLが立ち上がり、問題データが生成され、SQLに格納される
+
+dockerコマンドにsudoが必要な場合、`./launch_local`をsudoで実行する必要がある。
+しかしlibrary-checker-problems内にいろいろrootでフォルダが作られて面倒な事になるので、非推奨
+
+dockerグループに自分を登録することでsudoなしでdockerが使えるようになる
+- References: https://qiita.com/DQNEO/items/da5df074c48b012152ee
+
+## Launch Judge
+```
+cd /your/path/of/library-checker-judge/judge
+sudo ./judge.py
+```
+
+## Launch web server
+
+```
+cd /your/path/of/library-checker-problems/
+go run main.go
+```
