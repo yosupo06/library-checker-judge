@@ -1,20 +1,7 @@
 #!/usr/bin/env sh
 
-# prepare cgroups
-cgcreate -g cpuset,memory:/lib-judge
-# String 1 Core
-cgset -r cpuset.cpus=0 lib-judge
-cgset -r cpuset.mems=0 lib-judge
-# Memory limit is 1G
-cgset -r memory.limit_in_bytes=1G lib-judge
-cgset -r memory.memsw.limit_in_bytes=1G lib-judge
-
 # prepare sandbox
-rm -rf work
-mkdir work
-
-rm -rf sand
-mkdir sand sand/proc sand/dev sand/sys sand/bin sand/lib sand/lib64 sand/usr
+mkdir sand/proc sand/dev sand/sys sand/bin sand/lib sand/lib64 sand/usr
 
 # mount -o ro -t proc none sand/proc
 # mount -o ro --bind /dev sand/dev

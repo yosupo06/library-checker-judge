@@ -17,31 +17,31 @@ import psycopg2
 from termcolor import colored, cprint
 
 basicConfig(
-    level = os.getenv('LOG_LEVEL', 'DEBUG'),
-    format = "%(asctime)s %(levelname)s %(name)s :%(message)s"
+    level=os.getenv('LOG_LEVEL', 'DEBUG'),
+    format="%(asctime)s %(levelname)s %(name)s :%(message)s"
 )
 logger = getLogger(__name__)
 
+logger.info('Launch judge.py')
+
+logger.info('Make workdir & sanddir')
 curdir = os.path.abspath(os.path.curdir)
 sanddir = os.path.join(curdir, 'sand')
 workdir = os.path.join(curdir, 'work')
+if os.path.exists(sanddir):
+    shutil.rmtree(sanddir)
+if os.path.exists(workdir):
+    shutil.rmtree(workdir)
+os.mkdir(sanddir)
+os.mkdir(workdir)
+os.chmod(sanddir, 0o777)
 
-logger.info('Launch judge.py')
 
-executer = Popen(['unshare', '-fpnm', '--mount-proc', './executer.py'], stdin=PIPE, stdout=PIPE)
+env = os.environ.copy()
+env['POSTGRE_PASS'] = 'secret(of course, we should fix this code...)'
+executer = Popen(['unshare', '-fpnm', '--mount-proc',
+                  './executer.py'], stdin=PIPE, stdout=PIPE, env=env)
 
-logger.info('Connect SQL')
-hostname = os.environ.get('POSTGRE_HOST', '127.0.0.1')
-port = int(os.environ.get('POSTGRE_PORT', '5432'))
-user = os.environ.get('POSTGRE_USER', 'postgres')
-password = os.environ.get('POSTGRE_PASS', 'passwd')
-conn = psycopg2.connect(
-    host=hostname,
-    port=port,
-    user=user,
-    password=password,
-    database='librarychecker'
-)
 
 def run_in_sandbox(execcmd, stdinpath='', stdoutpath='', timelimit=2.0):
     data = {
@@ -94,14 +94,36 @@ def judgecase(execcmd, inpath, outpath, timelimit=2.0):
     return result
 
 
-
-
 def compilecxx(srcpath):
     shutil.copy(srcpath, os.path.join(sanddir, 'main.cpp'))
     run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp', timelimit=20.0)
 
+# get zip file and return path
 
-def judge(subid):
+
+def fetchcases(conn, problemid):
+    # get zip file
+    testhash = ''
+    with conn.cursor() as cursor:
+        if cursor.execute('select testhash from problems where name = %s', (problemid, )) == 0:
+            return
+        testhash = cursor.fetchone()[0]
+
+    zippath = os.path.join(workdir, 'cases-{}.zip'.format(testhash))
+
+    if not os.path.exists(zippath):
+        logger.info('Nothing {}, fetching...'.format(zippath))
+        with conn.cursor() as cursor:
+            if cursor.execute('select testzip from problems where name = %s', (problemid, )) == 0:
+                return
+            zipdata = cursor.fetchone()[0]
+            with open(zippath, 'wb') as f:
+                f.write(zipdata)
+
+    return zippath
+
+
+def judge(conn, subid):
     logger.info('Judge start submittion id = {}'.format(subid))
 
     logger.info('Fetch data from SQL')
@@ -112,21 +134,18 @@ def judge(subid):
             return
         submittion = cursor.fetchone()
 
-    with conn.cursor() as cursor:
-        if cursor.execute('select testzip from problems where name = %s', (submittion[0], )) == 0:
-            return
-        problem = cursor.fetchone()
-
-    logger.info('Extact fetched data')
-    srcpath = os.path.join(workdir, 'main.cpp')  # Todo: other lang
-    zippath = os.path.join(workdir, 'cases.zip')
-    indir = os.path.join(workdir, 'in')
-    outdir = os.path.join(workdir, 'out')
+    # write source
     with open(os.path.join(workdir, 'main.cpp'), 'w') as f:
         f.write(submittion[2])
 
-    with open(zippath, 'wb') as f:
-        f.write(problem[0])
+    zippath = fetchcases(conn, submittion[0])
+
+    srcpath = os.path.join(workdir, 'main.cpp')  # Todo: other lang
+
+    logger.info('Extract zip file')
+
+    indir = os.path.join(workdir, 'in')
+    outdir = os.path.join(workdir, 'out')
 
     if os.path.exists(indir):
         shutil.rmtree(indir)
@@ -168,22 +187,29 @@ def judge(subid):
     logger.info('End judge')
 
 
-# read sql queue and judge
-while True:
-    sleep(1)
-    sql = 'select id from queue'
-    res = None
-    with conn.cursor() as cursor:
-        cursor.execute('select id, submittion from tasks limit 1')
-        res = cursor.fetchone()
-        if res == None:
-            continue
-        cursor.execute('delete from tasks where id = %s', (res[0],))
-        conn.commit()
+if __name__ == "__main__":
+    logger.info('Connect SQL')
+    hostname = os.environ.get('POSTGRE_HOST', '127.0.0.1')
+    port = int(os.environ.get('POSTGRE_PORT', '5432'))
+    user = os.environ.get('POSTGRE_USER', 'postgres')
+    password = os.environ.get('POSTGRE_PASS', 'passwd')
+    conn = psycopg2.connect(
+        host=hostname,
+        port=port,
+        user=user,
+        password=password,
+        database='librarychecker'
+    )
+    while True:
+        sleep(1)
+        sql = 'select id from queue'
+        res = None
+        with conn.cursor() as cursor:
+            cursor.execute('select id, submittion from tasks limit 1')
+            res = cursor.fetchone()
+            if res == None:
+                continue
+            cursor.execute('delete from tasks where id = %s', (res[0],))
+            conn.commit()
 
-    judge(res[1])
-
-
-conn.close()
-
-executer.wait()
+        judge(conn, res[1])
