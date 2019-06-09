@@ -12,7 +12,7 @@ create table problems (
   testzip bytea
 );
 
-create table submittions (
+create table submissions (
   id serial primary key,
   submittime timestamp,
   userid int, -- null ok
@@ -27,5 +27,5 @@ create table submittions (
 
 create table tasks ( -- Between front and judge
   id serial primary key,
-  submittion int not null
+  submission int not null
 );

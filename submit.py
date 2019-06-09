@@ -34,11 +34,11 @@ conn = psycopg2.connect(
     database='librarychecker'
 )
 
-sql = 'insert into submittions(submittime, problem, lang, source, status) values (%s, %s, %s, %s, %s)'
+sql = 'insert into submissions(submittime, problem, lang, source, status) values (%s, %s, %s, %s, %s)'
 with conn.cursor() as cursor:
     cursor.execute(sql, (datetime.datetime.now(), problem, ext, source, 'WJ'))
-    cursor.execute("select currval('submittions_id_seq')")
+    cursor.execute("select currval('submissions_id_seq')")
     id = cursor.fetchone()[0]
-    cursor.execute('insert into tasks(submittion) values (%s)', (id, ))
+    cursor.execute('insert into tasks(submission) values (%s)', (id, ))
     conn.commit()
 conn.close()

@@ -128,21 +128,21 @@ def fetchcases(conn, problemid):
 
 
 def judge(conn, subid):
-    logger.info('Judge start submittion id = {}'.format(subid))
+    logger.info('Judge start submission id = {}'.format(subid))
 
     logger.info('Fetch data from SQL')
-    submittion = None
+    submission = None
     problem = None
     with conn.cursor() as cursor:
-        if cursor.execute('select problem, lang, source from submittions where id = %s', (subid, )) == 0:
+        if cursor.execute('select problem, lang, source from submissions where id = %s', (subid, )) == 0:
             return
-        submittion = cursor.fetchone()
+        submission = cursor.fetchone()
 
     # write source
     with open(os.path.join(workdir, 'main.cpp'), 'w') as f:
-        f.write(submittion[2])
+        f.write(submission[2])
 
-    zippath = fetchcases(conn, submittion[0])
+    zippath = fetchcases(conn, submission[0])
 
     srcpath = os.path.join(workdir, 'main.cpp')  # Todo: other lang
 
@@ -174,7 +174,7 @@ def judge(conn, subid):
             './main', inpath, os.path.join(outdir, name + '.out'))
 
         with conn.cursor() as cursor:
-            cursor.execute('update submittions set status = %s where id = %s',
+            cursor.execute('update submissions set status = %s where id = %s',
                            ('{}/{}'.format(i, len(file_list)), subid))
             conn.commit()
 
@@ -184,7 +184,7 @@ def judge(conn, subid):
         consume_memory = max(consume_memory, result['memory'])
 
     with conn.cursor() as cursor:
-        cursor.execute('update submittions set status = %s, maxtime = %s, maxmemory = %s where id = %s',
+        cursor.execute('update submissions set status = %s, maxtime = %s, maxmemory = %s where id = %s',
                        (status, consume_time, consume_memory, subid))
         conn.commit()
 
@@ -209,7 +209,7 @@ if __name__ == "__main__":
         sql = 'select id from queue'
         res = None
         with conn.cursor() as cursor:
-            cursor.execute('select id, submittion from tasks limit 1')
+            cursor.execute('select id, submission from tasks limit 1')
             res = cursor.fetchone()
             if res == None:
                 continue
@@ -223,6 +223,6 @@ if __name__ == "__main__":
             ex, ms, tb = sys.exc_info()
             logger.error("Unexpected error: {}".format(traceback.print_tb(tb)))
             with conn.cursor() as cursor:
-                cursor.execute('update submittions set status = %s where id = %s',
+                cursor.execute('update submissions set status = %s where id = %s',
                                ('IE', subid))
                 conn.commit()
