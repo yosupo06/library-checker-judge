@@ -1,3 +1,9 @@
+# library-checker-project
+
+- problems: [library-checker-problems](https://github.com/yosupo06/library-checker-problems)
+- judge: [library-checker-judge](https://github.com/yosupo06/library-checker-judge)
+- frontend: [library-checker-frontend](https://github.com/yosupo06/library-checker-frontend)
+
 # Recommended Environment
 
 - Ubuntu 18.04
@@ -18,7 +24,7 @@ pip3 install termcolor toml psycopg2
 # 準備
 
 
-## cgroupでmemory swapを管理する
+### cgroupでmemory swapを管理する
 /etc/default/grubに以下を書き、reboot
 ```
 GRUB_CMDLINE_LINUX="swapaccount=1"
@@ -27,18 +33,18 @@ GRUB_CMDLINE_LINUX="swapaccount=1"
 - References: https://unix.stackexchange.com/questions/147158/how-to-enable-swap-accounting-for-memory-cgroup-in-archlinux
 
 
-## ジャッジ用のシステムユーザーを作成する
+### ジャッジ用のシステムユーザーを作成する
 
 ```
 sudo useradd library-checker-user -r -s /sbin/nologin -M
 ```
 
-# 手元実行
+# Local Test
 
 - library-checker-problems / library-chcker-judgeは同じディレクトリにcloneする
 - library-checker-frontendはどこでもよい, go getとかするとよい？(TODO)
 
-## SQL立ち上げ
+### SQL立ち上げ
 ```
 cd /your/path/of/library-checker-judge
 ./launch_local
@@ -52,13 +58,13 @@ dockerコマンドにsudoが必要な場合、`./launch_local`をsudoで実行�
 dockerグループに自分を登録することでsudoなしでdockerが使えるようになる
 - References: https://qiita.com/DQNEO/items/da5df074c48b012152ee
 
-## Launch Judge
+### Launch Judge
 ```
 cd /your/path/of/library-checker-judge/judge
 sudo ./judge.py
 ```
 
-## Launch web server
+### Launch web server
 
 ```
 cd /your/path/of/library-checker-problems/
