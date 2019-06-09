@@ -21,7 +21,7 @@ import shutil
 import sys
 from datetime import datetime
 from logging import basicConfig, getLogger
-from subprocess import CalledProcessError, TimeoutExpired, check_call, run
+from subprocess import CalledProcessError, TimeoutExpired, check_call, run, DEVNULL
 
 basicConfig(
     filename='executer.log',
@@ -34,79 +34,79 @@ curdir = os.path.abspath(os.path.curdir)
 sanddir = os.path.join(curdir, 'sand')
 workdir = os.path.join(curdir, 'work')
 
-logger.info('Launch executer.py')
-
-logger.info('os env = {}'.format(os.environ))
-run(['./prepare.sh'])
 
 
-class Result:
-    result = ''
-    time = 0
-    memory = 0
-
-    def __init__(self, result, time, memory):
-        self.result = result
-        self.time = time
-        self.memory = memory
-
-
-def run_in_sandbox(execcmd, copyfiles, stdinpath, timelimit):
-    result = {
-        'status': 'IE',
-        'time': -1,
-        'memory': -1,
-    }
+def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
+    status = 'IE'
+    time = -1
+    memory = -1
 
     logger.info('execcmd: {}'.format(execcmd))
-    check_call(['./prepare_exec.sh'])
-
-    fstdin = None
-    if stdinpath:
-        logger.info('stdin: {}'.format(stdinpath))
-        fstdin = open(stdinpath, 'r')
 
     for f in glob.glob('sand/*'):
         if os.path.isfile(f):
             os.remove(f)
+        elif os.stat(f).st_uid != os.getuid():
+            shutil.rmtree(f)
 
     for f in copyfiles:
         shutil.copy(os.path.join(workdir, f), os.path.join(sanddir, f))
 
+    check_call(['./prepare_exec.sh'])
+    
     try:
         cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge',
                'chroot', '--userspec=library-checker-user:library-checker-user', 'sand']
         cmd.extend(execcmd.split())
         start = datetime.now()
-        check_call(cmd, stdin=fstdin,
-                   stdout=open('work/out.txt', 'w'), timeout=timelimit)
+        check_call(cmd, stdin=stdin, stdout=stdout, timeout=timelimit)
     except TimeoutExpired:
-        result['status'] = 'TLE'
+        status = 'TLE'
     except CalledProcessError:
-        result['status'] = 'RE'
+        status = 'RE'
     else:
         end = datetime.now()
-        result['status'] = 'OK'
-        result['time'] = (end - start).seconds * 1000 + \
+        status = 'OK'
+        time = (end - start).seconds * 1000 + \
             (end - start).microseconds // 1000
         with open('/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes', 'r') as f:
-            result['memory'] = int(f.read())
+            memory = int(f.read())
 
-    return result
+    return {
+        'status': status,
+        'time': time,
+        'memory': memory,
+    }
 
 
-while True:
-    s = sys.stdin.readline().strip()
-    logger.info('input: {}'.format(s))
-    if s == 'last':
-        break
-    comm = json.load(open('work/comm.json', 'r'))
-    logger.info('Command: {}'.format(comm))
-    result = run_in_sandbox(comm['exec'],
-                            copyfiles=comm.get('files', []),
-                            stdinpath=comm.get('stdin', None),
-                            timelimit=comm.get('timelimit', 2.0))
-    logger.info('Result: {}'.format(result))
-    with open('work/resp.json', 'w') as f:
-        f.write(json.dumps(result))
-    print('OK', flush=True)
+if __name__ == "__main__":
+    logger.info('Launch executer.py')
+    run(['./prepare.sh'])
+
+    while True:
+        s = sys.stdin.readline().strip()
+        logger.info('input: {}'.format(s))
+        if s == 'last':
+            break
+
+        comm = json.load(open('work/comm.json', 'r'))
+        logger.info('Command: {}'.format(comm))
+
+        stdinpath = comm.get('stdin', None)
+        stdin = DEVNULL
+        if stdinpath:
+            stdin = open(stdinpath, 'r')
+        stdoutpath = comm.get('stdout', None)        
+        stdout = DEVNULL
+        if stdoutpath:
+            stdout = open(stdoutpath, 'w')
+
+        result = run_in_sandbox(comm['exec'],
+                                copyfiles=comm.get('files', []),
+                                stdin=stdin,
+                                stdout=stdout,
+                                timelimit=comm.get('timelimit', 2.0))
+        logger.info('Result: {}'.format(result))
+        with open('work/resp.json', 'w') as f:
+            f.write(json.dumps(result))
+        print('OK', flush=True)

@@ -3,7 +3,7 @@
 cgdelete cpuset,memory:/lib-judge
 # prepare cgroups
 cgcreate -g cpuset,memory:/lib-judge
-# String 1 Core
+# Restrict to single Core
 cgset -r cpuset.cpus=0 lib-judge
 cgset -r cpuset.mems=0 lib-judge
 # Memory limit is 1G

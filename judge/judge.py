@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Copyright 2019 Kohei Morita
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,7 @@ import argparse
 import glob
 import json
 import os
+from os.path import join
 import shutil
 import sys
 import tempfile
@@ -42,8 +43,8 @@ logger.info('Launch judge.py')
 
 logger.info('Make workdir & sanddir')
 curdir = os.path.abspath(os.path.curdir)
-sanddir = os.path.join(curdir, 'sand')
-workdir = os.path.join(curdir, 'work')
+sanddir = join(curdir, 'sand')
+workdir = join(curdir, 'work')
 if os.path.exists(sanddir):
     shutil.rmtree(sanddir)
 if os.path.exists(workdir):
@@ -51,10 +52,10 @@ if os.path.exists(workdir):
 os.mkdir(sanddir)
 os.mkdir(workdir)
 os.chmod(sanddir, 0o777)
-
+shutil.copy('testlib.h', 'work/testlib.h')
 
 env = os.environ.copy()
-env['POSTGRE_PASS'] = 'secret(of course, we should fix this code...)'
+env['POSTGRE_PASS'] = 'secret(off course, we should fix this code...)'
 executer = Popen(['unshare', '-fpnm', '--mount-proc',
                   './executer.py'], stdin=PIPE, stdout=PIPE, env=env)
 
@@ -85,37 +86,56 @@ def run_in_sandbox(execcmd, copyfiles=[], stdinpath='', stdoutpath='', timelimit
     return json.load(open('work/resp.json', 'r'))
 
 
-def judgecase(execcmd, inpath, outpath, timelimit=2.0):
-    anspath = os.path.join(workdir, 'ans.txt')
+def judge_single_case(execcmd, inpath, outpath, timelimit=2.0):
+    new_inpath = os.path.join(workdir, 'case.in')
+    new_outpath = os.path.join(workdir, 'case.out')
+    shutil.copy(inpath, new_inpath)
+    shutil.copy(outpath, new_outpath)
+    inpath = new_inpath
+    outpath = new_outpath
+    anspath = os.path.join(workdir, 'case.ans')
 
     # run
-    result = run_in_sandbox(
-        execcmd, copyfiles=['main'], stdinpath=inpath, timelimit=timelimit)
+    result = run_in_sandbox(execcmd, copyfiles=['main'],
+                            stdinpath=inpath, stdoutpath=anspath, timelimit=timelimit)
 
-    shutil.copy(os.path.join(workdir, 'out.txt'), anspath)
-
-    color = ''
     if result['status'] == 'OK':
         try:
             # output check
-            check_call(['diff', anspath, outpath], stdout=DEVNULL)
+            run_in_sandbox('./checker case.in case.out case.ans',
+                           copyfiles=['checker', 'case.in', 'case.out', 'case.ans'], timelimit=30.0)
         except CalledProcessError:
             result['status'] = 'WA'
-            color = 'on_yellow'
+        except TimeoutError:
+            result['status'] = 'ITLE'
         else:
             result['status'] = 'AC'
-            color = 'on_green'
-    else:
-        color = 'on_red'
+
+    def get_color():
+        status = result['status']
+        if status == 'AC':
+            return 'on_green'
+        elif status == 'WA':
+            return 'on_yellow'
+        else:
+            return 'on_red'
 
     logger.info('judged {} res={} {} msecs'.format(
-        inpath, colored(result['status'], on_color=color), result['time']))
+        inpath, colored(result['status'], on_color=get_color()), result['time']))
     return result
 
 
-def compilecxx(srcpath):
+def compile_checker():
+    run_in_sandbox('g++ -O2 -std=c++14 -o checker checker.cpp',
+                   copyfiles=['checker.cpp', 'testlib.h'], timelimit=30.0)
+    shutil.copy(os.path.join(sanddir, 'checker'),
+                os.path.join(workdir, 'checker'))
+
+
+def compile(lang):
+    assert(lang == 'cpp')  # todo
     run_in_sandbox('g++ -O2 -std=c++14 -o main main.cpp',
-                   copyfiles=['main.cpp'], timelimit=20.0)
+                   copyfiles=['main.cpp'], timelimit=30.0)
     shutil.copy(os.path.join(sanddir, 'main'), os.path.join(workdir, 'main'))
 
 
@@ -138,33 +158,13 @@ def fetchcases(conn, problemid):
             with open(zippath, 'wb') as f:
                 f.write(zipdata)
 
-    return zippath
-
-
-def judge(conn, subid):
-    logger.info('Judge start submission id = {}'.format(subid))
-
-    logger.info('Fetch data from SQL')
-    submission = None
-    problem = None
-    with conn.cursor() as cursor:
-        if cursor.execute('select problem, lang, source from submissions where id = %s', (subid, )) == 0:
-            return
-        submission = cursor.fetchone()
-
-    # write source
-    with open(os.path.join(workdir, 'main.cpp'), 'w') as f:
-        f.write(submission[2])
-
-    zippath = fetchcases(conn, submission[0])
-
-    srcpath = os.path.join(workdir, 'main.cpp')  # Todo: other lang
-
     logger.info('Extract zip file')
 
-    indir = os.path.join(workdir, 'in')
-    outdir = os.path.join(workdir, 'out')
+    indir = join(workdir, 'in')
+    outdir = join(workdir, 'out')
 
+    if os.path.exists('work/checker.cpp'):
+        os.remove('work/checker.cpp')
     if os.path.exists(indir):
         shutil.rmtree(indir)
 
@@ -174,18 +174,36 @@ def judge(conn, subid):
     with zipfile.ZipFile(zippath, 'r') as f:
         f.extractall(workdir)
 
-    logger.info('Compile main.cpp')
-    compilecxx(srcpath)
+
+def judge(conn, subid):
+    logger.info('Judge start submission id = {}'.format(subid))
+
+    logger.info('Fetch data from SQL')
+    submission = None
+    with conn.cursor() as cursor:
+        if cursor.execute('select problem, lang, source from submissions where id = %s', (subid, )) == 0:
+            return
+        submission = cursor.fetchone()
+
+    fetchcases(conn, submission[0])
+
+    # write source
+    with open(os.path.join(workdir, 'main.cpp'), 'w') as f:
+        f.write(submission[2])
+
+    logger.info('Compile checker & source')
+    compile_checker()
+    compile('cpp')
 
     status = 'AC'
-    consume_time = -1
-    consume_memory = -1
-    file_list = list(sorted(glob.glob(indir + '/*')))
+    time = -1
+    memory = -1
+    file_list = list(sorted(glob.glob('work/in/*')))
     for i, inpath in enumerate(file_list):
         _, filepath = os.path.split(inpath)
         name, _ = os.path.splitext(filepath)
-        result = judgecase(
-            './main', inpath, os.path.join(outdir, name + '.out'))
+        outpath = os.path.join('work/out', name + '.out')
+        result = judge_single_case('./main', inpath=inpath, outpath=outpath)
 
         with conn.cursor() as cursor:
             cursor.execute('update submissions set status = %s where id = %s',
@@ -194,12 +212,12 @@ def judge(conn, subid):
 
         if result['status'] != 'AC':
             status = result['status']
-        consume_time = max(consume_time, result['time'])
-        consume_memory = max(consume_memory, result['memory'])
+        time = max(time, result['time'])
+        memory = max(memory, result['memory'])
 
     with conn.cursor() as cursor:
         cursor.execute('update submissions set status = %s, maxtime = %s, maxmemory = %s where id = %s',
-                       (status, consume_time, consume_memory, subid))
+                       (status, time, memory, subid))
         conn.commit()
 
     logger.info('End judge')
