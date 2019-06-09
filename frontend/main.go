@@ -44,6 +44,7 @@ func gormConnect() *gorm.DB {
 
 type Problem struct {
 	Name      string
+	Title     string
 	Statement template.HTML
 }
 
