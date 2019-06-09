@@ -6,6 +6,7 @@ create table users (
 
 create table problems (
   name varchar(255) primary key,
+  title varchar(255),
   statement text,
   timelimit int,
   testhash varchar(255),
