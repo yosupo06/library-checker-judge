@@ -37,6 +37,7 @@
     <section class="uk-section">
         <div class="uk-container">
             {{.Problem.Statement}}
+            <hr class="uk-margin-large">
             <form method="POST" action="/submit" enctype="multipart/form-data">
                 <div uk-form-custom="target: true">
                     <input name="source" type="file">
