@@ -64,7 +64,7 @@ type Task struct {
 
 func problemList(ctx *gin.Context) {
 	var problems = make([]Problem, 0)
-	db.Find(&problems)
+	db.Select("name, title").Find(&problems)
 	ctx.HTML(200, "problemlist.html", gin.H{
 		"problems": problems,
 	})
@@ -73,7 +73,7 @@ func problemList(ctx *gin.Context) {
 func problemInfo(ctx *gin.Context) {
 	name := ctx.Param("name")
 	var problem Problem
-	db.Where("name = ?", name).First(&problem)
+	db.Select("name, title, statement").Where("name = ?", name).First(&problem)
 	ctx.HTML(200, "problem.html", gin.H{
 		"Problem": problem,
 	})
