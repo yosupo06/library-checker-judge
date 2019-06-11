@@ -29,6 +29,23 @@
                     <td>{{.Submission.Maxmemory}} bytes</td>
                 </tr>
             </table>
+            <hr class="uk-margin-medium">
+            <table class="uk-table">
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th>Memory</th>
+                </tr>
+                {{range .Results}}
+                    <tr>
+                        <td>{{.Testcase}}</td>
+                        <td>{{.Status}}</td>
+                        <td>{{.Time}} ms</td>
+                        <td>{{.Memory}} bytes</td>
+                    </tr>
+                {{end}}
+            </table>
         </div>
     </section>
 </body>

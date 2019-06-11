@@ -62,6 +62,14 @@ type Task struct {
 	Submission int
 }
 
+type SubmissionTestcaseResult struct {
+	Submission int
+	Testcase   string
+	Status     string
+	Time       int
+	Memory     int
+}
+
 func problemList(ctx *gin.Context) {
 	var problems = make([]Problem, 0)
 	db.Select("name, title").Find(&problems)
@@ -116,8 +124,11 @@ func submissionInfo(ctx *gin.Context) {
 	}
 	var submission Submission
 	db.Where("id = ?", id).First(&submission)
+	var results []SubmissionTestcaseResult
+	db.Where("submission = ?", id).Find(&results)
 	ctx.HTML(200, "submitinfo.html", gin.H{
 		"Submission": submission,
+		"Results":    results,
 	})
 }
 
