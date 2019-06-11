@@ -149,18 +149,18 @@ class Judgement:
             './main', [workdir / 'main'], inpath, anspath, timelimit)
 
         if result.status == 'OK':
-            try:
-                # output check
-                self.executer.run('./checker case.in case.out case.ans',
-                                  copyfiles=[workdir / 'checker',
-                                             inpath, outpath, anspath],
-                                  timelimit=30.0)
-            except CalledProcessError:
+            checker_result = self.executer.run('./checker case.in case.out case.ans',
+                                               copyfiles=[workdir / 'checker',
+                                                          inpath, outpath, anspath],
+                                               timelimit=30.0)
+            if checker_result.status == 'OK':
+                result.status = 'AC'
+            elif checker_result.status == 'RE':
                 result.status = 'WA'
-            except TimeoutError:
+            elif checker_result.status == 'TLE':
                 result.status = 'ITLE'
             else:
-                result.status = 'AC'
+                result.status = 'IE'
 
         logger.info('judged {} res={} {} msecs'.format(
             inpath, colored(result.status, on_color=result.get_color()), result.time))
