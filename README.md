@@ -7,7 +7,7 @@
 # Recommended Environment
 
 - Ubuntu 18.04
-- Debian 9(stretch)
+- ~~Debian 9(stretch)~~
 
 # 動かすのに必要なもの
 
