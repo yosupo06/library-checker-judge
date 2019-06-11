@@ -218,6 +218,16 @@ def fetchdata(conn, problemid):
         f.extractall(workdir)
 
 
+# create table submission_testcase_results(
+#     submission int,       -- primary main
+#     testcase varchar(32), -- primary sub
+#     status varchar(32),
+#     maxtime int,
+#     maxmemory int,
+#     primary key(submission, testcase)
+# )
+
+
 def judge(conn, subid: int):
     logger.info('Judge start submission id = {}'.format(subid))
 
@@ -240,6 +250,10 @@ def judge(conn, subid: int):
         with conn.cursor() as cursor:
             cursor.execute('update submissions set status = %s where id = %s',
                            ('Judging', subid))
+            cursor.execute('''insert into submission_testcase_results
+                              (submission, testcase, status, time, memory)
+                              values (%s, %s, %s, %s, %s)''',
+                           (subid, name, result.status, result.time, result.memory))
             conn.commit()
         if result.status != 'AC':
             all_result.status = result.status

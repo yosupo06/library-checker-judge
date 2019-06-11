@@ -30,3 +30,12 @@ create table tasks ( -- Between front and judge
   id serial primary key,
   submission int not null
 );
+
+create table submission_testcase_results (
+  submission int,       -- primary main
+  testcase varchar(32), -- primary sub
+  status varchar(32),
+  time int,
+  memory int,
+  primary key(submission, testcase)
+);
