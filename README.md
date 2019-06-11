@@ -7,14 +7,14 @@
 # Recommended Environment
 
 - Ubuntu 18.04
-- Debian 9(stretch)
+- ~~Debian 9(stretch)~~
 
 # 動かすのに必要なもの
 
 - docker
 
 ```
-sudo apt install postgresql-client postgresql-dev python3 python3-dev g++ cgroups-bin libcap2-bin
+sudo apt install postgresql-client libpq-dev python3 python3-dev python3-pip g++ cgroup-tools libcap2-bin
 
 pip3 install termcolor toml psycopg2
 ```
