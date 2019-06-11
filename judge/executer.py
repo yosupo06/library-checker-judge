@@ -16,23 +16,23 @@
 
 import glob
 import json
-import os
-import shutil
 import sys
+from os import getenv, getuid
+from shutil import rmtree, copy
+from pathlib import Path
 from datetime import datetime
 from logging import basicConfig, getLogger
 from subprocess import CalledProcessError, TimeoutExpired, check_call, run, DEVNULL
 
 basicConfig(
     filename='executer.log',
-    level=os.getenv('LOG_LEVEL', 'DEBUG'),
+    level=getenv('LOG_LEVEL', 'DEBUG'),
     format="%(asctime)s %(levelname)s %(name)s :%(message)s"
 )
 logger = getLogger(__name__)
 
-curdir = os.path.abspath(os.path.curdir)
-sanddir = os.path.join(curdir, 'sand')
-workdir = os.path.join(curdir, 'work')
+curdir: Path = Path.cwd()
+sanddir: Path = Path.cwd() / 'sand'
 
 
 
@@ -43,14 +43,15 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
 
     logger.info('execcmd: {}'.format(execcmd))
 
-    for f in glob.glob('sand/*'):
-        if os.path.isfile(f):
-            os.remove(f)
-        elif os.stat(f).st_uid != os.getuid():
-            shutil.rmtree(f)
+    for f in sanddir.glob('*'):
+        if f.is_file():
+            f.unlink()
+        elif f.stat().st_uid != getuid():
+            rmtree(f)
 
     for f in copyfiles:
-        shutil.copy(os.path.join(workdir, f), os.path.join(sanddir, f))
+        fp = Path(f)
+        copy(fp, sanddir / fp.name)
 
     check_call(['./prepare_exec.sh'])
     
