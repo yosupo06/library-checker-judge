@@ -230,6 +230,10 @@ def fetchdata(conn, problemid):
 
 def judge(conn, subid: int):
     logger.info('Judge start submission id = {}'.format(subid))
+    with conn.cursor() as cursor:
+        cursor.execute('update submissions set status = %s where id = %s',
+                        ('Judging', subid))
+        conn.commit()
 
     logger.info('Fetch data from SQL')
     submission = None
@@ -248,8 +252,6 @@ def judge(conn, subid: int):
 
     def refresh(name: str, result: Result):
         with conn.cursor() as cursor:
-            cursor.execute('update submissions set status = %s where id = %s',
-                           ('Judging', subid))
             cursor.execute('''insert into submission_testcase_results
                               (submission, testcase, status, time, memory)
                               values (%s, %s, %s, %s, %s)''',
