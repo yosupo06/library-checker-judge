@@ -36,8 +36,13 @@ GRUB_CMDLINE_LINUX="swapaccount=1"
 ### ジャッジ用のシステムユーザーを作成する
 
 ```
-sudo useradd library-checker-user -r -s /sbin/nologin -M
+sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
 ```
+
+postgreコンテナはデフォルトで999をUIDとして使う、一方でuseradd -rはデフォルトでUID 999のユーザーを作る。
+そしてジャッジはpkill -u library-checker-user(このユーザーのプロセスを全部消す)を行うため、UIDが被ってはいけない。
+
+どちらかを変更すること
 
 # Local Test
 
