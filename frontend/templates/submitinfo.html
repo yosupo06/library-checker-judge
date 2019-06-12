@@ -6,9 +6,10 @@
     {{template "css.html" .}}
 </head>
 <body>
+    {{template "navbar.html" .}}
     <section class="uk-section">
         <div class="uk-container">
-            <h1 class="uk-heading-medium">Submit Info #{{.Submission.Id}}</h1>
+            <h1 class="uk-heading-medium">Submit Info #{{.Submission.ID}}</h1>
         </div>
     </section>
 
@@ -19,11 +20,13 @@
         <div class="uk-container">
             <table class="uk-table">
                 <tr>
+                    <th>Problem</th>
                     <th>Status</th>
                     <th>Time</th>
                     <th>Memory</th>
                 </tr>
                 <tr>
+                    <td><a href="/problem/{{.Submission.Problem}}">{{.Submission.Problem}}</a></td>
                     <td>{{.Submission.Status}}</td>
                     <td>{{.Submission.Maxtime}} ms</td>
                     <td>{{.Submission.Maxmemory}} bytes</td>

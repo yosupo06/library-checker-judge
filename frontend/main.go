@@ -49,7 +49,7 @@ type Problem struct {
 }
 
 type Submission struct {
-	Id        int
+	ID        int
 	Problem   string
 	Lang      string
 	Status    string
@@ -111,10 +111,10 @@ func submit(ctx *gin.Context) {
 	db.Create(&submission)
 
 	task := Task{}
-	task.Submission = submission.Id
+	task.Submission = submission.ID
 	db.Create(&task)
 
-	ctx.Redirect(http.StatusFound, "/submission/"+strconv.Itoa(submission.Id))
+	ctx.Redirect(http.StatusFound, "/submission/"+strconv.Itoa(submission.ID))
 }
 
 func submissionInfo(ctx *gin.Context) {

@@ -6,6 +6,7 @@
     {{template "css.html" .}}
 </head>
 <body>
+    {{template "navbar.html" .}}
     <section class="uk-section">
         <div class="uk-container">
             <h1 class="uk-heading-medium">Submission List</h1>
@@ -15,12 +16,16 @@
         <div class="uk-container">
             <table class="uk-table">
                 <tr>
+                    <th>ID</th>
+                    <th>Problem</th>
                     <th>Status</th>
                     <th>Time</th>
                     <th>Memory</th>
                 </tr>
                 {{range .Submissions}}
                 <tr>
+                    <td><a href="/submission/{{.ID}}">{{.ID}}</a></td>
+                    <td><a href="/problem/{{.Problem}}">{{.Problem}}</a></td>
                     <td>{{.Status}}</td>
                     <td>{{.Maxtime}}</td>
                     <td>{{.Maxmemory}}</td>

@@ -28,6 +28,7 @@
 </head>
 
 <body>
+    {{template "navbar.html" .}}
     <section class="uk-section">
         <div class="uk-container">
             <h1 class="uk-heading-medium">{{.Problem.Title}}</h1>
@@ -39,10 +40,19 @@
             {{.Problem.Statement}}
             <hr class="uk-margin-large">
             <form method="POST" action="/submit" enctype="multipart/form-data">
+                <input name="problem" type="hidden" value="{{.Problem.Name}}">
                 <div uk-form-custom="target: true">
                     <input name="source" type="file">
                     <input class="uk-input uk-form-width-medium" type="text" placeholder="Select source file" disabled>
-                    <input name="problem" type="hidden" value="{{.Problem.Name}}">
+                </div>
+                <div uk-form-custom="target: > * > span:first-child">
+                    <select>
+                        <option>C++(GCC)</option>
+                    </select>
+                    <button class="uk-button" type="button" tabindex="-1">
+                        <span></span>
+                        <span uk-icon="icon: chevron-down"></span>
+                    </button>
                 </div>
                 <button class="uk-button" type="submit">Submit</button>
             </form>
