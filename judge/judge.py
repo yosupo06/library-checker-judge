@@ -110,6 +110,11 @@ class Executer:
         result = json.load(open('work/resp.json', 'r'))
         return Result(result['status'], result['time'], result['memory'])
 
+    def kill(self):
+        self.executer.stdin.write(b'last\n')
+        self.executer.stdin.flush()
+        self.executer.wait()
+
 
 logger.info('Make workdir')
 workdir = Path.cwd() / 'work'
@@ -129,10 +134,12 @@ class Judgement:
     def compile(self, src: Path, lang: str, copyfiles: [str] = []):
         copyfiles.append(src)
         if lang == 'cpp':
-            self.executer.run(
+            result = self.executer.run(
                 'g++ -O2 -std=c++14 -o {} {}'.format(src.stem, src.name),
                 copyfiles, timelimit=30.0)
-            shutil.copy(self.executer.sanddir / src.stem, workdir / src.stem)
+            if result.status == 'OK':
+                shutil.copy(self.executer.sanddir / src.stem, workdir / src.stem)
+            return result
         else:
             print('Unknown type of file {}'.format(src))
             raise UnknownTypeFile('Unknown file: {}'.format(src))
@@ -147,7 +154,6 @@ class Judgement:
         # run
         result = self.executer.run(
             './main', [workdir / 'main'], inpath, anspath, timelimit)
-
         if result.status == 'OK':
             checker_result = self.executer.run('./checker case.in case.out case.ans',
                                                copyfiles=[workdir / 'checker',
@@ -167,12 +173,15 @@ class Judgement:
         return result
 
     # assume prepared: work/in, work/out, work/main.cpp, work/checker.cpp
+    def compile_checker(self) -> bool:
+        result = self.compile(workdir / 'checker.cpp', 'cpp', [workdir / 'testlib.h'])
+        return result.status == 'OK'
 
-    def judge(self, src: str, lang: str, handler):
-        logger.info('Compile checker & source')
-        self.compile(workdir / 'checker.cpp', 'cpp', [workdir / 'testlib.h'])
-        self.compile(src, lang)
+    def compile_src(self, src: str, lang: str) -> bool:
+        result = self.compile(src, lang)
+        return result.status == 'OK'
 
+    def judge(self, handler):
         file_list = list(sorted(workdir.glob('in/*')))
         for i, inpath in enumerate(file_list):
             stem = inpath.stem
@@ -181,6 +190,7 @@ class Judgement:
 
             handler(stem, result)
 
+        self.executer.kill()
         logger.info('End judge')
 
 
@@ -218,21 +228,11 @@ def fetchdata(conn, problemid):
         f.extractall(workdir)
 
 
-# create table submission_testcase_results(
-#     submission int,       -- primary main
-#     testcase varchar(32), -- primary sub
-#     status varchar(32),
-#     maxtime int,
-#     maxmemory int,
-#     primary key(submission, testcase)
-# )
-
-
 def judge(conn, subid: int):
     logger.info('Judge start submission id = {}'.format(subid))
     with conn.cursor() as cursor:
         cursor.execute('update submissions set status = %s where id = %s',
-                        ('Judging', subid))
+                       ('Fetching', subid))
         conn.commit()
 
     logger.info('Fetch data from SQL')
@@ -248,8 +248,33 @@ def judge(conn, subid: int):
     with open(workdir / 'main.cpp', 'w') as f:
         f.write(submission[2])
 
-    all_result = Result('AC')
+    with conn.cursor() as cursor:
+        cursor.execute('update submissions set status = %s where id = %s',
+                       ('Compiling', subid))
+        conn.commit()
 
+    judgement = Judgement()
+
+    if not judgement.compile_checker():
+        with conn.cursor() as cursor:
+            cursor.execute('update submissions set status = %s where id = %s',
+                           ('ICE', subid))
+            conn.commit()
+        return
+
+    if not judgement.compile_src(workdir / 'main.cpp', 'cpp'):
+        with conn.cursor() as cursor:
+            cursor.execute('update submissions set status = %s where id = %s',
+                           ('CE', subid))
+            conn.commit()
+        return
+
+    with conn.cursor() as cursor:
+        cursor.execute('update submissions set status = %s where id = %s',
+                       ('Executing', subid))
+        conn.commit()
+
+    all_result = Result('AC')
     def refresh(name: str, result: Result):
         with conn.cursor() as cursor:
             cursor.execute('''insert into submission_testcase_results
@@ -262,8 +287,8 @@ def judge(conn, subid: int):
         all_result.time = max(all_result.time, result.time)
         all_result.memory = max(all_result.memory, result.memory)
 
-    judgement = Judgement()
-    judgement.judge(workdir / 'main.cpp', 'cpp', refresh)
+
+    judgement.judge(refresh)
 
     with conn.cursor() as cursor:
         cursor.execute('update submissions set status = %s, maxtime = %s, maxmemory = %s where id = %s',

@@ -17,13 +17,14 @@
 import glob
 import json
 import sys
+
 from os import getenv, getuid
 from shutil import rmtree, copy
 from pathlib import Path
 from datetime import datetime
 from logging import basicConfig, getLogger
-from subprocess import CalledProcessError, TimeoutExpired, check_call, run, DEVNULL
-
+from subprocess import CalledProcessError, TimeoutExpired, Popen, run, DEVNULL
+from psutil import Process
 basicConfig(
     filename='executer.log',
     level=getenv('LOG_LEVEL', 'DEBUG'),
@@ -43,7 +44,7 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
 
     logger.info('execcmd: {}'.format(execcmd))
 
-    for f in sanddir.glob('*'):
+    for f in sanddir.glob('*'):        
         if f.is_file():
             f.unlink()
         elif f.stat().st_uid != getuid():
@@ -53,14 +54,18 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
         fp = Path(f)
         copy(fp, sanddir / fp.name)
 
-    check_call(['./prepare_exec.sh'])
-    
+    run(['./prepare_exec.sh'], check=True)
+    cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge',
+           'chroot', '--userspec=library-checker-user:library-checker-user', 'sand']
+    cmd.extend(execcmd.split())
+
+    start = datetime.now()
+    proc = Popen(cmd,
+                 stdin=stdin,
+                 stdout=stdout,
+                 stderr=DEVNULL)
     try:
-        cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge',
-               'chroot', '--userspec=library-checker-user:library-checker-user', 'sand']
-        cmd.extend(execcmd.split())
-        start = datetime.now()
-        check_call(cmd, stdin=stdin, stdout=stdout, timeout=timelimit)
+        proc.wait(timeout=timelimit)
     except TimeoutExpired:
         status = 'TLE'
     except CalledProcessError:
@@ -72,7 +77,11 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
             (end - start).microseconds // 1000
         with open('/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes', 'r') as f:
             memory = int(f.read())
-
+    
+    run(['pkill', '-KILL', '-u', 'library-checker-user'])
+    for child in Process().children():
+        child.wait()
+        
     return {
         'status': status,
         'time': time,
