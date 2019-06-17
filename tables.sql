@@ -1,7 +1,8 @@
-create table users (
-  id int primary key,
+create table users (  
+  id serial primary key,
   name varchar(255) unique not null,
-  passhash varchar(255)
+  passhash varchar(255),
+  admin boolean
 );
 
 create table problems (
