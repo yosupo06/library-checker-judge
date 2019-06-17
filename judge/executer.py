@@ -18,7 +18,8 @@ import glob
 import json
 import sys
 
-from os import getenv, getuid
+from os import getenv, getuid, environ
+from pwd import getpwnam
 from shutil import rmtree, copy
 from pathlib import Path
 from datetime import datetime
@@ -35,7 +36,9 @@ logger = getLogger(__name__)
 curdir: Path = Path.cwd()
 sanddir: Path = Path.cwd() / 'sand'
 
-
+with open('../compiler/PATH.txt') as f:
+    path = f.readline().strip()
+    environ['PATH'] = path + ':' + environ['PATH']
 
 def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
     status = 'IE'
@@ -47,7 +50,7 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
     for f in sanddir.glob('*'):        
         if f.is_file():
             f.unlink()
-        elif f.stat().st_uid != getuid():
+        elif f.stat().st_uid == getpwnam('library-checker-user')[2]:
             rmtree(f)
 
     for f in copyfiles:
@@ -71,8 +74,11 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
     except CalledProcessError:
         status = 'RE'
     else:
+        if proc.returncode:
+            status = 'RE'
+        else:
+            status = 'OK'
         end = datetime.now()
-        status = 'OK'
         time = (end - start).seconds * 1000 + \
             (end - start).microseconds // 1000
         with open('/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes', 'r') as f:
