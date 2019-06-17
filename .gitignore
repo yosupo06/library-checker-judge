@@ -1,3 +1,6 @@
 judge/sand
 judge/work
 *.log
+/compiler/*
+!/compiler/install.sh
+!/compiler/PATH.txt
