@@ -1,6 +1,5 @@
 create table users (  
-  id serial primary key,
-  name varchar(255) unique not null,
+  name varchar(255) primary key,
   passhash varchar(255),
   admin boolean
 );
@@ -17,7 +16,7 @@ create table problems (
 create table submissions (
   id serial primary key,
   submit_time timestamp,
-  user_id int references users(id),
+  user_name varchar(255) references users(name),
   problem varchar(32) not null,
   lang varchar(32) not null,
   source text not null,
