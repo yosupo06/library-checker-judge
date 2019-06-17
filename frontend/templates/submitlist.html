@@ -17,6 +17,7 @@
             <table class="uk-table">
                 <tr>
                     <th>ID</th>
+                    <th>User</th>
                     <th>Problem</th>
                     <th>Status</th>
                     <th>Time</th>
@@ -25,10 +26,11 @@
                 {{range .Submissions}}
                 <tr>
                     <td><a href="/submission/{{.ID}}">{{.ID}}</a></td>
+                    <td>{{if .User.Name}}{{.User.Name}}{{else}}(anonymous){{end}}</td>
                     <td><a href="/problem/{{.Problem}}">{{.Problem}}</a></td>
                     <td>{{.Status}}</td>
-                    <td>{{.Maxtime}}</td>
-                    <td>{{.Maxmemory}}</td>
+                    <td>{{.MaxTime}}</td>
+                    <td>{{.MaxMemory}}</td>
                 </tr>
                 {{end}}
             </table>

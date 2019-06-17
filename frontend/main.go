@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,7 +20,6 @@ import (
 )
 
 func login(c *gin.Context, name string, password string) bool {
-	fmt.Println("auth %s %s", name, password)
 	var user User
 	if err := db.Where("name = ?", name).First(&user).Error; err != nil {
 		return false
@@ -75,10 +75,15 @@ func gormConnect() *gorm.DB {
 	return db
 }
 
+func htmlWithUser(c *gin.Context, code int, name string, obj gin.H) {
+	obj["User"] = getUser(c)
+	c.HTML(code, name, obj)
+}
+
 func problemList(ctx *gin.Context) {
 	var problems = make([]Problem, 0)
 	db.Select("name, title").Find(&problems)
-	ctx.HTML(200, "problemlist.html", gin.H{
+	htmlWithUser(ctx, 200, "problemlist.html", gin.H{
 		"User":     getUser(ctx),
 		"problems": problems,
 	})
@@ -88,33 +93,53 @@ func problemInfo(ctx *gin.Context) {
 	name := ctx.Param("name")
 	var problem Problem
 	db.Select("name, title, statement").Where("name = ?", name).First(&problem)
-	ctx.HTML(200, "problem.html", gin.H{
+	htmlWithUser(ctx, 200, "problem.html", gin.H{
 		"User":    getUser(ctx),
 		"Problem": problem,
 	})
 }
 
-func submit(ctx *gin.Context) {
-	fileheader, err := ctx.FormFile("source")
-	if err != nil {
-		log.Fatal(err)
+func checkLang(lang string) bool {
+	langs := []string{"cpp", "rust", "d"}
+	for _, s := range langs {
+		if lang == s {
+			return true
+		}
 	}
-	problem := ctx.PostForm("problem")
-	file, err := fileheader.Open()
+	return false
+}
+
+func submit(ctx *gin.Context) {
+	type SubmitForm struct {
+		Source  *multipart.FileHeader `form:"source" binding:"required"`
+		Problem string                `form:"problem" binding:"required"`
+		Lang    string                `form:"lang" binding:"required"`
+	}
+	var submitForm SubmitForm
+	if err := ctx.ShouldBind(&submitForm); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+	}
+	file, err := submitForm.Source.Open()
 	if err != nil {
-		log.Fatal(err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 	}
 	src, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Fatal(err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 	}
-	submission := Submission{}
-	submission.Problem = problem
-	submission.Lang = "cpp"
-	submission.Status = "WJ"
-	submission.Source = string(src)
-	submission.Maxtime = -1
-	submission.Maxmemory = -1
+	if !checkLang(submitForm.Lang) {
+		ctx.Abort()
+	}
+	submission := Submission{
+		Problem:   submitForm.Problem,
+		Lang:      submitForm.Lang,
+		Status:    "WJ",
+		Source:    string(src),
+		MaxTime:   -1,
+		MaxMemory: -1,
+		UserID:    getUser(ctx).getID(),
+	}
+	fmt.Println(submission)
 	db.Create(&submission)
 
 	task := Task{}
@@ -133,7 +158,7 @@ func submissionInfo(ctx *gin.Context) {
 	db.Where("id = ?", id).First(&submission)
 	var results []SubmissionTestcaseResult
 	db.Where("submission = ?", id).Find(&results)
-	ctx.HTML(200, "submitinfo.html", gin.H{
+	htmlWithUser(ctx, 200, "submitinfo.html", gin.H{
 		"Submission": submission,
 		"Results":    results,
 	})
@@ -141,14 +166,15 @@ func submissionInfo(ctx *gin.Context) {
 
 func submitList(ctx *gin.Context) {
 	var submissions = make([]Submission, 0)
-	db.Order("id desc").Find(&submissions)
-	ctx.HTML(200, "submitlist.html", gin.H{
+	db.Preload("User").Order("id desc").Find(&submissions)
+	fmt.Println(submissions)
+	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": submissions,
 	})
 }
 
 func registerGet(ctx *gin.Context) {
-	ctx.HTML(200, "register.html", gin.H{
+	htmlWithUser(ctx, 200, "register.html", gin.H{
 		"Name": "",
 	})
 }
@@ -161,7 +187,7 @@ func registerPost(ctx *gin.Context) {
 	}
 	var userPass UserPass
 	if err := ctx.ShouldBind(&userPass); err != nil {
-		ctx.HTML(200, "register.html", gin.H{
+		htmlWithUser(ctx, 200, "register.html", gin.H{
 			"Name":  userPass.Name,
 			"Error": err.Error(),
 		})
@@ -176,7 +202,7 @@ func registerPost(ctx *gin.Context) {
 		Passhash: string(passHash),
 	}
 	if err := db.Create(&user).Error; err != nil {
-		ctx.HTML(200, "register.html", gin.H{
+		htmlWithUser(ctx, 200, "register.html", gin.H{
 			"Error": "This username are already registered",
 		})
 	}
@@ -184,7 +210,7 @@ func registerPost(ctx *gin.Context) {
 }
 
 func loginGet(ctx *gin.Context) {
-	ctx.HTML(200, "login.html", gin.H{
+	htmlWithUser(ctx, 200, "login.html", gin.H{
 		"Name": "",
 	})
 }
@@ -196,7 +222,7 @@ func loginPost(ctx *gin.Context) {
 	}
 	var userPass UserPass
 	if err := ctx.ShouldBind(&userPass); err != nil {
-		ctx.HTML(200, "login.html", gin.H{
+		htmlWithUser(ctx, 200, "login.html", gin.H{
 			"Name":  userPass.Name,
 			"Error": err.Error(),
 		})
@@ -220,6 +246,7 @@ func main() {
 	db.AutoMigrate(Submission{})
 	db.AutoMigrate(Task{})
 	db.AutoMigrate(User{})
+	// db.LogMode(true)
 
 	router := gin.Default()
 	router.Use(sessions.Sessions("mysession",

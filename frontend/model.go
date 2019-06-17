@@ -1,6 +1,9 @@
 package main
 
-import "html/template"
+import (
+	"database/sql"
+	"html/template"
+)
 
 type Problem struct {
 	Name      string
@@ -14,8 +17,10 @@ type Submission struct {
 	Lang      string
 	Status    string
 	Source    string
-	Maxtime   int
-	Maxmemory int
+	MaxTime   int
+	MaxMemory int
+	UserID    sql.NullInt64
+	User      User
 }
 
 type Task struct {
@@ -34,4 +39,11 @@ type User struct {
 	ID       int
 	Name     string
 	Passhash string
+}
+
+func (u User) getID() sql.NullInt64 {
+	if u.Name == "" {
+		return sql.NullInt64{0, false}
+	}
+	return sql.NullInt64{int64(u.ID), true}
 }

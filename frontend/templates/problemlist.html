@@ -14,6 +14,10 @@
     </section>
     <section class="uk-section">
         <div class="uk-container">
+            <div class="uk-alert-danger" uk-alert>
+                <a class="uk-alert-close" uk-close></a>
+                <p>データベースをよく爆破します(テーブルの構成が固まってなくて、いちいち移すのは面倒なので…)</p>
+            </div>
             <ul class="uk-list uk-list-divider uk-list-large">
                 {{range .problems}}
                 <li><a href="/problem/{{.Name}}">{{.Title}}</a></li>

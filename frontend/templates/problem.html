@@ -46,8 +46,10 @@
                     <input class="uk-input uk-form-width-medium" type="text" placeholder="Select source file" disabled>
                 </div>
                 <div uk-form-custom="target: > * > span:first-child">
-                    <select>
-                        <option>C++(GCC)</option>
+                    <select name="lang">
+                        <option value="cpp">C++(gcc)</option>
+                        <option value="rust">Rust(rustc)</option>
+                        <option value="d">D(ldc2)</option>
                     </select>
                     <button class="uk-button" type="button" tabindex="-1">
                         <span></span>
