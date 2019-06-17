@@ -19,8 +19,8 @@ type Submission struct {
 	Source    string
 	MaxTime   int
 	MaxMemory int
-	UserID    sql.NullInt64
-	User      User
+	UserName  sql.NullString
+	User      User `gorm:"foreignkey:UserName"`
 }
 
 type Task struct {
@@ -36,14 +36,10 @@ type SubmissionTestcaseResult struct {
 }
 
 type User struct {
-	ID       int
 	Name     string
 	Passhash string
 }
 
-func (u User) getID() sql.NullInt64 {
-	if u.Name == "" {
-		return sql.NullInt64{0, false}
-	}
-	return sql.NullInt64{int64(u.ID), true}
+func (u User) getName() sql.NullString {
+	return sql.NullString{u.Name, u.Name != ""}
 }

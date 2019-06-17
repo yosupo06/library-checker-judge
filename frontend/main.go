@@ -137,9 +137,8 @@ func submit(ctx *gin.Context) {
 		Source:    string(src),
 		MaxTime:   -1,
 		MaxMemory: -1,
-		UserID:    getUser(ctx).getID(),
+		UserName:  getUser(ctx).getName(),
 	}
-	fmt.Println(submission)
 	db.Create(&submission)
 
 	task := Task{}
@@ -167,7 +166,6 @@ func submissionInfo(ctx *gin.Context) {
 func submitList(ctx *gin.Context) {
 	var submissions = make([]Submission, 0)
 	db.Preload("User").Order("id desc").Find(&submissions)
-	fmt.Println(submissions)
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": submissions,
 	})
@@ -206,6 +204,7 @@ func registerPost(ctx *gin.Context) {
 			"Error": "This username are already registered",
 		})
 	}
+	login(ctx, userPass.Name, userPass.Password)
 	ctx.Redirect(http.StatusFound, "/")
 }
 
@@ -228,7 +227,12 @@ func loginPost(ctx *gin.Context) {
 		})
 		return
 	}
-	login(ctx, userPass.Name, userPass.Password)
+	if !login(ctx, userPass.Name, userPass.Password) {
+		htmlWithUser(ctx, 200, "login.html", gin.H{
+			"Name": userPass.Name,
+		})
+		return
+	}
 	ctx.Redirect(http.StatusFound, "/")
 }
 
