@@ -1,4 +1,4 @@
-./stop_local.sh
+./stop.sh
 
 docker run --name postgresql -p 5432:5432 -e POSTGRES_DB=librarychecker -e POSTGRES_PASSWORD=passwd -d postgres:11.3
 
@@ -9,4 +9,4 @@ done
 
 PGPASSWORD=passwd psql -h localhost -U postgres librarychecker < tables.sql
 
-cd ../library-checker-problems && ./deploy.py
+cd ../../library-checker-problems && ./deploy.py
