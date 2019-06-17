@@ -1,19 +1,52 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/lib/pq"
 )
+
+func login(c *gin.Context, name string, password string) bool {
+	fmt.Println("auth %s %s", name, password)
+	var user User
+	if err := db.Where("name = ?", name).First(&user).Error; err != nil {
+		return false
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(password)); err != nil {
+		return false
+	}
+	session := sessions.Default(c)
+	session.Set("user", user)
+	session.Save()
+	return true
+}
+
+func logout(c *gin.Context) {
+	session := sessions.Default(c)
+	session.Clear()
+	session.Save()
+}
+
+func getUser(c *gin.Context) User {
+	session := sessions.Default(c)
+	user, ok := session.Get("user").(User)
+	if !ok {
+		return User{}
+	}
+	return user
+}
 
 func getEnv(key, defaultValue string) string {
 	value := os.Getenv(key)
@@ -42,38 +75,11 @@ func gormConnect() *gorm.DB {
 	return db
 }
 
-type Problem struct {
-	Name      string
-	Title     string
-	Statement template.HTML
-}
-
-type Submission struct {
-	ID        int
-	Problem   string
-	Lang      string
-	Status    string
-	Source    string
-	Maxtime   int
-	Maxmemory int
-}
-
-type Task struct {
-	Submission int
-}
-
-type SubmissionTestcaseResult struct {
-	Submission int
-	Testcase   string
-	Status     string
-	Time       int
-	Memory     int
-}
-
 func problemList(ctx *gin.Context) {
 	var problems = make([]Problem, 0)
 	db.Select("name, title").Find(&problems)
 	ctx.HTML(200, "problemlist.html", gin.H{
+		"User":     getUser(ctx),
 		"problems": problems,
 	})
 }
@@ -83,6 +89,7 @@ func problemInfo(ctx *gin.Context) {
 	var problem Problem
 	db.Select("name, title, statement").Where("name = ?", name).First(&problem)
 	ctx.HTML(200, "problem.html", gin.H{
+		"User":    getUser(ctx),
 		"Problem": problem,
 	})
 }
@@ -140,16 +147,92 @@ func submitList(ctx *gin.Context) {
 	})
 }
 
+func registerGet(ctx *gin.Context) {
+	ctx.HTML(200, "register.html", gin.H{
+		"Name": "",
+	})
+}
+
+func registerPost(ctx *gin.Context) {
+	type UserPass struct {
+		Name     string `form:"name" binding:"required,alphanum,gte=3,lte=60"`
+		Password string `form:"password" binding:"required,printascii,gte=8,lte=72"`
+		Confirm  string `form:"confirm" binding:"eqfield=Password"`
+	}
+	var userPass UserPass
+	if err := ctx.ShouldBind(&userPass); err != nil {
+		ctx.HTML(200, "register.html", gin.H{
+			"Name":  userPass.Name,
+			"Error": err.Error(),
+		})
+		return
+	}
+	passHash, err := bcrypt.GenerateFromPassword([]byte(userPass.Password), 10)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+	}
+	user := User{
+		Name:     userPass.Name,
+		Passhash: string(passHash),
+	}
+	if err := db.Create(&user).Error; err != nil {
+		ctx.HTML(200, "register.html", gin.H{
+			"Error": "This username are already registered",
+		})
+	}
+	ctx.Redirect(http.StatusFound, "/")
+}
+
+func loginGet(ctx *gin.Context) {
+	ctx.HTML(200, "login.html", gin.H{
+		"Name": "",
+	})
+}
+
+func loginPost(ctx *gin.Context) {
+	type UserPass struct {
+		Name     string `form:"name" binding:"required,alphanum,gte=3,lte=60"`
+		Password string `form:"password" binding:"required,printascii,gte=8,lte=72"`
+	}
+	var userPass UserPass
+	if err := ctx.ShouldBind(&userPass); err != nil {
+		ctx.HTML(200, "login.html", gin.H{
+			"Name":  userPass.Name,
+			"Error": err.Error(),
+		})
+		return
+	}
+	login(ctx, userPass.Name, userPass.Password)
+	ctx.Redirect(http.StatusFound, "/")
+}
+
+func logoutGet(ctx *gin.Context) {
+	logout(ctx)
+
+	ctx.Redirect(http.StatusFound, "/")
+}
+
 func main() {
+	gob.Register(User{})
 	db = gormConnect()
 	defer db.Close()
 	db.AutoMigrate(Problem{})
 	db.AutoMigrate(Submission{})
 	db.AutoMigrate(Task{})
+	db.AutoMigrate(User{})
 
 	router := gin.Default()
+	router.Use(sessions.Sessions("mysession",
+		cookie.NewStore([]byte(getEnv("SESSION_SECRET", "session_secret")))))
 	router.LoadHTMLGlob("templates/*.html")
 	router.Static("/public", "./public")
+
+	router.GET("/register", registerGet)
+	router.POST("/register", registerPost)
+
+	router.GET("/login", loginGet)
+	router.POST("/login", loginPost)
+	router.GET("/logout", logoutGet)
 
 	router.GET("/", problemList)
 	router.GET("/problem/:name", problemInfo)

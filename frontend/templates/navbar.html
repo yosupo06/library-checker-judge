@@ -5,6 +5,13 @@
         <a href="/submissions" class="uk-navbar-item">Submissions</a>
     </div>
     <div class="uk-navbar-right">
+        {{if and .User .User.Name}}
+            {{.User.Name}}
+            <a href="/logout" class="uk-navbar-item">Logout</a>
+        {{else}}
+            <a href="/register" class="uk-navbar-item">Register</a>
+            <a href="/login" class="uk-navbar-item">Login</a>
+        {{end}}
         <a href="https://github.com/yosupo06/library-checker-problems" class="uk-navbar-item">Github</a>
     </div>
 </div>
