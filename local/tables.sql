@@ -16,14 +16,14 @@ create table problems (
 
 create table submissions (
   id serial primary key,
-  submittime timestamp,
-  userid int, -- null ok
+  submit_time timestamp,
+  user_id int references users(id),
   problem varchar(32) not null,
   lang varchar(32) not null,
   source text not null,
   status varchar(32), -- AC, WA, TLE, WJ, ...
-  maxtime int,
-  maxmemory int,
+  max_time int,
+  max_memory int,
   details json
 );
 
@@ -33,7 +33,7 @@ create table tasks ( -- Between front and judge
 );
 
 create table submission_testcase_results (
-  submission int,       -- primary main
+  submission int references submissions(id),       -- primary main
   testcase varchar(32), -- primary sub
   status varchar(32),
   time int,
