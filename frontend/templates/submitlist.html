@@ -18,6 +18,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Problem</th>
+                    <th>Lang</th>
                     <th>User</th>
                     <th>Status</th>
                     <th>Time</th>
@@ -27,6 +28,7 @@
                 <tr>
                     <td><a href="/submission/{{.ID}}">{{.ID}}</a></td>
                     <td><a href="/problem/{{.Problem}}">{{.Problem}}</a></td>
+                    <td>{{.Lang}}</td>
                     <td>{{if .User.Name}}{{.User.Name}}{{else}}(anonymous){{end}}</td>
                     <td>{{.Status}}</td>
                     <td>{{.MaxTime}}</td>
