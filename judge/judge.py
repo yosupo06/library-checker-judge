@@ -120,8 +120,8 @@ class Executer:
         if s != 'OK':
             logger.error('Error executer: {}'.format(s))
             return Result()
-        logger.info('Return OK')
         result = json.load(open('work/resp.json', 'r'))
+        logger.info('Return OK status: {}'.format(result['status']))
         return Result(result['status'], result['time'], result['memory'])
 
     def kill(self):

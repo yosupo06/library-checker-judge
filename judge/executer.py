@@ -65,8 +65,8 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
     start = datetime.now()
     proc = Popen(cmd,
                  stdin=stdin,
-                 stdout=stdout,
-                 stderr=DEVNULL)
+                 stdout=stdout)
+                 #stderr=DEVNULL)
     try:
         proc.wait(timeout=timelimit)
     except TimeoutExpired:
@@ -74,11 +74,11 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
     except CalledProcessError:
         status = 'RE'
     else:
+        end = datetime.now()
         if proc.returncode:
             status = 'RE'
         else:
             status = 'OK'
-        end = datetime.now()
         time = (end - start).seconds * 1000 + \
             (end - start).microseconds // 1000
         with open('/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes', 'r') as f:
