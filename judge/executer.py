@@ -65,8 +65,8 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
     start = datetime.now()
     proc = Popen(cmd,
                  stdin=stdin,
-                 stdout=stdout)
-                 #stderr=DEVNULL)
+                 stdout=stdout,
+                 stderr=DEVNULL)
     try:
         proc.wait(timeout=timelimit)
     except TimeoutExpired:
