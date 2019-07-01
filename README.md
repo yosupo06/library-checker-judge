@@ -39,8 +39,8 @@ GRUB_CMDLINE_LINUX="swapaccount=1"
 sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
 ```
 
-postgreコンテナはデフォルトで999をUIDとして使う、一方でuseradd -rはデフォルトでUID 999のユーザーを作る。
-そしてジャッジはpkill -u library-checker-user(このユーザーのプロセスを全部消す)を行うため、UIDが被ってはいけない。
+ジャッジはpkill -u library-checker-user(このユーザーのプロセスを全部消す)を使用するため、UIDが他のユーザーと被ってはいけない。
+特にpostgreコンテナはデフォルトで999をUIDとして使うため注意。
 
 どちらかを変更すること
 
