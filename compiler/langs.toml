@@ -1,0 +1,25 @@
+[langs.checker]
+    source = "checker.cpp"
+    compile = "g++ -O2 -std=c++14 -march=native -o checker checker.cpp"
+    objects = ["checker"]
+    exec = "./checker {input} {judge} {contestant}"
+[langs.cpp]
+    source = "main.cpp"
+    compile = "g++ -O2 -std=c++14 -march=native -o main main.cpp"
+    objects = ["main"]
+    exec = "./main"
+[langs.rust]
+    source = "main.rs"
+    compile = "rustc -O main.rs"
+    objects = ["main"]
+    exec = "./main"
+[langs.d]
+    source = "main.d"
+    compile = "ldc2 -O -release main.d"
+    objects = ["main"]
+    exec = "./main"
+[langs.java]
+    source = "Main.java"
+    compile = "javac Main.java"
+    objects = ["Main.class"]
+    exec = "java Main"

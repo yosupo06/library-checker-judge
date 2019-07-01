@@ -14,22 +14,24 @@
 # limitations under the License.
 
 
-from pathlib import Path
-from os import getenv, environ
-from shutil import copy, rmtree
 import json
 import shutil
 import sys
 import tempfile
 import traceback
 import zipfile
+from copy import deepcopy
 from datetime import datetime
-from logging import basicConfig, getLogger, Logger
-from subprocess import (DEVNULL, PIPE, CalledProcessError, Popen,
+from logging import Logger, basicConfig, getLogger
+from os import environ, getenv
+from pathlib import Path
+from shutil import copy, rmtree
+from subprocess import (DEVNULL, PIPE, STDOUT, CalledProcessError, Popen,
                         TimeoutExpired, check_call, run)
 from time import sleep
 
 import psycopg2
+import toml
 from termcolor import colored, cprint
 
 basicConfig(
@@ -41,24 +43,34 @@ logger: Logger = getLogger(__name__)
 logger.info('Launch judge.py')
 
 
+logger.info('Make workdir')
+workdir = Path.cwd() / 'work'
+
+if workdir.exists():
+    rmtree(workdir)
+workdir.mkdir()
+shutil.copy('testlib.h', workdir / 'testlib.h')
+
+
 class Lang:
-    lang: str
+    source: str = ''
+    compile: str = ''
+    objects: [str] = []
+    exec: str = ''
 
-    def __init__(self, lang):
-        self.lang = lang
+    __langsinfo = None
 
-    def get_ext(self) -> str:
-        return {
-            'cpp': '.cpp',
-            'rust': '.rs',
-            'd': '.d',
-        }[self.lang]
+    def __init__(self, lang: str):
+        if not Lang.__langsinfo:
+            Lang.__langsinfo = toml.load(
+                open('../compiler/langs.toml'))['langs']
 
+        langinfo = Lang.__langsinfo[lang]
 
-class UnknownTypeFile(Exception):
-    def __init__(self, message):
-        super().__init__()
-        self.message = message
+        self.source = langinfo['source']
+        self.compile = langinfo['compile']
+        self.objects = langinfo['objects']
+        self.exec = langinfo['exec']
 
 
 class Result:
@@ -96,15 +108,31 @@ class Executer:
         env = environ.copy()
         env['POSTGRE_PASS'] = 'secret(off course, we should fix this code...)'
         self.executer = Popen(['unshare', '-fpnm', '--mount-proc',
-                               './executer.py'], stdin=PIPE, stdout=PIPE, env=env)
+                               './executer.py'], stdin=PIPE, stdout=PIPE, stderr=STDOUT, env=env)
 
-    def run(self, execcmd, copyfiles: [Path], stdin: Path = None, stdout: Path = None, timelimit: float = 2.0) -> Result:
+    def clean(self):
+        self.executer.stdin.write(b'clean\n')
+        self.executer.stdin.flush()
+        s = self.executer.stdout.readline().decode('utf-8').strip()
+        if s != 'OK':
+            logger.error('Error executer clean: {}'.format(s))
+
+    def run(self,
+            exec: str,
+            sendfiles: [str] = [],
+            getfiles: [str] = [],
+            stdin: Path = None,
+            stdout: Path = None,
+            timelimit: float = 2.0) -> Result:
+
+        self.clean()
+        for f in sendfiles:
+            shutil.copy(workdir / f, self.sanddir / f)
+
         data = {
-            'exec': execcmd,
+            'exec': exec,
             'timelimit': timelimit,
         }
-        if copyfiles:
-            data['files'] = list(map(str, copyfiles))
         if stdin:
             data['stdin'] = str(stdin)
         if stdout:
@@ -122,7 +150,16 @@ class Executer:
             return Result()
         result = json.load(open('work/resp.json', 'r'))
         logger.info('Return OK status: {}'.format(result['status']))
-        return Result(result['status'], result['time'], result['memory'])
+
+        result = Result(result['status'], result['time'], result['memory'])
+
+        for f in getfiles:
+            if not (self.sanddir / f).exists() or not (self.sanddir / f).is_file():
+                result.status = 'RE'
+                break
+            shutil.copy(self.sanddir / f, workdir / f)
+
+        return result
 
     def kill(self):
         self.executer.stdin.write(b'last\n')
@@ -130,67 +167,37 @@ class Executer:
         self.executer.wait()
 
 
-logger.info('Make workdir')
-workdir = Path.cwd() / 'work'
-
-if workdir.exists():
-    rmtree(workdir)
-workdir.mkdir()
-shutil.copy('testlib.h', workdir / 'testlib.h')
-
-
 class Judgement:
     executer: Executer
+    lang: str
 
-    def __init__(self):
+    def __init__(self, langname):
         self.executer = Executer()
-
-    def compile(self, src: Path, lang: Lang, copyfiles: [str] = []):
-        copyfiles.append(src)
-        if lang.lang == 'cpp':
-            result = self.executer.run(
-                'g++ -O2 -std=c++14 -march=native -o {} {}'.format(
-                    src.stem, src.name),
-                copyfiles, timelimit=30.0)
-            if result.status == 'OK':
-                shutil.copy(self.executer.sanddir /
-                            src.stem, workdir / src.stem)
-            return result
-        elif lang.lang == 'd':
-            result = self.executer.run(
-                'ldc2 -O -release -mcpu=native {}'.format(src.stem, src.name),
-                copyfiles, timelimit=30.0)
-            if result.status == 'OK':
-                shutil.copy(self.executer.sanddir /
-                            src.stem, workdir / src.stem)
-            return result
-        elif lang.lang == 'rust':
-            result = self.executer.run(
-                'rustc -O -o {} {}'.format(src.stem, src.name),
-                copyfiles, timelimit=30.0)
-            if result.status == 'OK':
-                shutil.copy(self.executer.sanddir /
-                            src.stem, workdir / src.stem)
-            return result
-        else:
-            print('Unknown type of file {}'.format(src))
-            raise UnknownTypeFile('Unknown file: {}'.format(src))
+        self.lang = Lang(langname)
 
     def single(self, inpath: str, outpath: str, timelimit: float = 2.0):
         shutil.copy(inpath, workdir / 'case.in')
         shutil.copy(outpath, workdir / 'case.out')
-        inpath = workdir / 'case.in'
-        outpath = workdir / 'case.out'
-        anspath = workdir / 'case.ans'
 
-        # run
         result = self.executer.run(
-            './main', [workdir / 'main'], inpath, anspath, timelimit)
+            exec=self.lang.exec,
+            sendfiles=self.lang.objects,
+            stdin=workdir / 'case.in',
+            stdout=workdir / 'case.your',
+            timelimit=timelimit)
         if result.status == 'OK':
-            checker_result = self.executer.run('./checker case.in case.out case.ans',
-                                               copyfiles=[workdir / 'checker',
-                                                          inpath, outpath, anspath],
-                                               timelimit=30.0)
+            lang_checker = Lang('checker')
+            exec_command = lang_checker.exec.format(
+                input='case.in',
+                judge='case.out',
+                contestant='case.your',
+            )
+            objects = deepcopy(lang_checker.objects)
+            objects.extend(['case.in', 'case.out', 'case.your'])
+            checker_result = self.executer.run(
+                exec=exec_command,
+                sendfiles=objects,
+                timelimit=30.0)
             if checker_result.status == 'OK':
                 result.status = 'AC'
             elif checker_result.status == 'RE':
@@ -206,12 +213,22 @@ class Judgement:
 
     # assume prepared: work/in, work/out, work/main.cpp, work/checker.cpp
     def compile_checker(self) -> bool:
-        result = self.compile(workdir / 'checker.cpp',
-                              Lang('cpp'), [workdir / 'testlib.h'])
+        lang_checker = Lang('checker')
+        result = self.executer.run(
+            exec=lang_checker.compile,
+            sendfiles=['checker.cpp', 'testlib.h'],
+            getfiles=lang_checker.objects,
+            timelimit=30.0
+        )
         return result.status == 'OK'
 
-    def compile_src(self, src: str, lang: str) -> bool:
-        result = self.compile(src, lang)
+    def compile(self) -> bool:
+        result = self.executer.run(
+            exec=self.lang.compile,
+            sendfiles=[self.lang.source],
+            getfiles=self.lang.objects,
+            timelimit=30.0
+        )
         return result.status == 'OK'
 
     def judge(self, handler):
@@ -281,19 +298,17 @@ def judge(conn, subid: int):
         submission = cursor.fetchone()
 
     fetchdata(conn, submission[0])
-    lang = Lang(submission[1])
-    srcpath = workdir / ('main' + lang.get_ext())
+
+    judgement = Judgement(submission[1])
 
     # write source
-    with open(srcpath, 'w') as f:
+    with open(workdir / judgement.lang.source, 'w') as f:
         f.write(submission[2])
 
     with conn.cursor() as cursor:
         cursor.execute('update submissions set status = %s where id = %s',
                        ('Compiling', subid))
         conn.commit()
-
-    judgement = Judgement()
 
     if not judgement.compile_checker():
         with conn.cursor() as cursor:
@@ -302,7 +317,7 @@ def judge(conn, subid: int):
             conn.commit()
         return
 
-    if not judgement.compile_src(srcpath, lang):
+    if not judgement.compile():
         with conn.cursor() as cursor:
             cursor.execute('update submissions set status = %s where id = %s',
                            ('CE', subid))

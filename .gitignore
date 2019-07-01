@@ -4,3 +4,4 @@ judge/work
 /compiler/*
 !/compiler/install.sh
 !/compiler/PATH.txt
+!/compiler/langs.toml

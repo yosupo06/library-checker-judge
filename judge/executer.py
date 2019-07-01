@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # Copyright 2019 Kohei Morita
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,22 +40,21 @@ with open('../compiler/PATH.txt') as f:
     path = f.readline().strip()
     environ['PATH'] = path + ':' + environ['PATH']
 
-def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
-    status = 'IE'
-    time = -1
-    memory = -1
 
-    logger.info('execcmd: {}'.format(execcmd))
-
-    for f in sanddir.glob('*'):        
+def clean():
+    for f in sanddir.glob('*'):
         if f.is_file():
             f.unlink()
         elif f.stat().st_uid == getpwnam('library-checker-user')[2]:
             rmtree(f)
 
-    for f in copyfiles:
-        fp = Path(f)
-        copy(fp, sanddir / fp.name)
+
+def run_in_sandbox(execcmd, stdin, stdout, timelimit):
+    status = 'IE'
+    time = -1
+    memory = -1
+
+    logger.info('execcmd: {}'.format(execcmd))
 
     run(['./prepare_exec.sh'], check=True)
     cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge',
@@ -83,11 +82,11 @@ def run_in_sandbox(execcmd, copyfiles, stdin, stdout, timelimit):
             (end - start).microseconds // 1000
         with open('/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes', 'r') as f:
             memory = int(f.read())
-    
+
     run(['pkill', '-KILL', '-u', 'library-checker-user'])
     for child in Process().children():
         child.wait()
-        
+
     return {
         'status': status,
         'time': time,
@@ -102,27 +101,30 @@ if __name__ == "__main__":
     while True:
         s = sys.stdin.readline().strip()
         logger.info('input: {}'.format(s))
+
         if s == 'last':
             break
 
-        comm = json.load(open('work/comm.json', 'r'))
-        logger.info('Command: {}'.format(comm))
+        if s == 'clean':
+            clean()
+        else:
+            comm = json.load(open('work/comm.json', 'r'))
+            logger.info('Command: {}'.format(comm))
 
-        stdinpath = comm.get('stdin', None)
-        stdin = DEVNULL
-        if stdinpath:
-            stdin = open(stdinpath, 'r')
-        stdoutpath = comm.get('stdout', None)        
-        stdout = DEVNULL
-        if stdoutpath:
-            stdout = open(stdoutpath, 'w')
+            stdinpath = comm.get('stdin', None)
+            stdin = DEVNULL
+            if stdinpath:
+                stdin = open(stdinpath, 'r')
+            stdoutpath = comm.get('stdout', None)
+            stdout = DEVNULL
+            if stdoutpath:
+                stdout = open(stdoutpath, 'w')
 
-        result = run_in_sandbox(comm['exec'],
-                                copyfiles=comm.get('files', []),
-                                stdin=stdin,
-                                stdout=stdout,
-                                timelimit=comm.get('timelimit', 2.0))
-        logger.info('Result: {}'.format(result))
-        with open('work/resp.json', 'w') as f:
-            f.write(json.dumps(result))
+            result = run_in_sandbox(comm['exec'],
+                                    stdin=stdin,
+                                    stdout=stdout,
+                                    timelimit=comm.get('timelimit', 2.0))
+            logger.info('Result: {}'.format(result))
+            with open('work/resp.json', 'w') as f:
+                f.write(json.dumps(result))
         print('OK', flush=True)
