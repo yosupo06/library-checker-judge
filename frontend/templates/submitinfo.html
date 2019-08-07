@@ -9,10 +9,13 @@
     {{template "navbar.html" .}}
     <section class="uk-section">
         <div class="uk-container">
-            <h1 class="uk-heading-medium">Submit Info #{{.Submission.ID}}</h1>
+            <h1 class="uk-heading-medium">Submit Info #{{.Submission.ID}}</h1>            
+            {{if .User.Admin}}
+            <a href="/rejudge/{{.Submission.ID}}">Rejudge</a>
+            {{end}}
         </div>
     </section>
-
+    
     <section class="uk-section">
         <div class="uk-container">
             <pre>{{.Submission.Source}}</pre>

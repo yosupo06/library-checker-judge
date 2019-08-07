@@ -242,6 +242,17 @@ func logoutGet(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/")
 }
 
+func rejudge(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	task := Task{}
+	task.Submission = id
+	db.Create(&task)
+	ctx.Redirect(http.StatusFound, fmt.Sprintf("/submission/%d", id))
+}
+
 func main() {
 	gob.Register(User{})
 	db = gormConnect()
@@ -270,6 +281,8 @@ func main() {
 	router.POST("/submit", submit)
 	router.GET("/submission/:id", submissionInfo)
 	router.GET("/submissions", submitList)
+
+	router.GET("/rejudge/:id", rejudge)
 
 	router.Run(":8080")
 }
