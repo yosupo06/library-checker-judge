@@ -17,7 +17,7 @@ create table submissions (
   id serial primary key,
   submit_time timestamp,
   user_name varchar(255) references users(name),
-  problem varchar(32) not null,
+  problem varchar(32) not null references problems(name),
   lang varchar(32) not null,
   source text not null,
   status varchar(32), -- AC, WA, TLE, WJ, ...
