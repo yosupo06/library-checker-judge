@@ -100,7 +100,7 @@ func problemInfo(ctx *gin.Context) {
 }
 
 func checkLang(lang string) bool {
-	langs := []string{"cpp", "rust", "d"}
+	langs := []string{"cpp", "rust", "d", "java"}
 	for _, s := range langs {
 		if lang == s {
 			return true
