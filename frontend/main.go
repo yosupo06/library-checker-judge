@@ -243,9 +243,14 @@ func logoutGet(ctx *gin.Context) {
 }
 
 func rejudge(ctx *gin.Context) {
+	if !getUser(ctx).Admin {
+		ctx.AbortWithStatus(http.StatusForbidden)
+		return
+	}
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Fatal(err)
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
 	task := Task{}
 	task.Submission = id
