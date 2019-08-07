@@ -51,8 +51,8 @@ sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
 
 ### SQL立ち上げ
 ```
-cd /your/path/of/library-checker-judge
-./launch_local
+cd /your/path/of/library-checker-judge/local
+./launch.sh
 ```
 
 dockerでpostgre SQLが立ち上がり、問題データが生成され、SQLに格納される
