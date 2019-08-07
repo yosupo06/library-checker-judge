@@ -38,6 +38,7 @@ type SubmissionTestcaseResult struct {
 type User struct {
 	Name     string
 	Passhash string
+	Admin    bool
 }
 
 func (u User) getName() sql.NullString {
