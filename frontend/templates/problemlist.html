@@ -14,15 +14,21 @@
     </section>
     <section class="uk-section">
         <div class="uk-container">
+            {{if not .User.Name}}
             <div class="uk-alert-primary" uk-alert>
                 <a class="uk-alert-close" uk-close></a>
                 <p>ユーザー登録しなくても提出できます</p>
             </div>
+            {{end}}
+            {{$titlemap := .titlemap}}
+            {{range .list.Category}}
+            <h3 class="uk-heading-bullet">{{.Name}}</h3>
             <ul class="uk-list uk-list-divider uk-list-large">
-                {{range .problems}}
-                <li><a href="/problem/{{.Name}}">{{.Title}}</a></li>
+                {{range $index, $element := .Problems}}
+                <li><a href="/problem/{{.}}">{{index $titlemap $element}}</a></li>
                 {{end}}
             </ul>
+            {{end}}
         </div>
     </section>
 </body>

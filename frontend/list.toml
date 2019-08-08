@@ -1,0 +1,28 @@
+[[category]]
+    name = 'sample'
+    problems = [
+        'aplusb'
+    ]
+
+[[category]]
+    name = 'datastructure'
+    problems = [
+        'unionfind',
+        'staticrmq',
+    ]
+
+[[category]]
+    name = 'math'
+    problems = [
+        'convolution_mod',
+        'matrix_det',
+        'sparse_matrix_det',
+    ]
+
+[[category]]
+    name = 'string'
+    problems = [
+        'zalgorithm',
+        'suffixarray',
+        'runenumerate',
+    ]

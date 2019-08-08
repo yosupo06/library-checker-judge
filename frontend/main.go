@@ -83,9 +83,13 @@ func htmlWithUser(c *gin.Context, code int, name string, obj gin.H) {
 func problemList(ctx *gin.Context) {
 	var problems = make([]Problem, 0)
 	db.Select("name, title").Find(&problems)
+	var titlemap = make(map[string]string)
+	for _, problem := range problems {
+		titlemap[problem.Name] = problem.Title
+	}
 	htmlWithUser(ctx, 200, "problemlist.html", gin.H{
-		"User":     getUser(ctx),
-		"problems": problems,
+		"titlemap": titlemap,
+		"list":     list,
 	})
 }
 
@@ -259,6 +263,7 @@ func rejudge(ctx *gin.Context) {
 }
 
 func main() {
+	loadList()
 	gob.Register(User{})
 	db = gormConnect()
 	defer db.Close()

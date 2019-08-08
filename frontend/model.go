@@ -3,6 +3,9 @@ package main
 import (
 	"database/sql"
 	"html/template"
+	"log"
+
+	"github.com/BurntSushi/toml"
 )
 
 type Problem struct {
@@ -39,6 +42,23 @@ type User struct {
 	Name     string
 	Passhash string
 	Admin    bool
+}
+
+type Category struct {
+	Name     string
+	Problems []string
+}
+
+type List struct {
+	Category []Category
+}
+
+var list *List
+
+func loadList() {
+	if _, err := toml.DecodeFile("list.toml", &list); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (u User) getName() sql.NullString {
