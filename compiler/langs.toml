@@ -8,6 +8,11 @@
     compile = "g++ -O2 -std=c++14 -march=native -o main main.cpp"
     objects = ["main"]
     exec = "./main"
+[langs.cpp17]
+    source = "main.cpp"
+    compile = "g++ -O2 -std=c++17 -march=native -o main main.cpp"
+    objects = ["main"]
+    exec = "./main"
 [langs.rust]
     source = "main.rs"
     compile = "rustc -O main.rs"
