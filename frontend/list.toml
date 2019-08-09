@@ -1,18 +1,24 @@
 [[category]]
-    name = 'sample'
+    name = 'Sample'
     problems = [
         'aplusb'
     ]
 
 [[category]]
-    name = 'datastructure'
+    name = 'Data Structure'
     problems = [
         'unionfind',
         'staticrmq',
     ]
 
 [[category]]
-    name = 'math'
+    name = 'Graph'
+    problems = [
+        'lca',
+    ]
+
+[[category]]
+    name = 'Math'
     problems = [
         'convolution_mod',
         'matrix_det',
@@ -20,7 +26,7 @@
     ]
 
 [[category]]
-    name = 'string'
+    name = 'String'
     problems = [
         'zalgorithm',
         'suffixarray',
