@@ -22,6 +22,7 @@
 [[category]]
     name = 'Math'
     problems = [
+        'factorize',
         'convolution_mod',
         'matrix_det',
         'sparse_matrix_det',
