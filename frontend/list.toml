@@ -15,7 +15,8 @@
     name = 'Graph'
     problems = [
         'lca',
-        'bipartitematching'
+        'bipartitematching',
+        'assignment',
     ]
 
 [[category]]
