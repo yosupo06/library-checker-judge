@@ -25,7 +25,10 @@
             <h3 class="uk-heading-bullet">{{.Name}}</h3>
             <ul class="uk-list uk-list-divider uk-list-large">
                 {{range $index, $element := .Problems}}
-                <li><a href="/problem/{{.}}">{{index $titlemap $element}}</a></li>
+                {{$title := index $titlemap $element}}
+                {{if $title}}
+                <li><a href="/problem/{{.}}">{{$title}}</a></li>
+                {{end}}
                 {{end}}
             </ul>
             {{end}}
