@@ -5,6 +5,11 @@
     exec = "./checker {input} {judge} {contestant}"
 [langs.cpp]
     source = "main.cpp"
+    compile = "g++ -O2 -std=c++17 -march=native -o main main.cpp"
+    objects = ["main"]
+    exec = "./main"
+[langs.cpp14]
+    source = "main.cpp"
     compile = "g++ -O2 -std=c++14 -march=native -o main main.cpp"
     objects = ["main"]
     exec = "./main"
