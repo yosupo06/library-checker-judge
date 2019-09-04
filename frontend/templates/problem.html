@@ -40,7 +40,7 @@
             {{.Problem.Statement}}
             <hr class="uk-margin-large">
             <form method="POST" action="/submit" enctype="multipart/form-data">
-                <p>Timelimit: {{.Problem.Timelimit}} seconds</p>
+                <p>Timelimit: {{.Problem.Timelimit}} msecs</p>
                 <input name="problem" type="hidden" value="{{.Problem.Name}}">
                 <div uk-form-custom="target: true">
                     <input name="source" type="file">
