@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <title>Submitted</title>
     {{template "css.html" .}}
+
+    <!-- prismjs -->
+    <link href="/public/css/prism.css" rel="stylesheet" />
+    <script src="/public/js/prism.js" type="text/javascript"></script>
 </head>
 <body>
-    {{template "navbar.html" .}}
+    {{template "navbar.html" .}}    
     <section class="uk-section">
         <div class="uk-container">
             <h1 class="uk-heading-medium">Submit Info #{{.Submission.ID}}</h1>            
@@ -18,7 +22,7 @@
     
     <section class="uk-section">
         <div class="uk-container">
-            <pre>{{.Submission.Source}}</pre>
+            <pre><code class="language-cpp">{{.Submission.Source}}</code></pre>
         </div>
         <div class="uk-container">
             <table class="uk-table">
