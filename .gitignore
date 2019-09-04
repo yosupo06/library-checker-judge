@@ -1,6 +1,7 @@
 judge/sand
 judge/work
 *.log
+*.pyc
 /compiler/*
 !/compiler/install.sh
 !/compiler/PATH.txt
