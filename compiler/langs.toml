@@ -27,4 +27,4 @@
     source = "Main.java"
     compile = "javac Main.java"
     objects = ["Main.class"]
-    exec = "java Main"
+    exec = "java -Xss1G Main"
