@@ -26,6 +26,7 @@
         'convolution_mod',
         'matrix_det',
         'sparse_matrix_det',
+        'multipoint_evaluation',
     ]
 
 [[category]]
