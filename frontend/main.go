@@ -96,7 +96,7 @@ func problemList(ctx *gin.Context) {
 func problemInfo(ctx *gin.Context) {
 	name := ctx.Param("name")
 	var problem Problem
-	db.Select("name, title, statement").Where("name = ?", name).First(&problem)
+	db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem)
 	htmlWithUser(ctx, 200, "problem.html", gin.H{
 		"User":    getUser(ctx),
 		"Problem": problem,

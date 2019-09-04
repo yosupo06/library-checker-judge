@@ -12,6 +12,7 @@ type Problem struct {
 	Name      string
 	Title     string
 	Statement template.HTML
+	Timelimit float64
 }
 
 type Submission struct {
