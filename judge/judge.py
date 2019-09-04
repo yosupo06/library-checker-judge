@@ -34,234 +34,65 @@ import psycopg2
 import toml
 from termcolor import colored, cprint
 
+from judgeinside import Judgement, Result
+
 basicConfig(
     level=getenv('LOG_LEVEL', 'DEBUG'),
     format="%(asctime)s %(levelname)s %(name)s :%(message)s"
 )
 logger: Logger = getLogger(__name__)
 
-logger.info('Launch judge.py')
+class Problem:
+    id: str
+    testhash: str
+    timelimit: float
 
+    def __init__(self, conn, id: str):
+        self.id = id
+        with conn.cursor() as cursor:
+            if cursor.execute('select testhash, timelimit from problems where name = %s', (id, )) == 0:
+                raise Exception()
+            prob = cursor.fetchone()
+            self.testhash = prob[0]
+            self.timelimit = prob[1]
 
-logger.info('Make workdir')
-workdir = Path.cwd() / 'work'
-
-if workdir.exists():
-    rmtree(workdir)
-workdir.mkdir()
-shutil.copy('testlib.h', workdir / 'testlib.h')
-
-
-class Lang:
-    source: str = ''
-    compile: str = ''
-    objects: [str] = []
-    exec: str = ''
-
-    __langsinfo = None
-
-    def __init__(self, lang: str):
-        if not Lang.__langsinfo:
-            Lang.__langsinfo = toml.load(
-                open('../compiler/langs.toml'))['langs']
-
-        langinfo = Lang.__langsinfo[lang]
-
-        self.source = langinfo['source']
-        self.compile = langinfo['compile']
-        self.objects = langinfo['objects']
-        self.exec = langinfo['exec']
-
-
-class Result:
-    status: str
-    time: int
-    memory: int
-
-    def __init__(self, status='', time=-1, memory=-1):
-        self.status = status
-        self.time = time
-        self.memory = memory
-
-    def get_color(self):
-        if self.status == 'AC':
-            return 'on_green'
-        elif self.status == 'WA':
-            return 'on_yellow'
-        else:
-            return 'on_red'
-
-
-class Executer:
-    sanddir: Path  # = curdir / 'sand'
-    executer: Popen
-
-    def __init__(self):
-        logger.info('Launch executer')
-        # make sandbox dir
-        self.sanddir = Path.cwd() / 'sand'
-        if self.sanddir.exists():
-            rmtree(self.sanddir)
-        self.sanddir.mkdir()
-        self.sanddir.chmod(0o777)
-
-        env = environ.copy()
-        env['POSTGRE_PASS'] = 'secret(off course, we should fix this code...)'
-        self.executer = Popen(['unshare', '-fpnm', '--mount-proc',
-                               './executer.py'], stdin=PIPE, stdout=PIPE, stderr=STDOUT, env=env)
-
-    def clean(self):
-        self.executer.stdin.write(b'clean\n')
-        self.executer.stdin.flush()
-        s = self.executer.stdout.readline().decode('utf-8').strip()
-        if s != 'OK':
-            logger.error('Error executer clean: {}'.format(s))
-
-    def run(self,
-            exec: str,
-            sendfiles: [str] = [],
-            getfiles: [str] = [],
-            stdin: Path = None,
-            stdout: Path = None,
-            timelimit: float = 2.0) -> Result:
-
-        self.clean()
-        for f in sendfiles:
-            shutil.copy(workdir / f, self.sanddir / f)
-
-        data = {
-            'exec': exec,
-            'timelimit': timelimit,
-        }
-        if stdin:
-            data['stdin'] = str(stdin)
-        if stdout:
-            data['stdout'] = str(stdout)
-
-        logger.info('judge -> executer data: {}'.format(data))
-        with open('work/comm.json', 'w') as f:
-            f.write(json.dumps(data))
-        self.executer.stdin.write(b'comm\n')
-        self.executer.stdin.flush()
-
-        s = self.executer.stdout.readline().decode('utf-8').strip()
-        if s != 'OK':
-            logger.error('Error executer: {}'.format(s))
-            return Result()
-        result = json.load(open('work/resp.json', 'r'))
-        logger.info('Return OK status: {}'.format(result['status']))
-
-        result = Result(result['status'], result['time'], result['memory'])
-
-        for f in getfiles:
-            if not (self.sanddir / f).exists() or not (self.sanddir / f).is_file():
-                result.status = 'RE'
-                break
-            shutil.copy(self.sanddir / f, workdir / f)
-
-        return result
-
-    def kill(self):
-        self.executer.stdin.write(b'last\n')
-        self.executer.stdin.flush()
-        self.executer.wait()
-
-
-class Judgement:
-    executer: Executer
-    lang: str
-
-    def __init__(self, langname):
-        self.executer = Executer()
-        self.lang = Lang(langname)
-
-    def single(self, inpath: str, outpath: str, timelimit: float = 2.0):
-        shutil.copy(inpath, workdir / 'case.in')
-        shutil.copy(outpath, workdir / 'case.out')
-
-        result = self.executer.run(
-            exec=self.lang.exec,
-            sendfiles=self.lang.objects,
-            stdin=workdir / 'case.in',
-            stdout=workdir / 'case.your',
-            timelimit=timelimit)
-        if result.status == 'OK':
-            lang_checker = Lang('checker')
-            exec_command = lang_checker.exec.format(
-                input='case.in',
-                judge='case.out',
-                contestant='case.your',
-            )
-            objects = deepcopy(lang_checker.objects)
-            objects.extend(['case.in', 'case.out', 'case.your'])
-            checker_result = self.executer.run(
-                exec=exec_command,
-                sendfiles=objects,
-                timelimit=30.0)
-            if checker_result.status == 'OK':
-                result.status = 'AC'
-            elif checker_result.status == 'RE':
-                result.status = 'WA'
-            elif checker_result.status == 'TLE':
-                result.status = 'ITLE'
-            else:
-                result.status = 'IE'
-
-        logger.info('judged {} res={} {} msecs'.format(
-            inpath, colored(result.status, on_color=result.get_color()), result.time))
-        return result
-
-    # assume prepared: work/in, work/out, work/main.cpp, work/checker.cpp
-    def compile_checker(self) -> bool:
-        lang_checker = Lang('checker')
-        result = self.executer.run(
-            exec=lang_checker.compile,
-            sendfiles=['checker.cpp', 'testlib.h'],
-            getfiles=lang_checker.objects,
-            timelimit=30.0
-        )
-        return result.status == 'OK'
-
-    def compile(self) -> bool:
-        result = self.executer.run(
-            exec=self.lang.compile,
-            sendfiles=[self.lang.source],
-            getfiles=self.lang.objects,
-            timelimit=30.0
-        )
-        return result.status == 'OK'
-
-    def judge(self, handler):
-        file_list = list(sorted(workdir.glob('in/*')))
-        for i, inpath in enumerate(file_list):
-            stem = inpath.stem
-            outpath = workdir / 'out' / (stem + '.out')
-            result = self.single(inpath=inpath, outpath=outpath)
-
-            handler(stem, result)
-
-        self.executer.kill()
-        logger.info('End judge')
-
-
-def fetchdata(conn, problemid):
-    # get zip file
-    testhash = ''
-    with conn.cursor() as cursor:
-        if cursor.execute('select testhash from problems where name = %s', (problemid, )) == 0:
+    def fetchcase(self, conn, zippath: Path):
+        if zippath.exists():
             return
-        testhash = cursor.fetchone()[0]
-
-    zippath = workdir / 'cases-{}.zip'.format(testhash)
-
-    if not zippath.exists():
         logger.info('Nothing {}, fetching...'.format(zippath))
         with conn.cursor() as cursor:
-            if cursor.execute('select testzip from problems where name = %s', (problemid, )) == 0:
-                return
+            if cursor.execute('select testzip from problems where name = %s', (self.id, )) == 0:
+                raise Exception()
             zipdata = cursor.fetchone()[0]
             with open(zippath, 'wb') as f:
                 f.write(zipdata)
+
+class Submission:
+    id: int
+    pid: str
+    lang: str
+    source: str
+
+    def __init__(self, conn, id: int):
+        self.id = id
+        with conn.cursor() as cursor:
+            if cursor.execute('select problem, lang, source from submissions where id = %s', (id, )) == 0:
+                raise Exception()
+            submission = cursor.fetchone()
+            self.pid = submission[0]
+            self.lang = submission[1]
+            self.source = submission[2]
+
+    def ref_status(self, conn, status: str):
+        with conn.cursor() as cursor:
+            cursor.execute('update submissions set status = %s where id = %s',
+                        (status, self.id))
+            conn.commit()
+
+
+def fetchdata(conn, problem: Problem):
+    zippath = workdir / 'cases-{}.zip'.format(problem.testhash)
+    problem.fetchcase(conn, zippath)
 
     logger.info('Extract zip file')
 
@@ -278,56 +109,44 @@ def fetchdata(conn, problemid):
         f.extractall(workdir)
 
 
-def judge(conn, subid: int):
+def judge(conn, submission: Submission):
+    # WJ -> Fetching
     with conn.cursor() as cursor:
         if cursor.execute("update submissions set status = %s where id = %s and status = 'WJ'",
-                          ('Fetching', subid)) == 0:
+                          ('Fetching', submission.id)) == 0:
             return
         conn.commit()
-    logger.info('Judge start submission id = {}'.format(subid))
+
+    # Delete judge status
     with conn.cursor() as cursor:
         cursor.execute(
-            'delete from submission_testcase_results where submission = %s', (subid,))
+            'delete from submission_testcase_results where submission = %s', (submission.id,))
         conn.commit()
 
+    logger.info('Judge start submission id = {}'.format(submission.id))
+
     logger.info('Fetch data from SQL')
-    submission = None
-    with conn.cursor() as cursor:
-        if cursor.execute('select problem, lang, source from submissions where id = %s', (subid, )) == 0:
-            return
-        submission = cursor.fetchone()
 
-    fetchdata(conn, submission[0])
+    problem = Problem(conn, submission.pid)
+    fetchdata(conn, problem)
 
-    judgement = Judgement(submission[1])
+    judgement = Judgement(submission.lang)
 
     # write source
     with open(workdir / judgement.lang.source, 'w') as f:
-        f.write(submission[2])
+        f.write(submission.source)
 
-    with conn.cursor() as cursor:
-        cursor.execute('update submissions set status = %s where id = %s',
-                       ('Compiling', subid))
-        conn.commit()
+    submission.ref_status(conn, 'Compiling')
 
     if not judgement.compile_checker():
-        with conn.cursor() as cursor:
-            cursor.execute('update submissions set status = %s where id = %s',
-                           ('ICE', subid))
-            conn.commit()
+        submission.ref_status(conn, 'ICE')
         return
 
     if not judgement.compile():
-        with conn.cursor() as cursor:
-            cursor.execute('update submissions set status = %s where id = %s',
-                           ('CE', subid))
-            conn.commit()
+        submission.ref_status(conn, 'CE')
         return
 
-    with conn.cursor() as cursor:
-        cursor.execute('update submissions set status = %s where id = %s',
-                       ('Executing', subid))
-        conn.commit()
+    submission.ref_status(conn, 'Executing')
 
     all_result = Result('AC')
 
@@ -336,24 +155,36 @@ def judge(conn, subid: int):
             cursor.execute('''insert into submission_testcase_results
                               (submission, testcase, status, time, memory)
                               values (%s, %s, %s, %s, %s)''',
-                           (subid, name, result.status, result.time, result.memory))
+                           (submission.id, name, result.status, result.time, result.memory))
             conn.commit()
         if result.status != 'AC':
             all_result.status = result.status
         all_result.time = max(all_result.time, result.time)
         all_result.memory = max(all_result.memory, result.memory)
 
-    judgement.judge(refresh)
+    judgement.judge(refresh, problem.timelimit / 1000)
 
     with conn.cursor() as cursor:
         cursor.execute('update submissions set status = %s, max_time = %s, max_memory = %s where id = %s',
-                       (all_result.status, all_result.time, all_result.memory, subid))
+                       (all_result.status, all_result.time, all_result.memory, submission.id))
         conn.commit()
 
     logger.info('End judge')
 
 
 if __name__ == "__main__":
+    logger.info('Launch judge.py')
+
+
+    logger.info('Make workdir')
+    workdir = Path.cwd() / 'work'
+
+    if workdir.exists():
+        rmtree(workdir)
+    workdir.mkdir()
+    shutil.copy('testlib.h', workdir / 'testlib.h')
+
+
     logger.info('Connect SQL')
     hostname = environ.get('POSTGRE_HOST', '127.0.0.1')
     port = int(environ.get('POSTGRE_PORT', '5432'))
@@ -378,12 +209,12 @@ if __name__ == "__main__":
             cursor.execute('delete from tasks where id = %s', (res[0],))
             conn.commit()
 
-        subid = res[1]
+        submission = Submission(conn, res[1])
         try:
-            judge(conn, subid)
+            judge(conn, submission)
         except Exception as e:
             logger.exception(e)
             with conn.cursor() as cursor:
                 cursor.execute('update submissions set status = %s where id = %s',
-                               ('IE', subid))
+                               ('IE', submission.id))
                 conn.commit()

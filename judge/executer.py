@@ -14,18 +14,19 @@
 # limitations under the License.
 
 
-import glob
 import json
 import sys
+import resource
 
 from os import getenv, getuid, environ
 from pwd import getpwnam
-from shutil import rmtree, copy
+from shutil import rmtree
 from pathlib import Path
 from datetime import datetime
 from logging import basicConfig, getLogger
 from subprocess import CalledProcessError, TimeoutExpired, Popen, run, DEVNULL
 from psutil import Process
+
 basicConfig(
     filename='executer.log',
     level=getenv('LOG_LEVEL', 'DEBUG'),
@@ -56,7 +57,7 @@ def run_in_sandbox(execcmd, stdin, stdout, timelimit):
 
     logger.info('execcmd: {}'.format(execcmd))
 
-    run(['./prepare_exec.sh'], check=True)
+    run(['./prepare_exec.sh'])
     cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge',
            'chroot', '--userspec=library-checker-user:library-checker-user', 'sand']
     cmd.extend(execcmd.split())
@@ -97,6 +98,7 @@ def run_in_sandbox(execcmd, stdin, stdout, timelimit):
 if __name__ == "__main__":
     logger.info('Launch executer.py')
     run(['./prepare.sh'])
+    resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
     while True:
         s = sys.stdin.readline().strip()
@@ -112,18 +114,14 @@ if __name__ == "__main__":
             logger.info('Command: {}'.format(comm))
 
             stdinpath = comm.get('stdin', None)
-            stdin = DEVNULL
-            if stdinpath:
-                stdin = open(stdinpath, 'r')
+            stdin = open(stdinpath, 'r') if stdinpath else DEVNULL
             stdoutpath = comm.get('stdout', None)
-            stdout = DEVNULL
-            if stdoutpath:
-                stdout = open(stdoutpath, 'w')
+            stdout = open(stdoutpath, 'w') if stdoutpath else DEVNULL
 
             result = run_in_sandbox(comm['exec'],
                                     stdin=stdin,
                                     stdout=stdout,
-                                    timelimit=comm.get('timelimit', 2.0))
+                                    timelimit=comm['timelimit'])
             logger.info('Result: {}'.format(result))
             with open('work/resp.json', 'w') as f:
                 f.write(json.dumps(result))
