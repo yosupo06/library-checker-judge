@@ -32,12 +32,20 @@
                     <th>Time</th>
                     <th>Memory</th>
                 </tr>
+                {{with .Submission}}
                 <tr>
-                    <td><a href="/problem/{{.Submission.ProblemName}}">{{.Submission.ProblemName}}</a></td>
-                    <td>{{.Submission.Status}}</td>
-                    <td>{{.Submission.MaxTime}} ms</td>
-                    <td>{{.Submission.MaxMemory}} bytes</td>
+                    <td><a href="/problem/{{.ProblemName}}">{{.Problem.Title}}</a></td>
+                    <td>
+                        {{if and (eq .Testhash .Problem.Testhash) (eq .Status "AC")}}
+                        <span class="uk-label uk-label-success">AC</span>
+                        {{else}}
+                        <span class="uk-label">{{.Status}}</span>
+                        {{end}}
+                    </td>
+                    <td>{{.MaxTime}} ms</td>
+                    <td>{{.MaxMemory}} bytes</td>
                 </tr>
+                {{end}}
             </table>
             <hr class="uk-margin-medium">
             <table class="uk-table">

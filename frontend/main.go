@@ -159,7 +159,11 @@ func submissionInfo(ctx *gin.Context) {
 		log.Fatal(err)
 	}
 	var submission Submission
-	db.Where("id = ?", id).First(&submission)
+	db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).First(&submission)
 	var results []SubmissionTestcaseResult
 	db.Where("submission = ?", id).Find(&results)
 	rejudge := adminOrSubmitter(ctx, submission)
@@ -172,7 +176,17 @@ func submissionInfo(ctx *gin.Context) {
 
 func submitList(ctx *gin.Context) {
 	var submissions = make([]Submission, 0)
-	db.Preload("User").Preload("Problem").Order("id desc").Find(&submissions)
+	db.
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name")
+		}).
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Order("id desc").
+		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
+		Find(&submissions)
+	fmt.Println(submissions)
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": submissions,
 	})
