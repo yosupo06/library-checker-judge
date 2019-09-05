@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -161,9 +162,11 @@ func submissionInfo(ctx *gin.Context) {
 	db.Where("id = ?", id).First(&submission)
 	var results []SubmissionTestcaseResult
 	db.Where("submission = ?", id).Find(&results)
+	rejudge := adminOrSubmitter(ctx, submission)
 	htmlWithUser(ctx, 200, "submitinfo.html", gin.H{
 		"Submission": submission,
 		"Results":    results,
+		"Rejudge":    rejudge,
 	})
 }
 
@@ -246,16 +249,54 @@ func logoutGet(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/")
 }
 
-func rejudge(ctx *gin.Context) {
-	if !getUser(ctx).Admin {
-		ctx.AbortWithStatus(http.StatusForbidden)
-		return
+func adminOrSubmitter(ctx *gin.Context, submission Submission) bool {
+	if getUser(ctx).Admin {
+		return true
 	}
+	if !submission.UserName.Valid || submission.UserName.String == "" {
+		return false
+	}
+	return submission.UserName.String == getUser(ctx).Name
+}
+
+func rejudge(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusBadRequest)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "param error",
+		})
 		return
 	}
+	tx := db.Begin()
+	var submission Submission
+	err = tx.Where("id = ?", id).First(&submission).Error
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "can not find submissions",
+		})
+		tx.Rollback()
+		return
+	}
+	if !adminOrSubmitter(ctx, submission) {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"message": "no authority",
+		})
+		tx.Rollback()
+		return
+	}
+	if time.Now().Sub(submission.JudgePing).Minutes() <= 1 {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message":    "this submission seems judging now",
+			"now":        time.Now(),
+			"judge_ping": submission.JudgePing,
+		})
+		tx.Rollback()
+		return
+	}
+	submission.Status = "WJ"
+	tx.Save(&submission)
+	tx.Commit()
+
 	task := Task{}
 	task.Submission = id
 	db.Create(&task)

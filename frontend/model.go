@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"html/template"
 	"log"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -23,6 +24,7 @@ type Submission struct {
 	Source    string
 	MaxTime   int
 	MaxMemory int
+	JudgePing time.Time
 	UserName  sql.NullString
 	User      User `gorm:"foreignkey:UserName"`
 }

@@ -14,7 +14,7 @@
     <section class="uk-section">
         <div class="uk-container">
             <h1 class="uk-heading-medium">Submit Info #{{.Submission.ID}}</h1>            
-            {{if .User.Admin}}
+            {{if .Rejudge}}
             <a href="/rejudge/{{.Submission.ID}}">Rejudge</a>
             {{end}}
         </div>
