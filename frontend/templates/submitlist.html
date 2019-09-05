@@ -27,7 +27,7 @@
                 {{range .Submissions}}
                 <tr>
                     <td><a href="/submission/{{.ID}}">{{.ID}}</a></td>
-                    <td><a href="/problem/{{.Problem}}">{{.Problem}}</a></td>
+                    <td><a href="/problem/{{.ProblemName}}">{{.ProblemName}}</a></td>
                     <td>{{.Lang}}</td>
                     <td>{{if .User.Name}}{{.User.Name}}{{else}}(anonymous){{end}}</td>
                     <td>{{.Status}}</td>

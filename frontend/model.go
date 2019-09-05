@@ -14,19 +14,22 @@ type Problem struct {
 	Title     string
 	Statement template.HTML
 	Timelimit float64
+	Testhash  string
 }
 
 type Submission struct {
-	ID        int
-	Problem   string
-	Lang      string
-	Status    string
-	Source    string
-	MaxTime   int
-	MaxMemory int
-	JudgePing time.Time
-	UserName  sql.NullString
-	User      User `gorm:"foreignkey:UserName"`
+	ID          int
+	ProblemName string
+	Problem     Problem `gorm:"foreignkey:ProblemName"`
+	Lang        string
+	Status      string
+	Source      string
+	Testhash    string
+	MaxTime     int
+	MaxMemory   int
+	JudgePing   time.Time
+	UserName    sql.NullString
+	User        User `gorm:"foreignkey:UserName"`
 }
 
 type Task struct {

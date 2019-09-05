@@ -136,13 +136,13 @@ func submit(ctx *gin.Context) {
 		ctx.Abort()
 	}
 	submission := Submission{
-		Problem:   submitForm.Problem,
-		Lang:      submitForm.Lang,
-		Status:    "WJ",
-		Source:    string(src),
-		MaxTime:   -1,
-		MaxMemory: -1,
-		UserName:  getUser(ctx).getName(),
+		ProblemName: submitForm.Problem,
+		Lang:        submitForm.Lang,
+		Status:      "WJ",
+		Source:      string(src),
+		MaxTime:     -1,
+		MaxMemory:   -1,
+		UserName:    getUser(ctx).getName(),
 	}
 	db.Create(&submission)
 
@@ -172,7 +172,7 @@ func submissionInfo(ctx *gin.Context) {
 
 func submitList(ctx *gin.Context) {
 	var submissions = make([]Submission, 0)
-	db.Preload("User").Order("id desc").Find(&submissions)
+	db.Preload("User").Preload("Problem").Order("id desc").Find(&submissions)
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": submissions,
 	})
