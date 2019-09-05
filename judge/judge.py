@@ -145,6 +145,12 @@ def judge(conn, submission: Submission):
     problem = Problem(conn, submission.pid)
     fetchdata(conn, problem)
 
+    with conn.cursor() as cursor:
+        cursor.execute("update submissions set testhash = %s where id = %s",
+                       (problem.testhash, submission.id))
+        conn.commit()
+
+
     judgement = Judgement(submission.lang)
 
     # write source
