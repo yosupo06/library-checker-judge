@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -273,39 +274,17 @@ func adminOrSubmitter(ctx *gin.Context, submission Submission) bool {
 	return submission.UserName.String == getUser(ctx).Name
 }
 
-func rejudge(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "param error",
-		})
-		return
-	}
+func rejudge(id int) error {
 	tx := db.Begin()
 	var submission Submission
-	err = tx.Where("id = ?", id).First(&submission).Error
+	err := tx.Where("id = ?", id).First(&submission).Error
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "can not find submissions",
-		})
 		tx.Rollback()
-		return
-	}
-	if !adminOrSubmitter(ctx, submission) {
-		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"message": "no authority",
-		})
-		tx.Rollback()
-		return
+		return errors.New("can not find submissions")
 	}
 	if time.Now().Sub(submission.JudgePing).Minutes() <= 1 {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message":    "this submission seems judging now",
-			"now":        time.Now(),
-			"judge_ping": submission.JudgePing,
-		})
 		tx.Rollback()
-		return
+		return errors.New("this submission seems judging now")
 	}
 	submission.Status = "WJ"
 	tx.Save(&submission)
@@ -314,7 +293,59 @@ func rejudge(ctx *gin.Context) {
 	task := Task{}
 	task.Submission = id
 	db.Create(&task)
+	return nil
+}
+
+func getRejudge(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "param error",
+		})
+		return
+	}
+	var submission Submission
+	err = db.Where("id = ?", id).First(&submission).Error
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "can not find submissions",
+		})
+		return
+	}
+	if !adminOrSubmitter(ctx, submission) {
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"message": "no authority",
+		})
+		return
+	}
+	err = rejudge(id)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 	ctx.Redirect(http.StatusFound, fmt.Sprintf("/submission/%d", id))
+}
+
+func allRejudge(ctx *gin.Context) {
+	var submissions = make([]Submission, 0)
+	if !getUser(ctx).Admin {
+		ctx.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	db.
+		Order("id desc").
+		Select("id").
+		Find(&submissions)
+	for _, s := range submissions {
+		err := rejudge(s.ID)
+		if err != nil {
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "success",
+	})
 }
 
 func main() {
@@ -347,7 +378,8 @@ func main() {
 	router.GET("/submission/:id", submissionInfo)
 	router.GET("/submissions", submitList)
 
-	router.GET("/rejudge/:id", rejudge)
+	router.GET("/rejudge/:id", getRejudge)
+	router.GET("/admin/allrejudge", allRejudge)
 
 	router.Run(":8080")
 }
