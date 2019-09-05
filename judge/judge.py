@@ -77,7 +77,7 @@ class Submission:
     def __init__(self, conn, id: int):
         self.id = id
         with conn.cursor() as cursor:
-            if cursor.execute('select problem, lang, source from submissions where id = %s', (id, )) == 0:
+            if cursor.execute('select problem_name, lang, source from submissions where id = %s', (id, )) == 0:
                 raise Exception()
             submission = cursor.fetchone()
             self.pid = submission[0]
