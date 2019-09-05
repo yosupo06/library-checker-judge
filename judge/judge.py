@@ -20,6 +20,7 @@ import sys
 import tempfile
 import traceback
 import zipfile
+import datetime
 from copy import deepcopy
 from datetime import datetime
 from logging import Logger, basicConfig, getLogger
@@ -88,6 +89,19 @@ class Submission:
             cursor.execute('update submissions set status = %s where id = %s',
                         (status, self.id))
             conn.commit()
+        self.ref_ping(conn)
+
+    def ref_ping(self, conn):
+        with conn.cursor() as cursor:
+            cursor.execute('update submissions set judge_ping = %s where id = %s',
+                        (datetime.now(), self.id))
+            conn.commit()
+
+    def clear_ping(self, conn):
+        with conn.cursor() as cursor:
+            cursor.execute('update submissions set judge_ping = NULL where id = %s',
+                        (self.id, ))
+            conn.commit()
 
 
 def fetchdata(conn, problem: Problem):
@@ -112,8 +126,8 @@ def fetchdata(conn, problem: Problem):
 def judge(conn, submission: Submission):
     # WJ -> Fetching
     with conn.cursor() as cursor:
-        if cursor.execute("update submissions set status = %s where id = %s and status = 'WJ'",
-                          ('Fetching', submission.id)) == 0:
+        if cursor.execute("update submissions set (status, judge_ping) = (%s, %s) where id = %s and status = 'WJ'",
+                          ('Fetching', datetime.now(), submission.id)) == 0:
             return
         conn.commit()
 
@@ -151,6 +165,7 @@ def judge(conn, submission: Submission):
     all_result = Result('AC')
 
     def refresh(name: str, result: Result):
+        submission.ref_ping(conn)
         with conn.cursor() as cursor:
             cursor.execute('''insert into submission_testcase_results
                               (submission, testcase, status, time, memory)
@@ -170,6 +185,7 @@ def judge(conn, submission: Submission):
         conn.commit()
 
     logger.info('End judge')
+    submission.clear_ping(conn)
 
 
 if __name__ == "__main__":

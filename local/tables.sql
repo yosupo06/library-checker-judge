@@ -23,6 +23,7 @@ create table submissions (
   status varchar(32), -- AC, WA, TLE, WJ, ...
   max_time int,
   max_memory int,
+  judge_ping timestamp,
   details json
 );
 
