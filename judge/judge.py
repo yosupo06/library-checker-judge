@@ -126,8 +126,9 @@ def fetchdata(conn, problem: Problem):
 def judge(conn, submission: Submission):
     # WJ -> Fetching
     with conn.cursor() as cursor:
-        if cursor.execute("update submissions set (status, judge_ping) = (%s, %s) where id = %s and status = 'WJ'",
-                          ('Fetching', datetime.now(), submission.id)) == 0:
+        cursor.execute("update submissions set (status, judge_ping) = (%s, %s) where id = %s and status = 'WJ'",
+                          ('Fetching', datetime.now(), submission.id))
+        if not cursor.rowcount or cursor.rowcount <= 0:
             return
         conn.commit()
 
