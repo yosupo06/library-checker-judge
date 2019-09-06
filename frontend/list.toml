@@ -28,6 +28,7 @@
         'matrix_det',
         'sparse_matrix_det',
         'multipoint_evaluation',
+        'sum_of_floor_of_linear',
     ]
 
 [[category]]
