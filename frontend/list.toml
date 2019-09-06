@@ -18,6 +18,7 @@
         'scc',
         'bipartitematching',
         'assignment',
+        'directedmst',
     ]
 
 [[category]]
