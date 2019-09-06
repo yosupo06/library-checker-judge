@@ -2,7 +2,7 @@
     source = "checker.cpp"
     compile = "g++ -O2 -std=c++14 -march=native -o checker checker.cpp"
     objects = ["checker"]
-    exec = "./checker {input} {judge} {contestant}"
+    exec = "./checker {input} {contestant} {judge}"
 [langs.cpp]
     source = "main.cpp"
     compile = "g++ -O2 -std=c++17 -march=native -o main main.cpp"
