@@ -19,6 +19,7 @@
         'bipartitematching',
         'assignment',
         'directedmst',
+        'dominatortree',
     ]
 
 [[category]]
