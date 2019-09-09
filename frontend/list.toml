@@ -30,6 +30,7 @@
         'matrix_det',
         'sparse_matrix_det',
         'multipoint_evaluation',
+        'polynomial_interpolation',
         'sum_of_floor_of_linear',
     ]
 
