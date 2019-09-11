@@ -31,6 +31,7 @@
         'sparse_matrix_det',
         'multipoint_evaluation',
         'polynomial_interpolation',
+        'partition_function',
         'sum_of_floor_of_linear',
     ]
 
