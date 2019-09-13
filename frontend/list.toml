@@ -33,6 +33,7 @@
         'polynomial_interpolation',
         'partition_function',
         'sum_of_floor_of_linear',
+        'sqrt_mod',
     ]
 
 [[category]]
