@@ -1,8 +1,11 @@
 steps:
-- name: gcr.io/library-checker-project/library-checker-problem-env
-  args: ['./generate.py', 'problems.toml']
-- name: gcr.io/library-checker-project/library-checker-problem-env
-  args: ['./deploy.py']
-  env: ['POSTGRE_HOST=$_PG_HOST', 'POSTGRE_PASS=$_PG_PASS']
+- name: gcr.io/cloud-builders/gcloud
+  args:
+    - -c
+    - 'make_secret.sh && app deploy app.yaml --project=library-checker-project'
+  env:
+    - 'PG_HOST=$_PG_HOST'
+    - 'PG_PASS=$_PG_PASS'
+    - 'SESSION_SECRET=$_SESSION_SECRET'
 
 timeout: 1800s
