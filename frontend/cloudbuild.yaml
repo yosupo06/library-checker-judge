@@ -1,11 +1,15 @@
 steps:
-- name: gcr.io/cloud-builders/gcloud
+- id: make_secret
+  name: gcr.io/cloud-builders/gcloud
+  entrypoint: sh
   args:
-    - -c
-    - 'make_secret.sh && app deploy app.yaml --project=library-checker-project'
+    - ./make_secret.sh
   env:
     - 'PG_HOST=$_PG_HOST'
     - 'PG_PASS=$_PG_PASS'
     - 'SESSION_SECRET=$_SESSION_SECRET'
+- name: gcr.io/cloud-builders/gcloud
+  args: ['app', 'deploy', 'app.yaml']
+  waitFor: ['make_secret']
 
 timeout: 1800s
