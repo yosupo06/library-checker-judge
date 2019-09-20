@@ -27,14 +27,20 @@
     problems = [
         'factorize',
         'convolution_mod',
-        'matrix_det',
-        'sparse_matrix_det',
         'multipoint_evaluation',
         'polynomial_interpolation',
+        'exp_of_formal_power_series',
         'partition_function',
         'sum_of_floor_of_linear',
         'sqrt_mod',
         'two_sat',
+    ]
+
+[[category]]
+    name = 'Matrix'
+    problems = [
+        'matrix_det',
+        'sparse_matrix_det',
     ]
 
 [[category]]
