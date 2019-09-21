@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -124,17 +125,21 @@ func submit(ctx *gin.Context) {
 	var submitForm SubmitForm
 	if err := ctx.ShouldBind(&submitForm); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
 	}
 	file, err := submitForm.Source.Open()
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
 	}
 	src, err := ioutil.ReadAll(file)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
 	}
 	if !checkLang(submitForm.Lang) {
 		ctx.Abort()
+		return
 	}
 	submission := Submission{
 		ProblemName: submitForm.Problem,
@@ -176,6 +181,16 @@ func submissionInfo(ctx *gin.Context) {
 }
 
 func submitList(ctx *gin.Context) {
+	type SubmitFilter struct {
+		Page    int    `form:"page,default=1" binding:"gte=1,lte=1000"`
+		Problem string `form:"problem" binding:"lte=100"`
+		Status  string `form:"status" binding:"lte=100"`
+	}
+	var submitFilter SubmitFilter
+	if err := ctx.ShouldBind(&submitFilter); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 	var submissions = make([]Submission, 0)
 	db.
 		Preload("User", func(db *gorm.DB) *gorm.DB {
@@ -184,12 +199,19 @@ func submitList(ctx *gin.Context) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
+		Limit(100).
+		Offset((submitFilter.Page - 1) * 100).
 		Order("id desc").
 		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
+		Where(&Submission{ProblemName: submitFilter.Problem, Status: submitFilter.Status}).
+		//		Where("problem_name = ?", submitFilter.Problem).
 		Find(&submissions)
-	fmt.Println(submissions)
+	count := 0
+	db.Table("submissions").Count(&count)
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": submissions,
+		"NowPage":     submitFilter.Page,
+		"NumPage":     (count + 99) / 100,
 	})
 }
 
@@ -216,6 +238,7 @@ func registerPost(ctx *gin.Context) {
 	passHash, err := bcrypt.GenerateFromPassword([]byte(userPass.Password), 10)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	user := User{
 		Name:     userPass.Name,
@@ -360,6 +383,15 @@ func main() {
 	// db.LogMode(true)
 
 	router := gin.Default()
+	router.SetFuncMap(template.FuncMap{
+		"repeat": func(a, b int) []int {
+			var result []int
+			for i := a; i <= b; i++ {
+				result = append(result, i)
+			}
+			return result
+		},
+	})
 	router.Use(sessions.Sessions("mysession",
 		cookie.NewStore([]byte(getEnv("SESSION_SECRET", "session_secret")))))
 	router.LoadHTMLGlob("templates/*.html")

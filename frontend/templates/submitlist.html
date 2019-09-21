@@ -14,6 +14,11 @@
     </section>
     <section class="uk-section">
         <div class="uk-container">
+            <ul class="uk-pagination uk-flex-center">
+                {{range $p := (repeat 1 .NumPage)}}
+                    <li><a href="?page={{$p}}">{{$p}}</a></li>
+                {{end}}
+            </ul>
             <table class="uk-table">
                 <tr>
                     <th>ID</th>
