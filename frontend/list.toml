@@ -30,6 +30,7 @@
         'multipoint_evaluation',
         'polynomial_interpolation',
         'exp_of_formal_power_series',
+        'log_of_formal_power_series',
         'partition_function',
         'sum_of_floor_of_linear',
         'sqrt_mod',
