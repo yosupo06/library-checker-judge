@@ -43,6 +43,7 @@
     problems = [
         'matrix_det',
         'sparse_matrix_det',
+        'system_of_linear_equations',
     ]
 
 [[category]]
