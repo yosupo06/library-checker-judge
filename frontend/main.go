@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -118,23 +117,37 @@ func checkLang(lang string) bool {
 
 func submit(ctx *gin.Context) {
 	type SubmitForm struct {
-		Source  *multipart.FileHeader `form:"source" binding:"required"`
-		Problem string                `form:"problem" binding:"required"`
-		Lang    string                `form:"lang" binding:"required"`
+		//		Source     *multipart.FileHeader `form:"source"`
+		SourceText string `form:"source_text"`
+		Problem    string `form:"problem" binding:"required"`
+		Lang       string `form:"lang" binding:"required"`
 	}
 	var submitForm SubmitForm
 	if err := ctx.ShouldBind(&submitForm); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	file, err := submitForm.Source.Open()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
+	src := submitForm.SourceText
+	if src == "" {
+		file, err := ctx.FormFile("source")
+		if err != nil {
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		f, err := file.Open()
+		if err != nil {
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		srcByte, err := ioutil.ReadAll(f)
+		src = string(srcByte)
+		if err != nil {
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 	}
-	src, err := ioutil.ReadAll(file)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+	if src == "" {
+		ctx.Redirect(http.StatusFound, ".")
 		return
 	}
 	if !checkLang(submitForm.Lang) {
@@ -145,7 +158,7 @@ func submit(ctx *gin.Context) {
 		ProblemName: submitForm.Problem,
 		Lang:        submitForm.Lang,
 		Status:      "WJ",
-		Source:      string(src),
+		Source:      src,
 		MaxTime:     -1,
 		MaxMemory:   -1,
 		UserName:    getUser(ctx).getName(),
