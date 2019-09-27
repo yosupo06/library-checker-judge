@@ -35,6 +35,7 @@
         'partition_function',
         'sum_of_floor_of_linear',
         'sqrt_mod',
+        'kth_root_integer',
         'two_sat',
     ]
 
