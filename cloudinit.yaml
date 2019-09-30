@@ -1,0 +1,61 @@
+#cloud-config
+
+# Ubuntu 18.04
+
+timezone: Asia/Tokyo
+locale: ja_JP.utf8
+
+users:
+  - name: library-checker-user
+    uid: 2000
+
+packages:
+  - g++
+  - postgresql-client
+  - libpq-dev
+  - python3
+  - python3-dev
+  - python3-pip
+  - cgroup-tools
+  - libcap2-bin
+  - supervisor
+
+write_files:
+  - path: /etc/default/grub.d/99-lib-judge.cfg
+    owner: root:root
+    content: GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX_DEFAULT swapaccount=1"
+  - path: /etc/supervisor/conf.d/judge.conf
+    owner: root:root
+    content: |
+      [program:judge]
+      command=/root/library-checker-judge/judge/judge.py
+      autostart=false
+      autorestart=true
+      stdout_logfile=/root/judge.log
+      stderr_logfile=/root/judge-err.log
+      user=root
+      directory=/root/library-checker-judge/judge/
+
+      environment=POSTGRE_HOST='your ip',POSTGRE_PASS='your pass'
+  - path: /var/lib/cloud/scripts/per-boot/judge-launch.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      if [[ -f /root/init_end ]]; then
+        echo "Second Time"
+        supervisorctl start judge
+      else
+        echo "First Time"
+        touch /root/init_end
+      fi
+
+runcmd:
+  - update-grub
+  - pip3 install termcolor toml psycopg2 psutil
+  - git clone https://github.com/yosupo06/library-checker-judge /root/library-checker-judge
+  - [bash, -c, "cd /root/library-checker-judge/compiler && ./install.sh"]
+
+power_state:
+  mode: reboot
+  timeout: 30
