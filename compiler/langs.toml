@@ -28,3 +28,8 @@
     compile = "javac Main.java"
     objects = ["Main.class"]
     exec = "java -Xss1G Main"
+[langs.pypy3]
+    source = "Main.py"
+    compile = "echo dummy"
+    objects = ["Main.py"]
+    exec = "pypy3 Main.py"

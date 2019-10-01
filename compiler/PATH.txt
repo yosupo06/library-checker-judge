@@ -1,1 +1,1 @@
-/compiler/ldc2-1.15.0-linux-x86_64/bin:/compiler/rust/bin
+/compiler/ldc2-1.15.0-linux-x86_64/bin:/compiler/rust/bin:/compiler/pypy3.6-v7.1.1-linux64/bin
