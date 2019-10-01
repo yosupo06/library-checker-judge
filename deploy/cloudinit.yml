@@ -24,6 +24,7 @@ write_files:
   - path: /etc/default/grub.d/99-lib-judge.cfg
     owner: root:root
     content: GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX_DEFAULT swapaccount=1"
+
   - path: /etc/supervisor/conf.d/judge.conf
     owner: root:root
     content: |
@@ -35,8 +36,8 @@ write_files:
       stderr_logfile=/root/judge-err.log
       user=root
       directory=/root/library-checker-judge/judge/
+      environment=POSTGRE_HOST='{POSTGRE_HOST}',POSTGRE_PASS='{POSTGRE_PASS}'
 
-      environment=POSTGRE_HOST='your ip',POSTGRE_PASS='your pass'
   - path: /var/lib/cloud/scripts/per-boot/judge-launch.sh
     owner: root:root
     permissions: '0755'
@@ -58,4 +59,4 @@ runcmd:
 
 power_state:
   mode: reboot
-  timeout: 30
+  timeout: 15

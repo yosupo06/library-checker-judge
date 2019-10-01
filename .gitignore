@@ -6,3 +6,4 @@ judge/work
 !/compiler/install.sh
 !/compiler/PATH.txt
 !/compiler/langs.toml
+/deploy/cloudinit_buf.yml
