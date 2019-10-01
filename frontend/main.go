@@ -106,7 +106,7 @@ func problemInfo(ctx *gin.Context) {
 }
 
 func checkLang(lang string) bool {
-	langs := []string{"cpp", "cpp14", "rust", "d", "java"}
+	langs := []string{"cpp", "cpp14", "rust", "d", "java", "pypy3"}
 	for _, s := range langs {
 		if lang == s {
 			return true
@@ -151,7 +151,7 @@ func submit(ctx *gin.Context) {
 		return
 	}
 	if !checkLang(submitForm.Lang) {
-		ctx.Abort()
+		ctx.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 	submission := Submission{
