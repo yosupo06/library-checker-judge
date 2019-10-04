@@ -55,5 +55,6 @@
     problems = [
         'zalgorithm',
         'suffixarray',
+        'number_of_substrings',
         'runenumerate',
     ]
