@@ -30,6 +30,7 @@
         'convolution_mod',
         'multipoint_evaluation',
         'polynomial_interpolation',
+        'inv_of_formal_power_series',
         'exp_of_formal_power_series',
         'log_of_formal_power_series',
         'sqrt_of_formal_power_series',
