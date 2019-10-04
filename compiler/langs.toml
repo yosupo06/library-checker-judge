@@ -25,9 +25,9 @@
     exec = "./main"
 [langs.java]
     source = "Main.java"
-    compile = "javac Main.java"
-    objects = ["Main.class"]
-    exec = "java -Xss1G Main"
+    compile = "javac Main.java && cat 'Main-Class: Main' > manifet.mf && jar -cvfm Main.jar manifest.mf *.class"
+    objects = ["Main.jar"]
+    exec = "java -jar -Xss1G Main.jar"
 [langs.pypy3]
     source = "Main.py"
     compile = "echo dummy"
