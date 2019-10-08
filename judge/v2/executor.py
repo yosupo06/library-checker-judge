@@ -75,19 +75,14 @@ def inside(args):
 
     # TODO: use TemporaryDirectory
     tmpdir = Path(tempfile.mkdtemp())
-    workdir = Path(tempfile.mkdtemp())
-    upperdir = Path(tempfile.mkdtemp())
     tmpdir.chmod(0o777)
-    workdir.chmod(0o777)
-    upperdir.chmod(0o777)
-
-    prepare_mount(tmpdir, workdir, upperdir)
+    prepare_mount(tmpdir, args.overlay)
     prepare_cgroup()
 
     cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge']
     cmd += ['chroot',
             '--userspec=library-checker-user:library-checker-user', str(tmpdir)]
-    cmd += args.cmd
+    cmd += ['sh', '-c', ' '.join(['cd', 'sand', '&&'] + args.cmd)]
 
     returncode = -1
     time = -1
@@ -104,8 +99,8 @@ def inside(args):
         returncode = proc.returncode
     except subprocess.TimeoutExpired:
         logger.info('timeout command')
-        returncode = 124 # error code of timeout command
-        pass
+        returncode = 124  # error code of timeout command
+        time = args.tl
     else:
         end = datetime.now()
         time = (end - start).seconds + (end - start).microseconds / 1000000
@@ -130,13 +125,22 @@ def inside(args):
     }))
 
 
-def prepare_mount(tmpdir, workdir, upperdir):
-    cmd = ['mount', '-t', 'overlay', 'overlay', '-o']
-    cmd += ['lowerdir={},upperdir={},workdir={}'.format(
-        './', str(upperdir), str(workdir))]
-    cmd += [str(tmpdir)]
-
-    subprocess.run(cmd, check=True)
+def prepare_mount(tmpdir: Path, overlay):
+    sanddir = tmpdir / 'sand'
+    sanddir.mkdir()
+    if overlay:
+        workdir = Path(tempfile.mkdtemp())
+        workdir.chmod(0o777)
+        upperdir = Path(tempfile.mkdtemp())
+        upperdir.chmod(0o777)
+        cmd = ['mount', '-t', 'overlay', 'overlay', '-o']
+        cmd += ['lowerdir={},upperdir={},workdir={}'.format(
+            './', str(upperdir), str(workdir))]
+        cmd += [str(sanddir)]
+        subprocess.run(cmd, check=True)
+    else:
+        cmd = ['mount', '--bind', './', str(sanddir)]
+        subprocess.run(cmd, check=True)
 
     (tmpdir / 'proc').mkdir()
     subprocess.run(['mount', '-t', 'proc', 'none',
@@ -159,7 +163,7 @@ def prepare_cgroup():
 
 if __name__ == "__main__":
     basicConfig(
-        level=getenv('LOG_LEVEL', 'DEBUG'),
+        level=getenv('LOG_LEVEL', 'WARN'),
         format="%(asctime)s %(levelname)s %(name)s : %(message)s"
     )
     parser = argparse.ArgumentParser(description='Testcase Generator')
@@ -167,13 +171,15 @@ if __name__ == "__main__":
     parser.add_argument('--stdin', type=argparse.FileType('r'), help='stdin')
     parser.add_argument('--stdout', type=argparse.FileType('w'), help='stdout')
     parser.add_argument('--stderr', type=argparse.FileType('w'), help='stderr')
+    parser.add_argument('--overlay', action='store_true',
+                        help='overlay current dir?')
     parser.add_argument('--result', type=argparse.FileType('w'),
                         help='result file')
     parser.add_argument('--inside', action='store_true',
                         help='inside flag(DONT USE THIS FLAG DIRECTLY)')
     parser.add_argument('--insideresult', type=argparse.FileType('w'),
                         help='inside result file(DONT USE THIS FLAG DIRECTLY)')
-    parser.add_argument('--tl', type=float, help='Time Limit', default=2.0)
+    parser.add_argument('--tl', type=float, help='Time Limit', default=3600.0)
     args = parser.parse_args()
 
     if not (0 <= args.tl and args.tl <= 3600):
