@@ -1,14 +1,16 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
-	"testing"	
+	"path"
+	"strings"
+	"testing"
 )
 
 func TestExecutorHello(t *testing.T) {
 	cmd := exec.Command("echo", "Hello")
-	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	result, err := SafeRun(cmd, 1.0, false)
@@ -26,17 +28,90 @@ func TestExecutorHello(t *testing.T) {
 
 func TestExecutorTimeOut(t *testing.T) {
 	cmd := exec.Command("sleep", "5")
-	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	result, err := SafeRun(cmd, 1.0, false)
 	if err != nil {
-		t.Fatalf("Fail Execute: %v", err)
+		t.Fatal("Error ", err)
 	}
-	if result.ReturnCode != 124 {
-		t.Errorf("Error return code: %v", result.ReturnCode)
+	if cmd.ProcessState.ExitCode() != 124 {
+		t.Fatal("Error return code = ", result.ReturnCode)
 	}
 	if result.Time < 0.9 || 1.1 < result.Time {
-		t.Error("Error result time")
+		t.Fatal("Error result time = ", result.Time)
+	}
+}
+
+func generateAplusB(t *testing.T, srcName string) *Judge {
+	judge, err := NewJudge("cpp", "./test_src/aplusb/checker.cpp", path.Join("test_src/aplusb", srcName), 2.0)
+	if err != nil {
+		t.Fatal("Failed: NewJudge", err)
+	}
+
+	result, err := judge.CompileChecker()
+	if err != nil || result.ReturnCode != 0 {
+		t.Fatal("error CompileChecker", err, result.ReturnCode)
+	}
+	result, err = judge.CompileSource()
+	if err != nil || result.ReturnCode != 0 {
+		t.Fatal("error CompileSource", err, result.ReturnCode)
+	}
+
+	return judge
+}
+
+func TestAplusbAC(t *testing.T) {
+	judge := generateAplusB(t, "ac.cpp")
+	in := strings.NewReader("1 1")
+	expect := strings.NewReader("2")
+	result, err := judge.TestCase(in, expect)
+	log.Println(judge.dir)
+	if err != nil {
+		t.Fatal("error Run Test", err)
+	}
+	if result.Status != "AC" {
+		t.Fatal("error Status", result)
+	}
+}
+
+func TestAplusbWA(t *testing.T) {
+	judge := generateAplusB(t, "wa.cpp")
+	in := strings.NewReader("1 1")
+	expect := strings.NewReader("2")
+	result, err := judge.TestCase(in, expect)
+	log.Println(judge.dir)
+	if err != nil {
+		t.Fatal("error Run Test", err)
+	}
+	if result.Status != "WA" {
+		t.Fatal("error Status", result)
+	}
+}
+
+func TestAplusbPE(t *testing.T) {
+	judge := generateAplusB(t, "pe.cpp")
+	in := strings.NewReader("1 1")
+	expect := strings.NewReader("2")
+	result, err := judge.TestCase(in, expect)
+	log.Println(judge.dir)
+	if err != nil {
+		t.Fatal("error Run Test", err)
+	}
+	if result.Status != "PE" {
+		t.Fatal("error Status", result)
+	}
+}
+
+func TestAplusbFail(t *testing.T) {
+	judge := generateAplusB(t, "ac.cpp")
+	in := strings.NewReader("1 1")
+	expect := strings.NewReader("3") // !?
+	result, err := judge.TestCase(in, expect)
+	log.Println(judge.dir)
+	if err != nil {
+		t.Fatal("error Run Test", err)
+	}
+	if result.Status != "Fail" {
+		t.Fatal("error Status", result)
 	}
 }

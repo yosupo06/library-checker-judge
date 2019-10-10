@@ -20,47 +20,71 @@ def get_tmpdir(src: Path):
     return tmpdir
 
 
-def get_result(cmd, cwd, overlay):
-    logger.info('execute {}'.format(cmd))
+def get_result(execcmd, cwd, overlay, tl = None, stdin = None):
+    logger.info('execute {}'.format(execcmd))
     with NamedTemporaryFile() as resfile:
-        cmd = [executor, '--result', resfile.name] + cmd
+        cmd = [executor, '--result', resfile.name]
         if overlay:
             cmd = cmd + ['--overlay']
-        run(cmd, cwd=cwd, check=True)
+        if tl:
+            cmd = cmd + ['--tl', str(tl)]
+        if stdin:
+            cmd = cmd + ['--stdin', str(stdin)]
+        cmd = cmd + ['--'] + execcmd
+        returncode = run(cmd, cwd=cwd).returncode
+        
         result = json.load(resfile)
         logger.info('result {}'.format(result))
-        return result
+        return returncode, result
 
 
 class TestHelloWorld(unittest.TestCase):
     def test_cpp(self):
         tmpdir = get_tmpdir(Path('./test_src/Hello.cpp'))
-        result = get_result(['g++', 'Hello.cpp'], tmpdir.name, False)
+        code, result = get_result(['g++', 'Hello.cpp'], tmpdir.name, False)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
-        result = get_result(['./a.out'], tmpdir.name, True)
+        code, result = get_result(['./a.out'], tmpdir.name, True)
+        self.assertEqual(code, 0)
+        self.assertEqual(result['returncode'], 0)
+        self.assertLess(result['time'], 0.05)
+        tmpdir.cleanup()
+
+    def test_cpp_with_flag(self):
+        tmpdir = get_tmpdir(Path('./test_src/Hello.cpp'))
+        code, result = get_result(['g++', 'Hello.cpp', '-o', 'Hello'], tmpdir.name, False)
+        self.assertEqual(code, 0)
+        self.assertEqual(result['returncode'], 0)
+        code, result = get_result(['./Hello'], tmpdir.name, True)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         self.assertLess(result['time'], 0.05)
         tmpdir.cleanup()
 
     def test_java(self):
         tmpdir = get_tmpdir(Path('./test_src/Hello.java'))
-        result = get_result(['javac', 'Hello.java'], tmpdir.name, False)
+        code, result = get_result(['javac', 'Hello.java'], tmpdir.name, False)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
-        result = get_result(['java', 'Hello'], tmpdir.name, True)
+        code, result = get_result(['java', 'Hello'], tmpdir.name, True)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         tmpdir.cleanup()
 
     def test_java_twoclasses(self):
         tmpdir = get_tmpdir(Path('./test_src/TwoClasses.java'))
-        result = get_result(['javac', 'TwoClasses.java'], tmpdir.name, False)
+        code, result = get_result(['javac', 'TwoClasses.java'], tmpdir.name, False)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
-        result = get_result(['java', 'TwoClasses'], tmpdir.name, True)
+        code, result = get_result(['java', 'TwoClasses'], tmpdir.name, True)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         tmpdir.cleanup()
 
     def test_python(self):
         tmpdir = get_tmpdir(Path('./test_src/Hello.py'))
-        result = get_result(['python3', 'Hello.py'], tmpdir.name, True)
+        code, result = get_result(['python3', 'Hello.py'], tmpdir.name, True)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         tmpdir.cleanup()
 
@@ -68,10 +92,11 @@ class TestHelloWorld(unittest.TestCase):
 class TestTLE(unittest.TestCase):
     def test_tle(self):
         tmpdir = get_tmpdir(Path('./test_src/TLE.cpp'))
-        result = get_result(['g++', 'TLE.cpp'], tmpdir.name, False)
+        code, result = get_result(['g++', 'TLE.cpp'], tmpdir.name, False)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
-        result = get_result(['./a.out', '--tl', '2.0'], tmpdir.name, True)
-        self.assertEqual(result['returncode'], 124)
+        code, result = get_result(['./a.out'], tmpdir.name, True, 2.0)
+        self.assertEqual(code, 124)
         self.assertAlmostEqual(result['time'], 2.0)
         tmpdir.cleanup()
 
@@ -80,18 +105,29 @@ class TestOverlay(unittest.TestCase):
     def test_overlay_false(self):
         tmpdir = TemporaryDirectory()
         Path(tmpdir.name).chmod(0o777)
-        result = get_result(['touch', 'Hidden'], tmpdir.name, False)
+        code, result = get_result(['touch', 'Hidden'], tmpdir.name, False)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         self.assertTrue((Path(tmpdir.name) / 'Hidden').exists())
         tmpdir.cleanup()
 
     def test_overlay_true(self):
         tmpdir = TemporaryDirectory()
-        result = get_result(['touch', 'Hidden'], tmpdir.name, True)
+        code, result = get_result(['touch', 'Hidden'], tmpdir.name, True)
+        self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         self.assertFalse((Path(tmpdir.name) / 'Hidden').exists())
         tmpdir.cleanup()
 
+
+class TestStdin(unittest.TestCase):
+    def test_stdin(self):
+        tmpfile = NamedTemporaryFile(mode='w', delete=False)
+        tmpfile.write('Test str\n')
+        tmpfile.close()
+        code, result = get_result(['cat'], '.', False, 2.0, tmpfile.name)
+        self.assertEqual(code, 0)
+        self.assertEqual(result['returncode'], 0)
 
 if __name__ == "__main__":
     basicConfig(

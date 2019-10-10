@@ -33,14 +33,15 @@ from psutil import Process
 logger = getLogger(__name__)
 
 
-def outside(args):
+def outside(args, cmd):
     logger.info('outside')
     tmp = tempfile.NamedTemporaryFile()
 
     arg = ['unshare', '-fpnm', '--mount-proc']
-    arg += sys.argv
+    arg += [sys.argv[0]]
     arg += ['--inside']
     arg += ['--insideresult', tmp.name]
+    arg += sys.argv[1:]
 
     mycode = 0
     returncode = -1
@@ -56,7 +57,7 @@ def outside(args):
         memory = result.get('memory', -1)
     except subprocess.TimeoutExpired:
         logger.warning('outside catch timeout, this is unexpected')
-        returncode = 124
+        mycode = 124
         time = args.tl
 
     result = {
@@ -67,11 +68,11 @@ def outside(args):
     logger.info('outside result = {}'.format(result))
     if args.result:
         args.result.write(json.dumps(result))
-    exit(mycode)
+    return mycode
 
 
-def inside(args):
-    logger.info('inside execute: {}'.format(args.cmd))
+def inside(args, execcmd):
+    logger.info('inside execute: {}'.format(execcmd))
 
     # TODO: use TemporaryDirectory
     tmpdir = Path(tempfile.mkdtemp())
@@ -82,8 +83,9 @@ def inside(args):
     cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge']
     cmd += ['chroot',
             '--userspec=library-checker-user:library-checker-user', str(tmpdir)]
-    cmd += ['sh', '-c', ' '.join(['cd', 'sand', '&&'] + args.cmd)]
+    cmd += ['sh', '-c', ' '.join(['cd', 'sand', '&&'] + execcmd)]
 
+    mycode = 0
     returncode = -1
     time = -1
     memory = -1
@@ -99,7 +101,7 @@ def inside(args):
         returncode = proc.returncode
     except subprocess.TimeoutExpired:
         logger.info('timeout command')
-        returncode = 124  # error code of timeout command
+        mycode = 124  # error code of timeout command
         time = args.tl
     else:
         end = datetime.now()
@@ -123,7 +125,7 @@ def inside(args):
         'time': time,
         'memory': memory,
     }))
-
+    return mycode
 
 def prepare_mount(tmpdir: Path, overlay):
     sanddir = tmpdir / 'sand'
@@ -166,8 +168,14 @@ if __name__ == "__main__":
         level=getenv('LOG_LEVEL', 'WARN'),
         format="%(asctime)s %(levelname)s %(name)s : %(message)s"
     )
-    parser = argparse.ArgumentParser(description='Testcase Generator')
-    parser.add_argument('cmd', nargs='+', help='exec cmd')
+    assert sys.argv.count("--") == 1
+    if sys.argv.count("--") == 0:
+        logger.error('args must have -- : {}'.format(sys.argv))
+        exit(1)
+    sep_index = sys.argv.index("--")
+
+    parser = argparse.ArgumentParser(
+        description='Testcase Generator', usage='%(prog)s [options] -- command')    
     parser.add_argument('--stdin', type=argparse.FileType('r'), help='stdin')
     parser.add_argument('--stdout', type=argparse.FileType('w'), help='stdout')
     parser.add_argument('--stderr', type=argparse.FileType('w'), help='stderr')
@@ -180,13 +188,15 @@ if __name__ == "__main__":
     parser.add_argument('--insideresult', type=argparse.FileType('w'),
                         help='inside result file(DONT USE THIS FLAG DIRECTLY)')
     parser.add_argument('--tl', type=float, help='Time Limit', default=3600.0)
-    args = parser.parse_args()
+    
+    args = parser.parse_args(sys.argv[1:sep_index])
+    cmd = sys.argv[sep_index + 1:]
 
     if not (0 <= args.tl and args.tl <= 3600):
         logger.error('invalid tl: {}'.format(args.tl))
         exit(1)
 
     if args.inside:
-        inside(args)
+        exit(inside(args, cmd))
     else:
-        outside(args)
+        exit(outside(args, cmd))
