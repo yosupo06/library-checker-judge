@@ -29,6 +29,7 @@ write_files:
 
   - path: /etc/supervisor/conf.d/judge.conf
     owner: root:root
+    permissions: '0600'
     content: |
       [program:judge]
       command=/root/library-checker-judge/judge/judge.py
