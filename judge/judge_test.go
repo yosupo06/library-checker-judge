@@ -43,7 +43,16 @@ func TestExecutorTimeOut(t *testing.T) {
 }
 
 func generateAplusB(t *testing.T, srcName string) *Judge {
-	judge, err := NewJudge("cpp", "./test_src/aplusb/checker.cpp", path.Join("test_src/aplusb", srcName), 2.0)
+	checker, err := os.Open("./test_src/aplusb/checker.cpp")
+	if err != nil {
+		t.Fatal("Failed: Checker", err)
+	}
+	src, err := os.Open(path.Join("test_src/aplusb", srcName))
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+
+	judge, err := NewJudge("cpp", checker, src, 2.0)
 	if err != nil {
 		t.Fatal("Failed: NewJudge", err)
 	}

@@ -91,7 +91,7 @@ type Judge struct {
 	lang Lang
 }
 
-func NewJudge(lang, checkerPath, sourcePath string, tl float64) (*Judge, error) {
+func NewJudge(lang string, checker, source io.Reader, tl float64) (*Judge, error) {
 	judge := new(Judge)
 	judge.lang = langs[lang]
 	judge.tl = tl
@@ -115,10 +115,6 @@ func NewJudge(lang, checkerPath, sourcePath string, tl float64) (*Judge, error) 
 		return nil, err
 	}
 
-	checker, err := os.Open(checkerPath)
-	if err != nil {
-		return nil, err
-	}
 	tempChecker, err := os.Create(path.Join(tempdir, "checker", "checker.cpp"))
 	if err != nil {
 		return nil, err
@@ -139,15 +135,11 @@ func NewJudge(lang, checkerPath, sourcePath string, tl float64) (*Judge, error) 
 		return nil, err
 	}
 
-	src, err := os.Open(sourcePath)
-	if err != nil {
-		return nil, err
-	}
 	tempSrc, err := os.Create(path.Join(tempdir, "source", "main.cpp"))
 	if err != nil {
 		return nil, err
 	}
-	if _, err = io.Copy(tempSrc, src); err != nil {
+	if _, err = io.Copy(tempSrc, source); err != nil {
 		return nil, err
 	}
 
