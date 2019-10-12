@@ -1,35 +1,28 @@
 [langs.checker]
     source = "checker.cpp"
     compile = "g++ -O2 -std=c++14 -march=native -o checker checker.cpp"
-    objects = ["checker"]
     exec = "./checker {input} {contestant} {judge}"
 [langs.cpp]
     source = "main.cpp"
     compile = "g++ -O2 -std=c++17 -march=native -o main main.cpp"
-    objects = ["main"]
     exec = "./main"
 [langs.cpp14]
     source = "main.cpp"
     compile = "g++ -O2 -std=c++14 -march=native -o main main.cpp"
-    objects = ["main"]
     exec = "./main"
 [langs.rust]
     source = "main.rs"
     compile = "rustc -O main.rs"
-    objects = ["main"]
     exec = "./main"
 [langs.d]
     source = "main.d"
     compile = "ldc2 -O -release main.d"
-    objects = ["main"]
     exec = "./main"
 [langs.java]
     source = "Main.java"
-    compile = "javac Main.java && echo 'Main-Class: Main' > manifest.mf && jar -cvfm Main.jar manifest.mf *.class"
-    objects = ["Main.jar"]
-    exec = "java -jar -Xss1G Main.jar"
+    compile = "javac Main.java"
+    exec = "java -Xss1G Main"
 [langs.pypy3]
     source = "Main.py"
     compile = "echo dummy"
-    objects = ["Main.py"]
     exec = "pypy3 Main.py"
