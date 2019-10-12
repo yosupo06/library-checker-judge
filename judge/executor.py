@@ -150,7 +150,7 @@ def prepare_mount(tmpdir: Path, overlay):
 
     (tmpdir / 'tmp').mkdir()
     (tmpdir / 'tmp').chmod(0o777)
-    for dname in ['dev', 'sys', 'bin', 'lib', 'lib64', 'usr', 'etc']:
+    for dname in ['dev', 'sys', 'bin', 'lib', 'lib64', 'usr', 'etc', 'snap']:
         (tmpdir / dname).mkdir()
         subprocess.run(['mount', '--bind', '/' + dname,
                         str(tmpdir / dname)], check=True)

@@ -98,10 +98,12 @@ func execJudge(db *gorm.DB, task Task) error {
 		Where("id = ?", task.Submission).First(&submission).Error; err != nil {
 		return err
 	}
+
 	//set testhash
 	if err := db.Model(&submission).Select("testhash").Update("testhash", submission.Problem.Testhash).Error; err != nil {
 		return err
 	}
+
 	
 	caseDir, err := fetchData(db, submission.Problem)
 	workDir, err := ioutil.TempDir("", "work")
@@ -135,10 +137,7 @@ func execJudge(db *gorm.DB, task Task) error {
 	}
 	if result.ReturnCode != 0 {
 		submission.Status = "ICE"
-		if err = db.Save(&submission).Error; err != nil {
-			return err
-		}
-		return nil
+		return db.Model(&submission).Select("status").Update("status", "ICE").Error
 	}
 	result, err = judge.CompileSource()
 	if err != nil {
@@ -162,8 +161,19 @@ func execJudge(db *gorm.DB, task Task) error {
 		caseResult, err := judge.TestCase(inFile, outFile)
 		if err != nil {
 			return err
-		}
+		}		
 		caseResults = append(caseResults, caseResult)
+
+		sqlRes := SubmissionTestcaseResult{
+			Submission: submission.ID,
+			Testcase: caseName,
+			Status: caseResult.Status,
+			Time: int(caseResult.Time * 1000),
+			Memory: caseResult.Memory,
+		}
+		if err = db.Save(&sqlRes).Error; err != nil {
+			return err
+		}
 	}
 	log.Println(caseResults)
 	caseResult := AggregateResults(caseResults)
@@ -213,6 +223,7 @@ func main() {
 	db.AutoMigrate(Problem{})
 	db.AutoMigrate(Submission{})
 	db.AutoMigrate(Task{})
+	db.AutoMigrate(SubmissionTestcaseResult{})
 	//db.LogMode(true)
 
 	for {

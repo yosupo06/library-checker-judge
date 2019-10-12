@@ -154,6 +154,36 @@ func TestSubmitTLE(t *testing.T) {
 	}
 }
 
+func TestSubmitRE(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/re.cpp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "cpp", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	err = execJudge(db, Task{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var submission Submission
+	if err = db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		t.Fatal(err)
+	}
+	if submission.Status != "RE" {
+		t.Fatal("Expect status WA, actual ", submission.Status)
+	}
+	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
+		t.Fatal("Irregural consume time ", submission.MaxTime)
+	}
+}
+
 func TestSubmitCE(t *testing.T) {
 	id, err := Submit(db, "aplusb", "cpp", strings.NewReader("The answer is 42..."))
 	if err != nil {
@@ -176,6 +206,7 @@ func TestSubmitCE(t *testing.T) {
 		t.Fatal("Expect status CE, actual ", submission.Status)
 	}
 }
+
 
 
 func TestSubmitRustAC(t *testing.T) {
@@ -208,5 +239,98 @@ func TestSubmitRustAC(t *testing.T) {
 	}
 	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
 		t.Fatal("Irregural consume memory ", submission.MaxTime)
+	}
+}
+
+func TestSubmitPythonAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "pypy3", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	err = execJudge(db, Task{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var submission Submission
+	if err = db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		t.Fatal(err)
+	}
+	if submission.Status != "AC" {
+		t.Fatal("Expect status AC, actual ", submission.Status)
+	}
+	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
+		t.Fatal("Irregural consume time ", submission.MaxTime)
+	}
+	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
+		t.Fatal("Irregural consume memory ", submission.MaxTime)
+	}
+}
+
+func TestSubmitDlangAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac.d")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "d", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	err = execJudge(db, Task{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var submission Submission
+	if err = db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		t.Fatal(err)
+	}
+	if submission.Status != "AC" {
+		t.Fatal("Expect status AC, actual ", submission.Status)
+	}
+	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
+		t.Fatal("Irregural consume time ", submission.MaxTime)
+	}
+	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
+		t.Fatal("Irregural consume memory ", submission.MaxTime)
+	}
+}
+
+func TestSubmitJavaAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac.java")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "java", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	err = execJudge(db, Task{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var submission Submission
+	if err = db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		t.Fatal(err)
+	}
+	if submission.Status != "AC" {
+		t.Fatal("Expect status AC, actual ", submission.Status)
 	}
 }
