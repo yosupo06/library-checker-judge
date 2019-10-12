@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
+import json
 import unittest
 from logging import basicConfig, getLogger
 from os import getenv
 from pathlib import Path
 from shutil import copy
-from subprocess import run, PIPE
-from tempfile import TemporaryDirectory, NamedTemporaryFile
-import json
+from subprocess import PIPE, run
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from uuid import uuid4
 
 executor = Path('./executor.py').absolute()
 logger = getLogger(__name__)
@@ -20,7 +21,7 @@ def get_tmpdir(src: Path):
     return tmpdir
 
 
-def get_result(execcmd, cwd, overlay, tl = None, stdin = None):
+def get_result(execcmd, cwd, overlay, tl=None, stdin=None):
     logger.info('execute {}'.format(execcmd))
     with NamedTemporaryFile() as resfile:
         cmd = [executor, '--result', resfile.name]
@@ -32,7 +33,7 @@ def get_result(execcmd, cwd, overlay, tl = None, stdin = None):
             cmd = cmd + ['--stdin', str(stdin)]
         cmd = cmd + ['--'] + execcmd
         returncode = run(cmd, cwd=cwd).returncode
-        
+
         result = json.load(resfile)
         logger.info('result {}'.format(result))
         return returncode, result
@@ -52,7 +53,8 @@ class TestHelloWorld(unittest.TestCase):
 
     def test_cpp_with_flag(self):
         tmpdir = get_tmpdir(Path('./test_src/Hello.cpp'))
-        code, result = get_result(['g++', 'Hello.cpp', '-o', 'Hello'], tmpdir.name, False)
+        code, result = get_result(
+            ['g++', 'Hello.cpp', '-o', 'Hello'], tmpdir.name, False)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         code, result = get_result(['./Hello'], tmpdir.name, True)
@@ -73,7 +75,8 @@ class TestHelloWorld(unittest.TestCase):
 
     def test_java_twoclasses(self):
         tmpdir = get_tmpdir(Path('./test_src/TwoClasses.java'))
-        code, result = get_result(['javac', 'TwoClasses.java'], tmpdir.name, False)
+        code, result = get_result(
+            ['javac', 'TwoClasses.java'], tmpdir.name, False)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         code, result = get_result(['java', 'TwoClasses'], tmpdir.name, True)
@@ -128,6 +131,17 @@ class TestStdin(unittest.TestCase):
         code, result = get_result(['cat'], '.', False, 2.0, tmpfile.name)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
+
+
+class TestTmpDir(unittest.TestCase):
+    def test_tmpdir(self):
+        tmpdir = TemporaryDirectory()
+        name = str(uuid4())
+        code, result = get_result(['touch', '/tmp/' + name], tmpdir.name, True)
+        self.assertEqual(code, 0)
+        self.assertEqual(result['returncode'], 0)
+        self.assertFalse((Path('/tmp') / name).exists())
+        tmpdir.cleanup()
 
 if __name__ == "__main__":
     basicConfig(

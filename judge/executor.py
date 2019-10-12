@@ -148,6 +148,8 @@ def prepare_mount(tmpdir: Path, overlay):
     subprocess.run(['mount', '-t', 'proc', 'none',
                     str(tmpdir / 'proc')], check=True)
 
+    (tmpdir / 'tmp').mkdir()
+    (tmpdir / 'tmp').chmod(0o777)
     for dname in ['dev', 'sys', 'bin', 'lib', 'lib64', 'usr', 'etc']:
         (tmpdir / dname).mkdir()
         subprocess.run(['mount', '--bind', '/' + dname,

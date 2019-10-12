@@ -20,6 +20,7 @@ type Problem struct {
 	Title     string
 	Timelimit float64
 	Testhash  string
+	Testzip   []byte
 }
 
 type Submission struct {
@@ -27,6 +28,7 @@ type Submission struct {
 	ProblemName string
 	Problem     Problem `gorm:"foreignkey:ProblemName"`
 	Lang        string
+	UserName	string
 	Status      string
 	Source      string
 	Testhash    string
@@ -47,19 +49,27 @@ type SubmissionTestcaseResult struct {
 	Memory     int
 }
 
-var workDir string
+var casesDir string
 
 func fetchData(db *gorm.DB, problem Problem) (string, error) {
-	zipPath := path.Join(workDir, fmt.Sprintf("cases-%s.zip", problem.Testhash))
-	data := path.Join(workDir, fmt.Sprintf("cases-%s", problem.Testhash))
+	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", problem.Testhash))
+	data := path.Join(casesDir, fmt.Sprintf("cases-%s", problem.Testhash))
 	if _, err := os.Stat(zipPath); err != nil {
 		// fetch zip
-		return "", err
-	}
-
-	cmd := exec.Command("unzip", zipPath)
-	if err := cmd.Run(); err != nil {
-		return "", err
+		zipFile, err := os.Create(zipPath)
+		if err != nil {
+			return "", err
+		}
+		if _, err = zipFile.Write(problem.Testzip); err != nil {
+			return "", err
+		}
+		if err = zipFile.Close(); err != nil {
+			return "", err
+		}
+		cmd := exec.Command("unzip", zipPath, "-d", data)
+		if err := cmd.Run(); err != nil {
+			return "", err
+		}
 	}
 	return data, nil
 }
@@ -81,23 +91,40 @@ func getCases(data string) ([]string, error) {
 
 func execJudge(db *gorm.DB, task Task) error {
 	var submission Submission
-	if err := db.Find("id = ?", submission.ID).First(&submission).Error; err != nil {
+	if err := db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, timelimit, testhash, testzip")
+		}).
+		Where("id = ?", task.Submission).First(&submission).Error; err != nil {
 		return err
 	}
-	data, err := fetchData(db, submission.Problem)
+	//set testhash
+	if err := db.Model(&submission).Select("testhash").Update("testhash", submission.Problem.Testhash).Error; err != nil {
+		return err
+	}
+	
+	caseDir, err := fetchData(db, submission.Problem)
+	workDir, err := ioutil.TempDir("", "work")
 	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(workDir)
+	if err != nil {
+		log.Println("Fail to fetchData")
 		return err
 	}
 
-	cases, err := getCases(data)
+
+
+	cases, err := getCases(caseDir)
 	if err != nil {
 		return err
 	}
-	checker, err := os.Open(path.Join(data, "checker.cpp"))
+	checker, err := os.Open(path.Join(caseDir, "checker.cpp"))
 	if err != nil {
 		return err
 	}
-	judge, err := NewJudge(submission.Lang, checker, strings.NewReader(submission.Source), submission.Problem.Timelimit)
+	judge, err := NewJudge(submission.Lang, checker, strings.NewReader(submission.Source), submission.Problem.Timelimit / 1000)
 	if err != nil {
 		return err
 	}
@@ -119,19 +146,16 @@ func execJudge(db *gorm.DB, task Task) error {
 	}
 	if result.ReturnCode != 0 {
 		submission.Status = "CE"
-		if err = db.Save(&submission).Error; err != nil {
-			return err
-		}
-		return nil
+		return db.Model(&submission).Select("status").Update("status", "CE").Error
 	}
 
 	caseResults := []CaseResult{}
 	for _, caseName := range cases {
-		inFile, err := os.Open(path.Join(data, "in", caseName+".in"))
+		inFile, err := os.Open(path.Join(caseDir, "in", caseName+".in"))
 		if err != nil {
 			return err
 		}
-		outFile, err := os.Open(path.Join(data, "out", caseName+".in"))
+		outFile, err := os.Open(path.Join(caseDir, "out", caseName+".out"))
 		if err != nil {
 			return err
 		}
@@ -141,11 +165,10 @@ func execJudge(db *gorm.DB, task Task) error {
 		}
 		caseResults = append(caseResults, caseResult)
 	}
-	caseResult := calcSummary(caseResults)
-	submission.Status = caseResult.Status
-	submission.MaxTime = int(caseResult.Time * 1000)
-	submission.MaxMemory = caseResult.Memory
-	if err = db.Save(&submission).Error; err != nil {
+	log.Println(caseResults)
+	caseResult := AggregateResults(caseResults)
+	if err = db.Model(&submission).Select("status", "max_time", "max_memory").Updates(
+		Submission{Status: caseResult.Status, MaxTime: int(caseResult.Time * 1000), MaxMemory: caseResult.Memory}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -177,17 +200,20 @@ func gormConnect() *gorm.DB {
 }
 
 func main() {
-	workDir, err := ioutil.TempDir("", "work")
+	myCasesDir, err := ioutil.TempDir("", "case")
+	casesDir = myCasesDir
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.RemoveAll(workDir)
+	defer os.RemoveAll(casesDir)
+	log.Println("Case Pool Directory =", myCasesDir)
 
 	db := gormConnect()
 	defer db.Close()
 	db.AutoMigrate(Problem{})
 	db.AutoMigrate(Submission{})
 	db.AutoMigrate(Task{})
+	//db.LogMode(true)
 
 	for {
 		time.Sleep(1 * time.Second)
@@ -196,7 +222,7 @@ func main() {
 
 		err := tx.First(&task).Error
 		if gorm.IsRecordNotFoundError(err) {
-			log.Println("waiting...")
+			log.Println("waiting... ", err)
 			tx.Rollback()
 			continue
 		}
@@ -210,6 +236,12 @@ func main() {
 		if err != nil {
 			log.Println(err.Error())
 			break
+		}
+		log.Println("Start Judge")
+		err = execJudge(db, task)
+		if err != nil {
+			log.Println(err.Error())
+			continue
 		}
 	}
 }

@@ -42,7 +42,7 @@ func TestExecutorTimeOut(t *testing.T) {
 	}
 }
 
-func generateAplusB(t *testing.T, srcName string) *Judge {
+func generateAplusB(t *testing.T, lang, srcName string) *Judge {
 	checker, err := os.Open("./test_src/aplusb/checker.cpp")
 	if err != nil {
 		t.Fatal("Failed: Checker", err)
@@ -52,7 +52,7 @@ func generateAplusB(t *testing.T, srcName string) *Judge {
 		t.Fatal("Failed: Source", err)
 	}
 
-	judge, err := NewJudge("cpp", checker, src, 2.0)
+	judge, err := NewJudge(lang, checker, src, 2.0)
 	if err != nil {
 		t.Fatal("Failed: NewJudge", err)
 	}
@@ -70,7 +70,21 @@ func generateAplusB(t *testing.T, srcName string) *Judge {
 }
 
 func TestAplusbAC(t *testing.T) {
-	judge := generateAplusB(t, "ac.cpp")
+	judge := generateAplusB(t, "cpp", "ac.cpp")
+	in := strings.NewReader("1 1")
+	expect := strings.NewReader("2")
+	result, err := judge.TestCase(in, expect)
+	log.Println(judge.dir)
+	if err != nil {
+		t.Fatal("error Run Test", err)
+	}
+	if result.Status != "AC" {
+		t.Fatal("error Status", result)
+	}
+}
+
+func TestAplusbRustAC(t *testing.T) {
+	judge := generateAplusB(t, "rust", "ac.rs")
 	in := strings.NewReader("1 1")
 	expect := strings.NewReader("2")
 	result, err := judge.TestCase(in, expect)
@@ -84,7 +98,7 @@ func TestAplusbAC(t *testing.T) {
 }
 
 func TestAplusbWA(t *testing.T) {
-	judge := generateAplusB(t, "wa.cpp")
+	judge := generateAplusB(t, "cpp", "wa.cpp")
 	in := strings.NewReader("1 1")
 	expect := strings.NewReader("2")
 	result, err := judge.TestCase(in, expect)
@@ -98,7 +112,7 @@ func TestAplusbWA(t *testing.T) {
 }
 
 func TestAplusbPE(t *testing.T) {
-	judge := generateAplusB(t, "pe.cpp")
+	judge := generateAplusB(t, "cpp", "pe.cpp")
 	in := strings.NewReader("1 1")
 	expect := strings.NewReader("2")
 	result, err := judge.TestCase(in, expect)
@@ -112,7 +126,7 @@ func TestAplusbPE(t *testing.T) {
 }
 
 func TestAplusbFail(t *testing.T) {
-	judge := generateAplusB(t, "ac.cpp")
+	judge := generateAplusB(t, "cpp", "ac.cpp")
 	in := strings.NewReader("1 1")
 	expect := strings.NewReader("3") // !?
 	result, err := judge.TestCase(in, expect)

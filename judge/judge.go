@@ -134,9 +134,9 @@ func NewJudge(lang string, checker, source io.Reader, tl float64) (*Judge, error
 	if _, err = io.Copy(tempTestlib, testlib); err != nil {
 		return nil, err
 	}
-
-	tempSrc, err := os.Create(path.Join(tempdir, "source", "main.cpp"))
+	tempSrc, err := os.Create(path.Join(tempdir, "source", judge.lang.Source))
 	if err != nil {
+		log.Print("error ", path.Join(tempdir, "source", judge.lang.Source))
 		return nil, err
 	}
 	if _, err = io.Copy(tempSrc, source); err != nil {
@@ -169,7 +169,7 @@ type CaseResult struct {
 	Result
 }
 
-func calcSummary(results []CaseResult) CaseResult {
+func AggregateResults(results []CaseResult) CaseResult {
 	ans := CaseResult{"AC", Result{-1, -1, -1}}
 	for _, res := range results {
 		if res.Status != "AC" {
