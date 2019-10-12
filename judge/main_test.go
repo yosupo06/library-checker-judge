@@ -238,7 +238,7 @@ func TestSubmitRustAC(t *testing.T) {
 		t.Fatal("Irregural consume time ", submission.MaxTime)
 	}
 	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
-		t.Fatal("Irregural consume memory ", submission.MaxTime)
+		t.Fatal("Irregural consume memory ", submission.MaxMemory)
 	}
 }
 
@@ -267,11 +267,8 @@ func TestSubmitPythonAC(t *testing.T) {
 	if submission.Status != "AC" {
 		t.Fatal("Expect status AC, actual ", submission.Status)
 	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
+	if !(1 <= submission.MaxTime && submission.MaxTime <= 500) {
 		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
-	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
-		t.Fatal("Irregural consume memory ", submission.MaxTime)
 	}
 }
 
@@ -302,9 +299,6 @@ func TestSubmitDlangAC(t *testing.T) {
 	}
 	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
 		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
-	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
-		t.Fatal("Irregural consume memory ", submission.MaxTime)
 	}
 }
 
