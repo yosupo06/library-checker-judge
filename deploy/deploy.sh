@@ -2,13 +2,28 @@
 
 set -e
 
-cp cloudinit.yml cloudinit_buf.yml
+# gcloud compute instances delete lib-judge2
+# gcloud compute instances create lib-judge2 --zone=asia-northeast1-c \
+# --machine-type=n1-highcpu-2 \
+# --metadata-from-file user-data=cloudinit.yml \
+# --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud
 
-sed -i -e "s/{POSTGRE_HOST}/$POSTGRE_HOST/" cloudinit_buf.yml
-sed -i -e "s/{POSTGRE_PASS}/$POSTGRE_PASS/" cloudinit_buf.yml
+until gcloud compute ssh root@lib-judge2 -- ls /root/can_start > /dev/null; do
+    echo 'waiting...'
+    sleep 10
+done
 
-# gcloud compute instances delete lib-judge
-gcloud compute instances create lib-judge --zone=asia-northeast1-c \
---machine-type=n1-highcpu-2 \
---metadata-from-file user-data=cloudinit_buf.yml \
---image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud
+echo "Build judge"
+gcloud compute ssh root@lib-judge2 -- "
+cd /root/library-checker-judge/judge &&
+go build .
+"
+
+echo "Make Secret HOST=${PG_HOST} / PASS=${PG_PASS}"
+gcloud compute ssh root@lib-judge2 -- "
+cd /root/library-checker-judge/judge &&
+PG_HOST=${PG_HOST} PG_PASS=${PG_PASS} ./make_secret.sh
+"
+
+echo "Launch Judge"
+gcloud compute ssh root@lib-judge2 -- "supervisorctl start judge"

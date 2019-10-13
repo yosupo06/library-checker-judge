@@ -7,3 +7,5 @@ judge/work
 !/compiler/PATH.txt
 !/compiler/langs.toml
 /deploy/cloudinit_buf.yml
+secret.*
+judge
