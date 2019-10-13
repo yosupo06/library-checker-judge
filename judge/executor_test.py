@@ -143,6 +143,17 @@ class TestTmpDir(unittest.TestCase):
         self.assertFalse((Path('/tmp') / name).exists())
         tmpdir.cleanup()
 
+class TestStackOverFlow(unittest.TestCase):
+    def test_tmpdir(self):
+        tmpdir = get_tmpdir(Path('./test_src/stack.cpp'))
+        code, result = get_result(['g++', 'stack.cpp'], tmpdir.name, False)
+        self.assertEqual(code, 0)
+        self.assertEqual(result['returncode'], 0)
+        code, result = get_result(['./a.out'], tmpdir.name, True)
+        self.assertEqual(code, 0)
+        self.assertEqual(result['returncode'], 0)
+        tmpdir.cleanup()
+
 if __name__ == "__main__":
     basicConfig(
         level=getenv('LOG_LEVEL', 'DEBUG'),

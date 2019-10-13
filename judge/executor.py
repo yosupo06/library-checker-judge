@@ -74,6 +74,9 @@ def outside(args, cmd):
 def inside(args, execcmd):
     logger.info('inside execute: {}'.format(execcmd))
 
+    # expand stack
+    resource.setrlimit(resource.RLIMIT_STACK,
+                       (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
     # TODO: use TemporaryDirectory
     tmpdir = Path(tempfile.mkdtemp())
     tmpdir.chmod(0o777)
@@ -127,6 +130,7 @@ def inside(args, execcmd):
     }))
     return mycode
 
+
 def prepare_mount(tmpdir: Path, overlay):
     sanddir = tmpdir / 'sand'
     sanddir.mkdir()
@@ -155,6 +159,7 @@ def prepare_mount(tmpdir: Path, overlay):
         subprocess.run(['mount', '--bind', '-o', 'ro', '/' + dname,
                         str(tmpdir / dname)], check=True)
 
+
 def prepare_cgroup():
     run(['cgdelete', 'cpuset,memory:/lib-judge'])
     run(['cgcreate', '-g', 'cpuset,memory:/lib-judge'], check=True)
@@ -176,7 +181,7 @@ if __name__ == "__main__":
     sep_index = sys.argv.index("--")
 
     parser = argparse.ArgumentParser(
-        description='Testcase Generator', usage='%(prog)s [options] -- command')    
+        description='Testcase Generator', usage='%(prog)s [options] -- command')
     parser.add_argument('--stdin', type=argparse.FileType('r'), help='stdin')
     parser.add_argument('--stdout', type=argparse.FileType('w'), help='stdout')
     parser.add_argument('--stderr', type=argparse.FileType('w'), help='stderr')
@@ -189,7 +194,7 @@ if __name__ == "__main__":
     parser.add_argument('--insideresult', type=argparse.FileType('w'),
                         help='inside result file(DONT USE THIS FLAG DIRECTLY)')
     parser.add_argument('--tl', type=float, help='Time Limit', default=3600.0)
-    
+
     args = parser.parse_args(sys.argv[1:sep_index])
     cmd = sys.argv[sep_index + 1:]
 
