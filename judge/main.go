@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 )
@@ -197,14 +199,17 @@ func getEnv(key, defaultValue string) string {
 }
 
 func gormConnect() *gorm.DB {
-	host := getEnv("POSTGRE_HOST", "127.0.0.1")
-	port := getEnv("POSTGRE_PORT", "5432")
-	user := getEnv("POSTGRE_USER", "postgres")
-	pass := getEnv("POSTGRE_PASS", "passwd")
-
+	var sqlInfo struct {
+		PostgreHost string `toml:"postgre_host"`
+		PostgreUser string `toml:"postgre_user"`
+		PostgrePass string `toml:"postgre_pass"`
+	}
+	if _, err := toml.DecodeFile("./secret.toml", &sqlInfo); err != nil {
+		log.Fatal(err)
+	}
 	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
-		host, port, user, pass)
+		"host=%s port=5432 user=%s dbname=librarychecker password=%s sslmode=disable",
+		sqlInfo.PostgreHost, sqlInfo.PostgreUser, sqlInfo.PostgrePass)
 
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
