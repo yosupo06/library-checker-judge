@@ -10,18 +10,21 @@ users:
     uid: 2000
 
 packages:
+  - cgroup-tools
+  - supervisor
+  - postgresql-client
+  - libpq-dev
+  - libcap2-bin
+  - unzip
+  # compilers
   - g++
   - default-jdk
   - default-jre
   - python3
   - python3-dev
   - python3-pip
-  - cgroup-tools
-  - postgresql-client
-  - libpq-dev
-  - libcap2-bin
-  - supervisor
-
+  - rustc
+  
 write_files:
   - path: /etc/default/grub.d/99-lib-judge.cfg
     owner: root:root
@@ -32,14 +35,12 @@ write_files:
     permissions: '0600'
     content: |
       [program:judge]
-      command=/root/library-checker-judge/judge/judge.py
-      autostart=false
+      command=/root/library-checker-judge/judge/judge
       autorestart=true
       stdout_logfile=/root/judge.log
       stderr_logfile=/root/judge-err.log
       user=root
       directory=/root/library-checker-judge/judge/
-      environment=POSTGRE_HOST='{POSTGRE_HOST}',POSTGRE_PASS='{POSTGRE_PASS}'
 
   - path: /var/lib/cloud/scripts/per-boot/judge-launch.sh
     owner: root:root
@@ -48,7 +49,7 @@ write_files:
       #!/bin/bash
       if [[ -f /root/init_end ]]; then
         echo "Second Time"
-        supervisorctl start judge
+        touch /root/can_start
       else
         echo "First Time"
         touch /root/init_end
@@ -56,9 +57,15 @@ write_files:
 
 runcmd:
   - update-grub
+  - curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh
+  - git clone -b develop https://github.com/yosupo06/library-checker-judge /root/library-checker-judge
+  - git clone https://github.com/yosupo06/library-checker-problems /root/library-checker-problems
   - pip3 install termcolor toml psycopg2 psutil
-  - git clone https://github.com/yosupo06/library-checker-judge /root/library-checker-judge
+  - pip3 install -r /root/library-checker-problems/requirements.txt
   - [bash, -c, "cd /root/library-checker-judge/compiler && ./install.sh"]
+  # install go
+  - add-apt-repository -y ppa:longsleep/golang-backports
+  - apt-get install -y golang-go
 
 power_state:
   mode: reboot
