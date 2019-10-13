@@ -242,7 +242,6 @@ func main() {
 
 		err := tx.First(&task).Error
 		if gorm.IsRecordNotFoundError(err) {
-			log.Println("waiting... ", err)
 			tx.Rollback()
 			continue
 		}
