@@ -152,9 +152,8 @@ def prepare_mount(tmpdir: Path, overlay):
     (tmpdir / 'tmp').chmod(0o777)
     for dname in ['dev', 'sys', 'bin', 'lib', 'lib64', 'usr', 'etc', 'opt']:
         (tmpdir / dname).mkdir()
-        subprocess.run(['mount', '--bind', '/' + dname,
+        subprocess.run(['mount', '--bind', '-o', 'ro', '/' + dname,
                         str(tmpdir / dname)], check=True)
-
 
 def prepare_cgroup():
     run(['cgdelete', 'cpuset,memory:/lib-judge'])
