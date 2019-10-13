@@ -28,7 +28,7 @@ type Submission struct {
 	ProblemName string
 	Problem     Problem `gorm:"foreignkey:ProblemName"`
 	Lang        string
-	UserName	string
+	UserName    string
 	Status      string
 	Source      string
 	Testhash    string
@@ -99,44 +99,42 @@ func execJudge(db *gorm.DB, task Task) error {
 		return err
 	}
 
-	//set testhash
-	if err := db.Model(&submission).Select("testhash").Update("testhash", submission.Problem.Testhash).Error; err != nil {
-		return err
-	}
-
-	
-	caseDir, err := fetchData(db, submission.Problem)
 	workDir, err := ioutil.TempDir("", "work")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(workDir)
+
+	if err := db.Model(&submission).Select("testhash").Update("testhash", submission.Problem.Testhash).Error; err != nil {
+		return err
+	}
+
+	if err := db.Model(&submission).Select("status").Update("status", "Feching").Error; err != nil {
+		return err
+	}
+	caseDir, err := fetchData(db, submission.Problem)
 	if err != nil {
 		log.Println("Fail to fetchData")
 		return err
 	}
 
-
-
-	cases, err := getCases(caseDir)
-	if err != nil {
-		return err
-	}
 	checker, err := os.Open(path.Join(caseDir, "checker.cpp"))
 	if err != nil {
 		return err
 	}
-	judge, err := NewJudge(submission.Lang, checker, strings.NewReader(submission.Source), submission.Problem.Timelimit / 1000)
+	judge, err := NewJudge(submission.Lang, checker, strings.NewReader(submission.Source), submission.Problem.Timelimit/1000)
 	if err != nil {
 		return err
 	}
 
+	if err := db.Model(&submission).Select("status").Update("status", "Compiling").Error; err != nil {
+		return err
+	}
 	result, err := judge.CompileChecker()
 	if err != nil {
 		return err
 	}
 	if result.ReturnCode != 0 {
-		submission.Status = "ICE"
 		return db.Model(&submission).Select("status").Update("status", "ICE").Error
 	}
 	result, err = judge.CompileSource()
@@ -144,10 +142,16 @@ func execJudge(db *gorm.DB, task Task) error {
 		return err
 	}
 	if result.ReturnCode != 0 {
-		submission.Status = "CE"
 		return db.Model(&submission).Select("status").Update("status", "CE").Error
 	}
 
+	if err := db.Model(&submission).Select("status").Update("status", "Executing").Error; err != nil {
+		return err
+	}
+	cases, err := getCases(caseDir)
+	if err != nil {
+		return err
+	}
 	caseResults := []CaseResult{}
 	for _, caseName := range cases {
 		inFile, err := os.Open(path.Join(caseDir, "in", caseName+".in"))
@@ -161,15 +165,15 @@ func execJudge(db *gorm.DB, task Task) error {
 		caseResult, err := judge.TestCase(inFile, outFile)
 		if err != nil {
 			return err
-		}		
+		}
 		caseResults = append(caseResults, caseResult)
 
 		sqlRes := SubmissionTestcaseResult{
 			Submission: submission.ID,
-			Testcase: caseName,
-			Status: caseResult.Status,
-			Time: int(caseResult.Time * 1000),
-			Memory: caseResult.Memory,
+			Testcase:   caseName,
+			Status:     caseResult.Status,
+			Time:       int(caseResult.Time * 1000),
+			Memory:     caseResult.Memory,
 		}
 		if err = db.Save(&sqlRes).Error; err != nil {
 			return err
