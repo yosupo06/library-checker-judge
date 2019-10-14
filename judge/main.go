@@ -100,6 +100,10 @@ func execJudge(db *gorm.DB, task Task) error {
 		Where("id = ?", task.Submission).First(&submission).Error; err != nil {
 		return err
 	}
+	
+	if err := db.Where("submission = ?", submission.ID).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
+		return err
+	}
 
 	workDir, err := ioutil.TempDir("", "work")
 	if err != nil {
