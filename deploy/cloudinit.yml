@@ -58,7 +58,7 @@ write_files:
 runcmd:
   - update-grub
   - curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh
-  - git clone -b develop https://github.com/yosupo06/library-checker-judge /root/library-checker-judge
+  - git clone https://github.com/yosupo06/library-checker-judge /root/library-checker-judge
   - git clone https://github.com/yosupo06/library-checker-problems /root/library-checker-problems
   - pip3 install termcolor toml psycopg2 psutil
   - pip3 install -r /root/library-checker-problems/requirements.txt

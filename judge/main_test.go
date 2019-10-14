@@ -1,10 +1,10 @@
 package main
 
 import (
-	"strings"
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 	}()
-
+	
 	db = gormConnect()
 	db.AutoMigrate(Problem{})
 	db.AutoMigrate(Submission{})
@@ -77,7 +77,7 @@ func TestSubmitAC(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "AC" {
@@ -91,6 +91,44 @@ func TestSubmitAC(t *testing.T) {
 	}
 	if submission.Testhash == "" {
 		t.Fatal("You forgot to set testhash")
+	}
+}
+
+func TestReJudge(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac.cpp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "cpp", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	for i := 0; i < 3; i++ {
+		err = execJudge(db, Task{id})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var submission Submission
+		if err = db.
+			Preload("Problem", func(db *gorm.DB) *gorm.DB {
+				return db.Select("name, title, testhash")
+			}).
+			Where("id = ?", id).Take(&submission).Error; err != nil {
+			t.Fatal(err)
+		}
+		if submission.Status != "AC" {
+			t.Fatal("Expect status AC, actual ", submission.Status)
+		}
+		if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
+			t.Fatal("Irregural consume time ", submission.MaxTime)
+		}
+		if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
+			t.Fatal("Irregural consume memory ", submission.MaxTime)
+		}
+		if submission.Testhash == "" {
+			t.Fatal("You forgot to set testhash")
+		}
 	}
 }
 
@@ -113,7 +151,7 @@ func TestSubmitWA(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "WA" {
@@ -143,7 +181,7 @@ func TestSubmitTLE(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "TLE" {
@@ -173,7 +211,7 @@ func TestSubmitRE(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "RE" {
@@ -199,15 +237,13 @@ func TestSubmitCE(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "CE" {
 		t.Fatal("Expect status CE, actual ", submission.Status)
 	}
 }
-
-
 
 func TestSubmitRustAC(t *testing.T) {
 	src, err := os.Open("test_src/aplusb/ac.rs")
@@ -228,7 +264,7 @@ func TestSubmitRustAC(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "AC" {
@@ -261,7 +297,7 @@ func TestSubmitPythonAC(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "AC" {
@@ -291,7 +327,7 @@ func TestSubmitDlangAC(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "AC" {
@@ -321,7 +357,7 @@ func TestSubmitJavaAC(t *testing.T) {
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {			
+		Where("id = ?", id).Take(&submission).Error; err != nil {
 		t.Fatal(err)
 	}
 	if submission.Status != "AC" {

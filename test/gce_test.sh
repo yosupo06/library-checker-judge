@@ -7,12 +7,16 @@ gcloud compute instances create lib-judge-test --zone=asia-northeast1-c \
 --machine-type=c2-standard-4 \
 --boot-disk-size=200GB \
 --metadata-from-file user-data=cloudinit.yml \
---image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud
+--image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud \
+--preemptible
 
 until gcloud compute ssh root@lib-judge-test -- ls /root/can_start > /dev/null; do
     echo 'waiting...'
     sleep 10
 done
+
+echo "Make Secret"
+gcloud compute ssh root@lib-judge-test -- "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
 echo 'Start generate.py test'
 gcloud compute ssh root@lib-judge-test -- "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
