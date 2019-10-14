@@ -3,10 +3,10 @@
 set -e
 
 # gcloud compute instances delete lib-judge2
-# gcloud compute instances create lib-judge2 --zone=asia-northeast1-c \
-# --machine-type=n1-highcpu-2 \
-# --metadata-from-file user-data=cloudinit.yml \
-# --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud
+gcloud compute instances create lib-judge2 --zone=asia-northeast1-c \
+--machine-type=c2-standard-4 \
+--metadata-from-file user-data=cloudinit.yml \
+--image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud
 
 until gcloud compute ssh root@lib-judge2 -- ls /root/can_start > /dev/null; do
     echo 'waiting...'
