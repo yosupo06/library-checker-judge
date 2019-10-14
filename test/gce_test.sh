@@ -14,6 +14,9 @@ until gcloud compute ssh root@lib-judge-test -- ls /root/can_start > /dev/null; 
     sleep 10
 done
 
+echo "Make Secret"
+gcloud compute ssh root@lib-judge-test -- "cd /root/library-checker-judge/judge && ./make_secret.sh"
+
 echo 'Start generate.py test'
 gcloud compute ssh root@lib-judge-test -- "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
 
