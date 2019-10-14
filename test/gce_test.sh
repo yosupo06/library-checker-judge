@@ -7,7 +7,8 @@ gcloud compute instances create lib-judge-test --zone=asia-northeast1-c \
 --machine-type=c2-standard-4 \
 --boot-disk-size=200GB \
 --metadata-from-file user-data=cloudinit.yml \
---image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud
+--image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud \
+--preemptible
 
 until gcloud compute ssh root@lib-judge-test -- ls /root/can_start > /dev/null; do
     echo 'waiting...'
