@@ -39,6 +39,7 @@
         'sum_of_floor_of_linear',
         'sqrt_mod',
         'kth_root_integer',
+        'discrete_logarithm_mod',
         'two_sat',
     ]
 
