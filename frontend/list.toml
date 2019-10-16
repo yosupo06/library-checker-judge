@@ -10,6 +10,7 @@
         'unionfind',
         'staticrmq',
         'point_add_range_sum',
+        'rectangle_sum',
     ]
 
 [[category]]
