@@ -10,6 +10,7 @@
         'unionfind',
         'staticrmq',
         'point_add_range_sum',
+        'vertex_add_path_sum',
         'rectangle_sum',
     ]
 
@@ -19,6 +20,7 @@
         'lca',
         'scc',
         'bipartitematching',
+        'general_matching',
         'assignment',
         'directedmst',
         'dominatortree',
