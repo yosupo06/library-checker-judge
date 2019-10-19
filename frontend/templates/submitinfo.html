@@ -49,7 +49,7 @@
                 {{end}}
             </table>
             <hr class="uk-margin-medium">
-            <details>
+            <details open="true">
                 <summary>ケース詳細</summary>
                 <table class="uk-table">
                     <tr>
@@ -70,10 +70,11 @@
             </details>
             <hr class="uk-margin-medium">
             <div class="uk-container">
-                <div id="editor" style="height: 500px;">{{.Submission.Source}}</div>
+                <div id="editor">{{.Submission.Source}}</div>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
                 <script>
                     var editor = ace.edit("editor");
+                    editor.setOption("maxLines", "Infinity");                    
                     editor.setReadOnly(true);
                     var lang = "{{.Submission.Lang}}";
                     if (lang.startsWith("cpp")) {
