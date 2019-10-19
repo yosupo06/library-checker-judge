@@ -5,9 +5,9 @@
     <title>Submitted</title>
     {{template "css.html" .}}
 
-    <!-- prismjs -->
-    <link href="/public/css/prism.css" rel="stylesheet" />
-    <script src="/public/js/prism.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/styles/xcode.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
 </head>
 <body>
     {{template "navbar.html" .}}    
@@ -22,19 +22,24 @@
     
     <section class="uk-section">
         <div class="uk-container">
-            <pre><code class="language-cpp">{{.Submission.Source}}</code></pre>
-        </div>
-        <div class="uk-container">
             <table class="uk-table">
                 <tr>
                     <th>Problem</th>
+                    <th>Lang</th>
+                    <th>User</th>
                     <th>Status</th>
                     <th>Time</th>
                     <th>Memory</th>
                 </tr>
                 {{with .Submission}}
                 <tr>
+                    <!-- Title -->
                     <td><a href="/problem/{{.ProblemName}}">{{.Problem.Title}}</a></td>
+                    <!-- Lang -->
+                    <td>{{.Lang}}</td>
+                    <!-- User -->
+                    <td>{{if .User.Name}}{{.User.Name}}{{else}}(anonymous){{end}}</td>
+                    <!-- Status -->
                     <td>
                         {{if and (eq .Testhash .Problem.Testhash) (eq .Status "AC")}}
                         <span class="uk-label uk-label-success">AC</span>
@@ -48,22 +53,29 @@
                 {{end}}
             </table>
             <hr class="uk-margin-medium">
-            <table class="uk-table">
-                <tr>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Time</th>
-                    <th>Memory</th>
-                </tr>
-                {{range .Results}}
+            <details>
+                <summary>ケース詳細</summary>
+                <table class="uk-table">
                     <tr>
-                        <td>{{.Testcase}}</td>
-                        <td>{{.Status}}</td>
-                        <td>{{.Time}} ms</td>
-                        <td>{{.Memory}} bytes</td>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                        <th>Memory</th>
                     </tr>
-                {{end}}
-            </table>
+                    {{range .Results}}
+                        <tr>
+                            <td>{{.Testcase}}</td>
+                            <td>{{.Status}}</td>
+                            <td>{{.Time}} ms</td>
+                            <td>{{.Memory}} bytes</td>
+                        </tr>
+                    {{end}}
+                </table>
+            </details>
+            <hr class="uk-margin-medium">
+            <div class="uk-container">
+                <pre><code class="{{.Submission.Lang}}">{{.Submission.Source}}</code></pre>
+            </div>
         </div>
     </section>
 </body>
