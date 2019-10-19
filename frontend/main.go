@@ -179,6 +179,9 @@ func submissionInfo(ctx *gin.Context) {
 	}
 	var submission Submission
 	db.
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name")
+		}).
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
