@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <title>Submitted</title>
     {{template "css.html" .}}
-
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/styles/xcode.min.css">
-    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/highlight.min.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
 </head>
 <body>
     {{template "navbar.html" .}}    
@@ -74,7 +70,28 @@
             </details>
             <hr class="uk-margin-medium">
             <div class="uk-container">
-                <pre><code class="{{.Submission.Lang}}">{{.Submission.Source}}</code></pre>
+                <div id="editor" style="height: 500px;">{{.Submission.Source}}</div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+                <script>
+                    var editor = ace.edit("editor");
+                    editor.setReadOnly(true);
+                    var lang = "{{.Submission.Lang}}";
+                    if (lang.startsWith("cpp")) {
+                        editor.getSession().setMode("ace/mode/c_cpp");
+                    }
+                    if (lang.startsWith("java")) {
+                        editor.getSession().setMode("ace/mode/java");
+                    }
+                    if (lang.startsWith("pypy3")) {
+                        editor.getSession().setMode("ace/mode/python");
+                    }
+                    if (lang.startsWith("rust")) {
+                        editor.getSession().setMode("ace/mode/rust");
+                    }
+                    if (lang.startsWith("d")) {
+                        editor.getSession().setMode("ace/mode/d");
+                    }
+                </script>
             </div>
         </div>
     </section>
