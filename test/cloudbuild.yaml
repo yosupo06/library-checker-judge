@@ -5,4 +5,4 @@ steps:
     args:
       - '-c'
       - 'cd test && ./gce_test.sh'
-timeout: 1800s
+timeout: 4800s
