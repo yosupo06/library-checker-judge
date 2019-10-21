@@ -3,5 +3,6 @@ steps:
     name:	gcr.io/cloud-builders/gcloud
     entrypoint: sh
     args:
-      - 'test/gce_test.sh'
+      - '-c'
+      - 'cd test && gce_test.sh'
 timeout: 1800s
