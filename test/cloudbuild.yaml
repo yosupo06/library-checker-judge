@@ -4,5 +4,5 @@ steps:
     entrypoint: sh
     args:
       - '-c'
-      - 'cd test && gce_test.sh'
+      - 'cd test && ./gce_test.sh'
 timeout: 1800s
