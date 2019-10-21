@@ -81,12 +81,12 @@ func TestExecutorInfinityCE(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed: Checker", err)
 	}
-	src, err := os.Open("../../library-checker-judge-attack/inf_ce.cpp")
+	src, err := os.Open("./test_src/many_ce.d")
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
 
-	judge, err := NewJudge("cpp", checker, src, 2.0)
+	judge, err := NewJudge("d", checker, src, 2.0)
 	if err != nil {
 		t.Fatal("Failed: NewJudge", err)
 	}
