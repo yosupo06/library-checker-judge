@@ -8,4 +8,4 @@ judge/work
 !/compiler/langs.toml
 /deploy/cloudinit_buf.yml
 secret.*
-judge
+judge/judge

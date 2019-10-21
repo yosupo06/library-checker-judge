@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"os"
 	"os/exec"
@@ -40,6 +41,65 @@ func TestExecutorTimeOut(t *testing.T) {
 	if result.Time < 0.9 || 1.1 < result.Time {
 		t.Fatal("Error result time = ", result.Time)
 	}
+}
+
+func TestOutputStripper(t *testing.T) {
+	shortStr := []byte("short string")
+
+	os := &outputStripper{N: 100}
+	_, err := os.Write(shortStr)
+	if err != nil {
+		t.Fatal("outputStripper Error ", err)
+	}
+	res := os.Bytes()
+	if !bytes.Equal(shortStr, res) {
+		t.Fatal("outputStripper Differ")
+	}
+}
+
+func TestOutputStripperLong(t *testing.T) {
+	longStrBase := []byte("long string")
+	longStr := []byte{}
+	for i := 0; i < 100; i++ {
+		longStr = append(longStr, longStrBase...)
+	}
+
+	os := &outputStripper{N: 100}
+	_, err := os.Write(longStr)
+	if err != nil {
+		t.Fatal("outputStripper Error ", err)
+	}
+	res := os.Bytes()
+	if len(res) > 100 {
+		t.Fatal("outputStripper Differ")
+	}
+	t.Log(string(res))
+}
+
+func TestExecutorInfinityCE(t *testing.T) {
+	checker, err := os.Open("./test_src/aplusb/checker.cpp")
+	if err != nil {
+		t.Fatal("Failed: Checker", err)
+	}
+	src, err := os.Open("./test_src/many_ce.d")
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+
+	judge, err := NewJudge("d", checker, src, 2.0)
+	if err != nil {
+		t.Fatal("Failed: NewJudge", err)
+	}
+
+	result, err := judge.CompileSource()
+
+	if err != nil {
+		t.Fatal("Failed: Failed Compile", err)
+	}
+	if result.ReturnCode == 0 {
+		t.Fatal("Failed: Must be CE")
+	}
+	t.Log(string(result.Stderr))
 }
 
 func generateAplusB(t *testing.T, lang, srcName string) *Judge {

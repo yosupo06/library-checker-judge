@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -16,10 +17,43 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// Save stripped output with strip()
+type outputStripper struct {
+	N        int
+	data     []byte
+	overflow bool
+}
+
+func (os *outputStripper) Write(b []byte) (n int, err error) {
+	if os.N <= 20 {
+		return -1, errors.New("N is too small")
+	}
+	blen := len(b)
+	cap := os.N - 20 - len(os.data)
+
+	add := blen
+	if cap < add {
+		add = cap
+		os.overflow = true
+	}
+	os.data = append(os.data, b[:add]...)
+	return blen, nil
+}
+
+func (os *outputStripper) Bytes() []byte {
+	var buf bytes.Buffer
+	buf.Write(os.data)
+	if os.overflow {
+		buf.Write([]byte(" ... stripped"))
+	}
+	return buf.Bytes()
+}
+
 type Result struct {
 	ReturnCode int     `json:"returncode"`
 	Time       float64 `json:"time"`
 	Memory     int     `json:"memory"`
+	Stderr     []byte
 }
 
 func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
@@ -43,6 +77,14 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	cmd.Path = path.Join(wd, "executor.py")
 	cmd.Args = append([]string{cmd.Path}, newArg...)
 
+	// add stderr
+	os := &outputStripper{N: 1 << 11}
+	if cmd.Stderr != nil {
+		cmd.Stderr = io.MultiWriter(cmd.Stderr, os)
+	} else {
+		cmd.Stderr = os
+	}
+
 	err = cmd.Run()
 	if err != nil && cmd.ProcessState.ExitCode() != 124 {
 		return Result{ReturnCode: -1, Time: -1, Memory: -1}, err
@@ -55,6 +97,7 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	if err := json.Unmarshal(raw, &result); err != nil {
 		return Result{}, err
 	}
+	result.Stderr = os.Bytes()
 	return result, nil
 }
 
@@ -151,7 +194,7 @@ func (j *Judge) CompileSource() (Result, error) {
 	cmd := exec.Command(compile[0], compile[1:]...)
 	cmd.Dir = path.Join(j.dir, "source")
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = nil
 	return SafeRun(cmd, 30.0, false)
 }
 
@@ -160,7 +203,7 @@ func (j *Judge) CompileChecker() (Result, error) {
 	cmd := exec.Command(compile[0], compile[1:]...)
 	cmd.Dir = path.Join(j.dir, "checker")
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = nil
 	return SafeRun(cmd, 30.0, false)
 }
 
@@ -170,7 +213,7 @@ type CaseResult struct {
 }
 
 func AggregateResults(results []CaseResult) CaseResult {
-	ans := CaseResult{"AC", Result{-1, -1, -1}}
+	ans := CaseResult{"AC", Result{ReturnCode: -1, Time: -1, Memory: -1}}
 	for _, res := range results {
 		if res.Status != "AC" {
 			ans.Status = res.Status
