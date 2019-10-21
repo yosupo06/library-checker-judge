@@ -32,11 +32,11 @@ echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
 
 echo 'Start executor.py test'
-gcpexec -- "cd /root/library-checker-judge/judge && ./executor_test.py"
+gcpexec "cd /root/library-checker-judge/judge && ./executor_test.py"
 
 echo 'Start docker test'
-gcpexec -- "cd /root/library-checker-judge/local && ./launch.sh"
+gcpexec "cd /root/library-checker-judge/local && ./launch.sh"
 
 echo 'Start judge test'
-gcpexec -- "cd /root/library-checker-judge/judge && go test . -v"
+gcpexec "cd /root/library-checker-judge/judge && go test . -v"
 
