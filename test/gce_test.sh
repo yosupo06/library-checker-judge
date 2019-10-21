@@ -2,13 +2,25 @@
 
 set -e
 
-# gcloud compute instances delete lib-judge
-gcloud compute instances create lib-judge-test --zone=asia-northeast1-c \
+NAME=lib-judge-test-$(cat /dev/urandom | tr -d -c '[:lower:]' | fold -w 10 | head -n 1)
+ZONE=asia-northeast1-c
+
+
+echo "Set default zone : ${ZONE}"
+gcloud compute set compute/zone $ZONE
+
+echo "Create ${NAME}"
+
+gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
 --boot-disk-size=200GB \
 --metadata-from-file user-data=cloudinit.yml \
 --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud \
 --preemptible
+
+trap "echo 'Release' && gcloud compute instances delete ${NAME} --zone=${ZONE} --quiet" 0
+
+exit 0
 
 until gcloud compute ssh root@lib-judge-test -- ls /root/can_start > /dev/null; do
     echo 'waiting...'
@@ -30,5 +42,3 @@ gcloud compute ssh root@lib-judge-test -- "cd /root/library-checker-judge/local 
 echo 'Start judge test'
 gcloud compute ssh root@lib-judge-test -- "cd /root/library-checker-judge/judge && go test . -v"
 
-echo 'finish'
-gcloud compute instances delete lib-judge-test --zone=asia-northeast1-c --quiet
