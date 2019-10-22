@@ -83,7 +83,7 @@ def inside(args, execcmd):
     prepare_mount(tmpdir, args.overlay)
     prepare_cgroup()
 
-    cmd = ['cgexec', '-g', 'cpuset,memory:lib-judge']
+    cmd = ['cgexec', '-g', 'pids,cpuset,memory:lib-judge']
     cmd += ['chroot',
             '--userspec=library-checker-user:library-checker-user', str(tmpdir)]
     cmd += ['sh', '-c', ' '.join(['cd', 'sand', '&&'] + execcmd)]
@@ -161,8 +161,9 @@ def prepare_mount(tmpdir: Path, overlay):
 
 
 def prepare_cgroup():
-    run(['cgdelete', 'cpuset,memory:/lib-judge'])
-    run(['cgcreate', '-g', 'cpuset,memory:/lib-judge'], check=True)
+    run(['cgdelete', 'pids,cpuset,memory:/lib-judge'])
+    run(['cgcreate', '-g', 'pids,cpuset,memory:/lib-judge'], check=True)
+    run(['cgset', '-r', 'pids.max=1000', 'lib-judge'], check=True)
     run(['cgset', '-r', 'cpuset.cpus=0', 'lib-judge'], check=True)
     run(['cgset', '-r', 'cpuset.mems=0', 'lib-judge'], check=True)
     run(['cgset', '-r', 'memory.limit_in_bytes=1G', 'lib-judge'], check=True)

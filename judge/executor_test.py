@@ -143,6 +143,7 @@ class TestTmpDir(unittest.TestCase):
         self.assertFalse((Path('/tmp') / name).exists())
         tmpdir.cleanup()
 
+
 class TestStackOverFlow(unittest.TestCase):
     def test_tmpdir(self):
         tmpdir = get_tmpdir(Path('./test_src/stack.cpp'))
@@ -153,6 +154,14 @@ class TestStackOverFlow(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
         tmpdir.cleanup()
+
+
+class TestForkBomb(unittest.TestCase):
+    def test_forkbomb(self):
+        logger.info('Start Fork Bomb')
+        code, result = get_result(
+            ['./test_src/fork_bomb.sh'], '.', True, 10.0)
+        logger.info('End')
 
 if __name__ == "__main__":
     basicConfig(
