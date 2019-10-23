@@ -17,6 +17,7 @@ gcloud compute instances create $NAME --zone=$ZONE \
 trap "echo 'Release' && gcloud compute instances delete ${NAME} --zone=${ZONE} --quiet" 0
 
 function gcpexec() {
+    echo "Start: ${1}"
     gcloud compute ssh root@${NAME} --zone ${ZONE} -- $1
     RET=$?
     echo "Finish: ${1}"
@@ -30,6 +31,9 @@ until gcpexec "ls /root/can_start > /dev/null"; do
 
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
+
+ls .
+ls ..
 
 COMMIT=`git rev-parse HEAD`
 echo "Checkout Judge ${COMMIT}"
