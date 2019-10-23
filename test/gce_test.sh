@@ -10,7 +10,7 @@ echo "Create ${NAME}"
 gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
 --boot-disk-size=200GB \
---metadata-from-file user-data=cloudinit.yml \
+--metadata-from-file user-data=../deploy/cloudinit.yml \
 --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud \
 --preemptible
 
