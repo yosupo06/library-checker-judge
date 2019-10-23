@@ -54,6 +54,9 @@ write_files:
       else
         echo "First Time"
         touch /root/init_end
+        if [[ -f /root/library-checker-judge/judge/judge ]]; then
+          supervisorctl start judge
+        fi
       fi
 
 runcmd:
