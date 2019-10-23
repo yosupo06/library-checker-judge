@@ -1,0 +1,12 @@
+steps:
+  - id: test
+    name:	gcr.io/cloud-builders/gcloud
+    entrypoint: sh
+    args:
+      - '-c'
+      - 'cd deploy && ./deploy.sh'
+    env:
+      - 'PG_HOST=$_PG_HOST'
+      - 'PG_PASS=$_PG_PASS'
+
+timeout: 1800s
