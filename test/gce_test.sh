@@ -28,6 +28,10 @@ until gcpexec "ls /root/can_start > /dev/null"; do
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
+COMMIT=`git rev-parse HEAD`
+echo "Checkout Judge ${COMMIT}"
+gcpexec "cd /root/library-checker-judge && git checkout ${COMMIT}"
+
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
 
