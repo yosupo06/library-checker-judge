@@ -1,7 +1,6 @@
 [langs.checker]
     source = "checker.cpp"
     compile = "g++ -O2 -std=c++14 -march=native -o checker checker.cpp"
-    exec = "./checker {input} {contestant} {judge}"
 [langs.cpp]
     source = "main.cpp"
     compile = "g++ -O2 -std=c++17 -march=native -o main main.cpp"
@@ -23,6 +22,10 @@
     compile = "javac Main.java"
     exec = "java -Xss1G Main"
 [langs.pypy3]
-    source = "Main.py"
+    source = "main.py"
     compile = "pypy3 -c 'print(1)'"
-    exec = "pypy3 Main.py"
+    exec = "pypy3 main.py"
+[langs.haskell]
+    source = "main.hs"
+    compile = "ghc -O2 main.hs"
+    exec = "./main"

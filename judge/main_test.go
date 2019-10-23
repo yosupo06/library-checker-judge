@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 	}()
-	
+
 	db = gormConnect()
 	db.AutoMigrate(Problem{})
 	db.AutoMigrate(Submission{})
@@ -94,7 +94,7 @@ func TestSubmitAC(t *testing.T) {
 	}
 }
 
-func TestReJudge(t *testing.T) {
+func TestRejudge(t *testing.T) {
 	src, err := os.Open("test_src/aplusb/ac.cpp")
 	if err != nil {
 		t.Fatal(err)
@@ -251,6 +251,39 @@ func TestSubmitRustAC(t *testing.T) {
 		t.Fatal(err)
 	}
 	id, err := Submit(db, "aplusb", "rust", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	err = execJudge(db, Task{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var submission Submission
+	if err = db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).Take(&submission).Error; err != nil {
+		t.Fatal(err)
+	}
+	if submission.Status != "AC" {
+		t.Fatal("Expect status AC, actual ", submission.Status)
+	}
+	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
+		t.Fatal("Irregural consume time ", submission.MaxTime)
+	}
+	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
+		t.Fatal("Irregural consume memory ", submission.MaxMemory)
+	}
+}
+
+func TestSubmitHaskellAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac.hs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "haskell", src)
 	if err != nil {
 		t.Fatal(err)
 	}
