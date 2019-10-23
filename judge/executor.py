@@ -49,7 +49,7 @@ def outside(args, cmd):
     memory = -1
 
     try:
-        proc = subprocess.run(arg, timeout=args.tl + 1.0)
+        proc = subprocess.run(arg, timeout=args.tl + 5.0)
         mycode = proc.returncode
         result = json.load(tmp)
         returncode = result.get('returncode', -1)
