@@ -24,6 +24,7 @@ packages:
   - python3-dev
   - python3-pip
   - rustc
+  - ghc
   
 write_files:
   - path: /etc/default/grub.d/99-lib-judge.cfg
