@@ -49,7 +49,7 @@ def outside(args, cmd):
     memory = -1
 
     try:
-        proc = subprocess.run(arg, timeout=args.tl + 1.0)
+        proc = subprocess.run(arg, timeout=args.tl + 5.0)
         mycode = proc.returncode
         result = json.load(tmp)
         returncode = result.get('returncode', -1)
@@ -154,7 +154,7 @@ def prepare_mount(tmpdir: Path, overlay):
 
     (tmpdir / 'tmp').mkdir()
     (tmpdir / 'tmp').chmod(0o777)
-    for dname in ['dev', 'sys', 'bin', 'lib', 'lib64', 'usr', 'etc', 'opt']:
+    for dname in ['dev', 'sys', 'bin', 'lib', 'lib64', 'usr', 'etc', 'opt', 'var']:
         (tmpdir / dname).mkdir()
         subprocess.run(['mount', '--bind', '-o', 'ro', '/' + dname,
                         str(tmpdir / dname)], check=True)

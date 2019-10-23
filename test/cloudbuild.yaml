@@ -5,4 +5,7 @@ steps:
     args:
       - '-c'
       - 'cd test && ./gce_test.sh'
+    env:
+      - 'TEST_COMMIT=$COMMIT_SHA'
+
 timeout: 4800s

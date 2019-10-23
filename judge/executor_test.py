@@ -21,7 +21,7 @@ def get_tmpdir(src: Path):
     return tmpdir
 
 
-def get_result(execcmd, cwd, overlay, tl=None, stdin=None):
+def get_result(execcmd, cwd, overlay, tl=None, stdin=None, stderr=None):
     logger.info('execute {}'.format(execcmd))
     with NamedTemporaryFile() as resfile:
         cmd = [executor, '--result', resfile.name]
@@ -31,6 +31,8 @@ def get_result(execcmd, cwd, overlay, tl=None, stdin=None):
             cmd = cmd + ['--tl', str(tl)]
         if stdin:
             cmd = cmd + ['--stdin', str(stdin)]
+        if stderr:
+            cmd = cmd + ['--stderr', str(stderr)]
         cmd = cmd + ['--'] + execcmd
         returncode = run(cmd, cwd=cwd).returncode
 
@@ -160,7 +162,7 @@ class TestForkBomb(unittest.TestCase):
     def test_forkbomb(self):
         logger.info('Start Fork Bomb')
         code, result = get_result(
-            ['./test_src/fork_bomb.sh'], '.', True, 10.0)
+            ['./test_src/fork_bomb.sh'], '.', True, 10.0, None, "/dev/null")
         logger.info('End')
 
 if __name__ == "__main__":
