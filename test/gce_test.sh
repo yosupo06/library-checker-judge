@@ -32,8 +32,8 @@ until gcpexec "ls /root/can_start > /dev/null"; do
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
-ls .
-ls ..
+ls -al .
+ls -al ..
 
 COMMIT=`git rev-parse HEAD`
 echo "Checkout Judge ${COMMIT}"
