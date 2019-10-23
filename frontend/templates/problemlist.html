@@ -28,7 +28,7 @@
                         {{$info := index $titlemap $element}}
                         {{if $info.Title}}
                         <div style="height: 120px;">
-                            <div class="uk-height-1-1 uk-card uk-card-default uk-card-body " ;{{if $info.Solved}}style="background: #E0FFE0"{{end}}>
+                            <div class="uk-height-1-1 uk-card uk-card-default uk-card-body" {{if $info.Solved}}style="background: #E0FFE0"{{end}}>
                                 <a href="/problem/{{.}}">{{$info.Title}}</a>
                             </div>
                         </div>
