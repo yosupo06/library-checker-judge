@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"database/sql"
 
 	_ "github.com/lib/pq"
 )
@@ -85,9 +86,35 @@ func htmlWithUser(c *gin.Context, code int, name string, obj gin.H) {
 func problemList(ctx *gin.Context) {
 	var problems = make([]Problem, 0)
 	db.Select("name, title").Find(&problems)
-	var titlemap = make(map[string]string)
+
+	type ProblemInfo struct {
+		Title string
+		Solved bool
+	}
+	var titlemap = make(map[string]*ProblemInfo)
 	for _, problem := range problems {
-		titlemap[problem.Name] = problem.Title
+		if _, ok := titlemap[problem.Name]; !ok {
+			titlemap[problem.Name] = &ProblemInfo{}
+		}
+		titlemap[problem.Name].Title = problem.Title
+	}
+
+	userName := getUser(ctx).Name
+
+	if userName != "" {
+		var submissions = make([]Submission, 0)
+		db.
+			Preload("Problem", func(db *gorm.DB) *gorm.DB {
+				return db.Select("name, testhash")
+			}).
+			Select("id, problem_name, status, testhash").
+			Where(&Submission{UserName: sql.NullString{String: userName, Valid: true}, Status: "AC"}).
+			Find(&submissions)
+		for _, submission := range submissions {
+			if submission.Testhash == submission.Problem.Testhash {
+				titlemap[submission.ProblemName].Solved = true
+			}
+		}
 	}
 	htmlWithUser(ctx, 200, "problemlist.html", gin.H{
 		"titlemap": titlemap,
@@ -220,7 +247,6 @@ func submitList(ctx *gin.Context) {
 		Order("id desc").
 		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
 		Where(&Submission{ProblemName: submitFilter.Problem, Status: submitFilter.Status}).
-		//		Where("problem_name = ?", submitFilter.Problem).
 		Find(&submissions)
 	count := 0
 	db.Table("submissions").Count(&count)
