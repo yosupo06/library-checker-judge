@@ -228,6 +228,7 @@ func submitList(ctx *gin.Context) {
 		Page    int    `form:"page,default=1" binding:"gte=1,lte=1000"`
 		Problem string `form:"problem" binding:"lte=100"`
 		Status  string `form:"status" binding:"lte=100"`
+		User 	string `form:"user" binding:"lte=100"`
 	}
 	var submitFilter SubmitFilter
 	if err := ctx.ShouldBind(&submitFilter); err != nil {
@@ -246,7 +247,10 @@ func submitList(ctx *gin.Context) {
 		Offset((submitFilter.Page - 1) * 100).
 		Order("id desc").
 		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
-		Where(&Submission{ProblemName: submitFilter.Problem, Status: submitFilter.Status}).
+		Where(&Submission{
+			ProblemName: submitFilter.Problem,
+			Status: submitFilter.Status,
+			UserName: sql.NullString{String:submitFilter.User, Valid: (submitFilter.User != "")}}).
 		Find(&submissions)
 	count := 0
 	db.Table("submissions").Count(&count)

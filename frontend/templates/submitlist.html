@@ -10,6 +10,9 @@
     <section class="uk-section">
         <div class="uk-container">
             <h1 class="uk-heading-medium">Submission List</h1>
+            {{if and .User .User.Name}}
+                <a href="/submissions?user={{.User.Name}}">My Submissions</a>
+            {{end}}
         </div>
     </section>
     <section class="uk-section">
