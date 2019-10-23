@@ -17,8 +17,7 @@ gcloud compute instances create $NAME --zone=$ZONE \
 trap "echo 'Release' && gcloud compute instances delete ${NAME} --zone=${ZONE} --quiet" 0
 
 function gcpexec() {
-    gcloud compute ssh root@${NAME} --zone ${ZONE} -- $1
-    echo "Finish: ${1}"
+    gcloud compute ssh root@${NAME} --zone ${ZONE} -- $1 && echo "Finish: ${1}"
 }
 
 until gcpexec "ls /root/can_start > /dev/null"; do
