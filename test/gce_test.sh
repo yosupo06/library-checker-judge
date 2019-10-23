@@ -18,6 +18,7 @@ trap "echo 'Release' && gcloud compute instances delete ${NAME} --zone=${ZONE} -
 
 function gcpexec() {
     gcloud compute ssh root@${NAME} --zone ${ZONE} -- $1
+    echo "Finish: ${1}"
 }
 
 until gcpexec "ls /root/can_start > /dev/null"; do
