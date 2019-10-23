@@ -5,4 +5,7 @@ steps:
     args:
       - '-c'
       - 'cd test && ./gce_test.sh'
+    env:
+      - 'TEST_BRANCH=$BRANCH_NAME'
+
 timeout: 4800s
