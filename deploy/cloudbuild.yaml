@@ -8,5 +8,6 @@ steps:
     env:
       - 'PG_HOST=$_PG_HOST'
       - 'PG_PASS=$_PG_PASS'
+      - 'CREATE_OPTION=$_CREATE_OPTION'
 
 timeout: 1800s
