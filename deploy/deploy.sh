@@ -8,7 +8,7 @@ ZONE=asia-northeast1-c
 gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
 --metadata-from-file user-data=cloudinit.yml \
---image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud
+--image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud ${CREATE_OPTION}
 
 function gcpexec() {
     echo "Start: ${1}"
