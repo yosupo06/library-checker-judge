@@ -42,6 +42,8 @@ write_files:
       stderr_logfile=/root/judge-err.log
       user=root
       directory=/root/library-checker-judge/judge/
+      startsecs=10.0
+      startretries=300
 
   - path: /var/lib/cloud/scripts/per-boot/judge-launch.sh
     owner: root:root
