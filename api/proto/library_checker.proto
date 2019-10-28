@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package librarychecker;
+
+message LangListRequest {
+}
+
+message Lang {
+    string id = 1; // "cpp"
+    string name = 2; // "C++(default, C++17)"
+    string version = 3; // "ubuntu18.04 apt"
+}
+
+message LangListResponse {
+    repeated Lang langs = 1;
+}
+
+service LibraryCheckerService {
+    rpc LangList (LangListRequest) returns (LangListResponse) {}
+}
