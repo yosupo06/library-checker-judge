@@ -24,6 +24,7 @@
         'assignment',
         'directedmst',
         'dominatortree',
+        'maximum_independent_set'
     ]
 
 [[category]]
