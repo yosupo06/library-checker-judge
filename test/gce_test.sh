@@ -36,7 +36,7 @@ echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
 echo "Install compilers"
-gcpexec "cd /root/library-checker/judge/compiler && ./install.sh"
+gcpexec "cd /root/library-checker-judge/compiler && ./install.sh"
 
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
