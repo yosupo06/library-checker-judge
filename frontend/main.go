@@ -12,15 +12,47 @@ import (
 	"strconv"
 	"time"
 
+	"database/sql"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
-	"database/sql"
 
 	_ "github.com/lib/pq"
+	judgeapi "github.com/yosupo06/library-checker-judge/api"
+	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
+
+var client pb.LibraryCheckerServiceClient
+
+func langList(ctx *gin.Context) ([]*pb.Lang, error) {
+	list, err := client.LangList(ctx, &pb.LangListRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return list.Langs, nil
+}
+
+var db *gorm.DB
+
+func gormConnect() *gorm.DB {
+	host := getEnv("POSTGRE_HOST", "127.0.0.1")
+	port := getEnv("POSTGRE_PORT", "5432")
+	user := getEnv("POSTGRE_USER", "postgres")
+	pass := getEnv("POSTGRE_PASS", "passwd")
+
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
+		host, port, user, pass)
+
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return db
+}
 
 func login(c *gin.Context, name string, password string) bool {
 	var user User
@@ -59,25 +91,6 @@ func getEnv(key, defaultValue string) string {
 	return value
 }
 
-var db *gorm.DB
-
-func gormConnect() *gorm.DB {
-	host := getEnv("POSTGRE_HOST", "127.0.0.1")
-	port := getEnv("POSTGRE_PORT", "5432")
-	user := getEnv("POSTGRE_USER", "postgres")
-	pass := getEnv("POSTGRE_PASS", "passwd")
-
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
-		host, port, user, pass)
-
-	db, err := gorm.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return db
-}
-
 func htmlWithUser(c *gin.Context, code int, name string, obj gin.H) {
 	obj["User"] = getUser(c)
 	c.HTML(code, name, obj)
@@ -88,7 +101,7 @@ func problemList(ctx *gin.Context) {
 	db.Select("name, title").Find(&problems)
 
 	type ProblemInfo struct {
-		Title string
+		Title  string
 		Solved bool
 	}
 	var titlemap = make(map[string]*ProblemInfo)
@@ -126,25 +139,33 @@ func problemInfo(ctx *gin.Context) {
 	name := ctx.Param("name")
 	var problem Problem
 	db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem)
+	Langs, err := langList(ctx)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusServiceUnavailable)
+		return
+	}
 	htmlWithUser(ctx, 200, "problem.html", gin.H{
 		"User":    getUser(ctx),
 		"Problem": problem,
+		"Langs":   Langs,
 	})
 }
 
-func checkLang(lang string) bool {
-	langs := []string{"cpp", "cpp14", "rust", "d", "java", "pypy3"}
+func checkLang(ctx *gin.Context, lang string) (bool, error) {
+	langs, err := langList(ctx)
+	if err != nil {
+		return false, err
+	}
 	for _, s := range langs {
-		if lang == s {
-			return true
+		if lang == s.Id {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func submit(ctx *gin.Context) {
 	type SubmitForm struct {
-		//		Source     *multipart.FileHeader `form:"source"`
 		SourceText string `form:"source_text"`
 		Problem    string `form:"problem" binding:"required"`
 		Lang       string `form:"lang" binding:"required"`
@@ -177,7 +198,8 @@ func submit(ctx *gin.Context) {
 		ctx.Redirect(http.StatusFound, ".")
 		return
 	}
-	if !checkLang(submitForm.Lang) {
+	ok, err := checkLang(ctx, submitForm.Lang)
+	if err != nil || ok == false {
 		ctx.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -228,7 +250,7 @@ func submitList(ctx *gin.Context) {
 		Page    int    `form:"page,default=1" binding:"gte=1,lte=1000"`
 		Problem string `form:"problem" binding:"lte=100"`
 		Status  string `form:"status" binding:"lte=100"`
-		User 	string `form:"user" binding:"lte=100"`
+		User    string `form:"user" binding:"lte=100"`
 	}
 	var submitFilter SubmitFilter
 	if err := ctx.ShouldBind(&submitFilter); err != nil {
@@ -249,8 +271,8 @@ func submitList(ctx *gin.Context) {
 		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
 		Where(&Submission{
 			ProblemName: submitFilter.Problem,
-			Status: submitFilter.Status,
-			UserName: sql.NullString{String:submitFilter.User, Valid: (submitFilter.User != "")}}).
+			Status:      submitFilter.Status,
+			UserName:    sql.NullString{String: submitFilter.User, Valid: (submitFilter.User != "")}}).
 		Find(&submissions)
 	count := 0
 	db.Table("submissions").Count(&count)
@@ -417,7 +439,22 @@ func allRejudge(ctx *gin.Context) {
 	})
 }
 
+func helpPage(ctx *gin.Context) {
+	langs, err := langList(ctx)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	htmlWithUser(ctx, 200, "help.html", gin.H{
+		"Langs": langs,
+	})
+}
+
 func main() {
+	judgeapi.LoadLangsToml("../library-checker-judge/compiler/langs.toml")
+	conn := judgeapi.LocalConnection()
+	defer conn.Close()
+	client = pb.NewLibraryCheckerServiceClient(conn)
 	loadList()
 	gob.Register(User{})
 	db = gormConnect()
@@ -458,6 +495,8 @@ func main() {
 
 	router.GET("/rejudge/:id", getRejudge)
 	router.GET("/admin/allrejudge", allRejudge)
+
+	router.GET("/help", helpPage)
 
 	router.Run(":8080")
 }

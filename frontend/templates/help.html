@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="uft-8">
+    <title>Problem List</title>
+    {{template "css.html" .}}
+</head>
+<body>
+    {{template "navbar.html" .}}
+    <section class="uk-section">
+        <div class="uk-container">
+            <h1 class="uk-heading-medium">Library Checker</h1>
+        </div>
+    </section>
+    <section class="uk-section">
+        <h2>Lang List</h2>
+        <table class="uk-table uk-table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Version</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Langs}}
+                <tr>
+                    <td>{{.Name}}</td>
+                    <td>{{.Version}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        <div class="uk-container">
+            {{if not .User.Name}}
+                <div class="uk-alert-primary" uk-alert>
+                    <a class="uk-alert-close" uk-close></a>
+                    <p>ユーザー登録しなくても提出できます</p>
+                </div>
+            {{end}}
+        </div>
+    </section>
+</body>
+</html>
