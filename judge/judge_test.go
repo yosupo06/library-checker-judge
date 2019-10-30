@@ -119,11 +119,11 @@ func generateAplusB(t *testing.T, lang, srcName string) *Judge {
 
 	result, err := judge.CompileChecker()
 	if err != nil || result.ReturnCode != 0 {
-		t.Fatal("error CompileChecker", err, result.ReturnCode)
+		t.Fatal("error CompileChecker", err, result)
 	}
 	result, err = judge.CompileSource()
 	if err != nil || result.ReturnCode != 0 {
-		t.Fatal("error CompileSource", err, result.ReturnCode)
+		t.Fatal("error CompileSource", err, result)
 	}
 
 	return judge
