@@ -30,7 +30,7 @@ until gcpexec "ls /root/can_start > /dev/null"; do
 done
 
 echo "Copy library-checker-judge"
-gcloud compute scp --zone ${ZONE} --recurse ../library-checker-judge root@${NAME}:/root/library-checker-judge
+gcloud compute scp --zone ${ZONE} --recurse `pwd` root@${NAME}:/root/library-checker-judge
 
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
