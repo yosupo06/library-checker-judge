@@ -54,7 +54,7 @@
 [[langs]]
     id = "csharp"
     name = "C#"
-    version = "C#"
+    version = "C# 8.0"
     source = "main.cs"
     compile = """
 cp -r /root/library-checker-judge/compiler/C-Sharp C-Sharp &&

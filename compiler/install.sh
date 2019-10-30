@@ -17,7 +17,7 @@ apt update
 apt install dotnet-sdk-3.0 -y
 
 echo 'Init C# Project'
-dirname="/root/library-checker-judge/compiler"
+dirname="/opt"
 project_name="C-Sharp"
 
 dotnet new console -o ${dirname}/${project_name} -lang "C#"
