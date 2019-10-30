@@ -29,11 +29,14 @@ until gcpexec "ls /root/can_start > /dev/null"; do
     sleep 10
 done
 
+echo "Copy library-checker-judge : $(cd .. && pwd)"
+gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
+
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
-echo "Checkout Judge ${TEST_COMMIT}"
-gcpexec "cd /root/library-checker-judge && git checkout ${TEST_COMMIT}"
+echo "Install compilers"
+gcpexec "cd /root/library-checker-judge/compiler && ./install.sh"
 
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"

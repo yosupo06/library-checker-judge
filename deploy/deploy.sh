@@ -23,6 +23,9 @@ until gcpexec "ls /root/can_start > /dev/null"; do
     sleep 10
 done
 
+echo "Copy library-checker-judge : $(cd .. && pwd)"
+gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
+
 echo "Build judge"
 gcpexec "cd /root/library-checker-judge/judge && go build ."
 

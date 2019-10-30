@@ -1,38 +1,70 @@
-[langs.checker]
-    source = "checker.cpp"
+[[langs]]
+    id = "checker"
+    source = "checker.cpp"    
     compile = "g++ -O2 -std=c++14 -march=native -o checker checker.cpp"
-[langs.cpp]
-    source = "main.cpp"
+[[langs]]
+    id = "cpp"
+    name = "C++17"
+    version = "g++(ubuntu18.04 apt)"
+    source = "main.cpp"    
     compile = "g++ -O2 -std=c++17 -march=native -o main main.cpp"
     exec = "./main"
-[langs.cpp14]
+[[langs]]
+    id = "cpp14"
+    name = "C++14"
+    version = "g++(ubuntu18.04 apt)"
     source = "main.cpp"
     compile = "g++ -O2 -std=c++14 -march=native -o main main.cpp"
     exec = "./main"
-[langs.rust]
+[[langs]]
+    id = "rust"
+    name = "Rust"
+    version = "rustc(ubuntu18.04 apt)"
     source = "main.rs"
     compile = "rustc -O main.rs"
     exec = "./main"
-[langs.d]
+[[langs]]
+    id = "d"
+    name = "LDC2"
+    version = "LDC2 1.15.0"
     source = "main.d"
     compile = "ldc2 -O -release main.d"
     exec = "./main"
-[langs.java]
+[[langs]]
+    id = "java"
+    name = "Java"
+    version = "default-jdk(ubuntu18.04 apt)"
     source = "Main.java"
     compile = "javac Main.java"
     exec = "java -Xss1G Main"
-[langs.pypy3]
+[[langs]]
+    id = "pypy3"
+    name = "PyPy3"
+    version = "pypy3.6-v7.1.1"
     source = "main.py"
     compile = "pypy3 -c 'print(1)'"
     exec = "pypy3 main.py"
-[langs.haskell]
+[[langs]]
+    id = "haskell"
+    name = "GHC"
+    version = "ghc(ubuntu18.04 apt)"
     source = "main.hs"
     compile = "ghc -O2 main.hs"
     exec = "./main"
-[langs.csharp]
+[[langs]]
+    id = "csharp"
+    name = "C#"
+    version = "mono-mcs(ubuntu18.04 apt)"
     source = "main.cs"
-    compile = """
-cp -r /root/library-checker-judge/compiler/C-Sharp C-Sharp
-cp main.cs C-Sharp/Program.cs
-dotnet publish C-Sharp -c Release -r ubuntu.18.04-x64 /p:PublishReadyToRun=true -o bin"""
-    exec = "C-Sharp/bin/C-Sharp"
+    compile = "mcs main.cs"
+    exec = "mono main.exe"
+# [[langs]]
+#     id = "csharp"
+#     name = "C#"
+#     version = "C# 8.0"
+#     source = "main.cs"
+#     compile = """
+# cp -r /opt/C-Sharp C-Sharp &&
+# cp main.cs C-Sharp/Program.cs &&
+# dotnet publish C-Sharp -c Release -r ubuntu.18.04-x64 /p:PublishReadyToRun=true -o bin"""
+#     exec = "./C-Sharp/bin/C-Sharp"
