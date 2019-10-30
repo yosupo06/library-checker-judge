@@ -26,11 +26,13 @@ done
 echo "Copy library-checker-judge : $(cd .. && pwd)"
 gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
 
-echo "Build judge"
-gcpexec "cd /root/library-checker-judge/judge && go build ."
-
 echo "Make Secret HOST=${PG_HOST} / PASS=${PG_PASS}"
 gcpexec "cd /root/library-checker-judge/judge && PG_HOST=${PG_HOST} PG_PASS=${PG_PASS} ./make_secret.sh"
 
-echo "Launch Judge"
+echo "Install compilers"
+gcpexec "cd /root/library-checker-judge/compiler && ./install.sh"
+
+echo "Build judge"
+gcpexec "cd /root/library-checker-judge/judge && go build ."
+
 gcpexec "supervisorctl start judge"
