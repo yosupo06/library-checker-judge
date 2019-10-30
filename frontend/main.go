@@ -451,7 +451,7 @@ func helpPage(ctx *gin.Context) {
 }
 
 func main() {
-	judgeapi.LoadLangsToml("../library-checker-judge/compiler/langs.toml")
+	judgeapi.LoadLangsToml("langs.toml")
 	conn := judgeapi.LocalConnection()
 	defer conn.Close()
 	client = pb.NewLibraryCheckerServiceClient(conn)
