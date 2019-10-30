@@ -116,7 +116,7 @@ func init() {
 			ID string `toml:"id"`
 		} `toml:"langs"`
 	}
-	if _, err := toml.DecodeFile("../api/compiler/langs.toml", &tomlData); err != nil {
+	if _, err := toml.DecodeFile("../compiler/langs.toml", &tomlData); err != nil {
 		log.Fatal(err)
 	}
 	langs = make(map[string]Lang)
