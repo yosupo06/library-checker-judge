@@ -19,7 +19,6 @@ apt install dotnet-sdk-3.0 -y
 echo 'Init C# Project'
 dirname="/opt"
 project_name="C-Sharp"
-export DOTNET_CLI_HOME=/root
 
 dotnet new console -o ${dirname}/${project_name} -lang "C#"
 sed -i -e '/<PropertyGroup>/a <AllowUnsafeBlocks>true</AllowUnsafeBlocks>' ${dirname}/${project_name}/${project_name}.csproj

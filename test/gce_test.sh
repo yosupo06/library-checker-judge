@@ -32,8 +32,11 @@ done
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
-echo "Checkout Judge ${TEST_COMMIT}"
-gcpexec "cd /root/library-checker-judge && git checkout ${TEST_COMMIT}"
+echo "Copy library-checker-judge"
+gcloud compute scp --zone ${ZONE} --recurse ../../library-checker-judge root@${NAME}:/root/library-checker-judge
+
+echo "Install compilers"
+gcpexec "cd /root/library-checker/judge/compiler && ./install.sh"
 
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
