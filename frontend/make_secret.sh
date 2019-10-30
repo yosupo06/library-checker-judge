@@ -8,4 +8,4 @@ EOF
 #TODO
 apt-get update
 apt-get -y install wget
-wget https://github.com/yosupo06/library-checker-judge/blob/master/compiler/langs.toml
+wget https://raw.githubusercontent.com/yosupo06/library-checker-judge/master/compiler/langs.toml
