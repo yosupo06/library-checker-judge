@@ -1,16 +1,17 @@
-package main
+package api
 
 import (
+	"net"
+	"time"
 	"context"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/test/bufconn"
 )
 
 func getEnv(key, defaultValue string) string {
@@ -27,8 +28,8 @@ type server struct {
 
 var langs = []*pb.Lang{}
 
-func init() {
-	// langs init
+// LoadLangsToml load langs.toml
+func LoadLangsToml(tomlPath string) {
 	var tomlData struct {
 		Langs []struct {
 			ID      string `toml:"id"`
@@ -36,7 +37,7 @@ func init() {
 			Version string `toml:"version"`
 		}
 	}
-	if _, err := toml.DecodeFile("compiler/langs.toml", &tomlData); err != nil {
+	if _, err := toml.DecodeFile(tomlPath, &tomlData); err != nil {
 		log.Fatal(err)
 	}
 	for _, lang := range tomlData.Langs {
@@ -55,11 +56,30 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 	return &pb.LangListResponse{Langs: langs}, nil
 }
 
+// LocalConnection return local connection of gRPC
+func LocalConnection() *grpc.ClientConn {
+	lis := bufconn.Listen(1024 * 1024)
+	s := grpc.NewServer()
+	pb.RegisterLibraryCheckerServiceServer(s, &server{})
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatal("Server exited with error: ", err)
+		}
+	}()
+	bufDialer := func (string, time.Duration) (net.Conn, error) {
+		return lis.Dial()	
+	}
+	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithBlock(), grpc.WithInsecure(), grpc.WithDialer(bufDialer))
+	if err != nil {
+		log.Fatal("Grpc dial failed: ", err)
+	}
+	return conn
+}
+
 func main() {
+	// launch gRPC server
 	port := getEnv("PORT", "50051")
 	s := grpc.NewServer()
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})
-	reflection.Register(s)
-	wrapped := grpcweb.WrapServer(s)
-	http.ListenAndServe(":" + port, wrapped)
+	http.ListenAndServe(":" + port, s)
 }
