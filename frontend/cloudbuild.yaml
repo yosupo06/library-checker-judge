@@ -1,6 +1,6 @@
 steps:
 - id: make_secret
-  name: gcr.io/cloud-builders/gcloud
+  name: ubuntu:18.04
   entrypoint: sh
   args:
     - ./make_secret.sh
