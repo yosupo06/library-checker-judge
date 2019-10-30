@@ -6,5 +6,5 @@ env_variables:
   SESSION_SECRET: $SESSION_SECRET
 EOF
 #TODO
-apt-get -y wget
+apt-get -y install wget
 wget https://github.com/yosupo06/library-checker-judge/blob/master/compiler/langs.toml
