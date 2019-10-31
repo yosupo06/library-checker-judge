@@ -23,3 +23,4 @@ project_name="C-Sharp"
 dotnet new console -o ${dirname}/${project_name} -lang "C#"
 sed -i -e '/<PropertyGroup>/a <AllowUnsafeBlocks>true</AllowUnsafeBlocks>' ${dirname}/${project_name}/${project_name}.csproj
 dotnet add ${dirname}/${project_name} package System.Runtime.CompilerServices.Unsafe -v 4.6.0
+dotnet restore ${dirname}/${project_name} -r ubuntu.18.04-x64
