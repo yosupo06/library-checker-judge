@@ -54,10 +54,17 @@
 [[langs]]
     id = "csharp"
     name = "C#"
-    version = "C# 8.0"
+    version = "mono-mcs(ubuntu18.04 apt)"
     source = "main.cs"
-    compile = """
-cp -r /opt/C-Sharp C-Sharp &&
-cp main.cs C-Sharp/Program.cs &&
-dotnet publish --no-restore C-Sharp -c Release -r ubuntu.18.04-x64 /p:PublishReadyToRun=true -o bin"""
-    exec = "./C-Sharp/bin/C-Sharp"
+    compile = "mcs main.cs"
+    exec = "mono main.exe"
+# [[langs]]
+#     id = "csharp"
+#     name = "C#"
+#     version = "C# 8.0"
+#     source = "main.cs"
+#     compile = """
+# cp -r /opt/C-Sharp C-Sharp &&
+# cp main.cs C-Sharp/Program.cs &&
+# dotnet publish C-Sharp -c Release -r ubuntu.18.04-x64 /p:PublishReadyToRun=true -o bin"""
+#     exec = "./C-Sharp/bin/C-Sharp"
