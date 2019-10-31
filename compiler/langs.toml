@@ -1,13 +1,13 @@
 [[langs]]
     id = "checker"
     source = "checker.cpp"    
-    compile = "g++ -O2 -std=c++14 -march=native -o checker checker.cpp"
+    compile = "g++ -O2 -std=c++14 -DEVAL -march=native -o checker checker.cpp"
 [[langs]]
     id = "cpp"
     name = "C++17"
     version = "g++(ubuntu18.04 apt)"
     source = "main.cpp"    
-    compile = "g++ -O2 -std=c++17 -march=native -o main main.cpp"
+    compile = "g++ -O2 -std=c++17 -DEVAL -march=native -o main main.cpp"
     exec = "./main"
 [[langs]]
     id = "cpp14"
