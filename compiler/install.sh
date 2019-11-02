@@ -20,7 +20,11 @@ echo 'Init C# Project'
 dirname="/opt"
 project_name="C-Sharp"
 
-dotnet new console -o ${dirname}/${project_name} -lang "C#"
-sed -i -e '/<PropertyGroup>/a <AllowUnsafeBlocks>true</AllowUnsafeBlocks>' ${dirname}/${project_name}/${project_name}.csproj
-dotnet add ${dirname}/${project_name} package System.Runtime.CompilerServices.Unsafe -v 4.6.0
-dotnet restore ${dirname}/${project_name} -r ubuntu.18.04-x64
+su -c """
+dotnet new console -o /tmp/${project_name} -lang \"C#\" &&
+sed -i -e '/<PropertyGroup>/a <AllowUnsafeBlocks>true</AllowUnsafeBlocks>' /tmp/${project_name}/${project_name}.csproj &&
+dotnet add /tmp/${project_name} package System.Runtime.CompilerServices.Unsafe -v 4.6.0 &&
+dotnet restore /tmp/${project_name} -r ubuntu.18.04-x64
+""" -- library-checker-user
+
+cp -r /tmp/${project_name} ${dirname}/${project_name}
