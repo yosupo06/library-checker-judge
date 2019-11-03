@@ -1,0 +1,29 @@
+# gcloud builds submit . --config=cloudbuild.yaml
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - asia.gcr.io/library-checker-project/judge-api
+      - -f
+      - Dockerfile_api
+      - .
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - asia.gcr.io/library-checker-project/judge-api
+  - id: deploy
+    name: gcr.io/cloud-builders/gcloud
+    args:
+      - beta
+      - run
+      - deploy
+      - judge-api
+      - --image=asia.gcr.io/library-checker-project/judge-api
+      - --platform=managed
+      - --region=asia-northeast1
+      - --allow-unauthenticated
+
+timeout: 1800s

@@ -14,6 +14,9 @@ github.com/improbable-eng/grpc-web v0.11.0/go.mod h1:6hRR09jOEG81ADP5wCQju1z71g6
 github.com/rs/cors v1.7.0 h1:+88SsELBHx5r+hZ8TCkggzSstaWNbDvThkVK8H6f9ik=
 github.com/rs/cors v1.7.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
 github.com/yosupo06/library-checker-judge v0.0.0-20191024064917-2ce51c38c536 h1:VeRPPHUG50nu1J86k9/GvICvySKYC+ffSG/tCe2sHog=
+github.com/yosupo06/library-checker-judge v0.0.0-20191102192324-23ab35b98275 h1:eQJ4gOWeCVHg7+KjHViK5Z/B0rmMY+4jkntgLuf6M/I=
+github.com/yosupo06/library-checker-judge/api v0.0.0-20191102192324-23ab35b98275 h1:vBe1JGJ1C9y5OO9qRZVHfCPfxBaiwpV/qREQLbasiUA=
+github.com/yosupo06/library-checker-judge/api v0.0.0-20191102192324-23ab35b98275/go.mod h1:ywKYpPaCmPy1JR7uHfJNFX+Jf3J5xVEmwEqVmaqJc4k=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=
 golang.org/x/net v0.0.0-20190311183353-d8887717615a h1:oWX7TPOiFAMXLq8o0ikBYfCJVlRHBcsciT5bXOrH628=
