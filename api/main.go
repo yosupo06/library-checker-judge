@@ -1,16 +1,20 @@
 package main
 
 import (
-	"net"
-	"time"
 	"context"
+	"fmt"
 	"log"
+	"net"
 	"os"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/lib/pq"
 )
 
 func getEnv(key, defaultValue string) string {
@@ -24,6 +28,36 @@ func getEnv(key, defaultValue string) string {
 type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
 }
+
+// Problem is db table
+type Problem struct {
+	Name      string
+	Title     string
+	Statement string
+	Timelimit float64
+}
+
+func dbConnect() *gorm.DB {
+	host := getEnv("POSTGRE_HOST", "127.0.0.1")
+	port := getEnv("POSTGRE_PORT", "5432")
+	user := getEnv("POSTGRE_USER", "postgres")
+	pass := getEnv("POSTGRE_PASS", "passwd")
+
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
+		host, port, user, pass)
+
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db.AutoMigrate(Problem{})
+
+	return db
+}
+
+var db *gorm.DB
 
 var langs = []*pb.Lang{}
 
@@ -55,6 +89,19 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 	return &pb.LangListResponse{Langs: langs}, nil
 }
 
+func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
+	name := in.Name
+	var problem Problem
+	if err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error; err != nil {
+		return nil, err
+	}
+	return &pb.ProblemInfoResponse{
+		Title:     problem.Title,
+		Statement: problem.Statement,
+		TimeLimit: problem.Timelimit / 1000.0,
+	}, nil
+}
+
 // LocalConnection return local connection of gRPC
 func LocalConnection() *grpc.ClientConn {
 	lis := bufconn.Listen(1024 * 1024)
@@ -65,8 +112,8 @@ func LocalConnection() *grpc.ClientConn {
 			log.Fatal("Server exited with error: ", err)
 		}
 	}()
-	bufDialer := func (string, time.Duration) (net.Conn, error) {
-		return lis.Dial()	
+	bufDialer := func(string, time.Duration) (net.Conn, error) {
+		return lis.Dial()
 	}
 	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithBlock(), grpc.WithInsecure(), grpc.WithDialer(bufDialer))
 	if err != nil {
@@ -76,9 +123,11 @@ func LocalConnection() *grpc.ClientConn {
 }
 
 func main() {
+	// connect db
+	db = dbConnect()
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
-	listen, err := net.Listen("tcp", ":" + port)
+	listen, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatal(err)
 	}

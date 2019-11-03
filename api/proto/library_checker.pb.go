@@ -24,37 +24,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type LangListRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *LangListRequest) Reset()         { *m = LangListRequest{} }
-func (m *LangListRequest) String() string { return proto.CompactTextString(m) }
-func (*LangListRequest) ProtoMessage()    {}
-func (*LangListRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9accbd90656ef5bc, []int{0}
-}
-
-func (m *LangListRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_LangListRequest.Unmarshal(m, b)
-}
-func (m *LangListRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_LangListRequest.Marshal(b, m, deterministic)
-}
-func (m *LangListRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LangListRequest.Merge(m, src)
-}
-func (m *LangListRequest) XXX_Size() int {
-	return xxx_messageInfo_LangListRequest.Size(m)
-}
-func (m *LangListRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_LangListRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_LangListRequest proto.InternalMessageInfo
-
 type Lang struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
@@ -68,7 +37,7 @@ func (m *Lang) Reset()         { *m = Lang{} }
 func (m *Lang) String() string { return proto.CompactTextString(m) }
 func (*Lang) ProtoMessage()    {}
 func (*Lang) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9accbd90656ef5bc, []int{1}
+	return fileDescriptor_9accbd90656ef5bc, []int{0}
 }
 
 func (m *Lang) XXX_Unmarshal(b []byte) error {
@@ -110,6 +79,131 @@ func (m *Lang) GetVersion() string {
 	return ""
 }
 
+type ProblemInfoRequest struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProblemInfoRequest) Reset()         { *m = ProblemInfoRequest{} }
+func (m *ProblemInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*ProblemInfoRequest) ProtoMessage()    {}
+func (*ProblemInfoRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{1}
+}
+
+func (m *ProblemInfoRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProblemInfoRequest.Unmarshal(m, b)
+}
+func (m *ProblemInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProblemInfoRequest.Marshal(b, m, deterministic)
+}
+func (m *ProblemInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProblemInfoRequest.Merge(m, src)
+}
+func (m *ProblemInfoRequest) XXX_Size() int {
+	return xxx_messageInfo_ProblemInfoRequest.Size(m)
+}
+func (m *ProblemInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProblemInfoRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProblemInfoRequest proto.InternalMessageInfo
+
+func (m *ProblemInfoRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+type ProblemInfoResponse struct {
+	Title                string   `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Statement            string   `protobuf:"bytes,2,opt,name=statement,proto3" json:"statement,omitempty"`
+	TimeLimit            float64  `protobuf:"fixed64,3,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProblemInfoResponse) Reset()         { *m = ProblemInfoResponse{} }
+func (m *ProblemInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*ProblemInfoResponse) ProtoMessage()    {}
+func (*ProblemInfoResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{2}
+}
+
+func (m *ProblemInfoResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProblemInfoResponse.Unmarshal(m, b)
+}
+func (m *ProblemInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProblemInfoResponse.Marshal(b, m, deterministic)
+}
+func (m *ProblemInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProblemInfoResponse.Merge(m, src)
+}
+func (m *ProblemInfoResponse) XXX_Size() int {
+	return xxx_messageInfo_ProblemInfoResponse.Size(m)
+}
+func (m *ProblemInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProblemInfoResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProblemInfoResponse proto.InternalMessageInfo
+
+func (m *ProblemInfoResponse) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+func (m *ProblemInfoResponse) GetStatement() string {
+	if m != nil {
+		return m.Statement
+	}
+	return ""
+}
+
+func (m *ProblemInfoResponse) GetTimeLimit() float64 {
+	if m != nil {
+		return m.TimeLimit
+	}
+	return 0
+}
+
+type LangListRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *LangListRequest) Reset()         { *m = LangListRequest{} }
+func (m *LangListRequest) String() string { return proto.CompactTextString(m) }
+func (*LangListRequest) ProtoMessage()    {}
+func (*LangListRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{3}
+}
+
+func (m *LangListRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LangListRequest.Unmarshal(m, b)
+}
+func (m *LangListRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LangListRequest.Marshal(b, m, deterministic)
+}
+func (m *LangListRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LangListRequest.Merge(m, src)
+}
+func (m *LangListRequest) XXX_Size() int {
+	return xxx_messageInfo_LangListRequest.Size(m)
+}
+func (m *LangListRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LangListRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LangListRequest proto.InternalMessageInfo
+
 type LangListResponse struct {
 	Langs                []*Lang  `protobuf:"bytes,1,rep,name=langs,proto3" json:"langs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -121,7 +215,7 @@ func (m *LangListResponse) Reset()         { *m = LangListResponse{} }
 func (m *LangListResponse) String() string { return proto.CompactTextString(m) }
 func (*LangListResponse) ProtoMessage()    {}
 func (*LangListResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9accbd90656ef5bc, []int{2}
+	return fileDescriptor_9accbd90656ef5bc, []int{4}
 }
 
 func (m *LangListResponse) XXX_Unmarshal(b []byte) error {
@@ -150,28 +244,36 @@ func (m *LangListResponse) GetLangs() []*Lang {
 }
 
 func init() {
-	proto.RegisterType((*LangListRequest)(nil), "librarychecker.LangListRequest")
 	proto.RegisterType((*Lang)(nil), "librarychecker.Lang")
+	proto.RegisterType((*ProblemInfoRequest)(nil), "librarychecker.ProblemInfoRequest")
+	proto.RegisterType((*ProblemInfoResponse)(nil), "librarychecker.ProblemInfoResponse")
+	proto.RegisterType((*LangListRequest)(nil), "librarychecker.LangListRequest")
 	proto.RegisterType((*LangListResponse)(nil), "librarychecker.LangListResponse")
 }
 
 func init() { proto.RegisterFile("proto/library_checker.proto", fileDescriptor_9accbd90656ef5bc) }
 
 var fileDescriptor_9accbd90656ef5bc = []byte{
-	// 206 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x92, 0x2e, 0x28, 0xca, 0x2f,
-	0xc9, 0xd7, 0xcf, 0xc9, 0x4c, 0x2a, 0x4a, 0x2c, 0xaa, 0x8c, 0x4f, 0xce, 0x48, 0x4d, 0xce, 0x4e,
-	0x2d, 0xd2, 0x03, 0x8b, 0x0a, 0xf1, 0x41, 0x85, 0xa1, 0xa2, 0x4a, 0x82, 0x5c, 0xfc, 0x3e, 0x89,
-	0x79, 0xe9, 0x3e, 0x99, 0xc5, 0x25, 0x41, 0xa9, 0x85, 0xa5, 0xa9, 0xc5, 0x25, 0x4a, 0x2e, 0x5c,
-	0x2c, 0x20, 0x21, 0x21, 0x3e, 0x2e, 0xa6, 0xcc, 0x14, 0x09, 0x46, 0x05, 0x46, 0x0d, 0xce, 0x20,
-	0x20, 0x4b, 0x48, 0x88, 0x8b, 0x25, 0x2f, 0x31, 0x37, 0x55, 0x82, 0x09, 0x2c, 0x02, 0x66, 0x0b,
-	0x49, 0x70, 0xb1, 0x97, 0xa5, 0x16, 0x15, 0x67, 0xe6, 0xe7, 0x49, 0x30, 0x83, 0x85, 0x61, 0x5c,
-	0x25, 0x3b, 0x2e, 0x01, 0x84, 0xc1, 0xc5, 0x05, 0xf9, 0x79, 0xc5, 0xa9, 0x42, 0x5a, 0x5c, 0xac,
-	0x39, 0x40, 0xb1, 0x62, 0xa0, 0xa1, 0xcc, 0x1a, 0xdc, 0x46, 0x22, 0x7a, 0xa8, 0x8e, 0xd1, 0x03,
-	0x69, 0x08, 0x82, 0x28, 0x31, 0xca, 0xe0, 0x12, 0xf5, 0x81, 0xc8, 0x3a, 0x43, 0x64, 0x83, 0x53,
-	0x8b, 0xca, 0x32, 0x93, 0x53, 0x85, 0xfc, 0xb9, 0x38, 0x60, 0x06, 0x0b, 0xc9, 0x63, 0x33, 0x01,
-	0xc9, 0x2f, 0x52, 0x0a, 0xb8, 0x15, 0x40, 0xdc, 0xa4, 0xc4, 0x90, 0xc4, 0x06, 0x0e, 0x19, 0x63,
-	0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe4, 0x96, 0xd6, 0x5e, 0x38, 0x01, 0x00, 0x00,
+	// 299 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x92, 0x4f, 0x4f, 0x83, 0x40,
+	0x10, 0xc5, 0xa5, 0x7f, 0x54, 0xa6, 0x49, 0xd5, 0xb1, 0x26, 0xa4, 0x6a, 0x6c, 0xd6, 0x0b, 0xf1,
+	0x80, 0x49, 0xbd, 0x7b, 0xd1, 0x8b, 0x09, 0x89, 0x06, 0x2f, 0xde, 0x1a, 0xc0, 0xd1, 0x6e, 0x84,
+	0xdd, 0xba, 0xbb, 0x36, 0xf1, 0xeb, 0xf9, 0xc9, 0x84, 0x05, 0xa4, 0xf5, 0xdf, 0x6d, 0xe7, 0x37,
+	0x8f, 0x37, 0x6f, 0x26, 0xc0, 0xe1, 0x42, 0x49, 0x23, 0xcf, 0x33, 0x9e, 0xa8, 0x58, 0xbd, 0xcf,
+	0xd2, 0x39, 0xa5, 0x2f, 0xa4, 0x02, 0x4b, 0x71, 0x58, 0xe3, 0x9a, 0xb2, 0x6b, 0xe8, 0x85, 0xb1,
+	0x78, 0xc6, 0x21, 0x74, 0xf8, 0xa3, 0xe7, 0x4c, 0x1c, 0xdf, 0x8d, 0x8a, 0x17, 0x22, 0xf4, 0x44,
+	0x9c, 0x93, 0xd7, 0xb1, 0xc4, 0xbe, 0xd1, 0x83, 0xad, 0x25, 0x29, 0xcd, 0xa5, 0xf0, 0xba, 0x16,
+	0x37, 0x25, 0xf3, 0x01, 0xef, 0x94, 0x4c, 0x32, 0xca, 0x6f, 0xc4, 0x93, 0x8c, 0xe8, 0xf5, 0x8d,
+	0xb4, 0xf9, 0xf2, 0x70, 0x5a, 0x0f, 0x36, 0x87, 0xfd, 0x35, 0xa5, 0x5e, 0x48, 0xa1, 0x09, 0x47,
+	0xd0, 0x37, 0xdc, 0x64, 0x8d, 0xb6, 0x2a, 0xf0, 0x08, 0x5c, 0x6d, 0x62, 0x43, 0x39, 0x09, 0x53,
+	0x27, 0x69, 0x01, 0x1e, 0x03, 0x18, 0x9e, 0xd3, 0x2c, 0xe3, 0x39, 0x37, 0x36, 0x91, 0x13, 0xb9,
+	0x25, 0x09, 0x4b, 0xc0, 0xf6, 0x60, 0xa7, 0xdc, 0x2c, 0xe4, 0xda, 0xd4, 0x81, 0xd8, 0x25, 0xec,
+	0xb6, 0xa8, 0x9e, 0x7c, 0x06, 0xfd, 0xac, 0x60, 0xba, 0x98, 0xdc, 0xf5, 0x07, 0xd3, 0x51, 0xb0,
+	0x7e, 0xa0, 0xa0, 0xfc, 0x20, 0xaa, 0x24, 0xd3, 0x0f, 0x07, 0x0e, 0xc2, 0xaa, 0x7d, 0x55, 0xb5,
+	0xef, 0x49, 0x2d, 0x79, 0x4a, 0xf8, 0x00, 0x83, 0x95, 0xb5, 0x90, 0x7d, 0x77, 0xf9, 0x79, 0x9d,
+	0xf1, 0xe9, 0xbf, 0x9a, 0x2a, 0x1d, 0xdb, 0xc0, 0x5b, 0xd8, 0x6e, 0x32, 0xe3, 0xc9, 0x6f, 0xe1,
+	0x56, 0x16, 0x1c, 0x4f, 0xfe, 0x16, 0x34, 0x86, 0xc9, 0xa6, 0xfd, 0x11, 0x2e, 0x3e, 0x03, 0x00,
+	0x00, 0xff, 0xff, 0xd9, 0xf9, 0x56, 0x1a, 0x27, 0x02, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -186,6 +288,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type LibraryCheckerServiceClient interface {
+	ProblemInfo(ctx context.Context, in *ProblemInfoRequest, opts ...grpc.CallOption) (*ProblemInfoResponse, error)
 	LangList(ctx context.Context, in *LangListRequest, opts ...grpc.CallOption) (*LangListResponse, error)
 }
 
@@ -195,6 +298,15 @@ type libraryCheckerServiceClient struct {
 
 func NewLibraryCheckerServiceClient(cc *grpc.ClientConn) LibraryCheckerServiceClient {
 	return &libraryCheckerServiceClient{cc}
+}
+
+func (c *libraryCheckerServiceClient) ProblemInfo(ctx context.Context, in *ProblemInfoRequest, opts ...grpc.CallOption) (*ProblemInfoResponse, error) {
+	out := new(ProblemInfoResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/ProblemInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *libraryCheckerServiceClient) LangList(ctx context.Context, in *LangListRequest, opts ...grpc.CallOption) (*LangListResponse, error) {
@@ -208,6 +320,7 @@ func (c *libraryCheckerServiceClient) LangList(ctx context.Context, in *LangList
 
 // LibraryCheckerServiceServer is the server API for LibraryCheckerService service.
 type LibraryCheckerServiceServer interface {
+	ProblemInfo(context.Context, *ProblemInfoRequest) (*ProblemInfoResponse, error)
 	LangList(context.Context, *LangListRequest) (*LangListResponse, error)
 }
 
@@ -215,12 +328,33 @@ type LibraryCheckerServiceServer interface {
 type UnimplementedLibraryCheckerServiceServer struct {
 }
 
+func (*UnimplementedLibraryCheckerServiceServer) ProblemInfo(ctx context.Context, req *ProblemInfoRequest) (*ProblemInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProblemInfo not implemented")
+}
 func (*UnimplementedLibraryCheckerServiceServer) LangList(ctx context.Context, req *LangListRequest) (*LangListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LangList not implemented")
 }
 
 func RegisterLibraryCheckerServiceServer(s *grpc.Server, srv LibraryCheckerServiceServer) {
 	s.RegisterService(&_LibraryCheckerService_serviceDesc, srv)
+}
+
+func _LibraryCheckerService_ProblemInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProblemInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).ProblemInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/ProblemInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).ProblemInfo(ctx, req.(*ProblemInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _LibraryCheckerService_LangList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -245,6 +379,10 @@ var _LibraryCheckerService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "librarychecker.LibraryCheckerService",
 	HandlerType: (*LibraryCheckerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ProblemInfo",
+			Handler:    _LibraryCheckerService_ProblemInfo_Handler,
+		},
 		{
 			MethodName: "LangList",
 			Handler:    _LibraryCheckerService_LangList_Handler,

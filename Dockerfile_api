@@ -5,4 +5,4 @@ WORKDIR /go/src/github.com/yosupo06/library-checker-judge/api
 RUN CGO_ENABLED=0 GOOS=linux go build .
 
 ENV PORT 50051
-CMD ["/go/src/github.com/yosupo06/library-checker-judge/api/main"]
+CMD ["/go/src/github.com/yosupo06/library-checker-judge/api/api"]
