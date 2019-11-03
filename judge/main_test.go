@@ -336,10 +336,10 @@ func TestSubmitCSharpAC(t *testing.T) {
 	if submission.Status != "AC" {
 		t.Fatal("Expect status AC, actual ", submission.Status)
 	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
+	if !(1 <= submission.MaxTime && submission.MaxTime <= 1000) {
 		t.Fatal("Irregural consume time ", submission.MaxTime)
 	}
-	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
+	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 100_000_000) {
 		t.Fatal("Irregural consume memory ", submission.MaxMemory)
 	}
 }

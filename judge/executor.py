@@ -93,6 +93,8 @@ def inside(args, execcmd):
     time = -1
     memory = -1
 
+    env = environ.copy()
+    env["HOME"] = "/home/library-checker-user"
     start = datetime.now()
 
     try:
@@ -100,6 +102,7 @@ def inside(args, execcmd):
                               stdin=args.stdin,
                               stdout=args.stdout,
                               stderr=args.stderr,
+                              env=env,
                               timeout=args.tl)
         returncode = proc.returncode
     except subprocess.TimeoutExpired:

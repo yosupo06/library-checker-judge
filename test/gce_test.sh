@@ -14,7 +14,7 @@ gcloud compute instances create $NAME --zone=$ZONE \
 --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud \
 --preemptible
 
-if [ $1 = "remain" ]; then
+if [ $# -ge 1 ] && [ $1 = "remain" ]; then
     echo "[WARN!] Remain Instance"
 else
     echo "Auto Release"
