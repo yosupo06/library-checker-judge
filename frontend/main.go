@@ -142,14 +142,19 @@ func problemList(ctx *gin.Context) {
 
 func problemInfo(ctx *gin.Context) {
 	name := ctx.Param("name")
-	var problem Problem
-	db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem)
+	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{Name: name})
+	if err != nil {
+		ctx.AbortWithError(http.StatusServiceUnavailable, err)
+		return
+	}
 	Langs, err := langList(ctx)
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusServiceUnavailable)
 		return
 	}
 	htmlWithUser(ctx, 200, "problem.html", gin.H{
+		"Name": name,
+		"Statement": template.HTML(problem.Statement),
 		"User":    getUser(ctx),
 		"Problem": problem,
 		"Langs":   Langs,
@@ -455,7 +460,11 @@ func helpPage(ctx *gin.Context) {
 	})
 }
 
-func main() {
+func grpcDial(local bool) (*grpc.ClientConn, error) {
+	if local {
+		return grpc.Dial("localhost:50051", grpc.WithBlock(), grpc.WithInsecure())
+	}
+
 	systemRoots, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
@@ -463,7 +472,11 @@ func main() {
 	creds := credentials.NewTLS(&tls.Config{
 		RootCAs: systemRoots,
 	})
-	conn, err := grpc.Dial("judge-api-5qrf4vs5oa-an.a.run.app:443", grpc.WithBlock(), grpc.WithTransportCredentials(creds))
+	return grpc.Dial("judge-api-master-5qrf4vs5oa-an.a.run.app:443", grpc.WithBlock(), grpc.WithTransportCredentials(creds))
+}
+
+func main() {
+	conn, err := grpcDial(false)
 	if err != nil {
 		log.Fatal(err)
 	}
