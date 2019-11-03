@@ -12,6 +12,9 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
 	"database/sql"
 
 	"github.com/gin-contrib/sessions"
@@ -20,8 +23,10 @@ import (
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 
+	"crypto/tls"
+	"crypto/x509"
+
 	_ "github.com/lib/pq"
-	judgeapi "github.com/yosupo06/library-checker-judge/api"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
 
@@ -451,8 +456,17 @@ func helpPage(ctx *gin.Context) {
 }
 
 func main() {
-	judgeapi.LoadLangsToml("langs.toml")
-	conn := judgeapi.LocalConnection()
+	systemRoots, err := x509.SystemCertPool()
+	if err != nil {
+		log.Fatal(err)
+	}
+	creds := credentials.NewTLS(&tls.Config{
+		RootCAs: systemRoots,
+	})
+	conn, err := grpc.Dial("judge-api-5qrf4vs5oa-an.a.run.app:443", grpc.WithBlock(), grpc.WithTransportCredentials(creds))
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer conn.Close()
 	client = pb.NewLibraryCheckerServiceClient(conn)
 	loadList()
