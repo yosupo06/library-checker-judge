@@ -14,7 +14,12 @@ gcloud compute instances create $NAME --zone=$ZONE \
 --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud \
 --preemptible
 
-trap "echo 'Release' && gcloud compute instances delete ${NAME} --zone=${ZONE} --quiet" 0
+if [ $1 = "remain" ]; then
+    echo "[WARN!] Remain Instance"
+else
+    echo "Auto Release"
+    trap "echo 'Release' && gcloud compute instances delete ${NAME} --zone=${ZONE} --quiet" 0
+fi
 
 function gcpexec() {
     echo "Start: ${1}"
