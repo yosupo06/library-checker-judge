@@ -1,11 +1,10 @@
-package api
+package main
 
 import (
 	"net"
 	"time"
 	"context"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -79,7 +78,12 @@ func LocalConnection() *grpc.ClientConn {
 func main() {
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
+	listen, err := net.Listen("tcp", ":" + port)
+	if err != nil {
+		log.Fatal(err)
+	}
+	LoadLangsToml("../compiler/langs.toml")
 	s := grpc.NewServer()
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})
-	http.ListenAndServe(":" + port, s)
+	s.Serve(listen)
 }
