@@ -2,13 +2,23 @@ syntax = "proto3";
 
 package librarychecker;
 
-message LangListRequest {
-}
-
 message Lang {
     string id = 1; // "cpp"
     string name = 2; // "C++(default, C++17)"
     string version = 3; // "ubuntu18.04 apt"
+}
+
+message ProblemInfoRequest {
+    string name = 1; // "aplusb"
+}
+
+message ProblemInfoResponse {
+    string title = 1; // "A + B"
+    string statement = 2;
+    double time_limit = 3; // 2.0 = 2 seconds    
+}
+
+message LangListRequest {
 }
 
 message LangListResponse {
@@ -16,5 +26,6 @@ message LangListResponse {
 }
 
 service LibraryCheckerService {
+    rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc LangList (LangListRequest) returns (LangListResponse) {}
 }
