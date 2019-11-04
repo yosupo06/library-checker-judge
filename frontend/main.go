@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"context"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -153,11 +155,11 @@ func problemInfo(ctx *gin.Context) {
 		return
 	}
 	htmlWithUser(ctx, 200, "problem.html", gin.H{
-		"Name": name,
+		"Name":      name,
 		"Statement": template.HTML(problem.Statement),
-		"User":    getUser(ctx),
-		"Problem": problem,
-		"Langs":   Langs,
+		"User":      getUser(ctx),
+		"Problem":   problem,
+		"Langs":     Langs,
 	})
 }
 
@@ -204,31 +206,18 @@ func submit(ctx *gin.Context) {
 			return
 		}
 	}
-	if src == "" {
-		ctx.Redirect(http.StatusFound, ".")
+	response, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: submitForm.Problem,
+		Source:  src,
+		Lang:    submitForm.Lang,
+	})
+
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	ok, err := checkLang(ctx, submitForm.Lang)
-	if err != nil || ok == false {
-		ctx.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	submission := Submission{
-		ProblemName: submitForm.Problem,
-		Lang:        submitForm.Lang,
-		Status:      "WJ",
-		Source:      src,
-		MaxTime:     -1,
-		MaxMemory:   -1,
-		UserName:    getUser(ctx).getName(),
-	}
-	db.Create(&submission)
 
-	task := Task{}
-	task.Submission = submission.ID
-	db.Create(&task)
-
-	ctx.Redirect(http.StatusFound, "/submission/"+strconv.Itoa(submission.ID))
+	ctx.Redirect(http.StatusFound, "/submission/"+strconv.Itoa(int(response.Id)))
 }
 
 func submissionInfo(ctx *gin.Context) {
@@ -350,6 +339,21 @@ func loginPost(ctx *gin.Context) {
 		})
 		return
 	}
+	response, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     userPass.Name,
+		Password: userPass.Password,
+	})
+
+	if err != nil {
+		htmlWithUser(ctx, 200, "login.html", gin.H{
+			"Name":  userPass.Name,
+			"Error": err.Error(),
+		})
+		return
+	}
+
+	ctx.SetCookie("token", response.Token, 365*24*3600, "", "", false, false)
+
 	if !login(ctx, userPass.Name, userPass.Password) {
 		htmlWithUser(ctx, 200, "login.html", gin.H{
 			"Name": userPass.Name,
@@ -361,6 +365,7 @@ func loginPost(ctx *gin.Context) {
 
 func logoutGet(ctx *gin.Context) {
 	logout(ctx)
+	ctx.SetCookie("token", "", -1, "", "", false, false)
 
 	ctx.Redirect(http.StatusFound, "/")
 }
@@ -460,23 +465,49 @@ func helpPage(ctx *gin.Context) {
 	})
 }
 
-func grpcDial(local bool) (*grpc.ClientConn, error) {
+type loginCreds struct{}
+
+func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	dict := map[string]string{}
+	if token, ok := ctx.Value("token").(string); ok && token != "" {
+		dict["authorization"] = "bearer " + token
+	}
+	return dict, nil
+}
+
+func (c *loginCreds) RequireTransportSecurity() bool {
+	return false
+}
+
+func grpcDial(local bool, host string) (*grpc.ClientConn, error) {
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{})}
 	if local {
-		return grpc.Dial("localhost:50051", grpc.WithBlock(), grpc.WithInsecure())
+		if host == "" {
+			host = "localhost:50051"
+		}
+		options = append(options, grpc.WithInsecure())
+	} else {
+		if host == "" {
+			host = "apiv1.yosupo.jp:443"
+		}
+		systemRoots, err := x509.SystemCertPool()
+		if err != nil {
+			log.Fatal(err)
+		}
+		creds := credentials.NewTLS(&tls.Config{
+			RootCAs: systemRoots,
+		})
+		options = append(options, grpc.WithTransportCredentials(creds))
 	}
 
-	systemRoots, err := x509.SystemCertPool()
-	if err != nil {
-		log.Fatal(err)
-	}
-	creds := credentials.NewTLS(&tls.Config{
-		RootCAs: systemRoots,
-	})
-	return grpc.Dial("apiv1.yosupo.jp:443", grpc.WithBlock(), grpc.WithTransportCredentials(creds))
+	return grpc.Dial(host, options...)
 }
 
 func main() {
-	conn, err := grpcDial(false)
+	local := flag.Bool("local", false, "API server is local")
+	host := flag.String("host", "", "Hostname of API server")
+	flag.Parse()
+	conn, err := grpcDial(*local, *host)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -490,9 +521,16 @@ func main() {
 	db.AutoMigrate(Submission{})
 	db.AutoMigrate(Task{})
 	db.AutoMigrate(User{})
-	// db.LogMode(true)
+//	db.LogMode(*local)
 
 	router := gin.Default()
+	router.Use(func(ctx *gin.Context) {
+		token, err := ctx.Cookie("token")
+		if err == nil {
+			ctx.Set("token", token)
+		}
+		ctx.Next()
+	})
 	router.SetFuncMap(template.FuncMap{
 		"repeat": func(a, b int) []int {
 			var result []int
