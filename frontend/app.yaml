@@ -1,7 +1,1 @@
 runtime: go112
-
-includes:
-  - secret.yaml
-
-beta_settings:
-  cloud_sql_instances: library-checker-project:asia-northeast1:library-checker-sql
