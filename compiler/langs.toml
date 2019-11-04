@@ -42,7 +42,7 @@
     name = "Python3"
     version = "python3.7 + numpy + scipy (ubuntu18.04 apt)"
     source = "main.py"
-    compile = "python3.7 -c 'print(1)'"
+    compile = "(echo | python3.7 -c 'import main.py') || :"
     exec = "python3.7 main.py"
 [[langs]]
     id = "pypy3"
