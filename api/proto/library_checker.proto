@@ -2,30 +2,125 @@ syntax = "proto3";
 
 package librarychecker;
 
-message Lang {
-    string id = 1; // "cpp"
-    string name = 2; // "C++(default, C++17)"
-    string version = 3; // "ubuntu18.04 apt"
+service LibraryCheckerService {
+    rpc Register (RegisterRequest) returns (RegisterResponse) {}
+    rpc Login (LoginRequest) returns (LoginResponse) {}
+    rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
+    rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
+    rpc Submit (SubmitRequest) returns (SubmitResponse) {}
+    rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
+    rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}
+    rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
+    rpc LangList (LangListRequest) returns (LangListResponse) {}
+}
+
+// --- Register, Login ---
+
+message RegisterRequest {
+    string name = 1; // "newuser"
+    string password = 2; // "password"    
+}
+message RegisterResponse {
+    string token = 1; // JWT Token
+}
+
+message LoginRequest {
+    string name = 1; // "admin"
+    string password = 2; // "password"    
+}
+message LoginResponse {
+    string token = 1; // JWT Token
+}
+
+// --- Problem ---
+
+message Problem {
+    string name = 1; // "aplusb"
+    string title = 2; // "A + B"
+}
+
+message ProblemListRequest {    
+}
+message ProblemListResponse {
+    repeated Problem problems = 1;
 }
 
 message ProblemInfoRequest {
     string name = 1; // "aplusb"
 }
-
 message ProblemInfoResponse {
     string title = 1; // "A + B"
     string statement = 2;
     double time_limit = 3; // 2.0 = 2 seconds    
 }
 
+// --- Submission ---
+
+message SubmitRequest {
+    string problem = 1; // "aplusb"
+    string source = 2; // "int main() ..."
+    string lang = 3; // "cpp"
+}
+message SubmitResponse {
+    int32 id = 1; // submission id
+}
+
+message SubmissionOverview {
+    int32 id = 1; // submission id
+    string problem_name = 2; // "aplusb"
+    string problem_title = 3; // "A + B"
+    string user_name = 4; // "admin"
+    string lang = 5; // "cpp"
+    bool is_latest = 6;
+    string status = 7; // "AC"    
+    double time = 8; // 2.0 = 2 seconds
+    int64 memory = 9; // x bytes
+}
+message SubmissionCaseResult {
+    string case = 1; // "example_00.in"
+    string status = 2; // "AC"
+    double time = 3; // 2.0( = 2 seconds)
+    int64 memory = 4; // x bytes
+}
+
+message SubmissionInfoRequest {
+    int32 id = 1; // submission id
+}
+message SubmissionInfoResponse {
+    SubmissionOverview overview = 1;
+    repeated SubmissionCaseResult case_results = 2;
+    string source = 3; // "source"
+}
+
+message SubmissionListRequest {
+    uint32 skip = 1; // fetch [skip, skip + limit)-th submissions
+    uint32 limit = 2; // # of submissions (max 1000)
+    string problem = 3; // "aplusb"(filter)
+    string status = 4; // "AC"(filter)
+    string user = 5; // "admin"(filter)
+    //string order = 6; // unimplemented(default: "-id")
+}
+message SubmissionListResponse {
+    repeated SubmissionOverview submissions = 1;
+    int32 count = 2; // # of submissions(skip/limit don't effect this)
+}
+
+message RejudgeRequest {
+    int32 id = 1; // submission id
+}
+message RejudgeResponse {
+}
+
+// --- Lang ---
+
+message Lang {
+    string id = 1; // "cpp"
+    string name = 2; // "C++(default, C++17)"
+    string version = 3; // "ubuntu18.04 apt"
+}
+
 message LangListRequest {
 }
-
 message LangListResponse {
     repeated Lang langs = 1;
-}
-
-service LibraryCheckerService {
-    rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
-    rpc LangList (LangListRequest) returns (LangListResponse) {}
 }

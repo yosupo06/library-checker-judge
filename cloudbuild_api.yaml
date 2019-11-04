@@ -26,6 +26,6 @@ steps:
       - --region=asia-northeast1
       - --allow-unauthenticated
       - --add-cloudsql-instances=library-checker-sql
-      - --set-env-vars=POSTGRE_HOST=${_POSTGRE_HOST},POSTGRE_PASS=${_POSTGRE_PASS}
+      - --set-env-vars=POSTGRE_HOST=${_POSTGRE_HOST},POSTGRE_PASS=${_POSTGRE_PASS},HMAC_SECRET=${_HMAC_SECRET}
 
 timeout: 1800s

@@ -2,17 +2,19 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
+	"errors"
 	"log"
 	"net"
 	"os"
-	"time"
 
 	"github.com/BurntSushi/toml"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/dgrijalva/jwt-go"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 )
@@ -29,35 +31,248 @@ type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
 }
 
-// Problem is db table
-type Problem struct {
-	Name      string
-	Title     string
-	Statement string
-	Timelimit float64
+var db *gorm.DB
+
+func issueToken(name string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": name,
+	})
+	tokenString, err := token.SignedString(hmacSecret)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }
 
-func dbConnect() *gorm.DB {
-	host := getEnv("POSTGRE_HOST", "127.0.0.1")
-	port := getEnv("POSTGRE_PORT", "5432")
-	user := getEnv("POSTGRE_USER", "postgres")
-	pass := getEnv("POSTGRE_PASS", "passwd")
-
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
-		host, port, user, pass)
-
-	db, err := gorm.Open("postgres", connStr)
+func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	if in.Name == "" {
+		return nil, errors.New("Empty userName")
+	}
+	if in.Password == "" {
+		return nil, errors.New("Empty password")
+	}
+	passHash, err := bcrypt.GenerateFromPassword([]byte(in.Password), 10)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.New("Bcrypt broken")
+	}
+	user := User{
+		Name:     in.Name,
+		Passhash: string(passHash),
+	}
+	if err := db.Create(&user).Error; err != nil {
+		return nil, errors.New("This username are already registered")
+	}
+	token, err := issueToken(in.Name)
+	if err != nil {
+		return nil, errors.New("Broken")
+	}
+	return &pb.RegisterResponse{
+		Token: token,
+	}, nil
+}
+
+func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
+	var user User
+	if err := db.Where("name = ?", in.Name).First(&user).Error; err != nil {
+		return nil, errors.New("Invalid username")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(in.Password)); err != nil {
+		return nil, errors.New("Invalid password")
 	}
 
-	db.AutoMigrate(Problem{})
-
-	return db
+	token, err := issueToken(in.Name)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.LoginResponse{
+		Token: token,
+	}, nil
 }
 
-var db *gorm.DB
+func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
+	name := in.Name
+	if name == "" {
+		return nil, errors.New("Empty problem name")
+	}
+	var problem Problem
+	if err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error; err != nil {
+		return nil, errors.New("Failed to get problem")
+	}
+	return &pb.ProblemInfoResponse{
+		Title:     problem.Title,
+		Statement: problem.Statement,
+		TimeLimit: problem.Timelimit / 1000.0,
+	}, nil
+}
+
+func (s *server) ProblemList(ctx context.Context, in *pb.ProblemListRequest) (*pb.ProblemListResponse, error) {
+	problems := []Problem{}
+	if err := db.Select("name, title").Find(&problems).Error; err != nil {
+		return nil, errors.New("Fetch problems failed")
+	}
+
+	res := pb.ProblemListResponse{}
+	for _, prob := range problems {
+		res.Problems = append(res.Problems, &pb.Problem{
+			Name:  prob.Name,
+			Title: prob.Title,
+		})
+	}
+	return &res, nil
+}
+
+func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitResponse, error) {
+	if in.Source == "" {
+		return nil, errors.New("Empty Source")
+	}
+	ok := false
+	for _, lang := range langs {
+		if lang.Id == in.Lang {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return nil, errors.New("Unknown Lang")
+	}
+	if _, err := s.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: in.Problem,
+	}); err != nil {
+		return nil, errors.New("Unknown problem")
+	}
+	user := getUserName(ctx)
+	submission := Submission{
+		ProblemName: in.Problem,
+		Lang:        in.Lang,
+		Status:      "WJ",
+		Source:      in.Source,
+		MaxTime:     -1,
+		MaxMemory:   -1,
+		UserName:    sql.NullString{String: user, Valid: user != ""},
+	}
+
+	if err := db.Create(&submission).Error; err != nil {
+		return nil, errors.New("Submit failed")
+	}
+
+	task := Task{}
+	task.Submission = submission.ID
+	if err := db.Create(&task).Error; err != nil {
+		return nil, errors.New("Inserting to judge queue is failed")
+	}
+
+	log.Println("Submit ", submission.ID)
+
+	return &pb.SubmitResponse{Id: int32(submission.ID)}, nil
+}
+
+func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
+	var sub Submission
+	if err := db.
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name")
+		}).
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", in.Id).First(&sub).Error; err != nil {
+		return nil, errors.New("Submission fetch failed")
+	}
+	var cases []SubmissionTestcaseResult
+	if err := db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
+		return nil, errors.New("Submission fetch failed")
+	}
+
+	res := &pb.SubmissionInfoResponse{
+		Overview: &pb.SubmissionOverview{
+			Id:           int32(sub.ID),
+			ProblemName:  sub.Problem.Name,
+			ProblemTitle: sub.Problem.Title,
+			UserName:     sub.User.Name,
+			Lang:         sub.Lang,
+			IsLatest:     sub.Testhash == sub.Problem.Testhash,
+			Status:       sub.Status,
+			Time:         float64(sub.MaxTime) / 1000.0,
+			Memory:       int64(sub.MaxMemory),
+		},
+		Source: sub.Source,
+	}
+	for _, c := range cases {
+		res.CaseResults = append(res.CaseResults, &pb.SubmissionCaseResult{
+			Case:   c.Testcase,
+			Status: c.Status,
+			Time:   float64(c.Time) / 1000.0,
+			Memory: int64(sub.MaxMemory),
+		})
+	}
+	return res, nil
+}
+
+func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListRequest) (*pb.SubmissionListResponse, error) {
+	if 1000 < in.Limit {
+		in.Limit = 1000
+	}
+
+	filter := &Submission{
+		ProblemName: in.Problem,
+		Status:      in.Status,
+		UserName:    sql.NullString{String: in.User, Valid: (in.User != "")},
+	}
+
+	count := 0
+	if err := db.Model(&Submission{}).Where(filter).Count(&count).Error; err != nil {
+		return nil, errors.New("Count Query Failed")
+	}
+
+	var submissions = make([]Submission, 0)
+	if err := db.Where(filter).Limit(in.Limit).Offset(in.Skip).
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name")
+		}).
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
+		Order("id desc").
+		Find(&submissions).Error; err != nil {
+		return nil, errors.New("Select Query Failed")
+	}
+
+	res := pb.SubmissionListResponse{
+		Count: int32(count),
+	}
+	for _, sub := range submissions {
+		res.Submissions = append(res.Submissions, &pb.SubmissionOverview{
+			Id:           int32(sub.ID),
+			ProblemName:  sub.Problem.Name,
+			ProblemTitle: sub.Problem.Title,
+			UserName:     sub.User.Name,
+			Lang:         sub.Lang,
+			IsLatest:     sub.Testhash == sub.Problem.Testhash,
+			Status:       sub.Status,
+			Time:         float64(sub.MaxTime) / 1000.0,
+			Memory:       int64(sub.MaxMemory),
+		})
+	}
+	return &res, nil
+}
+
+func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.RejudgeResponse, error) {
+	sub, err := s.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{Id: in.Id})
+	if err != nil {
+		return nil, err
+	}
+	userName := getUserName(ctx)
+	if userName == "" || userName != sub.Overview.UserName {
+		return nil, errors.New("No permission")
+	}
+	task := Task{}
+	task.Submission = int(in.Id)
+	if err := db.Create(&task).Error; err != nil {
+		return nil, errors.New("Cannot insert into queue")
+	}
+	return &pb.RejudgeResponse{}, nil
+}
 
 var langs = []*pb.Lang{}
 
@@ -89,42 +304,11 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 	return &pb.LangListResponse{Langs: langs}, nil
 }
 
-func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
-	name := in.Name
-	var problem Problem
-	if err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error; err != nil {
-		return nil, err
-	}
-	return &pb.ProblemInfoResponse{
-		Title:     problem.Title,
-		Statement: problem.Statement,
-		TimeLimit: problem.Timelimit / 1000.0,
-	}, nil
-}
-
-// LocalConnection return local connection of gRPC
-func LocalConnection() *grpc.ClientConn {
-	lis := bufconn.Listen(1024 * 1024)
-	s := grpc.NewServer()
-	pb.RegisterLibraryCheckerServiceServer(s, &server{})
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			log.Fatal("Server exited with error: ", err)
-		}
-	}()
-	bufDialer := func(string, time.Duration) (net.Conn, error) {
-		return lis.Dial()
-	}
-	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithBlock(), grpc.WithInsecure(), grpc.WithDialer(bufDialer))
-	if err != nil {
-		log.Fatal("Grpc dial failed: ", err)
-	}
-	return conn
-}
-
 func main() {
 	// connect db
 	db = dbConnect()
+	//db.LogMode(true)
+
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
 	listen, err := net.Listen("tcp", ":"+port)
@@ -132,7 +316,8 @@ func main() {
 		log.Fatal(err)
 	}
 	LoadLangsToml("../compiler/langs.toml")
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})
 	s.Serve(listen)
 }

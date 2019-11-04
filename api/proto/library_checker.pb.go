@@ -24,59 +24,293 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type Lang struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Version              string   `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+type RegisterRequest struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Password             string   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Lang) Reset()         { *m = Lang{} }
-func (m *Lang) String() string { return proto.CompactTextString(m) }
-func (*Lang) ProtoMessage()    {}
-func (*Lang) Descriptor() ([]byte, []int) {
+func (m *RegisterRequest) Reset()         { *m = RegisterRequest{} }
+func (m *RegisterRequest) String() string { return proto.CompactTextString(m) }
+func (*RegisterRequest) ProtoMessage()    {}
+func (*RegisterRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9accbd90656ef5bc, []int{0}
 }
 
-func (m *Lang) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Lang.Unmarshal(m, b)
+func (m *RegisterRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RegisterRequest.Unmarshal(m, b)
 }
-func (m *Lang) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Lang.Marshal(b, m, deterministic)
+func (m *RegisterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RegisterRequest.Marshal(b, m, deterministic)
 }
-func (m *Lang) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Lang.Merge(m, src)
+func (m *RegisterRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterRequest.Merge(m, src)
 }
-func (m *Lang) XXX_Size() int {
-	return xxx_messageInfo_Lang.Size(m)
+func (m *RegisterRequest) XXX_Size() int {
+	return xxx_messageInfo_RegisterRequest.Size(m)
 }
-func (m *Lang) XXX_DiscardUnknown() {
-	xxx_messageInfo_Lang.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Lang proto.InternalMessageInfo
-
-func (m *Lang) GetId() string {
-	if m != nil {
-		return m.Id
-	}
-	return ""
+func (m *RegisterRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterRequest.DiscardUnknown(m)
 }
 
-func (m *Lang) GetName() string {
+var xxx_messageInfo_RegisterRequest proto.InternalMessageInfo
+
+func (m *RegisterRequest) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *Lang) GetVersion() string {
+func (m *RegisterRequest) GetPassword() string {
 	if m != nil {
-		return m.Version
+		return m.Password
 	}
 	return ""
+}
+
+type RegisterResponse struct {
+	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RegisterResponse) Reset()         { *m = RegisterResponse{} }
+func (m *RegisterResponse) String() string { return proto.CompactTextString(m) }
+func (*RegisterResponse) ProtoMessage()    {}
+func (*RegisterResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{1}
+}
+
+func (m *RegisterResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RegisterResponse.Unmarshal(m, b)
+}
+func (m *RegisterResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RegisterResponse.Marshal(b, m, deterministic)
+}
+func (m *RegisterResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterResponse.Merge(m, src)
+}
+func (m *RegisterResponse) XXX_Size() int {
+	return xxx_messageInfo_RegisterResponse.Size(m)
+}
+func (m *RegisterResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegisterResponse proto.InternalMessageInfo
+
+func (m *RegisterResponse) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
+
+type LoginRequest struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Password             string   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *LoginRequest) Reset()         { *m = LoginRequest{} }
+func (m *LoginRequest) String() string { return proto.CompactTextString(m) }
+func (*LoginRequest) ProtoMessage()    {}
+func (*LoginRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{2}
+}
+
+func (m *LoginRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LoginRequest.Unmarshal(m, b)
+}
+func (m *LoginRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LoginRequest.Marshal(b, m, deterministic)
+}
+func (m *LoginRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoginRequest.Merge(m, src)
+}
+func (m *LoginRequest) XXX_Size() int {
+	return xxx_messageInfo_LoginRequest.Size(m)
+}
+func (m *LoginRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoginRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoginRequest proto.InternalMessageInfo
+
+func (m *LoginRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *LoginRequest) GetPassword() string {
+	if m != nil {
+		return m.Password
+	}
+	return ""
+}
+
+type LoginResponse struct {
+	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *LoginResponse) Reset()         { *m = LoginResponse{} }
+func (m *LoginResponse) String() string { return proto.CompactTextString(m) }
+func (*LoginResponse) ProtoMessage()    {}
+func (*LoginResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{3}
+}
+
+func (m *LoginResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LoginResponse.Unmarshal(m, b)
+}
+func (m *LoginResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LoginResponse.Marshal(b, m, deterministic)
+}
+func (m *LoginResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoginResponse.Merge(m, src)
+}
+func (m *LoginResponse) XXX_Size() int {
+	return xxx_messageInfo_LoginResponse.Size(m)
+}
+func (m *LoginResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoginResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoginResponse proto.InternalMessageInfo
+
+func (m *LoginResponse) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
+
+type Problem struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Title                string   `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Problem) Reset()         { *m = Problem{} }
+func (m *Problem) String() string { return proto.CompactTextString(m) }
+func (*Problem) ProtoMessage()    {}
+func (*Problem) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{4}
+}
+
+func (m *Problem) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Problem.Unmarshal(m, b)
+}
+func (m *Problem) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Problem.Marshal(b, m, deterministic)
+}
+func (m *Problem) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Problem.Merge(m, src)
+}
+func (m *Problem) XXX_Size() int {
+	return xxx_messageInfo_Problem.Size(m)
+}
+func (m *Problem) XXX_DiscardUnknown() {
+	xxx_messageInfo_Problem.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Problem proto.InternalMessageInfo
+
+func (m *Problem) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Problem) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+type ProblemListRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProblemListRequest) Reset()         { *m = ProblemListRequest{} }
+func (m *ProblemListRequest) String() string { return proto.CompactTextString(m) }
+func (*ProblemListRequest) ProtoMessage()    {}
+func (*ProblemListRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{5}
+}
+
+func (m *ProblemListRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProblemListRequest.Unmarshal(m, b)
+}
+func (m *ProblemListRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProblemListRequest.Marshal(b, m, deterministic)
+}
+func (m *ProblemListRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProblemListRequest.Merge(m, src)
+}
+func (m *ProblemListRequest) XXX_Size() int {
+	return xxx_messageInfo_ProblemListRequest.Size(m)
+}
+func (m *ProblemListRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProblemListRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProblemListRequest proto.InternalMessageInfo
+
+type ProblemListResponse struct {
+	Problems             []*Problem `protobuf:"bytes,1,rep,name=problems,proto3" json:"problems,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *ProblemListResponse) Reset()         { *m = ProblemListResponse{} }
+func (m *ProblemListResponse) String() string { return proto.CompactTextString(m) }
+func (*ProblemListResponse) ProtoMessage()    {}
+func (*ProblemListResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{6}
+}
+
+func (m *ProblemListResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProblemListResponse.Unmarshal(m, b)
+}
+func (m *ProblemListResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProblemListResponse.Marshal(b, m, deterministic)
+}
+func (m *ProblemListResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProblemListResponse.Merge(m, src)
+}
+func (m *ProblemListResponse) XXX_Size() int {
+	return xxx_messageInfo_ProblemListResponse.Size(m)
+}
+func (m *ProblemListResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProblemListResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProblemListResponse proto.InternalMessageInfo
+
+func (m *ProblemListResponse) GetProblems() []*Problem {
+	if m != nil {
+		return m.Problems
+	}
+	return nil
 }
 
 type ProblemInfoRequest struct {
@@ -90,7 +324,7 @@ func (m *ProblemInfoRequest) Reset()         { *m = ProblemInfoRequest{} }
 func (m *ProblemInfoRequest) String() string { return proto.CompactTextString(m) }
 func (*ProblemInfoRequest) ProtoMessage()    {}
 func (*ProblemInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9accbd90656ef5bc, []int{1}
+	return fileDescriptor_9accbd90656ef5bc, []int{7}
 }
 
 func (m *ProblemInfoRequest) XXX_Unmarshal(b []byte) error {
@@ -131,7 +365,7 @@ func (m *ProblemInfoResponse) Reset()         { *m = ProblemInfoResponse{} }
 func (m *ProblemInfoResponse) String() string { return proto.CompactTextString(m) }
 func (*ProblemInfoResponse) ProtoMessage()    {}
 func (*ProblemInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9accbd90656ef5bc, []int{2}
+	return fileDescriptor_9accbd90656ef5bc, []int{8}
 }
 
 func (m *ProblemInfoResponse) XXX_Unmarshal(b []byte) error {
@@ -173,6 +407,603 @@ func (m *ProblemInfoResponse) GetTimeLimit() float64 {
 	return 0
 }
 
+type SubmitRequest struct {
+	Problem              string   `protobuf:"bytes,1,opt,name=problem,proto3" json:"problem,omitempty"`
+	Source               string   `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
+	Lang                 string   `protobuf:"bytes,3,opt,name=lang,proto3" json:"lang,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubmitRequest) Reset()         { *m = SubmitRequest{} }
+func (m *SubmitRequest) String() string { return proto.CompactTextString(m) }
+func (*SubmitRequest) ProtoMessage()    {}
+func (*SubmitRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{9}
+}
+
+func (m *SubmitRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmitRequest.Unmarshal(m, b)
+}
+func (m *SubmitRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmitRequest.Marshal(b, m, deterministic)
+}
+func (m *SubmitRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmitRequest.Merge(m, src)
+}
+func (m *SubmitRequest) XXX_Size() int {
+	return xxx_messageInfo_SubmitRequest.Size(m)
+}
+func (m *SubmitRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmitRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmitRequest proto.InternalMessageInfo
+
+func (m *SubmitRequest) GetProblem() string {
+	if m != nil {
+		return m.Problem
+	}
+	return ""
+}
+
+func (m *SubmitRequest) GetSource() string {
+	if m != nil {
+		return m.Source
+	}
+	return ""
+}
+
+func (m *SubmitRequest) GetLang() string {
+	if m != nil {
+		return m.Lang
+	}
+	return ""
+}
+
+type SubmitResponse struct {
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubmitResponse) Reset()         { *m = SubmitResponse{} }
+func (m *SubmitResponse) String() string { return proto.CompactTextString(m) }
+func (*SubmitResponse) ProtoMessage()    {}
+func (*SubmitResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{10}
+}
+
+func (m *SubmitResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmitResponse.Unmarshal(m, b)
+}
+func (m *SubmitResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmitResponse.Marshal(b, m, deterministic)
+}
+func (m *SubmitResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmitResponse.Merge(m, src)
+}
+func (m *SubmitResponse) XXX_Size() int {
+	return xxx_messageInfo_SubmitResponse.Size(m)
+}
+func (m *SubmitResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmitResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmitResponse proto.InternalMessageInfo
+
+func (m *SubmitResponse) GetId() int32 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+type SubmissionOverview struct {
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProblemName          string   `protobuf:"bytes,2,opt,name=problem_name,json=problemName,proto3" json:"problem_name,omitempty"`
+	ProblemTitle         string   `protobuf:"bytes,3,opt,name=problem_title,json=problemTitle,proto3" json:"problem_title,omitempty"`
+	UserName             string   `protobuf:"bytes,4,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	Lang                 string   `protobuf:"bytes,5,opt,name=lang,proto3" json:"lang,omitempty"`
+	IsLatest             bool     `protobuf:"varint,6,opt,name=is_latest,json=isLatest,proto3" json:"is_latest,omitempty"`
+	Status               string   `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	Time                 float64  `protobuf:"fixed64,8,opt,name=time,proto3" json:"time,omitempty"`
+	Memory               int64    `protobuf:"varint,9,opt,name=memory,proto3" json:"memory,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubmissionOverview) Reset()         { *m = SubmissionOverview{} }
+func (m *SubmissionOverview) String() string { return proto.CompactTextString(m) }
+func (*SubmissionOverview) ProtoMessage()    {}
+func (*SubmissionOverview) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{11}
+}
+
+func (m *SubmissionOverview) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmissionOverview.Unmarshal(m, b)
+}
+func (m *SubmissionOverview) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmissionOverview.Marshal(b, m, deterministic)
+}
+func (m *SubmissionOverview) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmissionOverview.Merge(m, src)
+}
+func (m *SubmissionOverview) XXX_Size() int {
+	return xxx_messageInfo_SubmissionOverview.Size(m)
+}
+func (m *SubmissionOverview) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmissionOverview.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmissionOverview proto.InternalMessageInfo
+
+func (m *SubmissionOverview) GetId() int32 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *SubmissionOverview) GetProblemName() string {
+	if m != nil {
+		return m.ProblemName
+	}
+	return ""
+}
+
+func (m *SubmissionOverview) GetProblemTitle() string {
+	if m != nil {
+		return m.ProblemTitle
+	}
+	return ""
+}
+
+func (m *SubmissionOverview) GetUserName() string {
+	if m != nil {
+		return m.UserName
+	}
+	return ""
+}
+
+func (m *SubmissionOverview) GetLang() string {
+	if m != nil {
+		return m.Lang
+	}
+	return ""
+}
+
+func (m *SubmissionOverview) GetIsLatest() bool {
+	if m != nil {
+		return m.IsLatest
+	}
+	return false
+}
+
+func (m *SubmissionOverview) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *SubmissionOverview) GetTime() float64 {
+	if m != nil {
+		return m.Time
+	}
+	return 0
+}
+
+func (m *SubmissionOverview) GetMemory() int64 {
+	if m != nil {
+		return m.Memory
+	}
+	return 0
+}
+
+type SubmissionCaseResult struct {
+	Case                 string   `protobuf:"bytes,1,opt,name=case,proto3" json:"case,omitempty"`
+	Status               string   `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Time                 float64  `protobuf:"fixed64,3,opt,name=time,proto3" json:"time,omitempty"`
+	Memory               int64    `protobuf:"varint,4,opt,name=memory,proto3" json:"memory,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubmissionCaseResult) Reset()         { *m = SubmissionCaseResult{} }
+func (m *SubmissionCaseResult) String() string { return proto.CompactTextString(m) }
+func (*SubmissionCaseResult) ProtoMessage()    {}
+func (*SubmissionCaseResult) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{12}
+}
+
+func (m *SubmissionCaseResult) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmissionCaseResult.Unmarshal(m, b)
+}
+func (m *SubmissionCaseResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmissionCaseResult.Marshal(b, m, deterministic)
+}
+func (m *SubmissionCaseResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmissionCaseResult.Merge(m, src)
+}
+func (m *SubmissionCaseResult) XXX_Size() int {
+	return xxx_messageInfo_SubmissionCaseResult.Size(m)
+}
+func (m *SubmissionCaseResult) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmissionCaseResult.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmissionCaseResult proto.InternalMessageInfo
+
+func (m *SubmissionCaseResult) GetCase() string {
+	if m != nil {
+		return m.Case
+	}
+	return ""
+}
+
+func (m *SubmissionCaseResult) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *SubmissionCaseResult) GetTime() float64 {
+	if m != nil {
+		return m.Time
+	}
+	return 0
+}
+
+func (m *SubmissionCaseResult) GetMemory() int64 {
+	if m != nil {
+		return m.Memory
+	}
+	return 0
+}
+
+type SubmissionInfoRequest struct {
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubmissionInfoRequest) Reset()         { *m = SubmissionInfoRequest{} }
+func (m *SubmissionInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*SubmissionInfoRequest) ProtoMessage()    {}
+func (*SubmissionInfoRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{13}
+}
+
+func (m *SubmissionInfoRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmissionInfoRequest.Unmarshal(m, b)
+}
+func (m *SubmissionInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmissionInfoRequest.Marshal(b, m, deterministic)
+}
+func (m *SubmissionInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmissionInfoRequest.Merge(m, src)
+}
+func (m *SubmissionInfoRequest) XXX_Size() int {
+	return xxx_messageInfo_SubmissionInfoRequest.Size(m)
+}
+func (m *SubmissionInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmissionInfoRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmissionInfoRequest proto.InternalMessageInfo
+
+func (m *SubmissionInfoRequest) GetId() int32 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+type SubmissionInfoResponse struct {
+	Overview             *SubmissionOverview     `protobuf:"bytes,1,opt,name=overview,proto3" json:"overview,omitempty"`
+	CaseResults          []*SubmissionCaseResult `protobuf:"bytes,2,rep,name=case_results,json=caseResults,proto3" json:"case_results,omitempty"`
+	Source               string                  `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
+}
+
+func (m *SubmissionInfoResponse) Reset()         { *m = SubmissionInfoResponse{} }
+func (m *SubmissionInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*SubmissionInfoResponse) ProtoMessage()    {}
+func (*SubmissionInfoResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{14}
+}
+
+func (m *SubmissionInfoResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmissionInfoResponse.Unmarshal(m, b)
+}
+func (m *SubmissionInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmissionInfoResponse.Marshal(b, m, deterministic)
+}
+func (m *SubmissionInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmissionInfoResponse.Merge(m, src)
+}
+func (m *SubmissionInfoResponse) XXX_Size() int {
+	return xxx_messageInfo_SubmissionInfoResponse.Size(m)
+}
+func (m *SubmissionInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmissionInfoResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmissionInfoResponse proto.InternalMessageInfo
+
+func (m *SubmissionInfoResponse) GetOverview() *SubmissionOverview {
+	if m != nil {
+		return m.Overview
+	}
+	return nil
+}
+
+func (m *SubmissionInfoResponse) GetCaseResults() []*SubmissionCaseResult {
+	if m != nil {
+		return m.CaseResults
+	}
+	return nil
+}
+
+func (m *SubmissionInfoResponse) GetSource() string {
+	if m != nil {
+		return m.Source
+	}
+	return ""
+}
+
+type SubmissionListRequest struct {
+	Skip                 uint32   `protobuf:"varint,1,opt,name=skip,proto3" json:"skip,omitempty"`
+	Limit                uint32   `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Problem              string   `protobuf:"bytes,3,opt,name=problem,proto3" json:"problem,omitempty"`
+	Status               string   `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	User                 string   `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubmissionListRequest) Reset()         { *m = SubmissionListRequest{} }
+func (m *SubmissionListRequest) String() string { return proto.CompactTextString(m) }
+func (*SubmissionListRequest) ProtoMessage()    {}
+func (*SubmissionListRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{15}
+}
+
+func (m *SubmissionListRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmissionListRequest.Unmarshal(m, b)
+}
+func (m *SubmissionListRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmissionListRequest.Marshal(b, m, deterministic)
+}
+func (m *SubmissionListRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmissionListRequest.Merge(m, src)
+}
+func (m *SubmissionListRequest) XXX_Size() int {
+	return xxx_messageInfo_SubmissionListRequest.Size(m)
+}
+func (m *SubmissionListRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmissionListRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmissionListRequest proto.InternalMessageInfo
+
+func (m *SubmissionListRequest) GetSkip() uint32 {
+	if m != nil {
+		return m.Skip
+	}
+	return 0
+}
+
+func (m *SubmissionListRequest) GetLimit() uint32 {
+	if m != nil {
+		return m.Limit
+	}
+	return 0
+}
+
+func (m *SubmissionListRequest) GetProblem() string {
+	if m != nil {
+		return m.Problem
+	}
+	return ""
+}
+
+func (m *SubmissionListRequest) GetStatus() string {
+	if m != nil {
+		return m.Status
+	}
+	return ""
+}
+
+func (m *SubmissionListRequest) GetUser() string {
+	if m != nil {
+		return m.User
+	}
+	return ""
+}
+
+type SubmissionListResponse struct {
+	Submissions          []*SubmissionOverview `protobuf:"bytes,1,rep,name=submissions,proto3" json:"submissions,omitempty"`
+	Count                int32                 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *SubmissionListResponse) Reset()         { *m = SubmissionListResponse{} }
+func (m *SubmissionListResponse) String() string { return proto.CompactTextString(m) }
+func (*SubmissionListResponse) ProtoMessage()    {}
+func (*SubmissionListResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{16}
+}
+
+func (m *SubmissionListResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmissionListResponse.Unmarshal(m, b)
+}
+func (m *SubmissionListResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmissionListResponse.Marshal(b, m, deterministic)
+}
+func (m *SubmissionListResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmissionListResponse.Merge(m, src)
+}
+func (m *SubmissionListResponse) XXX_Size() int {
+	return xxx_messageInfo_SubmissionListResponse.Size(m)
+}
+func (m *SubmissionListResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmissionListResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmissionListResponse proto.InternalMessageInfo
+
+func (m *SubmissionListResponse) GetSubmissions() []*SubmissionOverview {
+	if m != nil {
+		return m.Submissions
+	}
+	return nil
+}
+
+func (m *SubmissionListResponse) GetCount() int32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+type RejudgeRequest struct {
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RejudgeRequest) Reset()         { *m = RejudgeRequest{} }
+func (m *RejudgeRequest) String() string { return proto.CompactTextString(m) }
+func (*RejudgeRequest) ProtoMessage()    {}
+func (*RejudgeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{17}
+}
+
+func (m *RejudgeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RejudgeRequest.Unmarshal(m, b)
+}
+func (m *RejudgeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RejudgeRequest.Marshal(b, m, deterministic)
+}
+func (m *RejudgeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RejudgeRequest.Merge(m, src)
+}
+func (m *RejudgeRequest) XXX_Size() int {
+	return xxx_messageInfo_RejudgeRequest.Size(m)
+}
+func (m *RejudgeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RejudgeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RejudgeRequest proto.InternalMessageInfo
+
+func (m *RejudgeRequest) GetId() int32 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+type RejudgeResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *RejudgeResponse) Reset()         { *m = RejudgeResponse{} }
+func (m *RejudgeResponse) String() string { return proto.CompactTextString(m) }
+func (*RejudgeResponse) ProtoMessage()    {}
+func (*RejudgeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{18}
+}
+
+func (m *RejudgeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RejudgeResponse.Unmarshal(m, b)
+}
+func (m *RejudgeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RejudgeResponse.Marshal(b, m, deterministic)
+}
+func (m *RejudgeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RejudgeResponse.Merge(m, src)
+}
+func (m *RejudgeResponse) XXX_Size() int {
+	return xxx_messageInfo_RejudgeResponse.Size(m)
+}
+func (m *RejudgeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RejudgeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RejudgeResponse proto.InternalMessageInfo
+
+type Lang struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Version              string   `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Lang) Reset()         { *m = Lang{} }
+func (m *Lang) String() string { return proto.CompactTextString(m) }
+func (*Lang) ProtoMessage()    {}
+func (*Lang) Descriptor() ([]byte, []int) {
+	return fileDescriptor_9accbd90656ef5bc, []int{19}
+}
+
+func (m *Lang) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Lang.Unmarshal(m, b)
+}
+func (m *Lang) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Lang.Marshal(b, m, deterministic)
+}
+func (m *Lang) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Lang.Merge(m, src)
+}
+func (m *Lang) XXX_Size() int {
+	return xxx_messageInfo_Lang.Size(m)
+}
+func (m *Lang) XXX_DiscardUnknown() {
+	xxx_messageInfo_Lang.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Lang proto.InternalMessageInfo
+
+func (m *Lang) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Lang) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Lang) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 type LangListRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -183,7 +1014,7 @@ func (m *LangListRequest) Reset()         { *m = LangListRequest{} }
 func (m *LangListRequest) String() string { return proto.CompactTextString(m) }
 func (*LangListRequest) ProtoMessage()    {}
 func (*LangListRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9accbd90656ef5bc, []int{3}
+	return fileDescriptor_9accbd90656ef5bc, []int{20}
 }
 
 func (m *LangListRequest) XXX_Unmarshal(b []byte) error {
@@ -215,7 +1046,7 @@ func (m *LangListResponse) Reset()         { *m = LangListResponse{} }
 func (m *LangListResponse) String() string { return proto.CompactTextString(m) }
 func (*LangListResponse) ProtoMessage()    {}
 func (*LangListResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9accbd90656ef5bc, []int{4}
+	return fileDescriptor_9accbd90656ef5bc, []int{21}
 }
 
 func (m *LangListResponse) XXX_Unmarshal(b []byte) error {
@@ -244,9 +1075,26 @@ func (m *LangListResponse) GetLangs() []*Lang {
 }
 
 func init() {
-	proto.RegisterType((*Lang)(nil), "librarychecker.Lang")
+	proto.RegisterType((*RegisterRequest)(nil), "librarychecker.RegisterRequest")
+	proto.RegisterType((*RegisterResponse)(nil), "librarychecker.RegisterResponse")
+	proto.RegisterType((*LoginRequest)(nil), "librarychecker.LoginRequest")
+	proto.RegisterType((*LoginResponse)(nil), "librarychecker.LoginResponse")
+	proto.RegisterType((*Problem)(nil), "librarychecker.Problem")
+	proto.RegisterType((*ProblemListRequest)(nil), "librarychecker.ProblemListRequest")
+	proto.RegisterType((*ProblemListResponse)(nil), "librarychecker.ProblemListResponse")
 	proto.RegisterType((*ProblemInfoRequest)(nil), "librarychecker.ProblemInfoRequest")
 	proto.RegisterType((*ProblemInfoResponse)(nil), "librarychecker.ProblemInfoResponse")
+	proto.RegisterType((*SubmitRequest)(nil), "librarychecker.SubmitRequest")
+	proto.RegisterType((*SubmitResponse)(nil), "librarychecker.SubmitResponse")
+	proto.RegisterType((*SubmissionOverview)(nil), "librarychecker.SubmissionOverview")
+	proto.RegisterType((*SubmissionCaseResult)(nil), "librarychecker.SubmissionCaseResult")
+	proto.RegisterType((*SubmissionInfoRequest)(nil), "librarychecker.SubmissionInfoRequest")
+	proto.RegisterType((*SubmissionInfoResponse)(nil), "librarychecker.SubmissionInfoResponse")
+	proto.RegisterType((*SubmissionListRequest)(nil), "librarychecker.SubmissionListRequest")
+	proto.RegisterType((*SubmissionListResponse)(nil), "librarychecker.SubmissionListResponse")
+	proto.RegisterType((*RejudgeRequest)(nil), "librarychecker.RejudgeRequest")
+	proto.RegisterType((*RejudgeResponse)(nil), "librarychecker.RejudgeResponse")
+	proto.RegisterType((*Lang)(nil), "librarychecker.Lang")
 	proto.RegisterType((*LangListRequest)(nil), "librarychecker.LangListRequest")
 	proto.RegisterType((*LangListResponse)(nil), "librarychecker.LangListResponse")
 }
@@ -254,26 +1102,61 @@ func init() {
 func init() { proto.RegisterFile("proto/library_checker.proto", fileDescriptor_9accbd90656ef5bc) }
 
 var fileDescriptor_9accbd90656ef5bc = []byte{
-	// 299 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x92, 0x4f, 0x4f, 0x83, 0x40,
-	0x10, 0xc5, 0xa5, 0x7f, 0x54, 0xa6, 0x49, 0xd5, 0xb1, 0x26, 0xa4, 0x6a, 0x6c, 0xd6, 0x0b, 0xf1,
-	0x80, 0x49, 0xbd, 0x7b, 0xd1, 0x8b, 0x09, 0x89, 0x06, 0x2f, 0xde, 0x1a, 0xc0, 0xd1, 0x6e, 0x84,
-	0xdd, 0xba, 0xbb, 0x36, 0xf1, 0xeb, 0xf9, 0xc9, 0x84, 0x05, 0xa4, 0xf5, 0xdf, 0x6d, 0xe7, 0x37,
-	0x8f, 0x37, 0x6f, 0x26, 0xc0, 0xe1, 0x42, 0x49, 0x23, 0xcf, 0x33, 0x9e, 0xa8, 0x58, 0xbd, 0xcf,
-	0xd2, 0x39, 0xa5, 0x2f, 0xa4, 0x02, 0x4b, 0x71, 0x58, 0xe3, 0x9a, 0xb2, 0x6b, 0xe8, 0x85, 0xb1,
-	0x78, 0xc6, 0x21, 0x74, 0xf8, 0xa3, 0xe7, 0x4c, 0x1c, 0xdf, 0x8d, 0x8a, 0x17, 0x22, 0xf4, 0x44,
-	0x9c, 0x93, 0xd7, 0xb1, 0xc4, 0xbe, 0xd1, 0x83, 0xad, 0x25, 0x29, 0xcd, 0xa5, 0xf0, 0xba, 0x16,
-	0x37, 0x25, 0xf3, 0x01, 0xef, 0x94, 0x4c, 0x32, 0xca, 0x6f, 0xc4, 0x93, 0x8c, 0xe8, 0xf5, 0x8d,
-	0xb4, 0xf9, 0xf2, 0x70, 0x5a, 0x0f, 0x36, 0x87, 0xfd, 0x35, 0xa5, 0x5e, 0x48, 0xa1, 0x09, 0x47,
-	0xd0, 0x37, 0xdc, 0x64, 0x8d, 0xb6, 0x2a, 0xf0, 0x08, 0x5c, 0x6d, 0x62, 0x43, 0x39, 0x09, 0x53,
-	0x27, 0x69, 0x01, 0x1e, 0x03, 0x18, 0x9e, 0xd3, 0x2c, 0xe3, 0x39, 0x37, 0x36, 0x91, 0x13, 0xb9,
-	0x25, 0x09, 0x4b, 0xc0, 0xf6, 0x60, 0xa7, 0xdc, 0x2c, 0xe4, 0xda, 0xd4, 0x81, 0xd8, 0x25, 0xec,
-	0xb6, 0xa8, 0x9e, 0x7c, 0x06, 0xfd, 0xac, 0x60, 0xba, 0x98, 0xdc, 0xf5, 0x07, 0xd3, 0x51, 0xb0,
-	0x7e, 0xa0, 0xa0, 0xfc, 0x20, 0xaa, 0x24, 0xd3, 0x0f, 0x07, 0x0e, 0xc2, 0xaa, 0x7d, 0x55, 0xb5,
-	0xef, 0x49, 0x2d, 0x79, 0x4a, 0xf8, 0x00, 0x83, 0x95, 0xb5, 0x90, 0x7d, 0x77, 0xf9, 0x79, 0x9d,
-	0xf1, 0xe9, 0xbf, 0x9a, 0x2a, 0x1d, 0xdb, 0xc0, 0x5b, 0xd8, 0x6e, 0x32, 0xe3, 0xc9, 0x6f, 0xe1,
-	0x56, 0x16, 0x1c, 0x4f, 0xfe, 0x16, 0x34, 0x86, 0xc9, 0xa6, 0xfd, 0x11, 0x2e, 0x3e, 0x03, 0x00,
-	0x00, 0xff, 0xff, 0xd9, 0xf9, 0x56, 0x1a, 0x27, 0x02, 0x00, 0x00,
+	// 856 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x56, 0x6d, 0x4f, 0xdb, 0x48,
+	0x10, 0x26, 0xef, 0xc9, 0x84, 0x70, 0xdc, 0x5e, 0xe0, 0xac, 0xf0, 0x7a, 0xcb, 0xc1, 0xa1, 0xfb,
+	0x40, 0x25, 0xf8, 0x8e, 0x54, 0x81, 0x5a, 0x51, 0x45, 0xa5, 0x32, 0xad, 0xd4, 0x6f, 0x51, 0x12,
+	0xb6, 0xc1, 0x25, 0xb1, 0x53, 0xaf, 0x0d, 0xe2, 0x17, 0xf4, 0x0f, 0xf4, 0xcf, 0xf4, 0xcf, 0x55,
+	0xdd, 0xd9, 0x17, 0x7b, 0xe3, 0xc4, 0xa1, 0xea, 0xb7, 0x9d, 0xd9, 0x99, 0x67, 0x66, 0x9e, 0x9d,
+	0x19, 0x1b, 0xb6, 0xa6, 0x61, 0x10, 0x05, 0x2f, 0xc6, 0xde, 0x20, 0xec, 0x87, 0x4f, 0xbd, 0xe1,
+	0x1d, 0x1b, 0xde, 0xb3, 0xf0, 0x44, 0x6a, 0xc9, 0x9a, 0x56, 0x6b, 0x2d, 0x7d, 0x09, 0x7f, 0xb8,
+	0x6c, 0xe4, 0xf1, 0x88, 0x85, 0x2e, 0xfb, 0x12, 0x33, 0x1e, 0x11, 0x02, 0x65, 0xbf, 0x3f, 0x61,
+	0x4e, 0x61, 0xbf, 0x70, 0xdc, 0x70, 0xe5, 0x99, 0x74, 0xa0, 0x3e, 0xed, 0x73, 0xfe, 0x18, 0x84,
+	0xb7, 0x4e, 0x51, 0xea, 0x13, 0x99, 0x1e, 0xc3, 0x7a, 0x0a, 0xc1, 0xa7, 0x81, 0xcf, 0x19, 0x69,
+	0x43, 0x25, 0x0a, 0xee, 0x99, 0xaf, 0x41, 0x94, 0x40, 0xcf, 0x61, 0xb5, 0x1b, 0x8c, 0x3c, 0xff,
+	0x77, 0x23, 0x1d, 0x42, 0x4b, 0xfb, 0x2f, 0x0d, 0x73, 0x06, 0xb5, 0x77, 0x61, 0x30, 0x18, 0xb3,
+	0xc9, 0xc2, 0x08, 0xe8, 0xe4, 0x45, 0x63, 0xa6, 0xe1, 0x95, 0x40, 0xdb, 0x40, 0xb4, 0x53, 0x57,
+	0x94, 0xa2, 0x33, 0xa4, 0x6f, 0xe0, 0xaf, 0x19, 0xad, 0x8e, 0x7b, 0x26, 0x92, 0x54, 0x6a, 0x2e,
+	0xa0, 0x4b, 0xc7, 0xcd, 0xd3, 0xbf, 0x4f, 0x66, 0x89, 0x3d, 0xd1, 0x6e, 0x6e, 0x62, 0x28, 0x78,
+	0x32, 0x11, 0xae, 0xfc, 0x4f, 0xc1, 0x12, 0x0e, 0xe8, 0x5d, 0x12, 0x55, 0x59, 0x5a, 0xd5, 0xca,
+	0xc4, 0x0b, 0x56, 0xe2, 0x64, 0x1b, 0x1a, 0x3c, 0xea, 0x47, 0x6c, 0xc2, 0xfc, 0x48, 0x97, 0x94,
+	0x2a, 0xc8, 0x0e, 0x40, 0xe4, 0x4d, 0x58, 0x6f, 0xec, 0x4d, 0xbc, 0xc8, 0x29, 0x89, 0xeb, 0x82,
+	0xdb, 0x40, 0x4d, 0x17, 0x15, 0xf4, 0x03, 0xb4, 0x6e, 0xe2, 0x81, 0x38, 0x99, 0x74, 0x1c, 0xa8,
+	0xe9, 0x84, 0x75, 0x14, 0x23, 0x92, 0x4d, 0xa8, 0xf2, 0x20, 0x0e, 0x87, 0x86, 0x37, 0x2d, 0x61,
+	0x01, 0xe3, 0xbe, 0x3f, 0x92, 0xd8, 0xa2, 0x00, 0x3c, 0xd3, 0x7d, 0x58, 0x33, 0xb0, 0x3a, 0xf7,
+	0x35, 0x28, 0x7a, 0xb7, 0x12, 0xb2, 0xe2, 0x8a, 0x13, 0xfd, 0x51, 0x00, 0x22, 0x4d, 0x38, 0xf7,
+	0x02, 0xff, 0xfa, 0x81, 0x85, 0x0f, 0x1e, 0x7b, 0xcc, 0x9a, 0x91, 0x7f, 0x60, 0x55, 0xc7, 0xef,
+	0x49, 0x96, 0x54, 0xe8, 0xa6, 0xd6, 0xbd, 0xc5, 0xe7, 0x3c, 0x80, 0x96, 0x31, 0x51, 0xec, 0xa8,
+	0x44, 0x8c, 0xdf, 0x7b, 0x49, 0xd2, 0x16, 0x34, 0x62, 0xce, 0x42, 0x05, 0x52, 0x56, 0x6d, 0x85,
+	0x0a, 0x89, 0x60, 0x2a, 0xa8, 0xa4, 0x15, 0xa0, 0x83, 0xc7, 0x7b, 0x63, 0x41, 0x23, 0x8f, 0x9c,
+	0xaa, 0xb8, 0xa8, 0xbb, 0x75, 0x8f, 0x77, 0xa5, 0x2c, 0xa9, 0x10, 0x0c, 0xc7, 0xdc, 0xa9, 0x69,
+	0x2a, 0xa4, 0x84, 0x40, 0x48, 0xad, 0x53, 0x97, 0x34, 0xcb, 0x33, 0xda, 0x4e, 0xd8, 0x24, 0x08,
+	0x9f, 0x9c, 0x86, 0xd0, 0x96, 0x5c, 0x2d, 0x51, 0x1f, 0xda, 0x69, 0xfd, 0x17, 0x7d, 0xce, 0x04,
+	0x55, 0xf1, 0x58, 0xf6, 0xc3, 0x50, 0x48, 0xa6, 0x1f, 0xf0, 0x6c, 0xc5, 0x2b, 0x2e, 0x8c, 0x57,
+	0x5a, 0x18, 0xaf, 0x3c, 0x13, 0xef, 0x3f, 0xd8, 0x48, 0xe3, 0xd9, 0x0d, 0x98, 0x7d, 0x99, 0xef,
+	0x05, 0xd8, 0xcc, 0x5a, 0xea, 0x47, 0x3c, 0x87, 0x7a, 0xa0, 0x5f, 0x4a, 0x3a, 0x34, 0x4f, 0x69,
+	0xb6, 0xed, 0xe7, 0xdf, 0xd4, 0x4d, 0x7c, 0xc8, 0x6b, 0x58, 0xc5, 0x7a, 0x7a, 0xa1, 0x2c, 0x15,
+	0xab, 0xc1, 0xd1, 0xf9, 0x37, 0x1f, 0x23, 0xe5, 0xc5, 0x6d, 0x0e, 0x93, 0x33, 0xb7, 0x7a, 0xb1,
+	0x64, 0xf7, 0x22, 0xfd, 0x5a, 0xb0, 0xab, 0xb4, 0x06, 0x19, 0xa9, 0xe2, 0xf7, 0xde, 0x54, 0xa6,
+	0xdd, 0x72, 0xe5, 0x19, 0xe7, 0x49, 0x8d, 0x45, 0x51, 0x2a, 0x95, 0x60, 0x4f, 0x40, 0x69, 0x7e,
+	0x02, 0xd4, 0x33, 0x94, 0xb3, 0xcf, 0x80, 0xbd, 0x64, 0xfa, 0x07, 0xcf, 0x34, 0xb2, 0x49, 0x9c,
+	0xd9, 0x1d, 0x97, 0xd0, 0xe4, 0xc9, 0x8d, 0x59, 0x1f, 0xbf, 0xc2, 0xa3, 0xed, 0x86, 0xb9, 0x0f,
+	0x83, 0x58, 0x4f, 0x7c, 0xc5, 0x55, 0x02, 0xce, 0x9d, 0xcb, 0x3e, 0xc7, 0xb7, 0x23, 0x96, 0xf7,
+	0xba, 0x7f, 0xe2, 0xbe, 0xd7, 0x16, 0x2a, 0x21, 0x7a, 0x09, 0xe5, 0x2e, 0xb6, 0x7c, 0x6a, 0xda,
+	0x90, 0xb3, 0x67, 0x36, 0x53, 0xd1, 0xda, 0x9d, 0x82, 0x1c, 0x91, 0x0e, 0xa6, 0x60, 0xc8, 0xd1,
+	0x22, 0x02, 0x23, 0x8a, 0xbd, 0x3c, 0xcf, 0x61, 0x3d, 0x55, 0xe9, 0xea, 0xff, 0x17, 0x9c, 0x0b,
+	0x9d, 0xa9, 0xbb, 0x9d, 0xad, 0x1b, 0x1d, 0x5c, 0x65, 0x72, 0xfa, 0xad, 0x0a, 0x1b, 0x5d, 0x75,
+	0x7d, 0xa1, 0xae, 0x6f, 0x90, 0x0a, 0xb1, 0x73, 0xae, 0xa1, 0x6e, 0x3e, 0x39, 0x64, 0x2f, 0x0b,
+	0x91, 0xf9, 0x9e, 0x75, 0xf6, 0xf3, 0x0d, 0x34, 0x03, 0x2b, 0xe4, 0x15, 0x54, 0xe4, 0x97, 0x85,
+	0x6c, 0xcf, 0x25, 0x64, 0x7d, 0xb0, 0x3a, 0x3b, 0x39, 0xb7, 0x09, 0xce, 0x47, 0x68, 0x5a, 0x9b,
+	0x9b, 0xd0, 0x9c, 0xaf, 0x82, 0x35, 0x7f, 0x9d, 0x83, 0xa5, 0x36, 0x0b, 0x90, 0x91, 0xcf, 0x5c,
+	0x64, 0x8b, 0xff, 0x5c, 0x64, 0xfb, 0x41, 0x04, 0xf2, 0x15, 0x54, 0xd5, 0xb2, 0x26, 0x3b, 0x0b,
+	0xbb, 0x30, 0xc1, 0xdb, 0xcd, 0xbb, 0x4e, 0xa0, 0xfa, 0x7a, 0xef, 0x27, 0xab, 0x83, 0x1c, 0xe6,
+	0x37, 0xb6, 0x4d, 0xc2, 0xd1, 0x73, 0x66, 0x8b, 0x43, 0x48, 0x2a, 0x96, 0x84, 0xb0, 0xd9, 0x38,
+	0x7a, 0xce, 0x2c, 0x09, 0xd1, 0x85, 0x9a, 0x9e, 0x11, 0xb2, 0x3b, 0xdf, 0x3b, 0xf6, 0x78, 0x75,
+	0xf6, 0x72, 0xef, 0x13, 0x34, 0xd1, 0xab, 0x66, 0x0a, 0xe6, 0x7b, 0x35, 0x33, 0x32, 0xf3, 0xbd,
+	0x9a, 0x1d, 0x20, 0xba, 0x32, 0xa8, 0xca, 0x3f, 0xb9, 0xb3, 0x9f, 0x01, 0x00, 0x00, 0xff, 0xff,
+	0x89, 0xba, 0x67, 0xce, 0xe8, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -288,7 +1171,14 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type LibraryCheckerServiceClient interface {
+	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	ProblemInfo(ctx context.Context, in *ProblemInfoRequest, opts ...grpc.CallOption) (*ProblemInfoResponse, error)
+	ProblemList(ctx context.Context, in *ProblemListRequest, opts ...grpc.CallOption) (*ProblemListResponse, error)
+	Submit(ctx context.Context, in *SubmitRequest, opts ...grpc.CallOption) (*SubmitResponse, error)
+	SubmissionInfo(ctx context.Context, in *SubmissionInfoRequest, opts ...grpc.CallOption) (*SubmissionInfoResponse, error)
+	SubmissionList(ctx context.Context, in *SubmissionListRequest, opts ...grpc.CallOption) (*SubmissionListResponse, error)
+	Rejudge(ctx context.Context, in *RejudgeRequest, opts ...grpc.CallOption) (*RejudgeResponse, error)
 	LangList(ctx context.Context, in *LangListRequest, opts ...grpc.CallOption) (*LangListResponse, error)
 }
 
@@ -300,9 +1190,72 @@ func NewLibraryCheckerServiceClient(cc *grpc.ClientConn) LibraryCheckerServiceCl
 	return &libraryCheckerServiceClient{cc}
 }
 
+func (c *libraryCheckerServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	out := new(RegisterResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/Register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryCheckerServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/Login", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *libraryCheckerServiceClient) ProblemInfo(ctx context.Context, in *ProblemInfoRequest, opts ...grpc.CallOption) (*ProblemInfoResponse, error) {
 	out := new(ProblemInfoResponse)
 	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/ProblemInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryCheckerServiceClient) ProblemList(ctx context.Context, in *ProblemListRequest, opts ...grpc.CallOption) (*ProblemListResponse, error) {
+	out := new(ProblemListResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/ProblemList", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryCheckerServiceClient) Submit(ctx context.Context, in *SubmitRequest, opts ...grpc.CallOption) (*SubmitResponse, error) {
+	out := new(SubmitResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/Submit", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryCheckerServiceClient) SubmissionInfo(ctx context.Context, in *SubmissionInfoRequest, opts ...grpc.CallOption) (*SubmissionInfoResponse, error) {
+	out := new(SubmissionInfoResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/SubmissionInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryCheckerServiceClient) SubmissionList(ctx context.Context, in *SubmissionListRequest, opts ...grpc.CallOption) (*SubmissionListResponse, error) {
+	out := new(SubmissionListResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/SubmissionList", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *libraryCheckerServiceClient) Rejudge(ctx context.Context, in *RejudgeRequest, opts ...grpc.CallOption) (*RejudgeResponse, error) {
+	out := new(RejudgeResponse)
+	err := c.cc.Invoke(ctx, "/librarychecker.LibraryCheckerService/Rejudge", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +1273,14 @@ func (c *libraryCheckerServiceClient) LangList(ctx context.Context, in *LangList
 
 // LibraryCheckerServiceServer is the server API for LibraryCheckerService service.
 type LibraryCheckerServiceServer interface {
+	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	ProblemInfo(context.Context, *ProblemInfoRequest) (*ProblemInfoResponse, error)
+	ProblemList(context.Context, *ProblemListRequest) (*ProblemListResponse, error)
+	Submit(context.Context, *SubmitRequest) (*SubmitResponse, error)
+	SubmissionInfo(context.Context, *SubmissionInfoRequest) (*SubmissionInfoResponse, error)
+	SubmissionList(context.Context, *SubmissionListRequest) (*SubmissionListResponse, error)
+	Rejudge(context.Context, *RejudgeRequest) (*RejudgeResponse, error)
 	LangList(context.Context, *LangListRequest) (*LangListResponse, error)
 }
 
@@ -328,8 +1288,29 @@ type LibraryCheckerServiceServer interface {
 type UnimplementedLibraryCheckerServiceServer struct {
 }
 
+func (*UnimplementedLibraryCheckerServiceServer) Register(ctx context.Context, req *RegisterRequest) (*RegisterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (*UnimplementedLibraryCheckerServiceServer) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
 func (*UnimplementedLibraryCheckerServiceServer) ProblemInfo(ctx context.Context, req *ProblemInfoRequest) (*ProblemInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProblemInfo not implemented")
+}
+func (*UnimplementedLibraryCheckerServiceServer) ProblemList(ctx context.Context, req *ProblemListRequest) (*ProblemListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProblemList not implemented")
+}
+func (*UnimplementedLibraryCheckerServiceServer) Submit(ctx context.Context, req *SubmitRequest) (*SubmitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Submit not implemented")
+}
+func (*UnimplementedLibraryCheckerServiceServer) SubmissionInfo(ctx context.Context, req *SubmissionInfoRequest) (*SubmissionInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmissionInfo not implemented")
+}
+func (*UnimplementedLibraryCheckerServiceServer) SubmissionList(ctx context.Context, req *SubmissionListRequest) (*SubmissionListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmissionList not implemented")
+}
+func (*UnimplementedLibraryCheckerServiceServer) Rejudge(ctx context.Context, req *RejudgeRequest) (*RejudgeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Rejudge not implemented")
 }
 func (*UnimplementedLibraryCheckerServiceServer) LangList(ctx context.Context, req *LangListRequest) (*LangListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LangList not implemented")
@@ -337,6 +1318,42 @@ func (*UnimplementedLibraryCheckerServiceServer) LangList(ctx context.Context, r
 
 func RegisterLibraryCheckerServiceServer(s *grpc.Server, srv LibraryCheckerServiceServer) {
 	s.RegisterService(&_LibraryCheckerService_serviceDesc, srv)
+}
+
+func _LibraryCheckerService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/Register",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).Register(ctx, req.(*RegisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LibraryCheckerService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/Login",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _LibraryCheckerService_ProblemInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -353,6 +1370,96 @@ func _LibraryCheckerService_ProblemInfo_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LibraryCheckerServiceServer).ProblemInfo(ctx, req.(*ProblemInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LibraryCheckerService_ProblemList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProblemListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).ProblemList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/ProblemList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).ProblemList(ctx, req.(*ProblemListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LibraryCheckerService_Submit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).Submit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/Submit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).Submit(ctx, req.(*SubmitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LibraryCheckerService_SubmissionInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmissionInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).SubmissionInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/SubmissionInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).SubmissionInfo(ctx, req.(*SubmissionInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LibraryCheckerService_SubmissionList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmissionListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).SubmissionList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/SubmissionList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).SubmissionList(ctx, req.(*SubmissionListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LibraryCheckerService_Rejudge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejudgeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LibraryCheckerServiceServer).Rejudge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/librarychecker.LibraryCheckerService/Rejudge",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LibraryCheckerServiceServer).Rejudge(ctx, req.(*RejudgeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -380,8 +1487,36 @@ var _LibraryCheckerService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*LibraryCheckerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Register",
+			Handler:    _LibraryCheckerService_Register_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _LibraryCheckerService_Login_Handler,
+		},
+		{
 			MethodName: "ProblemInfo",
 			Handler:    _LibraryCheckerService_ProblemInfo_Handler,
+		},
+		{
+			MethodName: "ProblemList",
+			Handler:    _LibraryCheckerService_ProblemList_Handler,
+		},
+		{
+			MethodName: "Submit",
+			Handler:    _LibraryCheckerService_Submit_Handler,
+		},
+		{
+			MethodName: "SubmissionInfo",
+			Handler:    _LibraryCheckerService_SubmissionInfo_Handler,
+		},
+		{
+			MethodName: "SubmissionList",
+			Handler:    _LibraryCheckerService_SubmissionList_Handler,
+		},
+		{
+			MethodName: "Rejudge",
+			Handler:    _LibraryCheckerService_Rejudge_Handler,
 		},
 		{
 			MethodName: "LangList",
