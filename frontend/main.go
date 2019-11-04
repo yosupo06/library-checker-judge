@@ -472,7 +472,7 @@ func grpcDial(local bool) (*grpc.ClientConn, error) {
 	creds := credentials.NewTLS(&tls.Config{
 		RootCAs: systemRoots,
 	})
-	return grpc.Dial("judge-api-master-5qrf4vs5oa-an.a.run.app:443", grpc.WithBlock(), grpc.WithTransportCredentials(creds))
+	return grpc.Dial("apiv1.yosupo.jp:443", grpc.WithBlock(), grpc.WithTransportCredentials(creds))
 }
 
 func main() {
