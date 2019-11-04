@@ -3,6 +3,7 @@ syntax = "proto3";
 package librarychecker;
 
 service LibraryCheckerService {
+    rpc Register (RegisterRequest) returns (RegisterResponse) {}
     rpc Login (LoginRequest) returns (LoginResponse) {}
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
@@ -12,7 +13,15 @@ service LibraryCheckerService {
     rpc LangList (LangListRequest) returns (LangListResponse) {}
 }
 
-// --- Login ---
+// --- Register, Login ---
+
+message RegisterRequest {
+    string name = 1; // "newuser"
+    string password = 2; // "password"    
+}
+message RegisterResponse {
+    string token = 1; // JWT Token
+}
 
 message LoginRequest {
     string name = 1; // "admin"
@@ -22,12 +31,12 @@ message LoginResponse {
     string token = 1; // JWT Token
 }
 
+// --- Problem ---
+
 message Problem {
     string name = 1; // "aplusb"
     string title = 2; // "A + B"
 }
-
-// --- Problem ---
 
 message ProblemListRequest {    
 }
@@ -84,7 +93,7 @@ message SubmissionInfoResponse {
 
 message SubmissionListRequest {
     uint32 skip = 1; // fetch [skip, skip + limit)-th submissions
-    uint32 limit = 2; // # of submissions (max/default 100)
+    uint32 limit = 2; // # of submissions (max 1000)
     string problem = 3; // "aplusb"(filter)
     string status = 4; // "AC"(filter)
     string user = 5; // "admin"(filter)

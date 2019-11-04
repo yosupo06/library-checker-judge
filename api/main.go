@@ -33,6 +33,44 @@ type server struct {
 
 var db *gorm.DB
 
+func issueToken(name string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": name,
+	})
+	tokenString, err := token.SignedString(hmacSecret)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	if in.Name == "" {
+		return nil, errors.New("Empty userName")
+	}
+	if in.Password == "" {
+		return nil, errors.New("Empty password")
+	}
+	passHash, err := bcrypt.GenerateFromPassword([]byte(in.Password), 10)
+	if err != nil {
+		return nil, errors.New("Bcrypt broken")
+	}
+	user := User{
+		Name:     in.Name,
+		Passhash: string(passHash),
+	}
+	if err := db.Create(&user).Error; err != nil {
+		return nil, errors.New("This username are already registered")
+	}
+	token, err := issueToken(in.Name)
+	if err != nil {
+		return nil, errors.New("Broken")
+	}
+	return &pb.RegisterResponse{
+		Token: token,
+	}, nil
+}
+
 func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
 	var user User
 	if err := db.Where("name = ?", in.Name).First(&user).Error; err != nil {
@@ -42,15 +80,12 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 		return nil, errors.New("Invalid password")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": in.Name,
-	})
-	tokenString, err := token.SignedString(hmacSecret)
+	token, err := issueToken(in.Name)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.LoginResponse{
-		Token: tokenString,
+		Token: token,
 	}, nil
 }
 
@@ -68,6 +103,22 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 		Statement: problem.Statement,
 		TimeLimit: problem.Timelimit / 1000.0,
 	}, nil
+}
+
+func (s *server) ProblemList(ctx context.Context, in *pb.ProblemListRequest) (*pb.ProblemListResponse, error) {
+	problems := []Problem{}
+	if err := db.Select("name, title").Find(&problems).Error; err != nil {
+		return nil, errors.New("Fetch problems failed")
+	}
+
+	res := pb.ProblemListResponse{}
+	for _, prob := range problems {
+		res.Problems = append(res.Problems, &pb.Problem{
+			Name: prob.Name,
+			Title: prob.Title,
+		})
+	}
+	return &res, nil
 }
 
 func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitResponse, error) {
@@ -239,7 +290,8 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 func main() {
 	// connect db
 	db = dbConnect()
-	db.LogMode(true)
+	//db.LogMode(true)
+
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
 	listen, err := net.Listen("tcp", ":"+port)
