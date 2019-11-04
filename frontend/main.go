@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"math"
 	"context"
 	"flag"
@@ -429,5 +430,9 @@ func main() {
 
 	router.GET("/help", helpPage)
 
-	router.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	router.Run(":" + port)
 }
