@@ -114,7 +114,7 @@ func (s *server) ProblemList(ctx context.Context, in *pb.ProblemListRequest) (*p
 	res := pb.ProblemListResponse{}
 	for _, prob := range problems {
 		res.Problems = append(res.Problems, &pb.Problem{
-			Name: prob.Name,
+			Name:  prob.Name,
 			Title: prob.Title,
 		})
 	}
@@ -255,6 +255,23 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		})
 	}
 	return &res, nil
+}
+
+func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.RejudgeResponse, error) {
+	sub, err := s.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{Id: in.Id})
+	if err != nil {
+		return nil, err
+	}
+	userName := getUserName(ctx)
+	if userName == "" || userName != sub.Overview.UserName {
+		return nil, errors.New("No permission")
+	}
+	task := Task{}
+	task.Submission = int(in.Id)
+	if err := db.Create(&task).Error; err != nil {
+		return nil, errors.New("Cannot insert into queue")
+	}
+	return &pb.RejudgeResponse{}, nil
 }
 
 var langs = []*pb.Lang{}

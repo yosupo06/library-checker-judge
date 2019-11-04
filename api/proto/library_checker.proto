@@ -10,6 +10,7 @@ service LibraryCheckerService {
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
     rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
     rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}
+    rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
     rpc LangList (LangListRequest) returns (LangListResponse) {}
 }
 
@@ -102,6 +103,12 @@ message SubmissionListRequest {
 message SubmissionListResponse {
     repeated SubmissionOverview submissions = 1;
     int32 count = 2; // # of submissions(skip/limit don't effect this)
+}
+
+message RejudgeRequest {
+    int32 id = 1; // submission id
+}
+message RejudgeResponse {
 }
 
 // --- Lang ---
