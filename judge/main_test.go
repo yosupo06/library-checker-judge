@@ -345,6 +345,36 @@ func TestSubmitCSharpAC(t *testing.T) {
 }
 
 func TestSubmitPythonAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac_numpy.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "python3", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	err = execJudge(db, Task{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var submission Submission
+	if err = db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).Take(&submission).Error; err != nil {
+		t.Fatal(err)
+	}
+	if submission.Status != "AC" {
+		t.Fatal("Expect status AC, actual ", submission.Status)
+	}
+	if !(1 <= submission.MaxTime && submission.MaxTime <= 500) {
+		t.Fatal("Irregural consume time ", submission.MaxTime)
+	}
+}
+
+func TestSubmitPyPyAC(t *testing.T) {
 	src, err := os.Open("test_src/aplusb/ac.py")
 	if err != nil {
 		t.Fatal(err)

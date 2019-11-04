@@ -38,6 +38,13 @@
     compile = "javac Main.java"
     exec = "java -Xss1G Main"
 [[langs]]
+    id = "python3"
+    name = "Python3"
+    version = "python3.7 + numpy + scipy (ubuntu18.04 apt)"
+    source = "main.py"
+    compile = "python3.7 -c 'print(1)'"
+    exec = "python3.7 main.py"
+[[langs]]
     id = "pypy3"
     name = "PyPy3"
     version = "pypy3.6-v7.1.1"
