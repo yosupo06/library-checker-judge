@@ -1,18 +1,20 @@
 package main
 
 import (
+	"database/sql"
 	"context"
-	"fmt"
+	"errors"
 	"log"
 	"net"
 	"os"
-	"time"
 
 	"github.com/BurntSushi/toml"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/dgrijalva/jwt-go"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 )
@@ -27,34 +29,6 @@ func getEnv(key, defaultValue string) string {
 
 type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
-}
-
-// Problem is db table
-type Problem struct {
-	Name      string
-	Title     string
-	Statement string
-	Timelimit float64
-}
-
-func dbConnect() *gorm.DB {
-	host := getEnv("POSTGRE_HOST", "127.0.0.1")
-	port := getEnv("POSTGRE_PORT", "5432")
-	user := getEnv("POSTGRE_USER", "postgres")
-	pass := getEnv("POSTGRE_PASS", "passwd")
-
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
-		host, port, user, pass)
-
-	db, err := gorm.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db.AutoMigrate(Problem{})
-
-	return db
 }
 
 var db *gorm.DB
@@ -91,9 +65,12 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 
 func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
 	name := in.Name
+	if name == "" {
+		return nil, errors.New("Empty problem name")
+	}
 	var problem Problem
 	if err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error; err != nil {
-		return nil, err
+		return nil, errors.New("Failed to get problem")
 	}
 	return &pb.ProblemInfoResponse{
 		Title:     problem.Title,
@@ -102,24 +79,70 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 	}, nil
 }
 
-// LocalConnection return local connection of gRPC
-func LocalConnection() *grpc.ClientConn {
-	lis := bufconn.Listen(1024 * 1024)
-	s := grpc.NewServer()
-	pb.RegisterLibraryCheckerServiceServer(s, &server{})
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			log.Fatal("Server exited with error: ", err)
-		}
-	}()
-	bufDialer := func(string, time.Duration) (net.Conn, error) {
-		return lis.Dial()
+func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
+	var user User
+	if err := db.Where("name = ?", in.Name).First(&user).Error; err != nil {
+		return nil, errors.New("Invalid username")
 	}
-	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithBlock(), grpc.WithInsecure(), grpc.WithDialer(bufDialer))
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(in.Password)); err != nil {
+		return nil, errors.New("Invalid password")
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": in.Name,
+	})
+	tokenString, err := token.SignedString(hmacSecret)
 	if err != nil {
-		log.Fatal("Grpc dial failed: ", err)
+		return nil, err
 	}
-	return conn
+	return &pb.LoginResponse{
+		Token: tokenString,
+	}, nil
+}
+
+func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitResponse, error) {
+	if in.Source == "" {
+		return nil, errors.New("Empty Source")
+	}
+	ok := false
+	for _, lang := range langs {
+		if lang.Id == in.Lang {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return nil, errors.New("Unknown Lang")
+	}
+	if _, err := s.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: in.Problem,
+	}); err != nil {
+		return nil, errors.New("Unknown problem")
+	}
+	user := getUserName(ctx)
+	submission := Submission{
+		ProblemName: in.Problem,
+		Lang:        in.Lang,
+		Status:      "WJ",
+		Source:      in.Source,
+		MaxTime:     -1,
+		MaxMemory:   -1,
+		UserName:    sql.NullString{String: user, Valid: user != ""},
+	}
+	
+	if err := db.Create(&submission).Error; err != nil {
+		return nil, errors.New("Submit failed")
+	}
+
+	task := Task{}
+	task.Submission = submission.ID
+	if err := db.Create(&task).Error; err != nil {
+		return nil, errors.New("Inserting to judge queue is failed")
+	}
+
+	log.Println("Submit ", submission.ID)
+
+	return &pb.SubmitResponse{Id: int32(submission.ID)}, nil	
 }
 
 func main() {
@@ -132,7 +155,8 @@ func main() {
 		log.Fatal(err)
 	}
 	LoadLangsToml("../compiler/langs.toml")
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})
 	s.Serve(listen)
 }

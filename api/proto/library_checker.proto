@@ -2,10 +2,23 @@ syntax = "proto3";
 
 package librarychecker;
 
-message Lang {
-    string id = 1; // "cpp"
-    string name = 2; // "C++(default, C++17)"
-    string version = 3; // "ubuntu18.04 apt"
+message LoginRequest {
+    string name = 1; // "admin"
+    string password = 2; // "password"    
+}
+
+message LoginResponse {
+    string token = 1; // JWT Token
+}
+
+message SubmitRequest {
+    string problem = 1; // "aplusb"
+    string source = 2; // "int main() ..."
+    string lang = 3; // "cpp"
+}
+
+message SubmitResponse {
+    int32 id = 1; // submission id
 }
 
 message ProblemInfoRequest {
@@ -18,6 +31,12 @@ message ProblemInfoResponse {
     double time_limit = 3; // 2.0 = 2 seconds    
 }
 
+message Lang {
+    string id = 1; // "cpp"
+    string name = 2; // "C++(default, C++17)"
+    string version = 3; // "ubuntu18.04 apt"
+}
+
 message LangListRequest {
 }
 
@@ -26,6 +45,8 @@ message LangListResponse {
 }
 
 service LibraryCheckerService {
+    rpc Login (LoginRequest) returns (LoginResponse) {}
+    rpc Submit (SubmitRequest) returns (SubmitResponse) {}
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc LangList (LangListRequest) returns (LangListResponse) {}
 }
