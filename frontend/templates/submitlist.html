@@ -10,8 +10,8 @@
     <section class="uk-section">
         <div class="uk-container">
             <h1 class="uk-heading-medium">Submission List</h1>
-            {{if and .User .User.Name}}
-                <a href="/submissions?user={{.User.Name}}">My Submissions</a>
+            {{if .User}}
+                <a href="/submissions?user={{.User}}">My Submissions</a>
             {{end}}
         </div>
     </section>
@@ -34,19 +34,19 @@
                 </tr>
                 {{range .Submissions}}
                 <tr>
-                    <td><a href="/submission/{{.ID}}">{{.ID}}</a></td>
-                    <td><a href="/problem/{{.ProblemName}}">{{.Problem.Title}}</a></td>
+                    <td><a href="/submission/{{.Id}}">{{.Id}}</a></td>
+                    <td><a href="/problem/{{.ProblemName}}">{{.ProblemTitle}}</a></td>
                     <td>{{.Lang}}</td>
-                    <td>{{if .User.Name}}{{.User.Name}}{{else}}(anonymous){{end}}</td>
+                    <td>{{if .UserName}}{{.UserName}}{{else}}(anonymous){{end}}</td>
                     <td>
-                        {{if and (eq .Testhash .Problem.Testhash) (eq .Status "AC")}}
+                        {{if and .IsLatest (eq .Status "AC")}}
                         <span class="uk-label uk-label-success">AC</span>
                         {{else}}
                         <span class="uk-label">{{.Status}}</span>
                         {{end}}
                     </td>
-                    <td>{{.MaxTime}}</td>
-                    <td>{{.MaxMemory}}</td>
+                    <td>{{.Time}}</td>
+                    <td>{{.Memory}}</td>
                 </tr>
                 {{end}}
             </table>
