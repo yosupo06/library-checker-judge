@@ -43,8 +43,8 @@
                         <span class="uk-label">{{.Status}}</span>
                         {{end}}
                     </td>
-                    <td>{{.Time}} ms</td>
-                    <td>{{.Memory}} bytes</td>
+                    <td>{{time2str .Time}}</td>
+                    <td>{{mem2str .Memory}}</td>
                 </tr>
                 {{end}}
             </table>
@@ -62,8 +62,8 @@
                         <tr>
                             <td>{{.Case}}</td>
                             <td>{{.Status}}</td>
-                            <td>{{.Time}} secs</td>
-                            <td>{{.Memory}} bytes</td>
+                            <td>{{time2str .Time}}</td>
+                            <td>{{mem2str .Memory}}</td>
                         </tr>
                     {{end}}
                 </table>

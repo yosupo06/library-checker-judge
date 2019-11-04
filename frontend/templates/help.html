@@ -13,31 +13,29 @@
         </div>
     </section>
     <section class="uk-section">
-        <h2>Lang List</h2>
-        <table class="uk-table uk-table-striped">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Version</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .Langs}}
-                <tr>
-                    <td>{{.Name}}</td>
-                    <td>{{.Version}}</td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
         <div class="uk-container">
-            {{if not .User.Name}}
-                <div class="uk-alert-primary" uk-alert>
-                    <a class="uk-alert-close" uk-close></a>
-                    <p>ユーザー登録しなくても提出できます</p>
-                </div>
-            {{end}}
+            <h2>Lang List</h2>
+            <table class="uk-table uk-table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Langs}}
+                    <tr>
+                        <td>{{.Name}}</td>
+                        <td>{{.Version}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+            <p>より詳しくは<a href="https://github.com/yosupo06/library-checker-judge/blob/master/compiler/langs.toml">langs.toml</a>, <a href="https://github.com/yosupo06/library-checker-judge/blob/master/compiler/install.sh">install.sh</a>を参照してください</p>
+            <h2>Tips</h2>
+            <p>メモリ制限は全部1G(2<sup>30</sup> bytes)です スタックサイズは無制限です</p>
         </div>
+
     </section>
 </body>
 </html>

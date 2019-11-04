@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"context"
 	"flag"
 	"fmt"
@@ -396,6 +397,16 @@ func main() {
 				result = append(result, i)
 			}
 			return result
+		},
+		"time2str": func(a float64) string {
+			msec := int(math.Round(a * 1000))
+			return fmt.Sprintf("%d ms", msec)
+		},
+		"mem2str": func(a int64) string {
+			if a == -1 {
+				return "-1 Mib"
+			}
+			return fmt.Sprintf("%.2f MiB", float64(a) / 1024 / 1024)
 		},
 	})
 	router.LoadHTMLGlob("templates/*.html")

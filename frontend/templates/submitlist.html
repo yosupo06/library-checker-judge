@@ -45,8 +45,8 @@
                         <span class="uk-label">{{.Status}}</span>
                         {{end}}
                     </td>
-                    <td>{{.Time}}</td>
-                    <td>{{.Memory}}</td>
+                    <td>{{time2str .Time}}</td>
+                    <td>{{mem2str .Memory}}</td>
                 </tr>
                 {{end}}
             </table>
