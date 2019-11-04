@@ -1,27 +1,21 @@
 package main
 
 import (
-	"encoding/gob"
-	"errors"
+	"math"
+	"context"
+	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
-	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"database/sql"
-
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	"golang.org/x/crypto/bcrypt"
 
 	"crypto/tls"
 	"crypto/x509"
@@ -40,100 +34,55 @@ func langList(ctx *gin.Context) ([]*pb.Lang, error) {
 	return list.Langs, nil
 }
 
-var db *gorm.DB
-
-func gormConnect() *gorm.DB {
-	host := getEnv("POSTGRE_HOST", "127.0.0.1")
-	port := getEnv("POSTGRE_PORT", "5432")
-	user := getEnv("POSTGRE_USER", "postgres")
-	pass := getEnv("POSTGRE_PASS", "passwd")
-
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
-		host, port, user, pass)
-
-	db, err := gorm.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
+func getUserName(c *gin.Context) string {
+	user := c.Value("user")
+	if name, ok := user.(string); ok {
+		return name
 	}
-	return db
-}
-
-func login(c *gin.Context, name string, password string) bool {
-	var user User
-	if err := db.Where("name = ?", name).First(&user).Error; err != nil {
-		return false
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(password)); err != nil {
-		return false
-	}
-	session := sessions.Default(c)
-	session.Set("user", user)
-	session.Save()
-	return true
-}
-
-func logout(c *gin.Context) {
-	session := sessions.Default(c)
-	session.Clear()
-	session.Save()
-}
-
-func getUser(c *gin.Context) User {
-	session := sessions.Default(c)
-	user, ok := session.Get("user").(User)
-	if !ok {
-		return User{}
-	}
-	return user
-}
-
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
+	return ""
 }
 
 func htmlWithUser(c *gin.Context, code int, name string, obj gin.H) {
-	obj["User"] = getUser(c)
+	obj["User"] = getUserName(c)
 	c.HTML(code, name, obj)
 }
 
 func problemList(ctx *gin.Context) {
-	var problems = make([]Problem, 0)
-	db.Select("name, title").Find(&problems)
-
+	res, err := client.ProblemList(ctx, &pb.ProblemListRequest{})
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 	type ProblemInfo struct {
 		Title  string
 		Solved bool
 	}
 	var titlemap = make(map[string]*ProblemInfo)
-	for _, problem := range problems {
+	for _, problem := range res.Problems {
 		if _, ok := titlemap[problem.Name]; !ok {
 			titlemap[problem.Name] = &ProblemInfo{}
 		}
 		titlemap[problem.Name].Title = problem.Title
 	}
 
-	userName := getUser(ctx).Name
-
+	userName := getUserName(ctx)
 	if userName != "" {
-		var submissions = make([]Submission, 0)
-		db.
-			Preload("Problem", func(db *gorm.DB) *gorm.DB {
-				return db.Select("name, testhash")
-			}).
-			Select("id, problem_name, status, testhash").
-			Where(&Submission{UserName: sql.NullString{String: userName, Valid: true}, Status: "AC"}).
-			Find(&submissions)
-		for _, submission := range submissions {
-			if submission.Testhash == submission.Problem.Testhash {
-				titlemap[submission.ProblemName].Solved = true
+		subs, err := client.SubmissionList(ctx, &pb.SubmissionListRequest{
+			Skip:   0,
+			Limit:  1000,
+			Status: "AC",
+			User:   userName,
+		})
+
+		if err == nil {
+			for _, sub := range subs.Submissions {
+				if sub.IsLatest {
+					titlemap[sub.ProblemName].Solved = true
+				}
 			}
 		}
 	}
+
 	htmlWithUser(ctx, 200, "problemlist.html", gin.H{
 		"titlemap": titlemap,
 		"list":     list,
@@ -153,11 +102,10 @@ func problemInfo(ctx *gin.Context) {
 		return
 	}
 	htmlWithUser(ctx, 200, "problem.html", gin.H{
-		"Name": name,
+		"Name":      name,
 		"Statement": template.HTML(problem.Statement),
-		"User":    getUser(ctx),
-		"Problem": problem,
-		"Langs":   Langs,
+		"Problem":   problem,
+		"Langs":     Langs,
 	})
 }
 
@@ -204,54 +152,37 @@ func submit(ctx *gin.Context) {
 			return
 		}
 	}
-	if src == "" {
-		ctx.Redirect(http.StatusFound, ".")
+	response, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: submitForm.Problem,
+		Source:  src,
+		Lang:    submitForm.Lang,
+	})
+
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	ok, err := checkLang(ctx, submitForm.Lang)
-	if err != nil || ok == false {
-		ctx.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-	submission := Submission{
-		ProblemName: submitForm.Problem,
-		Lang:        submitForm.Lang,
-		Status:      "WJ",
-		Source:      src,
-		MaxTime:     -1,
-		MaxMemory:   -1,
-		UserName:    getUser(ctx).getName(),
-	}
-	db.Create(&submission)
 
-	task := Task{}
-	task.Submission = submission.ID
-	db.Create(&task)
-
-	ctx.Redirect(http.StatusFound, "/submission/"+strconv.Itoa(submission.ID))
+	ctx.Redirect(http.StatusFound, "/submission/"+strconv.Itoa(int(response.Id)))
 }
 
 func submissionInfo(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Fatal(err)
+		ctx.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
-	var submission Submission
-	db.
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name")
-		}).
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).First(&submission)
-	var results []SubmissionTestcaseResult
-	db.Where("submission = ?", id).Find(&results)
-	rejudge := adminOrSubmitter(ctx, submission)
+	sub, err := client.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{
+		Id: int32(id),
+	})
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 	htmlWithUser(ctx, 200, "submitinfo.html", gin.H{
-		"Submission": submission,
-		"Results":    results,
-		"Rejudge":    rejudge,
+		"Overview": sub.Overview,
+		"Results":  sub.CaseResults,
+		"Source":   sub.Source,
 	})
 }
 
@@ -267,29 +198,21 @@ func submitList(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	var submissions = make([]Submission, 0)
-	db.
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name")
-		}).
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Limit(100).
-		Offset((submitFilter.Page - 1) * 100).
-		Order("id desc").
-		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
-		Where(&Submission{
-			ProblemName: submitFilter.Problem,
-			Status:      submitFilter.Status,
-			UserName:    sql.NullString{String: submitFilter.User, Valid: (submitFilter.User != "")}}).
-		Find(&submissions)
-	count := 0
-	db.Table("submissions").Count(&count)
+	res, err := client.SubmissionList(ctx, &pb.SubmissionListRequest{
+		Skip:    uint32((submitFilter.Page - 1) * 100),
+		Limit:   100,
+		Problem: submitFilter.Problem,
+		Status:  submitFilter.Status,
+		User:    submitFilter.User,
+	})
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
-		"Submissions": submissions,
+		"Submissions": res.Submissions,
 		"NowPage":     submitFilter.Page,
-		"NumPage":     (count + 99) / 100,
+		"NumPage":     int((res.Count + 99) / 100),
 	})
 }
 
@@ -313,21 +236,17 @@ func registerPost(ctx *gin.Context) {
 		})
 		return
 	}
-	passHash, err := bcrypt.GenerateFromPassword([]byte(userPass.Password), 10)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	user := User{
+	res, err := client.Register(ctx, &pb.RegisterRequest{
 		Name:     userPass.Name,
-		Passhash: string(passHash),
-	}
-	if err := db.Create(&user).Error; err != nil {
+		Password: userPass.Password,
+	})
+	if err != nil {
 		htmlWithUser(ctx, 200, "register.html", gin.H{
 			"Error": "This username are already registered",
 		})
+		return
 	}
-	login(ctx, userPass.Name, userPass.Password)
+	ctx.SetCookie("token", res.Token, 365*24*3600, "", "", false, false)
 	ctx.Redirect(http.StatusFound, "/")
 }
 
@@ -350,51 +269,26 @@ func loginPost(ctx *gin.Context) {
 		})
 		return
 	}
-	if !login(ctx, userPass.Name, userPass.Password) {
+	response, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     userPass.Name,
+		Password: userPass.Password,
+	})
+
+	if err != nil {
 		htmlWithUser(ctx, 200, "login.html", gin.H{
-			"Name": userPass.Name,
+			"Name":  userPass.Name,
+			"Error": err.Error(),
 		})
 		return
 	}
+
+	ctx.SetCookie("token", response.Token, 365*24*3600, "", "", false, false)
 	ctx.Redirect(http.StatusFound, "/")
 }
 
 func logoutGet(ctx *gin.Context) {
-	logout(ctx)
-
+	ctx.SetCookie("token", "", -1, "", "", false, false)
 	ctx.Redirect(http.StatusFound, "/")
-}
-
-func adminOrSubmitter(ctx *gin.Context, submission Submission) bool {
-	if getUser(ctx).Admin {
-		return true
-	}
-	if !submission.UserName.Valid || submission.UserName.String == "" {
-		return false
-	}
-	return submission.UserName.String == getUser(ctx).Name
-}
-
-func rejudge(id int) error {
-	tx := db.Begin()
-	var submission Submission
-	err := tx.Where("id = ?", id).First(&submission).Error
-	if err != nil {
-		tx.Rollback()
-		return errors.New("can not find submissions")
-	}
-	if time.Now().Sub(submission.JudgePing).Minutes() <= 1 {
-		tx.Rollback()
-		return errors.New("this submission seems judging now")
-	}
-	submission.Status = "WJ"
-	tx.Save(&submission)
-	tx.Commit()
-
-	task := Task{}
-	task.Submission = id
-	db.Create(&task)
-	return nil
 }
 
 func getRejudge(ctx *gin.Context) {
@@ -405,48 +299,16 @@ func getRejudge(ctx *gin.Context) {
 		})
 		return
 	}
-	var submission Submission
-	err = db.Where("id = ?", id).First(&submission).Error
-	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "can not find submissions",
-		})
-		return
-	}
-	if !adminOrSubmitter(ctx, submission) {
-		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-			"message": "no authority",
-		})
-		return
-	}
-	err = rejudge(id)
+
+	_, err = client.Rejudge(ctx, &pb.RejudgeRequest{
+		Id: int32(id),
+	})
+
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	ctx.Redirect(http.StatusFound, fmt.Sprintf("/submission/%d", id))
-}
-
-func allRejudge(ctx *gin.Context) {
-	var submissions = make([]Submission, 0)
-	if !getUser(ctx).Admin {
-		ctx.AbortWithStatus(http.StatusForbidden)
-		return
-	}
-	db.
-		Order("id desc").
-		Select("id").
-		Find(&submissions)
-	for _, s := range submissions {
-		err := rejudge(s.ID)
-		if err != nil {
-			ctx.AbortWithError(http.StatusBadRequest, err)
-			return
-		}
-	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "success",
-	})
 }
 
 func helpPage(ctx *gin.Context) {
@@ -460,39 +322,74 @@ func helpPage(ctx *gin.Context) {
 	})
 }
 
-func grpcDial(local bool) (*grpc.ClientConn, error) {
+type loginCreds struct{}
+
+func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	dict := map[string]string{}
+	if token, ok := ctx.Value("token").(string); ok && token != "" {
+		dict["authorization"] = "bearer " + token
+	}
+	return dict, nil
+}
+
+func (c *loginCreds) RequireTransportSecurity() bool {
+	return false
+}
+
+func grpcDial(local bool, host string) (*grpc.ClientConn, error) {
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{})}
 	if local {
-		return grpc.Dial("localhost:50051", grpc.WithBlock(), grpc.WithInsecure())
+		if host == "" {
+			host = "localhost:50051"
+		}
+		options = append(options, grpc.WithInsecure())
+	} else {
+		if host == "" {
+			host = "apiv1.yosupo.jp:443"
+		}
+		systemRoots, err := x509.SystemCertPool()
+		if err != nil {
+			log.Fatal(err)
+		}
+		creds := credentials.NewTLS(&tls.Config{
+			RootCAs: systemRoots,
+		})
+		options = append(options, grpc.WithTransportCredentials(creds))
 	}
 
-	systemRoots, err := x509.SystemCertPool()
-	if err != nil {
-		log.Fatal(err)
-	}
-	creds := credentials.NewTLS(&tls.Config{
-		RootCAs: systemRoots,
-	})
-	return grpc.Dial("apiv1.yosupo.jp:443", grpc.WithBlock(), grpc.WithTransportCredentials(creds))
+	return grpc.Dial(host, options...)
 }
 
 func main() {
-	conn, err := grpcDial(false)
+	local := flag.Bool("local", false, "API server is local")
+	host := flag.String("host", "", "Hostname of API server")
+	flag.Parse()
+	conn, err := grpcDial(*local, *host)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 	client = pb.NewLibraryCheckerServiceClient(conn)
 	loadList()
-	gob.Register(User{})
-	db = gormConnect()
-	defer db.Close()
-	db.AutoMigrate(Problem{})
-	db.AutoMigrate(Submission{})
-	db.AutoMigrate(Task{})
-	db.AutoMigrate(User{})
-	// db.LogMode(true)
 
 	router := gin.Default()
+	router.Use(func(ctx *gin.Context) {
+		token, err := ctx.Cookie("token")
+		if err == nil {
+			ctx.Set("token", token)
+			parsed, _, err := new(jwt.Parser).ParseUnverified(token, jwt.MapClaims{})
+			if err == nil {
+				if claims, ok := parsed.Claims.(jwt.MapClaims); ok {
+					if user, ok := claims["user"]; ok {
+						if name, ok := user.(string); ok {
+							ctx.Set("user", name)
+						}
+					}
+				}
+			}
+		}
+		ctx.Next()
+	})
 	router.SetFuncMap(template.FuncMap{
 		"repeat": func(a, b int) []int {
 			var result []int
@@ -501,9 +398,17 @@ func main() {
 			}
 			return result
 		},
+		"time2str": func(a float64) string {
+			msec := int(math.Round(a * 1000))
+			return fmt.Sprintf("%d ms", msec)
+		},
+		"mem2str": func(a int64) string {
+			if a == -1 {
+				return "-1 Mib"
+			}
+			return fmt.Sprintf("%.2f MiB", float64(a) / 1024 / 1024)
+		},
 	})
-	router.Use(sessions.Sessions("mysession",
-		cookie.NewStore([]byte(getEnv("SESSION_SECRET", "session_secret")))))
 	router.LoadHTMLGlob("templates/*.html")
 	router.Static("/public", "./public")
 
@@ -521,7 +426,6 @@ func main() {
 	router.GET("/submissions", submitList)
 
 	router.GET("/rejudge/:id", getRejudge)
-	router.GET("/admin/allrejudge", allRejudge)
 
 	router.GET("/help", helpPage)
 

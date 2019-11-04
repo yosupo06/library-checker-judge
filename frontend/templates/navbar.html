@@ -5,8 +5,8 @@
         <a href="/submissions" class="uk-navbar-item">Submissions</a>
     </div>
     <div class="uk-navbar-right">
-        {{if and .User .User.Name}}
-            {{.User.Name}}
+        {{if .User}}
+            {{.User}}
             <a href="/logout" class="uk-navbar-item">Logout</a>
         {{else}}
             <a href="/register" class="uk-navbar-item">Register</a>

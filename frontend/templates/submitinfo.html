@@ -9,9 +9,9 @@
     {{template "navbar.html" .}}    
     <section class="uk-section">
         <div class="uk-container">
-            <h1 class="uk-heading-medium">Submit Info #{{.Submission.ID}}</h1>            
-            {{if .Rejudge}}
-            <a href="/rejudge/{{.Submission.ID}}">Rejudge</a>
+            <h1 class="uk-heading-medium">Submit Info #{{.Overview.Id}}</h1>
+            {{if and .User (eq .User .Overview.UserName)}}
+            <a href="/rejudge/{{.Overview.Id}}">Rejudge</a>
             {{end}}
         </div>
     </section>
@@ -27,24 +27,24 @@
                     <th>Time</th>
                     <th>Memory</th>
                 </tr>
-                {{with .Submission}}
+                {{with .Overview}}
                 <tr>
                     <!-- Title -->
-                    <td><a href="/problem/{{.ProblemName}}">{{.Problem.Title}}</a></td>
+                    <td><a href="/problem/{{.ProblemName}}">{{.ProblemTitle}}</a></td>
                     <!-- Lang -->
                     <td>{{.Lang}}</td>
                     <!-- User -->
-                    <td>{{if .User.Name}}{{.User.Name}}{{else}}(anonymous){{end}}</td>
+                    <td>{{if .UserName}}{{.UserName}}{{else}}(anonymous){{end}}</td>
                     <!-- Status -->
                     <td>
-                        {{if and (eq .Testhash .Problem.Testhash) (eq .Status "AC")}}
+                        {{if and .IsLatest (eq .Status "AC")}}
                         <span class="uk-label uk-label-success">AC</span>
                         {{else}}
                         <span class="uk-label">{{.Status}}</span>
                         {{end}}
                     </td>
-                    <td>{{.MaxTime}} ms</td>
-                    <td>{{.MaxMemory}} bytes</td>
+                    <td>{{time2str .Time}}</td>
+                    <td>{{mem2str .Memory}}</td>
                 </tr>
                 {{end}}
             </table>
@@ -60,23 +60,23 @@
                     </tr>
                     {{range .Results}}
                         <tr>
-                            <td>{{.Testcase}}</td>
+                            <td>{{.Case}}</td>
                             <td>{{.Status}}</td>
-                            <td>{{.Time}} ms</td>
-                            <td>{{.Memory}} bytes</td>
+                            <td>{{time2str .Time}}</td>
+                            <td>{{mem2str .Memory}}</td>
                         </tr>
                     {{end}}
                 </table>
             </details>
             <hr class="uk-margin-medium">
             <div class="uk-container">
-                <div id="editor">{{.Submission.Source}}</div>
+                <div id="editor">{{.Source}}</div>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
                 <script>
                     var editor = ace.edit("editor");
                     editor.setOption("maxLines", "Infinity");                    
                     editor.setReadOnly(true);
-                    var lang = "{{.Submission.Lang}}";
+                    var lang = "{{.Overview.Lang}}";
                     if (lang.startsWith("cpp")) {
                         editor.getSession().setMode("ace/mode/c_cpp");
                     }
