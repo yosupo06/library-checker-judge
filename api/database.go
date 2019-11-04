@@ -2,9 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"time"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
@@ -16,6 +16,7 @@ type Problem struct {
 	Title     string
 	Statement string
 	Timelimit float64
+	Testhash  string
 }
 
 // User is db table
@@ -41,6 +42,15 @@ type Submission struct {
 	User        User `gorm:"foreignkey:UserName"`
 }
 
+// SubmissionTestcaseResult is db table
+type SubmissionTestcaseResult struct {
+	Submission int
+	Testcase   string
+	Status     string
+	Time       int
+	Memory     int
+}
+
 // Task is db table
 type Task struct {
 	Submission int
@@ -64,6 +74,7 @@ func dbConnect() *gorm.DB {
 	db.AutoMigrate(Problem{})
 	db.AutoMigrate(User{})
 	db.AutoMigrate(Submission{})
+	db.AutoMigrate(SubmissionTestcaseResult{})
 	db.AutoMigrate(Task{})
 
 	return db
