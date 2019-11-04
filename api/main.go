@@ -209,8 +209,8 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 }
 
 func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListRequest) (*pb.SubmissionListResponse, error) {
-	if 100 < in.Limit {
-		in.Limit = 100
+	if 1000 < in.Limit {
+		in.Limit = 1000
 	}
 
 	filter := &Submission{
