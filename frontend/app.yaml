@@ -1,4 +1,6 @@
 runtime: go112
 
+handlers:
 - url: /.*
+  script: auto
   secure: always
