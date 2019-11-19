@@ -22,13 +22,13 @@ import argparse
 from os import getenv, getuid, environ
 from pwd import getpwnam
 from shutil import rmtree
-from datetime import datetime
 from pathlib import Path
 from logging import basicConfig, getLogger
 import subprocess
 from subprocess import run
 import tempfile
 from psutil import Process
+from time import perf_counter
 
 logger = getLogger(__name__)
 
@@ -95,9 +95,9 @@ def inside(args, execcmd):
 
     env = environ.copy()
     env["HOME"] = "/home/library-checker-user"
-    start = datetime.now()
 
     try:
+        start = perf_counter()
         proc = subprocess.run(cmd,
                               stdin=args.stdin,
                               stdout=args.stdout,
@@ -110,8 +110,8 @@ def inside(args, execcmd):
         mycode = 124  # error code of timeout command
         time = args.tl
     else:
-        end = datetime.now()
-        time = (end - start).seconds + (end - start).microseconds / 1000000
+        end = perf_counter()
+        time = (end - start)
         with open('/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes', 'r') as f:
             memory = int(f.read())
 
