@@ -74,7 +74,7 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	cmd.Path = path.Join(wd, "executor.py")
+	cmd.Path = path.Join(wd, "executor", "executor.py")
 	cmd.Args = append([]string{cmd.Path}, newArg...)
 
 	// add stderr
