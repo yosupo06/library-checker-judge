@@ -37,6 +37,14 @@ def outside(args, cmd):
     logger.info('outside')
     tmp = tempfile.NamedTemporaryFile()
 
+    core = Path(sys.argv[0]).parent / 'executor_core'
+
+    if not core.exists():
+        logger.warn('compile executor_core.cpp: start')
+        core_src = Path(sys.argv[0]).parent / 'executor_core.cpp'
+        subprocess.check_call(['g++', str(core_src), '-o', str(core)])
+        logger.warn('compile executor_core.cpp: finished')
+
     arg = ['unshare', '-fpnm', '--mount-proc']
     arg += [sys.argv[0]]
     arg += ['--inside']
@@ -83,7 +91,8 @@ def inside(args, execcmd):
     prepare_mount(tmpdir, args.overlay)
     prepare_cgroup()
 
-    cmd = ['cgexec', '-g', 'pids,cpuset,memory:lib-judge']
+    core = Path(sys.argv[0]).parent / 'executor_core'
+    cmd = [core, 'time.txt', 'cgexec', '-g', 'pids,cpuset,memory:lib-judge']
     cmd += ['chroot',
             '--userspec=library-checker-user:library-checker-user', str(tmpdir)]
     cmd += ['sh', '-c', ' '.join(['cd', 'sand', '&&'] + execcmd)]
@@ -97,7 +106,6 @@ def inside(args, execcmd):
     env["HOME"] = "/home/library-checker-user"
 
     try:
-        start = perf_counter()
         proc = subprocess.run(cmd,
                               stdin=args.stdin,
                               stdout=args.stdout,
@@ -110,8 +118,8 @@ def inside(args, execcmd):
         mycode = 124  # error code of timeout command
         time = args.tl
     else:
-        end = perf_counter()
-        time = (end - start)
+        with open('time.txt', 'r') as f:
+            time = float(f.read())
         with open('/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes', 'r') as f:
             memory = int(f.read())
 

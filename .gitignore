@@ -1,5 +1,6 @@
 judge/sand
 judge/work
+judge/executor/executor_core
 *.log
 *.pyc
 /compiler/*
