@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
         v.push_back(nullptr);
         if (execvp(argv[2], v.data()) == -1) exit(1);
     } else {
-        int status;
+        int status = 0;
         high_resolution_clock::time_point begin = high_resolution_clock::now();
         wait(&status);
         high_resolution_clock::time_point end = high_resolution_clock::now();
@@ -26,6 +26,15 @@ int main(int argc, char* argv[]) {
         auto f = fopen(argv[1], "w");
         fprintf(f, "%.10Lf\n", milli);
         fclose(f);
-        exit(status);
+        if (WIFEXITED(status)) {
+            exit(WEXITSTATUS(status));
+        }
+        if (WIFSIGNALED(status)) {
+            exit(WTERMSIG(status));
+        }
+        if (WIFSTOPPED(status)) {
+            exit(WSTOPSIG(status));
+        }
+        exit(!status ? 0 : 1);
     }
 }

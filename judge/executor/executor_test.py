@@ -158,6 +158,16 @@ class TestStackOverFlow(unittest.TestCase):
         tmpdir.cleanup()
 
 
+class TestRE(unittest.TestCase):
+    def test_re(self):
+        tmpdir = TemporaryDirectory()
+        Path(tmpdir.name).chmod(0o777)
+        code, result = get_result(['cat', 'dummy'], tmpdir.name, False)
+        self.assertEqual(code, 0)
+        self.assertNotEqual(result['returncode'], 0)
+        tmpdir.cleanup()
+
+
 class TestForkBomb(unittest.TestCase):
     def test_forkbomb(self):
         logger.info('Start Fork Bomb')
