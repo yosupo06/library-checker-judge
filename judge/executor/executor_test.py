@@ -43,7 +43,7 @@ def get_result(execcmd, cwd, overlay, tl=None, stdin=None, stderr=None):
 
 class TestHelloWorld(unittest.TestCase):
     def test_cpp(self):
-        tmpdir = get_tmpdir(Path('./test_src/Hello.cpp'))
+        tmpdir = get_tmpdir(Path('../test_src/Hello.cpp'))
         code, result = get_result(['g++', 'Hello.cpp'], tmpdir.name, False)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
@@ -54,7 +54,7 @@ class TestHelloWorld(unittest.TestCase):
         tmpdir.cleanup()
 
     def test_cpp_with_flag(self):
-        tmpdir = get_tmpdir(Path('./test_src/Hello.cpp'))
+        tmpdir = get_tmpdir(Path('../test_src/Hello.cpp'))
         code, result = get_result(
             ['g++', 'Hello.cpp', '-o', 'Hello'], tmpdir.name, False)
         self.assertEqual(code, 0)
@@ -66,7 +66,7 @@ class TestHelloWorld(unittest.TestCase):
         tmpdir.cleanup()
 
     def test_java(self):
-        tmpdir = get_tmpdir(Path('./test_src/Hello.java'))
+        tmpdir = get_tmpdir(Path('../test_src/Hello.java'))
         code, result = get_result(['javac', 'Hello.java'], tmpdir.name, False)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
@@ -76,7 +76,7 @@ class TestHelloWorld(unittest.TestCase):
         tmpdir.cleanup()
 
     def test_java_twoclasses(self):
-        tmpdir = get_tmpdir(Path('./test_src/TwoClasses.java'))
+        tmpdir = get_tmpdir(Path('../test_src/TwoClasses.java'))
         code, result = get_result(
             ['javac', 'TwoClasses.java'], tmpdir.name, False)
         self.assertEqual(code, 0)
@@ -87,7 +87,7 @@ class TestHelloWorld(unittest.TestCase):
         tmpdir.cleanup()
 
     def test_python(self):
-        tmpdir = get_tmpdir(Path('./test_src/Hello.py'))
+        tmpdir = get_tmpdir(Path('../test_src/Hello.py'))
         code, result = get_result(['python3', 'Hello.py'], tmpdir.name, True)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
@@ -96,7 +96,7 @@ class TestHelloWorld(unittest.TestCase):
 
 class TestTLE(unittest.TestCase):
     def test_tle(self):
-        tmpdir = get_tmpdir(Path('./test_src/TLE.cpp'))
+        tmpdir = get_tmpdir(Path('../test_src/TLE.cpp'))
         code, result = get_result(['g++', 'TLE.cpp'], tmpdir.name, False)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
@@ -148,7 +148,7 @@ class TestTmpDir(unittest.TestCase):
 
 class TestStackOverFlow(unittest.TestCase):
     def test_tmpdir(self):
-        tmpdir = get_tmpdir(Path('./test_src/stack.cpp'))
+        tmpdir = get_tmpdir(Path('../test_src/stack.cpp'))
         code, result = get_result(['g++', 'stack.cpp'], tmpdir.name, False)
         self.assertEqual(code, 0)
         self.assertEqual(result['returncode'], 0)
@@ -162,7 +162,7 @@ class TestForkBomb(unittest.TestCase):
     def test_forkbomb(self):
         logger.info('Start Fork Bomb')
         code, result = get_result(
-            ['./test_src/fork_bomb.sh'], '.', True, 10.0, None, "/dev/null")
+            ['../test_src/fork_bomb.sh'], '.', True, 10.0, None, "/dev/null")
         logger.info('End')
 
 if __name__ == "__main__":
