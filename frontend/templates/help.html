@@ -32,10 +32,57 @@
                 </tbody>
             </table>
             <p>より詳しくは<a href="https://github.com/yosupo06/library-checker-judge/blob/master/compiler/langs.toml">langs.toml</a>, <a href="https://github.com/yosupo06/library-checker-judge/blob/master/compiler/install.sh">install.sh</a>を参照してください</p>
+            <h2>Judge Status</h2>
+            <table class="uk-table uk-table-striped">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Info</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="uk-label uk-label-success">AC</span></td>
+                        <td>最新のテストケースでAccepted</td>
+                    </tr>
+                    <tr>
+                        <td><span class="uk-label">AC</span></td>
+                        <td>ACだが最新ではない(テストケースが追加されたなど)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="uk-label">WA</span></td>
+                        <td>Wrong Answer</td>
+                    </tr>
+                    <tr>
+                        <td><span class="uk-label">RE</span></td>
+                        <td>Runtime Error(0以外の返り値を返した)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="uk-label">TLE</span></td>
+                        <td>Time Limit Exceeded</td>
+                    </tr>
+                    <tr>
+                        <td><span class="uk-label">Fail</span></td>
+                        <td>(スペシャルジャッジなどで)想定解より良い解を作った これが出たら報告していただけると助かります</td>
+                    </tr>
+                    <tr>
+                        <td><span class="uk-label">CE</span></td>
+                        <td>Compile Error</td>
+                    </tr>
+                    <tr>
+                        <td><span class="uk-label">WJ</span></td>
+                        <td>ジャッジ待ち</td>
+                    </tr>
+                    <tr>
+                        <td>これ以外</td>
+                        <td>が出たら想定外の挙動です　報告していただけると助かります</td>
+                    </tr>
+                </tbody>
+            </table>
             <h2>Tips</h2>
             <p>メモリ制限は全部1G(2<sup>30</sup> bytes)です スタックサイズは無制限です</p>
+            <p>時々サーバーを再起動します。その時に提出するとWJのまま無限に放置されます(いつか直す…)。10分ぐらいWJが続くようだったらリジャッジしてみてください。それでダメなら想定外の挙動です。</p>
         </div>
-
     </section>
 </body>
 </html>
