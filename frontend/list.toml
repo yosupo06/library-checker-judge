@@ -24,6 +24,7 @@
         'general_matching',
         'assignment',
         'directedmst',
+        'manhattanmst',
         'dominatortree',
         'maximum_independent_set'
     ]
