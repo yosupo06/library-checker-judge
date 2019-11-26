@@ -10,6 +10,7 @@
         'unionfind',
         'staticrmq',
         'point_add_range_sum',
+        'point_set_range_composite',
         'vertex_add_path_sum',
         'vertex_add_subtree_sum',
         'rectangle_sum',
