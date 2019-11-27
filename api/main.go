@@ -307,6 +307,7 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 func main() {
 	// connect db
 	db = dbConnect()
+	defer db.Close()
 	//db.LogMode(true)
 
 	// launch gRPC server

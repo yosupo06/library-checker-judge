@@ -12,3 +12,10 @@ services:
     build:
       context: ./
       dockerfile: api/Dockerfile
+    ports:
+      - 50051:50051
+    depends_on:
+      - db
+    environment:
+      - POSTGRE_HOST=db
+      - HMAC_SECRET=dummy_secret
