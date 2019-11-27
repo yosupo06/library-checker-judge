@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  db:
+    image: postgres:11.3
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=librarychecker
+      - POSTGRES_PASSWORD=passwd
+  api:
+    build:
+      context: ./
+      dockerfile: api/Dockerfile
