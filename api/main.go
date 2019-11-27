@@ -202,7 +202,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 			Case:   c.Testcase,
 			Status: c.Status,
 			Time:   float64(c.Time) / 1000.0,
-			Memory: int64(sub.MaxMemory),
+			Memory: int64(c.Memory),
 		})
 	}
 	return res, nil
