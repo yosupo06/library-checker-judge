@@ -10,7 +10,7 @@
 cd /path/to/library-checker-frontend
 
 go run . # access to apiv1.yosupo.jp:443 (API server of judge.yosupo.jp)
-go run . --local # access to localhost:55051 (you must launch api server in local)
+go run . --local # access to localhost:50051 (you must launch api server in local)
 ```
 
 ## Contributing
