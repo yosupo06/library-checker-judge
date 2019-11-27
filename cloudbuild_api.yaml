@@ -7,7 +7,7 @@ steps:
       - -t
       - asia.gcr.io/library-checker-project/judge-api
       - -f
-      - Dockerfile_api
+      - api/Dockerfile
       - .
   - id: push
     name: gcr.io/cloud-builders/docker
