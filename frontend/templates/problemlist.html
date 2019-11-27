@@ -30,8 +30,13 @@
                         {{$info := index $titlemap $element}}
                         {{if $info.Title}}
                         <div style="height: 120px;">
-                            <div class="uk-height-1-1 uk-card uk-card-default uk-card-body" {{if $info.Solved}}style="background: #E0FFE0"{{end}}>
-                                <a href="/problem/{{.}}">{{$info.Title}}</a>
+                            <div class="uk-height-1-1 uk-card uk-card-default uk-card-body"
+                                {{if eq $info.Solved 2}}
+                                    style="background: #E0FFE0"
+                                {{else if eq $info.Solved 1}}
+                                    style="background: #A0E0FF"
+                                {{end}}>
+                                <a class="uk-link-heading" href="/problem/{{.}}">{{$info.Title}}</a>
                                 {{if $info.Solved}}
                                 <a href="/submissions?user={{$user}}&status=AC&problem={{.}}" class="uk-link-text uk-position-bottom-right">
                                     <span uk-icon="icon: file-text;"></span>

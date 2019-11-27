@@ -56,7 +56,7 @@ func problemList(ctx *gin.Context) {
 	}
 	type ProblemInfo struct {
 		Title  string
-		Solved bool
+		Solved int
 	}
 	var titlemap = make(map[string]*ProblemInfo)
 	for _, problem := range res.Problems {
@@ -78,7 +78,9 @@ func problemList(ctx *gin.Context) {
 		if err == nil {
 			for _, sub := range subs.Submissions {
 				if sub.IsLatest {
-					titlemap[sub.ProblemName].Solved = true
+					titlemap[sub.ProblemName].Solved = 2
+				} else if titlemap[sub.ProblemName].Solved == 0 {
+					titlemap[sub.ProblemName].Solved = 1
 				}
 			}
 		}
