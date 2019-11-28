@@ -50,7 +50,7 @@ echo 'Start executor.py test'
 gcpexec "cd /root/library-checker-judge/judge/executor && ./executor_test.py"
 
 echo 'Start docker test'
-gcpexec "cd /root/library-checker-judge/local && ./launch.sh"
+gcpexec "cd /root/library-checker-judge && ./launch_local.sh"
 
 echo 'Start judge test'
 gcpexec "cd /root/library-checker-judge/judge && go test . -v"
