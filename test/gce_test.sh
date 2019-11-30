@@ -43,15 +43,18 @@ gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 echo "Install compilers"
 gcpexec "cd /root/library-checker-judge/compiler && ./install.sh"
 
-echo 'Start generate.py test'
-gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
-
 echo 'Start executor.py test'
 gcpexec "cd /root/library-checker-judge/judge/executor && ./executor_test.py"
+
+echo 'Start generate.py test'
+gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
 
 echo 'Start docker test'
 gcpexec "cd /root/library-checker-judge && ./launch_local.sh"
 
 echo 'Start judge test'
 gcpexec "cd /root/library-checker-judge/judge && go test . -v"
+
+echo 'Start API test'
+gcpexec "cd /root/library-checker-judge/api && go test ."
 

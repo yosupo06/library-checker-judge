@@ -125,6 +125,9 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	if in.Source == "" {
 		return nil, errors.New("Empty Source")
 	}
+	if len(in.Source) > 1024 * 1024 {
+		return nil, errors.New("Too large Source")
+	}
 	ok := false
 	for _, lang := range langs {
 		if lang.Id == in.Lang {
