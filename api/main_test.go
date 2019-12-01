@@ -52,14 +52,12 @@ func (c *loginCreds) RequireTransportSecurity() bool {
 }
 
 func TestMain(m *testing.M) {
-	log.Print("UNKO")
 	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{}), grpc.WithInsecure()}
 	conn, err := grpc.Dial("localhost:50051", options...)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	log.Print("UNKO")
 	client = pb.NewLibraryCheckerServiceClient(conn)
 
 	os.Exit(m.Run())
