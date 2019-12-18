@@ -47,6 +47,7 @@
         'sqrt_mod',
         'kth_root_integer',
         'discrete_logarithm_mod',
+        'tetration_mod',
         'two_sat',
     ]
 
