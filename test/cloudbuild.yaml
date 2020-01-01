@@ -2,9 +2,8 @@ steps:
   - id: test
     name:	gcr.io/cloud-builders/gcloud
     entrypoint: bash
-    args:
-      - '-c'
-      - 'cd test && ./gce_test.sh'
+    dir: test
+    args: './gce_test.sh'
     env:
       - 'TEST_COMMIT=$COMMIT_SHA'
 
