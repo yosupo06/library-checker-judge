@@ -37,8 +37,14 @@ done
 echo "Copy library-checker-problems : $(cd .. && pwd)"
 gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-problems
 
+echo "Install pip"
+gcpexec "pip3 install -r ../requirements.txt"
+
 echo "Copy library-checker-judge : $(cd .. && pwd)"
 gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
+
+echo "Install pip"
+gcpexec "pip3 install termcolor psutil"
 
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
