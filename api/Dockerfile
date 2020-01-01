@@ -1,7 +1,6 @@
 FROM golang:1.13.4-stretch as builder
-WORKDIR /go/src/github.com/yosupo06/library-checker-judge/
-COPY . .
 WORKDIR /go/src/github.com/yosupo06/library-checker-judge/api
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build .
 
 ENV PORT 50051
