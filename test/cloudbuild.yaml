@@ -4,7 +4,7 @@ steps:
     entrypoint: bash
     args:
       - 'cd .. && git clone https://github.com/yosupo06/library-checker-problems/'
-      - './gce_test.sh'
+      - 'cd test && ./gce_test.sh'
     env:
       - 'TEST_COMMIT=$COMMIT_SHA'
 
