@@ -8,7 +8,7 @@ steps:
     args:
       - clone
       - https://github.com/yosupo06/library-checker-problems/
-  - id: test
+  - id: test2
     name:	gcr.io/cloud-builders/gcloud
     volumes:
     - name: library-checker-problems
@@ -17,6 +17,15 @@ steps:
     entrypoint:
     args:
       - pwd
+  - id: test3
+    name:	gcr.io/cloud-builders/gcloud
+    volumes:
+    - name: library-checker-problems
+      path: /library-checker-problems
+    dir: /
+    entrypoint:
+    args:
+      - ls
   - id: test
     name:	gcr.io/cloud-builders/gcloud
     volumes:
