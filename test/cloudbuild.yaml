@@ -1,6 +1,6 @@
 steps:
   - id: clone-problems
-    name:	ubuntu
+    name:	gcr.io/cloud-builders/git
     dir: ..
     args:
       - 'git'
