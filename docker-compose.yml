@@ -10,7 +10,7 @@ services:
       - POSTGRES_PASSWORD=passwd
   api:
     build:
-      context: ./
+      context: api
       dockerfile: api/Dockerfile
     ports:
       - 50051:50051
