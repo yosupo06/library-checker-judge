@@ -16,6 +16,7 @@ steps:
     entrypoint: bash
     dir: /
     args:
+      - '-c'
       - pwd
   - id: test3
     name:	gcr.io/cloud-builders/gcloud
@@ -25,6 +26,7 @@ steps:
     entrypoint: bash
     dir: /
     args:
+      - '-c'
       - ls
   - id: test
     name:	gcr.io/cloud-builders/gcloud
