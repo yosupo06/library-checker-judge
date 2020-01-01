@@ -1,7 +1,6 @@
 steps:
   - id: test
     name:	gcr.io/cloud-builders/gcloud
-    entrypoint: bash
     args:
       - 'pwd'
       - 'cd .. && git clone https://github.com/yosupo06/library-checker-problems/'
