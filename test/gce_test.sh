@@ -34,6 +34,9 @@ until gcpexec "ls /root/can_start > /dev/null"; do
     sleep 10
 done
 
+echo "Copy library-checker-problems : $(cd .. && pwd)"
+gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-problems
+
 echo "Copy library-checker-judge : $(cd .. && pwd)"
 gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
 
@@ -41,7 +44,7 @@ echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
 echo "Install compilers"
-gcpexec "cd /root/library-checker-judge/compiler && ./install.sh"
+gcpexec "cd /root/library-checker-judge/deploy && ./install.sh"
 
 echo 'Start executor.py test'
 gcpexec "cd /root/library-checker-judge/judge/executor && ./executor_test.py"
