@@ -4,7 +4,7 @@ steps:
     volumes:
     - name: library-checker-problems
       path: /library-checker-problems
-    dir: /library-checker-problems
+    dir: ../library-checker-problems
     args:
       - clone
       - https://github.com/yosupo06/library-checker-problems/
