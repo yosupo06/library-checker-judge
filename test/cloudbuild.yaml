@@ -13,8 +13,8 @@ steps:
     volumes:
     - name: library-checker-problems
       path: /library-checker-problems
+    entrypoint: bash
     dir: /
-    entrypoint:
     args:
       - pwd
   - id: test3
@@ -22,8 +22,8 @@ steps:
     volumes:
     - name: library-checker-problems
       path: /library-checker-problems
+    entrypoint: bash
     dir: /
-    entrypoint:
     args:
       - ls
   - id: test
