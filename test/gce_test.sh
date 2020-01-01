@@ -38,7 +38,7 @@ echo "Make problems.tar.gz(compressed library-checker-problems)"
 (cd ../../library-checker-problems && tar -cf problems.tar.gz $(git ls-files))
 echo "Copy problems.tar.gz"
 gcpexec "cd /root/ && mkdir library-checker-problems"
-gcloud compute scp --zone ${ZONE} problems.tar.gz root@${NAME}:/root/library-checker-problems/problems.tar.gz
+gcloud compute scp --zone ${ZONE} ../../library-checker-problems/problems.tar.gz root@${NAME}:/root/library-checker-problems/problems.tar.gz
 echo "Extract problems.tar.gx"
 gcpexec "cd /root/library-checker-problems && tar -xf problems.tar.gz"
 
