@@ -2,7 +2,7 @@
 
 set -e
 
-NAME=lib-judge-test-$(cat /dev/urandom | tr -d -c '[:lower:]' | fold -w 10 | head -n 1)
+NAME=lib-judge-test-$(cat /dev/urandom | LC_CTYPE=C tr -d -c '[:lower:]' | fold -w 10 | head -n 1)
 ZONE=asia-northeast1-c
 
 echo "Create ${NAME}"
@@ -36,6 +36,13 @@ done
 
 echo "Copy library-checker-problems : $(cd ../../library-checker-problems && pwd)"
 gcloud compute scp --zone ${ZONE} --recurse $(cd ../../library-checker-problems && pwd) root@${NAME}:/root/library-checker-problems
+
+echo "ls"
+gcpexec "ls /"
+
+echo "ls"
+gcpexec "ls /library-checker-problems"
+
 
 echo "Install pip"
 gcpexec "cd /root/library-checker-problems && pip3 install -r requirements.txt"
