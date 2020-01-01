@@ -1,12 +1,18 @@
 steps:
   - id: clone-problems
     name:	gcr.io/cloud-builders/git
-    dir: ..
+    volumes:
+    - name: library-checker-problems
+      path: /library-checker-problems
+    dir: /library-checker-problems
     args:
       - clone
       - https://github.com/yosupo06/library-checker-problems/
   - id: test
     name:	gcr.io/cloud-builders/gcloud
+    volumes:
+    - name: library-checker-problems
+      path: /library-checker-problems
     entrypoint: bash
     dir: test
     args:
