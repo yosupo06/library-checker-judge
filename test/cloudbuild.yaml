@@ -13,6 +13,15 @@ steps:
     volumes:
     - name: library-checker-problems
       path: /library-checker-problems
+    dir: /
+    entrypoint:
+    args:
+      - pwd
+  - id: test
+    name:	gcr.io/cloud-builders/gcloud
+    volumes:
+    - name: library-checker-problems
+      path: /library-checker-problems
     entrypoint: bash
     dir: test
     args:
