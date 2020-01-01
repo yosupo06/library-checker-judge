@@ -27,7 +27,7 @@ steps:
     dir: /
     args:
       - '-c'
-      - 'ls library-checker-problems'
+      - 'ls -al library-checker-problems'
   - id: test
     name:	gcr.io/cloud-builders/gcloud
     volumes:
