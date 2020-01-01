@@ -34,8 +34,8 @@ until gcpexec "ls /root/can_start > /dev/null"; do
     sleep 10
 done
 
-echo "Copy library-checker-problems : $(cd .. && pwd)"
-gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-problems
+echo "Copy library-checker-problems : $(cd ../../library-checker-problems && pwd)"
+gcloud compute scp --zone ${ZONE} --recurse $(cd ../../library-checker-problems && pwd) root@${NAME}:/root/library-checker-problems
 
 echo "Install pip"
 gcpexec "cd /root/library-checker-problems && pip3 install -r requirements.txt"
