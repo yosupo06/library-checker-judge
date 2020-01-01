@@ -3,9 +3,8 @@ steps:
     name:	gcr.io/cloud-builders/git
     dir: ..
     args:
-      - 'git'
-      - 'clone'
-      - 'https://github.com/yosupo06/library-checker-problems/'
+      - clone
+      - https://github.com/yosupo06/library-checker-problems/
   - id: test
     name:	gcr.io/cloud-builders/gcloud
     entrypoint: bash
