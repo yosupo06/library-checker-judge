@@ -49,7 +49,7 @@ echo "Copy library-checker-judge : $(cd .. && pwd)"
 gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
 
 echo "Install pip"
-gcpexec "pip3 install psutil"
+gcpexec "pip3 install psutil psycopg2"
 
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
