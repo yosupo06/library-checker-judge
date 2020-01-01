@@ -11,7 +11,6 @@ services:
   api:
     build:
       context: api
-      dockerfile: api/Dockerfile
     ports:
       - 50051:50051
     depends_on:
