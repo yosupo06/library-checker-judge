@@ -34,15 +34,13 @@ until gcpexec "ls /root/can_start > /dev/null"; do
     sleep 10
 done
 
-echo "Copy library-checker-problems : $(cd ../../library-checker-problems && pwd)"
-gcloud compute scp --zone ${ZONE} --recurse $(cd ../../library-checker-problems && pwd) root@${NAME}:/root/library-checker-problems
-
-echo "ls"
-gcpexec "ls /"
-
-echo "ls"
-gcpexec "ls /library-checker-problems"
-
+echo "Make problems.tar.gz(compressed library-checker-problems)"
+(cd ../../library-checker-problems && tar -cf problems.tar.gz $(git ls-files))
+echo "Copy problems.tar.gz"
+gcpexec "cd /root/ && mkdir library-checker-problems"
+gcloud compute scp problems.tar.gz root@${NAME}:/root/library-checker-problems/problems.tar.gz
+echo "Extract problems.tar.gx"
+gcpexec "cd /root/library-checker-problems && tar -xf problems.tar.gz"
 
 echo "Install pip"
 gcpexec "cd /root/library-checker-problems && pip3 install -r requirements.txt"
@@ -51,7 +49,7 @@ echo "Copy library-checker-judge : $(cd .. && pwd)"
 gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
 
 echo "Install pip"
-gcpexec "pip3 install termcolor psutil"
+gcpexec "pip3 install psutil"
 
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"

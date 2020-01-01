@@ -8,26 +8,6 @@ steps:
     args:
       - clone
       - https://github.com/yosupo06/library-checker-problems/
-  - id: test2
-    name:	gcr.io/cloud-builders/gcloud
-    volumes:
-    - name: library-checker-problems
-      path: /library-checker-problems
-    entrypoint: bash
-    dir: /
-    args:
-      - '-c'
-      - pwd
-  - id: test3
-    name:	gcr.io/cloud-builders/gcloud
-    volumes:
-    - name: library-checker-problems
-      path: /library-checker-problems
-    entrypoint: bash
-    dir: /
-    args:
-      - '-c'
-      - 'ls -al library-checker-problems'
   - id: test
     name:	gcr.io/cloud-builders/gcloud
     volumes:
