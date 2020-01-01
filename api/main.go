@@ -319,7 +319,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	LoadLangsToml("../compiler/langs.toml")
+	LoadLangsToml("./langs.toml")
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})
