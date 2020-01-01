@@ -1,10 +1,10 @@
 steps:
   - id: test
     name:	gcr.io/cloud-builders/gcloud
+    entrypoint: bash
     args:
-      - 'pwd'
-      - 'cd .. && git clone https://github.com/yosupo06/library-checker-problems/'
-      - 'cd test && ./gce_test.sh'
+      - '-c'
+      - 'pwd && cd .. && git clone https://github.com/yosupo06/library-checker-problems/ && cd test && ./gce_test.sh'
     env:
       - 'TEST_COMMIT=$COMMIT_SHA'
 
