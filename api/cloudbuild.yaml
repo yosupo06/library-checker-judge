@@ -1,6 +1,7 @@
 steps:
   - id: build
     name: gcr.io/cloud-builders/docker
+    dir: api
     args:
       - build
       - -t
