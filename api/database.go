@@ -65,17 +65,21 @@ func dbConnect() *gorm.DB {
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
 		host, port, user, pass)
-
-	db, err := gorm.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
+	log.Printf("Try connect %s", connStr)
+	for i := 0; i < 3; i++ {
+		db, err := gorm.Open("postgres", connStr)
+		if err != nil {
+			log.Printf("Cannot connect db %d/3", i)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		db.AutoMigrate(Problem{})
+		db.AutoMigrate(User{})
+		db.AutoMigrate(Submission{})
+		db.AutoMigrate(SubmissionTestcaseResult{})
+		db.AutoMigrate(Task{})
+		return db
 	}
-
-	db.AutoMigrate(Problem{})
-	db.AutoMigrate(User{})
-	db.AutoMigrate(Submission{})
-	db.AutoMigrate(SubmissionTestcaseResult{})
-	db.AutoMigrate(Task{})
-
-	return db
+	log.Fatal("Cannot connect db 3 times")
+	return nil
 }

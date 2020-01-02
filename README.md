@@ -1,15 +1,22 @@
-# library-checker-project
+# Library Checker Judge
 
-- problems: [library-checker-problems](https://github.com/yosupo06/library-checker-problems)
-- judge: [library-checker-judge](https://github.com/yosupo06/library-checker-judge)
-- frontend: [library-checker-frontend](https://github.com/yosupo06/library-checker-frontend)
+ジャッジ / API のソースコードです
 
-# Recommended Environment
+## Requirements
 
 - Ubuntu 18.04
-- ~~Debian 9(stretch)~~
 
-# 動かすのに必要なもの
+## How to Use
+
+### Launch API & SQL
+
+```
+./launch_local.sh
+```
+
+APIサーバー(localhost:50051)とSQL(Postgre SQL)がdocker-composeで立ち上がります。
+
+### Launch Judge Server
 
 - docker
 
@@ -79,3 +86,9 @@ go run *.go
 # Contribution
 
 なんでも歓迎
+
+## library-checker-project
+
+- problems: [library-checker-problems](https://github.com/yosupo06/library-checker-problems)
+- judge: [library-checker-judge](https://github.com/yosupo06/library-checker-judge)
+- frontend: [library-checker-frontend](https://github.com/yosupo06/library-checker-frontend)

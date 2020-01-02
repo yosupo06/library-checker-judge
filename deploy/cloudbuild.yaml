@@ -1,9 +1,8 @@
 steps:
   - name:	gcr.io/cloud-builders/gcloud
     entrypoint: sh
-    args:
-      - '-c'
-      - 'cd deploy && ./deploy.sh'
+    dir: deploy
+    args: ./deploy.sh
     env:
       - 'PG_HOST=$_PG_HOST'
       - 'PG_PASS=$_PG_PASS'

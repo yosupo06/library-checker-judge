@@ -10,5 +10,11 @@ services:
       - POSTGRES_PASSWORD=passwd
   api:
     build:
-      context: ./
-      dockerfile: api/Dockerfile
+      context: api
+    ports:
+      - 50051:50051
+    depends_on:
+      - db
+    environment:
+      - POSTGRE_HOST=db
+      - HMAC_SECRET=dummy_secret

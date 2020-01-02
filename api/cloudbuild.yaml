@@ -1,13 +1,11 @@
-# Run from parent directory(/path/to/library-checker-judge)
 steps:
   - id: build
     name: gcr.io/cloud-builders/docker
+    dir: api
     args:
       - build
       - -t
       - asia.gcr.io/library-checker-project/judge-api
-      - -f
-      - api/Dockerfile
       - .
   - id: push
     name: gcr.io/cloud-builders/docker

@@ -125,6 +125,9 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	if in.Source == "" {
 		return nil, errors.New("Empty Source")
 	}
+	if len(in.Source) > 1024 * 1024 {
+		return nil, errors.New("Too large Source")
+	}
 	ok := false
 	for _, lang := range langs {
 		if lang.Id == in.Lang {
@@ -307,6 +310,7 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 func main() {
 	// connect db
 	db = dbConnect()
+	defer db.Close()
 	//db.LogMode(true)
 
 	// launch gRPC server
@@ -315,7 +319,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	LoadLangsToml("../compiler/langs.toml")
+	LoadLangsToml("./langs.toml")
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})

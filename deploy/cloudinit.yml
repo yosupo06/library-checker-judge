@@ -65,10 +65,10 @@ write_files:
 
 runcmd:
   - update-grub
+  # install docker, docker-compose
   - curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh
-  - git clone https://github.com/yosupo06/library-checker-problems /root/library-checker-problems
-  - pip3 install termcolor toml psycopg2 psutil
-  - pip3 install -r /root/library-checker-problems/requirements.txt
+  - curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - chmod +x /usr/local/bin/docker-compose
   # install go
   - add-apt-repository -y ppa:longsleep/golang-backports
   - apt-get install -y golang-go

@@ -31,7 +31,7 @@ echo "Make Secret HOST=${PG_HOST} / PASS=${PG_PASS}"
 gcpexec "cd /root/library-checker-judge/judge && PG_HOST=${PG_HOST} PG_PASS=${PG_PASS} ./make_secret.sh"
 
 echo "Install compilers"
-gcpexec "cd /root/library-checker-judge/compiler && ./install.sh"
+gcpexec "cd /root/library-checker-judge/deploy && ./install.sh"
 
 echo "Build judge"
 gcpexec "cd /root/library-checker-judge/judge && go build ."
