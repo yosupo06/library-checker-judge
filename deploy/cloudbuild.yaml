@@ -1,6 +1,6 @@
 steps:
   - name:	gcr.io/cloud-builders/gcloud
-    entrypoint: sh
+    entrypoint: bash
     dir: deploy
     args: [./deploy.sh]
     env:
