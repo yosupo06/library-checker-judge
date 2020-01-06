@@ -21,7 +21,7 @@ jobs:
         gcloud config set project library-checker-project
 
     - name: Clone problems
-      working_directory: ..
+      working-directory: ..
       run: |
         git clone https://github.com/yosupo06/library-checker-problems/
 
