@@ -7,7 +7,7 @@ set -e
 NAME=$1
 ZONE=$2
 
-echo "Create Instance Name = $NAME, Zone = $ZONE"
+echo "Create Instance Name = $NAME, Zone = $ZONE, Extra Opt = ${@:3}"
 gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
 --boot-disk-size=200GB \
