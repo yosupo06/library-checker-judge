@@ -14,7 +14,7 @@ else
     trap "echo 'Release' && gcloud compute instances delete ${NAME} --zone=${ZONE} --quiet" 0
 fi
 
-(cd ../deploy && ./create_instance.sh $NAME $ZONE)
+(cd ../deploy && ./create_instance.sh $NAME $ZONE --preemptible)
 
 function gcpexec() {
     echo "Start: ${1}"
