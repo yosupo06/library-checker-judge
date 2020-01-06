@@ -33,17 +33,8 @@ gcpexec "cd /root/library-checker-problems && tar -xf problems.tar.gz"
 echo "Install pip"
 gcpexec "cd /root/library-checker-problems && pip3 install -r requirements.txt"
 
-# echo "Copy library-checker-judge : $(cd .. && pwd)"
-# gcloud compute scp --zone ${ZONE} --recurse $(cd .. && pwd) root@${NAME}:/root/library-checker-judge
-
-# echo "Install pip"
-# gcpexec "pip3 install psutil psycopg2"
-
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
-
-# echo "Install compilers"
-# gcpexec "cd /root/library-checker-judge/deploy && ./install.sh"
 
 echo 'Start executor.py test'
 gcpexec "cd /root/library-checker-judge/judge/executor && ./executor_test.py"
