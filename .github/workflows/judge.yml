@@ -21,6 +21,7 @@ jobs:
       run:
         - git clone https://github.com/yosupo06/library-checker-problems/
     - name: Run test
+      working-directory: test
       run: 
         - ./gce_test.sh
     
