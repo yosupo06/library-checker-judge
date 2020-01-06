@@ -9,3 +9,4 @@ judge/executor/executor_core
 /deploy/cloudinit_buf.yml
 secret.*
 judge/judge
+judge.tar.gz

@@ -93,6 +93,7 @@ func getCases(data string) ([]string, error) {
 
 func execJudge(db *gorm.DB, task Task) error {
 	var submission Submission
+	log.Println("Fetch Submission")
 	if err := db.
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, timelimit, testhash, testzip")
@@ -100,24 +101,29 @@ func execJudge(db *gorm.DB, task Task) error {
 		Where("id = ?", task.Submission).First(&submission).Error; err != nil {
 		return err
 	}
-	
+
+	log.Println("Clear SubmissionTestcaseResults")
 	if err := db.Where("submission = ?", submission.ID).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
 		return err
 	}
 
+	log.Println("Gen workdir")
 	workDir, err := ioutil.TempDir("", "work")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(workDir)
 
+	log.Println("Fetch testhash")
 	if err := db.Model(&submission).Select("testhash").Update("testhash", submission.Problem.Testhash).Error; err != nil {
 		return err
 	}
 
-	if err := db.Model(&submission).Select("status").Update("status", "Feching").Error; err != nil {
+	log.Println("Change Status -> Fetching")
+	if err := db.Model(&submission).Select("status").Update("status", "Fetching").Error; err != nil {
 		return err
 	}
+	log.Println("Fetch data")
 	caseDir, err := fetchData(db, submission.Problem)
 	if err != nil {
 		log.Println("Fail to fetchData")
@@ -215,6 +221,7 @@ func gormConnect() *gorm.DB {
 		"host=%s port=5432 user=%s dbname=librarychecker password=%s sslmode=disable",
 		sqlInfo.PostgreHost, sqlInfo.PostgreUser, sqlInfo.PostgrePass)
 
+	log.Println("Connected to DB")
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -239,6 +246,7 @@ func main() {
 	db.AutoMigrate(SubmissionTestcaseResult{})
 	//db.LogMode(true)
 
+	log.Println("Start Pooling")
 	for {
 		time.Sleep(1 * time.Second)
 		var task Task
