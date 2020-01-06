@@ -2,6 +2,8 @@
 
 set -e
 
+echo "Start Test"
+
 NAME=lib-judge-test-$(cat /dev/urandom | LC_CTYPE=C tr -d -c '[:lower:]' | fold -w 10 | head -n 1)
 ZONE=asia-northeast1-c
 
