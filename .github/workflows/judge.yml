@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Judge Test
 
 on: [push]
 
@@ -18,10 +18,10 @@ jobs:
         service_account_key: ${{ secrets.GCLOUD_KEY }}
     
     - name: Clone problems
-      run:
-        - git clone https://github.com/yosupo06/library-checker-problems/
+      run: |
+        git clone https://github.com/yosupo06/library-checker-problems/
     - name: Run test
       working-directory: test
-      run: 
-        - ./gce_test.sh
+      run: |
+        ./gce_test.sh
     
