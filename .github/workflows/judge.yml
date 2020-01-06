@@ -16,7 +16,10 @@ jobs:
         version: '270.0.0'
         service_account_email: ${{ secrets.GCLOUD_EMAIL }}
         service_account_key: ${{ secrets.GCLOUD_KEY }}
-    
+    - name: Set project
+      run: |
+        gcloud config set project library-checker-project
+        
     - name: Clone problems
       run: |
         git clone https://github.com/yosupo06/library-checker-problems/
