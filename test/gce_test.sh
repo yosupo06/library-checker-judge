@@ -4,7 +4,7 @@ set -e
 
 echo "Start Test"
 
-NAME=lib-judge-test-$(cat /dev/urandom | LC_CTYPE=C tr -d -c '[:lower:]' | fold -w 10 | head -n 1)
+NAME=lib-judge-test-$RANDOM
 ZONE=asia-northeast1-c
 
 if [ $# -ge 1 ] && [ $1 = "remain" ]; then

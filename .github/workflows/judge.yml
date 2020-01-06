@@ -21,10 +21,6 @@ jobs:
       run: |
         git clone https://github.com/yosupo06/library-checker-problems/
 
-    - name: Print ID Test
-      run: |
-        cat /dev/urandom | LC_CTYPE=C tr -d -c '[:lower:]' | fold -w 10 | head -n 1
-        
     - name: Run test
       run: |
         cd test && ./gce_test.sh
