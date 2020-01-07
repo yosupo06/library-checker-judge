@@ -1,16 +1,34 @@
 package main
 
 import (
-	"os"
-	"strings"
-	"google.golang.org/grpc"
-	pb "github.com/yosupo06/library-checker-judge/api/proto"
-	"testing"
 	"context"
 	"log"
+	"math"
+	"os"
+	"strings"
+	"testing"
+
+	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"google.golang.org/grpc"
 )
 
 var client pb.LibraryCheckerServiceClient
+
+func TestProblemInfo(t *testing.T) {
+	ctx := context.Background()
+	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: "aplusb",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if problem.Title != "A + B" {
+		t.Fatal("Differ Title : ", problem.Title)
+	}
+	if math.Abs(problem.TimeLimit-2.0) > 0.01 {
+		t.Fatal("Differ TimeLimit : ", problem.TimeLimit)
+	}
+}
 
 func TestLangList(t *testing.T) {
 	ctx := context.Background()
@@ -25,12 +43,12 @@ func TestLangList(t *testing.T) {
 
 func TestSubmitBig(t *testing.T) {
 	ctx := context.Background()
-	bigSrc := strings.Repeat("a", 3 * 1000 * 1000) // 3 MB
+	bigSrc := strings.Repeat("a", 3*1000*1000) // 3 MB
 	_, err := client.Submit(ctx, &pb.SubmitRequest{
 		Problem: "aplusb",
-		Source: bigSrc,
-		Lang: "cpp",
-	})	
+		Source:  bigSrc,
+		Lang:    "cpp",
+	})
 	if err == nil {
 		t.Fatal("Success to submit big source")
 	}
