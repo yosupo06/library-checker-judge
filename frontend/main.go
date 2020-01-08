@@ -214,6 +214,8 @@ func submitList(ctx *gin.Context) {
 	}
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": res.Submissions,
+		"Problem":     submitFilter.Problem,
+		"Status":      submitFilter.Status,
 		"NowPage":     submitFilter.Page,
 		"NumPage":     int((res.Count + 99) / 100),
 	})
