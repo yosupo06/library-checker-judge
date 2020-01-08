@@ -12,6 +12,7 @@
         'point_add_range_sum',
         'point_set_range_composite',
         'range_affine_range_sum',
+        'range_chmin_chmax_add_range_sum',
         'vertex_add_path_sum',
         'vertex_add_subtree_sum',
         'dynamic_tree_vertex_add_path_sum',
