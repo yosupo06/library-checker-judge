@@ -10,7 +10,7 @@
     <section class="uk-section">
         <div class="uk-container">
             <h1 class="uk-heading-medium">Submit Info #{{.Overview.Id}}</h1>
-            {{if and .User (eq .User .Overview.UserName)}}
+            {{if or .Admin (and .User (eq .User .Overview.UserName))}}
             <a href="/rejudge/{{.Overview.Id}}">Rejudge</a>
             {{end}}
         </div>

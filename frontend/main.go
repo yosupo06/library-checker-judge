@@ -1,15 +1,15 @@
 package main
 
 import (
-	"os"
-	"math"
 	"context"
 	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
@@ -182,10 +182,19 @@ func submissionInfo(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
+	admin := false
+	if getUserName(ctx) != "" {
+		user, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
+		if err != nil {
+			ctx.AbortWithError(http.StatusBadRequest, err)
+		}
+		admin = user.IsAdmin
+	}
 	htmlWithUser(ctx, 200, "submitinfo.html", gin.H{
 		"Overview": sub.Overview,
 		"Results":  sub.CaseResults,
 		"Source":   sub.Source,
+		"Admin":    admin,
 	})
 }
 
@@ -411,7 +420,7 @@ func main() {
 			if a == -1 {
 				return "-1 Mib"
 			}
-			return fmt.Sprintf("%.2f MiB", float64(a) / 1024 / 1024)
+			return fmt.Sprintf("%.2f MiB", float64(a)/1024/1024)
 		},
 	})
 	router.LoadHTMLGlob("templates/*.html")
