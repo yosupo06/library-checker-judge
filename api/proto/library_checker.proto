@@ -5,6 +5,7 @@ package librarychecker;
 service LibraryCheckerService {
     rpc Register (RegisterRequest) returns (RegisterResponse) {}
     rpc Login (LoginRequest) returns (LoginResponse) {}
+    rpc UserInfo (UserInfoRequest) returns (UserInfoResponse) {}
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
@@ -30,6 +31,12 @@ message LoginRequest {
 }
 message LoginResponse {
     string token = 1; // JWT Token
+}
+
+message UserInfoRequest {
+}
+message UserInfoResponse {
+    bool is_admin = 1;
 }
 
 // --- Problem ---

@@ -89,6 +89,15 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 	}, nil
 }
 
+func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
+	if getUserName(ctx) == "" {
+		return nil, errors.New("Not login")
+	}
+	return &pb.UserInfoResponse{
+		IsAdmin: isAdmin(ctx),
+	}, nil
+}
+
 func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
 	name := in.Name
 	if name == "" {
@@ -125,7 +134,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	if in.Source == "" {
 		return nil, errors.New("Empty Source")
 	}
-	if len(in.Source) > 1024 * 1024 {
+	if len(in.Source) > 1024*1024 {
 		return nil, errors.New("Too large Source")
 	}
 	ok := false

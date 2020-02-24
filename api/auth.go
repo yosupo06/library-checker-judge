@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/dgrijalva/jwt-go"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -31,6 +31,20 @@ func getUserName(ctx context.Context) string {
 		return name
 	}
 	return ""
+}
+
+func isAdmin(ctx context.Context) bool {
+	u := getUserName(ctx)
+	if u == "" {
+		// don't login
+		return false
+	}
+	var user User
+	if err := db.Where("name = ?", u).First(&user).Error; err != nil {
+		// invalid user name
+		return false
+	}
+	return user.Admin
 }
 
 func authnFunc(ctx context.Context) (context.Context, error) {
@@ -62,4 +76,3 @@ func authnFunc(ctx context.Context) (context.Context, error) {
 	}
 	return ctx, nil
 }
-

@@ -14,6 +14,8 @@ import (
 
 var client pb.LibraryCheckerServiceClient
 
+type tokenKey struct{}
+
 func TestProblemInfo(t *testing.T) {
 	ctx := context.Background()
 	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
@@ -55,11 +57,51 @@ func TestSubmitBig(t *testing.T) {
 	t.Log(err)
 }
 
+func TestAdmin(t *testing.T) {
+	ctx := context.Background()
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "admin",
+		Password: "password",
+	})
+	t.Log(loginResp, err)
+	if err != nil {
+		t.Fatal("Failed to login")
+	}
+	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
+	if err != nil {
+		t.Fatal("Failed isAdmin")
+	}
+	if !resp.IsAdmin {
+		t.Fatal("isAdmin(admin) = False")
+	}
+}
+
+func TestNotAdmin(t *testing.T) {
+	ctx := context.Background()
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "tester",
+		Password: "password",
+	})
+	t.Log(loginResp, err)
+	if err != nil {
+		t.Fatal("Failed to login")
+	}
+	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
+	if err != nil {
+		t.Fatal("Failed isAdmin")
+	}
+	if resp.IsAdmin {
+		t.Fatal("isAdmin(tester) = True")
+	}
+}
+
 type loginCreds struct{}
 
 func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	dict := map[string]string{}
-	if token, ok := ctx.Value("token").(string); ok && token != "" {
+	if token, ok := ctx.Value(tokenKey{}).(string); ok && token != "" {
 		dict["authorization"] = "bearer " + token
 	}
 	return dict, nil

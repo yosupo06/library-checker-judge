@@ -15,7 +15,7 @@ echo "insert into users(name, passhash, admin) values ('admin', '\$2a\$10\$Aqftz
 | PGPASSWORD=passwd psql -h localhost -U postgres librarychecker
 
 # test account (name: tester / password: password)
-echo "insert into users(name, passhash, admin) values ('tester', '\$2a\$10\$AqftzLHYcaGH2GxUXiGO/OzHnIMJO.PGMrLFqm7mPbpqZlQrIRrq.', true)" \
+echo "insert into users(name, passhash, admin) values ('tester', '\$2a\$10\$AqftzLHYcaGH2GxUXiGO/OzHnIMJO.PGMrLFqm7mPbpqZlQrIRrq.', false)" \
 | PGPASSWORD=passwd psql -h localhost -U postgres librarychecker
 
-cd ../library-checker-problems && ./deploy.py
+cd ../library-checker-problems && ./deploy.py -p aplusb unionfind

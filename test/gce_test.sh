@@ -42,7 +42,7 @@ echo 'Start executor.py test'
 gcpexec "cd /root/library-checker-judge/judge/executor && ./executor_test.py"
 
 echo 'Start generate.py test'
-gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py problems.toml"
+gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py -p aplusb unionfind"
 
 echo 'Start docker test'
 gcpexec "cd /root/library-checker-judge && ./launch_local.sh"
