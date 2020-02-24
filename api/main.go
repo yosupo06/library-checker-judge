@@ -275,7 +275,10 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 		return nil, err
 	}
 	userName := getUserName(ctx)
-	if userName == "" || userName != sub.Overview.UserName {
+	if userName == "" {
+		return nil, errors.New("Did not login")
+	}
+	if userName != sub.Overview.UserName && !isAdmin(ctx) {
 		return nil, errors.New("No permission")
 	}
 	task := Task{}
