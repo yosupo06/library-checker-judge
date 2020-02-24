@@ -57,6 +57,25 @@ func TestSubmitBig(t *testing.T) {
 	t.Log(err)
 }
 
+func TestAnonymousRejudge(t *testing.T) {
+	ctx := context.Background()
+	src := strings.Repeat("a", 1000)
+	resp, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: "aplusb",
+		Source:  src,
+		Lang:    "cpp",
+	})
+	if err != nil {
+		t.Fatal("Unsuccess to submit source")
+	}
+	_, err = client.Rejudge(ctx, &pb.RejudgeRequest{
+		Id: resp.Id,
+	})
+	if err == nil {
+		t.Fatal("Success to rejudge")
+	}
+}
+
 func TestAdmin(t *testing.T) {
 	ctx := context.Background()
 	loginResp, err := client.Login(ctx, &pb.LoginRequest{
