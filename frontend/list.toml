@@ -76,3 +76,9 @@
         'number_of_substrings',
         'runenumerate',
     ]
+
+[[category]]
+    name = 'Geometry'
+    problems = [
+        'sort_points_by_argument',
+    ]
