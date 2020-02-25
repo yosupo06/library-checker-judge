@@ -43,6 +43,7 @@
         'factorize',
         'convolution_mod',
         'convolution_mod_1000000007',
+        'subset_convolution',
         'multipoint_evaluation',
         'polynomial_interpolation',
         'inv_of_formal_power_series',
