@@ -61,6 +61,7 @@
         'kth_root_integer',
         'discrete_logarithm_mod',
         'tetration_mod',
+        'nim_product_64',
         'two_sat',
     ]
 
