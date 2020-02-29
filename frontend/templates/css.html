@@ -7,8 +7,9 @@
     function getLang(lang) {
         lang = localStorage.getItem("lang");
         if (lang == "ja" || lang == "en") return lang;
-        for (e in navigator.languages) {
-            if (e == "ja" || e == "en") return e;
+        for (e of navigator.languages) {
+            if (e.startsWith("en")) return "en";
+            if (e.startsWith("ja")) return "ja";
         }
         return "en";
     }
