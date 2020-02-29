@@ -1,18 +1,31 @@
 <div class="uk-navbar-container" uk-navbar>
     <div class="uk-navbar-left">
         <a href="/" class="uk-navbar-item uk-logo">Library-Checker</a>
-        <a href="/" class="uk-navbar-item">Problems</a>
-        <a href="/submissions" class="uk-navbar-item">Submissions</a>
+        <ul class="uk-navbar-nav">
+            <li><a href="/" class="uk-navbar-item">Problems</a></li>
+            <li><a href="/submissions" class="uk-navbar-item">Submissions</a></li>
+        </ul>
     </div>
     <div class="uk-navbar-right">
-        {{if .User}}
-            {{.User}}
-            <a href="/logout" class="uk-navbar-item">Logout</a>
-        {{else}}
-            <a href="/register" class="uk-navbar-item">Register</a>
-            <a href="/login" class="uk-navbar-item">Login</a>
-        {{end}}
-        <a href="https://gitter.im/library-checker-problems/community" class="uk-navbar-item">質問(Gitter)</a>
-        <a href="https://github.com/yosupo06/library-checker-problems" class="uk-navbar-item">GitHub</a>
+        <ul class="uk-navbar-nav">
+            <li>
+                <a href="#" id="nav-lang">Lang()</a>
+                <div class="uk-navbar-dropdown">
+                    <ul class="uk-nav uk-navbar-dropdown-nav">
+                        <li><a href="#" onclick="setLang('ja')">Ja</a></li>
+                        <li><a href="#" onclick="setLang('en')">En</a></li>
+                    </ul>
+                </div>
+            </li>
+            {{if .User}}
+            <li><a href="#" class="uk-navbar-item">{{.User}}</a></li>
+            <li><a href="/logout" class="uk-navbar-item">Logout</a></li>
+            {{else}}
+            <li><a href="/register" class="uk-navbar-item">Register</a></li>
+            <li><a href="/login" class="uk-navbar-item">Login</a></li>
+            {{end}}
+            <li><a href="https://gitter.im/library-checker-problems/community" class="uk-navbar-item">質問(Gitter)</a></li>
+            <li><a href="https://github.com/yosupo06/library-checker-problems" class="uk-navbar-item">GitHub</a></li>
+        </ul>
     </div>
 </div>

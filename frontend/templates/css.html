@@ -3,3 +3,31 @@
 <script src="/public/js/uikit.min.js"></script>
 <script src="/public/js/uikit-icons.min.js"></script>
 <link rel="icon" href="/public/favicon.ico" type="image/x-icon" />
+<script>
+    function getLang(lang) {
+        lang = localStorage.getItem("lang");
+        if (lang == "ja" || lang == "en") return lang;
+        for (e in navigator.language) {
+            if (e == "ja" || e == "en") return e;
+        }
+        return "en";
+    }
+    function refLang() {
+        lang = getLang();
+        document.getElementById("nav-lang").text = `Lang(${lang})`;
+
+        // problem statement
+        document.querySelectorAll(".lang-en, .lang-ja").forEach(function(e) {
+            if (e.classList.contains(`lang-${lang}`)) {
+                e.style.display = 'block';
+            } else {
+                e.style.display = 'none';
+            }
+        })
+    }
+    function setLang(lang) {
+        localStorage.setItem("lang", lang)
+        refLang()
+    }
+    document.addEventListener("DOMContentLoaded", refLang);
+</script>
