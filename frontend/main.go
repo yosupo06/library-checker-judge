@@ -191,10 +191,11 @@ func submissionInfo(ctx *gin.Context) {
 		admin = user.IsAdmin
 	}
 	htmlWithUser(ctx, 200, "submitinfo.html", gin.H{
-		"Overview": sub.Overview,
-		"Results":  sub.CaseResults,
-		"Source":   sub.Source,
-		"Admin":    admin,
+		"Overview":   sub.Overview,
+		"CanRejudge": sub.CanRejudge,
+		"Results":    sub.CaseResults,
+		"Source":     sub.Source,
+		"Admin":      admin,
 	})
 }
 
