@@ -97,6 +97,7 @@ message SubmissionInfoResponse {
     SubmissionOverview overview = 1;
     repeated SubmissionCaseResult case_results = 2;
     string source = 3; // "source"
+    bool can_rejudge = 4;
 }
 
 message SubmissionListRequest {

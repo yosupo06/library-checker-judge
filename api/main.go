@@ -178,6 +178,23 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	return &pb.SubmitResponse{Id: int32(submission.ID)}, nil
 }
 
+func canRejudge(ctx context.Context, submission *pb.SubmissionOverview) bool {
+	userName := getUserName(ctx)
+	if userName == "" {
+		return false
+	}
+	if userName == submission.UserName {
+		return true
+	}
+	if !submission.IsLatest && submission.Status == "AC" {
+		return true
+	}
+	if isAdmin(ctx) {
+		return true
+	}
+	return false
+}
+
 func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
 	var sub Submission
 	if err := db.
@@ -194,21 +211,24 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	if err := db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
 		return nil, errors.New("Submission fetch failed")
 	}
+	overview := &pb.SubmissionOverview{
+		Id:           int32(sub.ID),
+		ProblemName:  sub.Problem.Name,
+		ProblemTitle: sub.Problem.Title,
+		UserName:     sub.User.Name,
+		Lang:         sub.Lang,
+		IsLatest:     sub.Testhash == sub.Problem.Testhash,
+		Status:       sub.Status,
+		Time:         float64(sub.MaxTime) / 1000.0,
+		Memory:       int64(sub.MaxMemory),
+	}
 
 	res := &pb.SubmissionInfoResponse{
-		Overview: &pb.SubmissionOverview{
-			Id:           int32(sub.ID),
-			ProblemName:  sub.Problem.Name,
-			ProblemTitle: sub.Problem.Title,
-			UserName:     sub.User.Name,
-			Lang:         sub.Lang,
-			IsLatest:     sub.Testhash == sub.Problem.Testhash,
-			Status:       sub.Status,
-			Time:         float64(sub.MaxTime) / 1000.0,
-			Memory:       int64(sub.MaxMemory),
-		},
-		Source: sub.Source,
+		Overview:   overview,
+		Source:     sub.Source,
+		CanRejudge: canRejudge(ctx, overview),
 	}
+
 	for _, c := range cases {
 		res.CaseResults = append(res.CaseResults, &pb.SubmissionCaseResult{
 			Case:   c.Testcase,
@@ -274,11 +294,7 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 	if err != nil {
 		return nil, err
 	}
-	userName := getUserName(ctx)
-	if userName == "" {
-		return nil, errors.New("Did not login")
-	}
-	if userName != sub.Overview.UserName && !isAdmin(ctx) {
+	if !sub.CanRejudge {
 		return nil, errors.New("No permission")
 	}
 	task := Task{}
