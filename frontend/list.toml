@@ -53,6 +53,7 @@
         'exp_of_formal_power_series',
         'log_of_formal_power_series',
         'sqrt_of_formal_power_series',
+        'stirling_number_of_the_first_kind',
         'bernoulli_number',
         'partition_function',
         'montmort_number_mod',
