@@ -335,6 +335,48 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 	return &pb.LangListResponse{Langs: langs}, nil
 }
 
+func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.RankingResponse, error) {
+	filter := &Submission{
+		Status: "AC",
+	}
+
+	count := 0
+	if err := db.Model(&Submission{}).Where(filter).Count(&count).Error; err != nil {
+		return nil, errors.New("Count Query Failed")
+	}
+
+	var submissions = make([]Submission, 0)
+	if err := db.
+		Select("id, user_name, problem_name, status").
+		Find(&submissions).Error; err != nil {
+		return nil, errors.New("Select Query Failed")
+	}
+
+	ac := make(map[string]map[string]bool)
+	for _, sub := range submissions {
+		if !sub.UserName.Valid {
+			continue
+		}
+		userName := sub.UserName.String
+		if _, ok := ac[userName]; !ok {
+			ac[userName] = make(map[string]bool)
+		}
+		ac[userName][sub.ProblemName] = true
+	}
+	stats := make([]*pb.UserStatistics, 0)
+	for name, acs := range ac {
+		stats = append(stats, &pb.UserStatistics{
+			Name:  name,
+			Count: int32(len(acs)),
+		})
+	}
+
+	res := pb.RankingResponse{
+		Statistics: stats,
+	}
+	return &res, nil
+}
+
 func main() {
 	// connect db
 	db = dbConnect()

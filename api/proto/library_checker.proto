@@ -13,6 +13,7 @@ service LibraryCheckerService {
     rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}
     rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
     rpc LangList (LangListRequest) returns (LangListResponse) {}
+    rpc Ranking (RankingRequest) returns (RankingResponse) {}
 }
 
 // --- Register, Login ---
@@ -131,4 +132,16 @@ message LangListRequest {
 }
 message LangListResponse {
     repeated Lang langs = 1;
+}
+
+// --- Ranking ---
+
+message UserStatistics {
+    string name = 1; // "admin"
+    int32 count = 2; // 12 (AC)
+}
+message RankingRequest {    
+}
+message RankingResponse {
+    repeated UserStatistics statistics = 1;
 }
