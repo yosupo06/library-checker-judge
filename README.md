@@ -16,6 +16,12 @@
 
 APIサーバー(localhost:50051)とSQL(Postgre SQL)がdocker-composeで立ち上がります。
 
+APIサーバーへは gRPC でアクセスします。例えばクライアントとして [evans](https://github.com/ktr0731/evans) を使うなら、以下のようにアクセス
+
+```
+evans --host apiv1.yosupo.com --port 443 library-checker-judge/api/proto/library_checker.proto -t
+```
+
 ### Launch Judge Server
 
 - docker
