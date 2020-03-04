@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="uft-8">
+    <title>Problem List</title>
+    {{template "css.html" .}}
+</head>
+<body>
+    {{template "navbar.html" .}}
+    <section class="uk-section">
+        <div class="uk-container">
+            <h1 class="uk-heading-medium">Library Checker</h1>
+        </div>
+    </section>
+    <section class="uk-section">
+        <div class="uk-container">
+            <h2>Ranking</h2>
+            <table class="uk-table uk-table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th># of AC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Statistics}}
+                    <tr>
+                        <td>{{.Name}}</td>
+                        <td>{{.Count}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</body>
+</html>

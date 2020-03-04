@@ -337,6 +337,26 @@ func helpPage(ctx *gin.Context) {
 	})
 }
 
+/*
+func langList(ctx *gin.Context) ([]*pb.Lang, error) {
+	list, err := client.LangList(ctx, &pb.LangListRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return list.Langs, nil
+}
+*/
+func getRanking(ctx *gin.Context) {
+	stats, err := client.Ranking(ctx, &pb.RankingRequest{})
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	htmlWithUser(ctx, 200, "ranking.html", gin.H{
+		"Statistics": stats.Statistics,
+	})
+}
+
 type loginCreds struct{}
 
 func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
@@ -442,6 +462,7 @@ func main() {
 
 	router.GET("/rejudge/:id", getRejudge)
 
+	router.GET("/ranking", getRanking)
 	router.GET("/help", helpPage)
 
 	port := os.Getenv("PORT")

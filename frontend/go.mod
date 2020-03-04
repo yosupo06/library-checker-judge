@@ -14,11 +14,11 @@ require (
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/mattn/go-isatty v0.0.12 // indirect
-	github.com/yosupo06/library-checker-judge/api v0.0.0-20200302100024-c90a63410db5
+	github.com/yosupo06/library-checker-judge/api v0.0.0-20200304124358-6bc652d27741
 	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
-	golang.org/x/sys v0.0.0-20200302083256-062a44052db1 // indirect
-	google.golang.org/genproto v0.0.0-20200228133532-8c2c7df3a383 // indirect
+	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
+	google.golang.org/genproto v0.0.0-20200303153909-beee998c1893 // indirect
 	google.golang.org/grpc v1.27.1
 	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect

@@ -173,6 +173,8 @@ github.com/yosupo06/library-checker-judge/api v0.0.0-20200224201934-fed229b7d3ce
 github.com/yosupo06/library-checker-judge/api v0.0.0-20200224201934-fed229b7d3ce/go.mod h1:8+XdSE+uNVfLDg8btkJuImRP+s5M1JBc/56938juHdg=
 github.com/yosupo06/library-checker-judge/api v0.0.0-20200302100024-c90a63410db5 h1:QYdtGiq8CoE799jfMCO6nCrt25LkZgvlB076Rv4D1K4=
 github.com/yosupo06/library-checker-judge/api v0.0.0-20200302100024-c90a63410db5/go.mod h1:8+XdSE+uNVfLDg8btkJuImRP+s5M1JBc/56938juHdg=
+github.com/yosupo06/library-checker-judge/api v0.0.0-20200304124358-6bc652d27741 h1:tUMFjAitJ2GjimnBAakI5yg30JaM6zMrqwdUnw+xkV8=
+github.com/yosupo06/library-checker-judge/api v0.0.0-20200304124358-6bc652d27741/go.mod h1:8+XdSE+uNVfLDg8btkJuImRP+s5M1JBc/56938juHdg=
 go.opencensus.io v0.20.1/go.mod h1:6WKK9ahsWS3RSO+PY9ZHZUfv2irvY6gN279GOPZjmmk=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
@@ -229,6 +231,8 @@ golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae h1:/WDfKMnPU+m5M4xB+6x4kaepx
 golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200302083256-062a44052db1 h1:trYYa2hBaTeei9Bq2uAXwsfNYW4r+xD/tztngRsT0cQ=
 golang.org/x/sys v0.0.0-20200302083256-062a44052db1/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 h1:uYVVQ9WP/Ds2ROhcaGPeIdVq0RIXVLwsHlnvJ+cT1So=
+golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2 h1:z99zHgr7hKfrUcX/KsoJk5FJfjTceCKIp96+biqP4To=
 golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
@@ -256,6 +260,8 @@ google.golang.org/genproto v0.0.0-20200224152610-e50cd9704f63 h1:YzfoEYWbODU5Fbt
 google.golang.org/genproto v0.0.0-20200224152610-e50cd9704f63/go.mod h1:55QSHmfGQM9UVYDPBsyGGes0y52j32PQ3BqQfXhyH3c=
 google.golang.org/genproto v0.0.0-20200228133532-8c2c7df3a383 h1:Vo0fD5w0fUKriWlZLyrim2GXbumyN0D6euW79T9PgEE=
 google.golang.org/genproto v0.0.0-20200228133532-8c2c7df3a383/go.mod h1:55QSHmfGQM9UVYDPBsyGGes0y52j32PQ3BqQfXhyH3c=
+google.golang.org/genproto v0.0.0-20200303153909-beee998c1893 h1:OTjq5CN+5TpMIvzqxSFCjbBX3jNKjX0XOPi4SdBxQU8=
+google.golang.org/genproto v0.0.0-20200303153909-beee998c1893/go.mod h1:55QSHmfGQM9UVYDPBsyGGes0y52j32PQ3BqQfXhyH3c=
 google.golang.org/grpc v1.17.0/go.mod h1:6QZJwpn2B+Zp71q/5VxRsJ6NXXVCE5NRUHRo+f3cWCs=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 google.golang.org/grpc v1.23.0/go.mod h1:Y5yQAOtifL1yxbo5wqy6BxZv8vAUGQwXBOALyacEbxg=
