@@ -341,15 +341,10 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 		Status: "AC",
 	}
 
-	count := 0
-	if err := db.Model(&Submission{}).Where(filter).Count(&count).Error; err != nil {
-		return nil, errors.New("Count Query Failed")
-	}
-
 	var submissions = make([]Submission, 0)
 	if err := db.
 		Select("id, user_name, problem_name, status").
-		Find(&submissions).Error; err != nil {
+		Find(&submissions).Where(filter).Error; err != nil {
 		return nil, errors.New("Select Query Failed")
 	}
 
