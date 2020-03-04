@@ -352,8 +352,27 @@ func getRanking(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	type UserInfo struct {
+		Rank  int
+		Name  string
+		Count int32
+	}
+	userInfo := make([]UserInfo, 0)
+	nowRank := 1
+	back := int32(-1)
+	for i, v := range stats.Statistics {
+		if back != v.Count {
+			nowRank = i + 1
+			back = v.Count
+		}
+		userInfo = append(userInfo, UserInfo{
+			Rank:  nowRank,
+			Name:  v.Name,
+			Count: v.Count,
+		})
+	}
 	htmlWithUser(ctx, 200, "ranking.html", gin.H{
-		"Statistics": stats.Statistics,
+		"Statistics": userInfo,
 	})
 }
 
