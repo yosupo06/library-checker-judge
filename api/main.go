@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sort"
 
 	"github.com/BurntSushi/toml"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
@@ -370,7 +371,12 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 			Count: int32(len(acs)),
 		})
 	}
-
+	sort.Slice(stats, func(i, j int) bool {
+		if stats[i].Count != stats[j].Count {
+			return stats[i].Count > stats[j].Count
+		}
+		return stats[i].Name < stats[j].Name
+	})
 	res := pb.RankingResponse{
 		Statistics: stats,
 	}
