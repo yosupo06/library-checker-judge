@@ -1,7 +1,8 @@
 [[category]]
     name = 'Sample'
     problems = [
-        'aplusb'
+        'aplusb',
+        'many_aplusb',
     ]
 
 [[category]]
