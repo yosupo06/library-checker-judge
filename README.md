@@ -4,29 +4,30 @@
 
 ## Requirements
 
-- Ubuntu 18.04
+- Ubuntu 18.04(Judge Server)
+- docker, docker-compose(API, SQL)
 
-## How to Use
+## Launch API & SQL
 
-### Launch API & SQL
-
-```
+```sh
 ./launch_local.sh
 ```
 
-APIサーバー(localhost:50051)とSQL(Postgre SQL)がdocker-composeで立ち上がります。
+dockerグループに自分を登録することでsudoなしでdockerが使えるようになる [Reference](https://qiita.com/DQNEO/items/da5df074c48b012152ee)
+sudoをつけて実行してもいいが、色んなところにrootでフォルダが作られて面倒な事になるので、非推奨
+
+APIサーバー(localhost:50051)とSQL(Postgre SQL)がdocker-composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
 
 APIサーバーへは gRPC でアクセスします。例えばクライアントとして [evans](https://github.com/ktr0731/evans) を使うなら、以下のようにアクセス
 
-```
+```sh
+evans --host localhost --port 50051 api/proto/library_checker.proto
 evans --host apiv1.yosupo.com --port 443 library-checker-judge/api/proto/library_checker.proto -t
 ```
 
-### Launch Judge Server
+## Launch Judge Server
 
-- docker
-
-```
+```sh
 sudo apt install postgresql-client libpq-dev python3 python3-dev python3-pip g++ cgroup-tools libcap2-bin
 
 pip3 install termcolor toml psycopg2 psutil
@@ -34,12 +35,11 @@ pip3 install termcolor toml psycopg2 psutil
 
 など
 
-# 準備
-
-
 ### cgroupでmemory swapを管理する
+
 /etc/default/grubに以下を書き、reboot
-```
+
+```sh
 GRUB_CMDLINE_LINUX="swapaccount=1"
 ```
 
@@ -48,7 +48,7 @@ GRUB_CMDLINE_LINUX="swapaccount=1"
 
 ### ジャッジ用のシステムユーザーを作成する
 
-```
+```sh
 sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
 ```
 
@@ -57,39 +57,27 @@ sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
 
 どちらかを変更すること
 
-# Local Test
+## Local Test
 
-- library-checker-problems / library-chcker-judgeは同じディレクトリにcloneする
-- library-checker-frontendはどこでもよい, go getとかするとよい？(TODO)
+- library-checker-problems / library-chcker-judge は同じディレクトリにcloneしておくこと
 
-### SQL立ち上げ
+APIのテスト(今のgo sourceではなく、今立ち上がってるAPIサーバーに対してテストすることに注意)
+
+```sh
+cd library-checker-judge/api
+go test . -v
 ```
-cd /your/path/of/library-checker-judge/local
-./launch.sh
-```
-
-dockerでpostgre SQLが立ち上がり、問題データが生成され、SQLに格納される
-
-dockerコマンドにsudoが必要な場合、`./launch_local`をsudoで実行する必要がある。
-しかしlibrary-checker-problems内にいろいろrootでフォルダが作られて面倒な事になるので、非推奨
-
-dockerグループに自分を登録することでsudoなしでdockerが使えるようになる
-- References: https://qiita.com/DQNEO/items/da5df074c48b012152ee
 
 ### Launch Judge
-```
-cd /your/path/of/library-checker-judge/judge
-sudo ./judge.py
+
+```sh
+cd library-checker-judge/judge
+sudo go run *.go
 ```
 
-### Launch web server
+各種機能をガンガン使うのでrootじゃないと動かない　多分
 
-```
-cd /your/path/of/library-checker-problems/
-go run *.go
-```
-
-# Contribution
+## Contribution
 
 なんでも歓迎
 
