@@ -38,7 +38,7 @@
                 <tr>
                     <td><a href="/submission/{{.Id}}">{{.Id}}</a></td>
                     <td><a href="/problem/{{.ProblemName}}">{{.ProblemTitle}}</a></td>
-                    <td>{{.Lang}}</td>
+                    <td>{{index $.LangMap .Lang}}</td>
                     <td>{{if .UserName}}{{.UserName}}{{else}}(anonymous){{end}}</td>
                     <td>
                         {{if and .IsLatest (eq .Status "AC")}}

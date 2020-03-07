@@ -222,11 +222,21 @@ func submitList(ctx *gin.Context) {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
+	list, err := client.LangList(ctx, &pb.LangListRequest{})
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	langMap := make(map[string]string)
+	for _, v := range list.Langs {
+		langMap[v.Id] = v.Name
+	}
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": res.Submissions,
 		"Problem":     submitFilter.Problem,
 		"Status":      submitFilter.Status,
 		"NowPage":     submitFilter.Page,
+		"LangMap":     langMap,
 		"NumPage":     int((res.Count + 99) / 100),
 	})
 }
