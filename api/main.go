@@ -259,7 +259,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 	order := ""
 	if in.Order == "-id" {
 		order = "id desc"
-	} else if in.Order == "time" {
+	} else if in.Order == "+time" {
 		order = "max_time asc"
 	} else {
 		return nil, errors.New("Unknown Sort Order")

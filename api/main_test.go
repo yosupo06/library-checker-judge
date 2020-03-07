@@ -34,7 +34,7 @@ func TestProblemInfo(t *testing.T) {
 
 func TestSubmissionSortOrderList(t *testing.T) {
 	ctx := context.Background()
-	for _, order := range []string{"-id", "time"} {
+	for _, order := range []string{"-id", "+time"} {
 		_, err := client.SubmissionList(ctx, &pb.SubmissionListRequest{
 			Skip:  0,
 			Limit: 100,
