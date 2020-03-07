@@ -17,8 +17,42 @@
     </section>
     <section class="uk-section">
         <div class="uk-container">
+            <form method="GET" action="/submissions">
+                <div class="uk-margin">
+                    <div class="uk-inline">
+                        <span class="uk-form-icon" uk-icon="icon: file-text"></span>
+                        <input name="problem" placeholder="problem" class="uk-input" type="text" {{if $.Problem}}value="{{$.Problem}}" {{end}}>
+                    </div>
+                    <div class="uk-inline">
+                        <span class="uk-form-icon" uk-icon="icon: user"></span>
+                        <input name="user" placeholder="user" class="uk-input" type="text" {{if $.FilterUser}}value="{{$.FilterUser}}" {{end}}>
+                    </div>
+                    <div uk-form-custom="target: > * > span:first-child">
+                        <select name="status">
+                            <option value="">All</option>
+                            <option value="AC" {{if eq $.Status "AC" }}selected{{end}}>AC</option>
+                        </select>
+                        <button class="uk-button uk-button-default uk-form-width-small" type="button" tabindex="-1">
+                            <span></span>
+                            <span uk-icon="icon: chevron-down"></span>
+                        </button>
+                    </div>
+                    <div uk-form-custom="target: > * > span:first-child">
+                        <select name="order">
+                            <option value="-id" {{if eq $.Order "-id" }}selected{{end}}>ID</option>
+                            <option value="+time" {{if eq $.Order "+time" }}selected{{end}}>Time</option>
+                        </select>
+                        <button class="uk-button uk-button-default uk-form-width-small" type="button" tabindex="-1">
+                            <span></span>
+                            <span uk-icon="icon: chevron-down"></span>
+                        </button>
+                    </div>
+                    <button class="uk-button uk-button-default" type="submit">Filter</button>
+                </div>
+            </form>
+            <hr class="uk-margin-small">
             <ul class="uk-pagination uk-flex-center">
-                {{range $p := (repeat 1 .NumPage)}}
+                {{range $p := .Pages}}
                     <li>
                         <a href="?page={{$p}}{{if $.Problem}}&amp;problem={{$.Problem}}{{end}}{{if $.Status}}&amp;status={{$.Status}}{{end}}{{if $.FilterUser}}&amp;user={{$.FilterUser}}{{end}}">{{$p}}</a>
                     </li>

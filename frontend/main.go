@@ -205,6 +205,7 @@ func submitList(ctx *gin.Context) {
 		Problem string `form:"problem" binding:"lte=100"`
 		Status  string `form:"status" binding:"lte=100"`
 		User    string `form:"user" binding:"lte=100"`
+		Order   string `form:"order"`
 	}
 	var submitFilter SubmitFilter
 	if err := ctx.ShouldBind(&submitFilter); err != nil {
@@ -217,6 +218,7 @@ func submitList(ctx *gin.Context) {
 		Problem: submitFilter.Problem,
 		Status:  submitFilter.Status,
 		User:    submitFilter.User,
+		Order:   submitFilter.Order,
 	})
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -231,14 +233,24 @@ func submitList(ctx *gin.Context) {
 	for _, v := range list.Langs {
 		langMap[v.Id] = v.Name
 	}
+	numPage := int((res.Count + 99) / 100)
+	pages := make([]int, 0)
+	for i := -5; i <= 5; i++ {
+		page := submitFilter.Page + i
+		if 1 <= page && page <= numPage {
+			pages = append(pages, page)
+		}
+	}
+
 	htmlWithUser(ctx, 200, "submitlist.html", gin.H{
 		"Submissions": res.Submissions,
 		"Problem":     submitFilter.Problem,
 		"Status":      submitFilter.Status,
-		"NowPage":     submitFilter.Page,
+		"Pages":       pages,
+		"Order":       submitFilter.Order,
 		"FilterUser":  submitFilter.User,
 		"LangMap":     langMap,
-		"NumPage":     int((res.Count + 99) / 100),
+		"NumPage":     numPage,
 	})
 }
 
