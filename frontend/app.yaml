@@ -1,7 +1,7 @@
 runtime: go112
 
 env_variables:
-  GIN_MODE: Release
+  GIN_MODE: release
 
 handlers:
 - url: /.*
