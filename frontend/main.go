@@ -236,6 +236,7 @@ func submitList(ctx *gin.Context) {
 		"Problem":     submitFilter.Problem,
 		"Status":      submitFilter.Status,
 		"NowPage":     submitFilter.Page,
+		"FilterUser":  submitFilter.User,
 		"LangMap":     langMap,
 		"NumPage":     int((res.Count + 99) / 100),
 	})
