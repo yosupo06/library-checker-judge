@@ -107,7 +107,7 @@ message SubmissionListRequest {
     string problem = 3; // "aplusb"(filter)
     string status = 4; // "AC"(filter)
     string user = 5; // "admin"(filter)
-    //string order = 6; // unimplemented(default: "-id")
+    string order = 6; // sort order (default: "-id", "time")
 }
 message SubmissionListResponse {
     repeated SubmissionOverview submissions = 1;

@@ -256,6 +256,14 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 	if err := db.Model(&Submission{}).Where(filter).Count(&count).Error; err != nil {
 		return nil, errors.New("Count Query Failed")
 	}
+	order := ""
+	if in.Order == "-id" {
+		order = "id desc"
+	} else if in.Order == "+time" {
+		order = "max_time asc"
+	} else {
+		return nil, errors.New("Unknown Sort Order")
+	}
 
 	var submissions = make([]Submission, 0)
 	if err := db.Where(filter).Limit(in.Limit).Offset(in.Skip).
@@ -266,7 +274,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 			return db.Select("name, title, testhash")
 		}).
 		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
-		Order("id desc").
+		Order(order).
 		Find(&submissions).Error; err != nil {
 		return nil, errors.New("Select Query Failed")
 	}

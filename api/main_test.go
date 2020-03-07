@@ -32,6 +32,29 @@ func TestProblemInfo(t *testing.T) {
 	}
 }
 
+func TestSubmissionSortOrderList(t *testing.T) {
+	ctx := context.Background()
+	for _, order := range []string{"-id", "+time"} {
+		_, err := client.SubmissionList(ctx, &pb.SubmissionListRequest{
+			Skip:  0,
+			Limit: 100,
+			Order: order,
+		})
+		if err != nil {
+			t.Fatal("Failed SubmissionList Order: ", order)
+		}
+	}
+	_, err := client.SubmissionList(ctx, &pb.SubmissionListRequest{
+		Skip:  0,
+		Limit: 100,
+		Order: "dummy",
+	})
+	if err == nil {
+		t.Fatal("Success SubmissionList Dummy Order")
+	}
+	t.Log(err)
+}
+
 func TestLangList(t *testing.T) {
 	ctx := context.Background()
 	list, err := client.LangList(ctx, &pb.LangListRequest{})
@@ -82,7 +105,6 @@ func TestAdmin(t *testing.T) {
 		Name:     "admin",
 		Password: "password",
 	})
-	t.Log(loginResp, err)
 	if err != nil {
 		t.Fatal("Failed to login")
 	}
@@ -102,7 +124,6 @@ func TestNotAdmin(t *testing.T) {
 		Name:     "tester",
 		Password: "password",
 	})
-	t.Log(loginResp, err)
 	if err != nil {
 		t.Fatal("Failed to login")
 	}
