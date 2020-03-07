@@ -257,7 +257,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		return nil, errors.New("Count Query Failed")
 	}
 	order := ""
-	if in.Order == "-id" {
+	if in.Order == "" || in.Order == "-id" {
 		order = "id desc"
 	} else if in.Order == "+time" {
 		order = "max_time asc"
