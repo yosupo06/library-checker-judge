@@ -33,6 +33,7 @@
     problems = [
         'lca',
         'scc',
+        'three_edge_connected_components',
         'bipartitematching',
         'general_matching',
         'assignment',
