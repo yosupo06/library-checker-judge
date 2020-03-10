@@ -62,6 +62,7 @@
         'bernoulli_number',
         'partition_function',
         'montmort_number_mod',
+        'sum_of_exponential_times_polynomial',
         'sum_of_exponential_times_polynomial_limit',
         'find_linear_recurrence',
         'sum_of_floor_of_linear',
