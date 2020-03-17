@@ -68,6 +68,7 @@
         'find_linear_recurrence',
         'sum_of_floor_of_linear',
         'sqrt_mod',
+        'kth_root_mod',
         'kth_root_integer',
         'discrete_logarithm_mod',
         'tetration_mod',
