@@ -107,6 +107,7 @@ dependencies = [
  "libc",
  "log",
  "nix",
+ "rand",
  "tempfile",
 ]
 
