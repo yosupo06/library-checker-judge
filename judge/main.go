@@ -109,13 +109,6 @@ func execJudge(db *gorm.DB, task Task) error {
 		return err
 	}
 
-	log.Println("Gen workdir")
-	workDir, err := ioutil.TempDir("", "work")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(workDir)
-
 	log.Println("Fetch testhash")
 	if err := db.Model(&submission).Select("testhash").Update("testhash", submission.Problem.Testhash).Error; err != nil {
 		return err
