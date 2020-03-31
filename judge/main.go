@@ -241,6 +241,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	workDir = os.Getenv("WORKDIR")
+	log.Println("Workdir: ", workDir)
 	defer os.RemoveAll(casesDir)
 	log.Println("Case Pool Directory =", myCasesDir)
 
@@ -253,7 +255,6 @@ func main() {
 	//db.LogMode(true)
 
 	log.Println("Start Pooling")
-	workDir = os.Getenv("WORKDIR")
 	for {
 		time.Sleep(1 * time.Second)
 		var task Task
