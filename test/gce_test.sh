@@ -38,8 +38,8 @@ gcpexec "cd /root/library-checker-problems && pip3 install -r requirements.txt"
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
-echo 'Start executor.py test'
-gcpexec "cd /root/library-checker-judge/judge/executor && ./executor_test.py"
+echo 'Start executor_rust test'
+gcpexec "cd /root/library-checker-judge/judge/executor_rust && cargo test"
 
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py -p aplusb unionfind"

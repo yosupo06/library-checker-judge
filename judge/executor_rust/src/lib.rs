@@ -14,12 +14,14 @@ use nix::unistd::{
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::ffi::CString;
+use std::fs::File;
 use std::fs::{create_dir, read_to_string, remove_dir_all, set_permissions, OpenOptions};
 use std::io;
 use std::io::Write;
 use std::iter;
 use std::mem::size_of;
 use std::os::unix::fs::PermissionsExt;
+use std::os::unix::io::RawFd;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::process::Command;
@@ -53,7 +55,9 @@ fn tempdir(temp_dir: &Path) -> io::Result<PathBuf> {
 }
 
 fn prepare_mount(base_dir: &Path, temp_dir: &Path, overlay: bool) -> Result<(), Error> {
-    let sand_dir = temp_dir.join("sand");
+    let root_dir = temp_dir.join("root");
+    let sand_dir = root_dir.join("sand");
+    create_dir(&root_dir)?;
     create_dir(&sand_dir)?;
 
     if overlay {
@@ -85,12 +89,12 @@ fn prepare_mount(base_dir: &Path, temp_dir: &Path, overlay: bool) -> Result<(), 
         )?;
     }
 
-    let proc_dir = temp_dir.join("proc");
     // make /tmp
-    create_dir(temp_dir.join("tmp"))?;
-    set_permissions(&temp_dir.join("tmp"), PermissionsExt::from_mode(0o777))?;
+    create_dir(root_dir.join("tmp"))?;
+    set_permissions(&root_dir.join("tmp"), PermissionsExt::from_mode(0o777))?;
     // mount -t proc proc /proc
-    create_dir(temp_dir.join("proc"))?;
+    let proc_dir = root_dir.join("proc");
+    create_dir(&proc_dir)?;
     mount(
         Some("proc"),
         &proc_dir,
@@ -102,7 +106,7 @@ fn prepare_mount(base_dir: &Path, temp_dir: &Path, overlay: bool) -> Result<(), 
     for dir_name in vec![
         "dev", "sys", "bin", "lib", "lib64", "usr", "etc", "opt", "var", "home",
     ] {
-        let dir = temp_dir.join(dir_name);
+        let dir = root_dir.join(dir_name);
         create_dir(&dir)?;
         mount(
             Some(&Path::new("/").join(dir_name)),
@@ -152,7 +156,6 @@ fn prepare_cgroup(pid: &Pid) -> Result<(), Error> {
     cgexec("pids", &pid)?;
     cgexec("cpuset", &pid)?;
     cgexec("memory", &pid)?;
-    info!("pid: {}", pid.as_raw().to_string());
     Ok(())
 }
 
@@ -181,9 +184,9 @@ fn execute_unshared(
     app: &clap::ArgMatches,
     temp_dir: &Path,
     user_args: &[String],
+    start_pipe_write: RawFd,
 ) -> Result<(), Error> {
     let base_dir = Path::new(app.value_of("cwd").unwrap_or("."));
-    info!("base_dir : {:?}", base_dir);
     let overlay: bool = app.is_present("overlay");
     prepare_mount(&base_dir, &temp_dir, overlay)?;
     prepare_cgroup(&getpid())?;
@@ -199,7 +202,7 @@ fn execute_unshared(
             return Err(format_err!("setrlimit(stack) failed"));
         }
     }
-    chdir(&temp_dir.join("sand"))?;
+    chdir(&temp_dir.join("root").join("sand"))?;
     chroot("..")?;
     change_uid()?;
     let program = CString::new(user_args[0].clone())?;
@@ -208,6 +211,8 @@ fn execute_unshared(
         .map(|s| CString::new(s.clone()).unwrap())
         .collect();
     let args: Vec<&std::ffi::CStr> = args.iter().map(|s| &s[..]).collect();
+    write(start_pipe_write, &[0])?;
+    close(start_pipe_write)?;
     execvp(&program, &args[..])?;
     Ok(())
 }
@@ -222,12 +227,13 @@ pub struct ExecResult {
 fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, Error> {
     let temp_dir = tempdir(Path::new("/tmp"))?;
     let (pipe_read, pipe_write) = pipe()?;
+    let (start_pipe_read, start_pipe_write) = pipe()?;
     info!("working dir: {:?}", temp_dir);
-    info!("pipe: {} {}", pipe_read, pipe_write);
     set_permissions(&temp_dir, PermissionsExt::from_mode(0o777))?;
     match fork()? {
         ForkResult::Child => {
             close(pipe_read)?;
+            close(start_pipe_read)?;
             unshare(CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWNET)
                 .expect("unshare failed");
             match fork()? {
@@ -254,15 +260,18 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
                         MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC | MsFlags::MS_NODEV,
                         None::<&str>,
                     )?;
-                    exit(match execute_unshared(app, &temp_dir, user_args) {
-                        Ok(()) => 0,
-                        Err(msg) => {
-                            warn!("{}", msg);
-                            1
-                        }
-                    })
+                    exit(
+                        match execute_unshared(app, &temp_dir, user_args, start_pipe_write) {
+                            Ok(()) => 0,
+                            Err(msg) => {
+                                warn!("{}", msg);
+                                1
+                            }
+                        },
+                    )
                 }
                 ForkResult::Parent { child, .. } => {
+                    close(start_pipe_write)?;
                     write(pipe_write, &child.as_raw().to_le_bytes())?;
                     match waitpid(child, None)? {
                         WaitStatus::Exited(_, status) => {
@@ -283,6 +292,7 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
         }
         ForkResult::Parent { child, .. } => {
             close(pipe_write)?;
+            close(start_pipe_write)?;
             let tl: f64 = app
                 .value_of("timelimit")
                 .unwrap_or("3600")
@@ -291,13 +301,14 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
             let tl_msec = (tl * 1000.0) as u64;
             let mut buf = [0; size_of::<pid_t>()];
             let size = read(pipe_read, &mut buf[..])?;
-            let start = Instant::now();
             if size == 0 {
                 return Err(format_err!("pipe broken: unshared may be failed"));
             }
             let inside: i32 = pid_t::from_le_bytes(buf);
             let tle = Arc::new(AtomicBool::new(false));
             let tle_clone = tle.clone();
+            read(start_pipe_read, &mut [0])?;
+            let start = Instant::now();
             thread::spawn(move || {
                 thread::sleep(Duration::from_millis(tl_msec));
                 match kill(Pid::from_raw(inside), SIGKILL) {
@@ -349,34 +360,16 @@ pub fn execute_main(my_args: &[String], user_args: &[String]) -> Result<ExecResu
                 .takes_value(true)
                 .required(false),
         )
-        .arg(
-            Arg::with_name("stdin")
-                .long("stdin")
-                .takes_value(true)
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("stdout")
-                .long("stdout")
-                .takes_value(true)
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("stderr")
-                .long("stderr")
-                .takes_value(true)
-                .required(false),
-        )
         .arg(Arg::with_name("overlay").long("overlay").required(false))
-        .arg(
-            Arg::with_name("result")
-                .long("result")
-                .takes_value(true)
-                .required(false),
-        )
         .arg(
             Arg::with_name("timelimit")
                 .long("tl")
+                .takes_value(true)
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("result")
+                .long("result")
                 .takes_value(true)
                 .required(false),
         )
@@ -391,8 +384,16 @@ pub fn execute_main(my_args: &[String], user_args: &[String]) -> Result<ExecResu
         warn!("invalid timelimit: {}", tl);
         panic!();
     }
-
-    let result = execute(&matches, user_args);
+    let result = execute(&matches, user_args)?;
     info!("result: {:?}", result);
-    result
+    if let Some(result_file) = matches.value_of("result") {
+        let mut file = File::create(result_file)?;
+        writeln!(
+            file,
+            "{{\"returncode\": {}, \"time\": {}, \"memory\": {}, \"tle\": {}}}",
+            result.status, result.time, result.memory, result.tle
+        )?;
+    }
+
+    Ok(result)
 }
