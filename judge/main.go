@@ -52,6 +52,7 @@ type SubmissionTestcaseResult struct {
 }
 
 var casesDir string
+var workDir string
 
 func fetchData(db *gorm.DB, problem Problem) (string, error) {
 	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", problem.Testhash))
@@ -101,6 +102,7 @@ func execJudge(db *gorm.DB, task Task) error {
 		Where("id = ?", task.Submission).First(&submission).Error; err != nil {
 		return err
 	}
+	log.Println("Submission info:", submission.ID, submission.ProblemName)
 
 	log.Println("Clear SubmissionTestcaseResults")
 	if err := db.Where("submission = ?", submission.ID).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
@@ -134,7 +136,12 @@ func execJudge(db *gorm.DB, task Task) error {
 	if err != nil {
 		return err
 	}
-	judge, err := NewJudge(submission.Lang, checker, strings.NewReader(submission.Source), submission.Problem.Timelimit/1000)
+	tempdir, err := ioutil.TempDir(workDir, "judge")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tempdir)
+	judge, err := NewJudge(tempdir, submission.Lang, checker, strings.NewReader(submission.Source), submission.Problem.Timelimit/1000)
 	if err != nil {
 		return err
 	}
@@ -179,7 +186,7 @@ func execJudge(db *gorm.DB, task Task) error {
 			return err
 		}
 		caseResults = append(caseResults, caseResult)
-
+		log.Println("Case info:", caseName, caseResult.Status, int(caseResult.Time*1000), caseResult.Memory)
 		sqlRes := SubmissionTestcaseResult{
 			Submission: submission.ID,
 			Testcase:   caseName,
@@ -191,7 +198,6 @@ func execJudge(db *gorm.DB, task Task) error {
 			return err
 		}
 	}
-	log.Println(caseResults)
 	caseResult := AggregateResults(caseResults)
 	if err = db.Model(&submission).Select("status", "max_time", "max_memory").Updates(
 		Submission{Status: caseResult.Status, MaxTime: int(caseResult.Time * 1000), MaxMemory: caseResult.Memory}).Error; err != nil {
@@ -235,6 +241,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	workDir = os.Getenv("WORKDIR")
+	log.Println("Workdir: ", workDir)
 	defer os.RemoveAll(casesDir)
 	log.Println("Case Pool Directory =", myCasesDir)
 

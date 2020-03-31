@@ -308,9 +308,8 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
             let tle = Arc::new(AtomicBool::new(false));
             let tle_clone = tle.clone();
             read(start_pipe_read, &mut [0])?;
-            let start = Instant::now();
             thread::spawn(move || {
-                thread::sleep(Duration::from_millis(tl_msec));
+                thread::sleep(Duration::from_millis(tl_msec + 200));
                 match kill(Pid::from_raw(inside), SIGKILL) {
                     Ok(()) => {
                         tle_clone.store(true, Ordering::Relaxed);
@@ -318,6 +317,7 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
                     Err(..) => {}
                 }
             });
+            let start = Instant::now();
             match waitpid(child, None)? {
                 WaitStatus::Exited(_, status) => {
                     if status != 0 {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -84,8 +85,12 @@ func TestExecutorInfinityCE(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-
-	judge, err := NewJudge("d", checker, src, 2.0)
+	tempdir, err := ioutil.TempDir("", "judge")
+	if err != nil {
+		t.Fatal("Failed: tempdir", err)
+	}
+	defer os.RemoveAll(tempdir)
+	judge, err := NewJudge(tempdir, "d", checker, src, 2.0)
 	if err != nil {
 		t.Fatal("Failed: NewJudge", err)
 	}
@@ -110,8 +115,11 @@ func generateAplusB(t *testing.T, lang, srcName string) *Judge {
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-
-	judge, err := NewJudge(lang, checker, src, 2.0)
+	tempdir, err := ioutil.TempDir("", "judge")
+	if err != nil {
+		t.Fatal("Failed: tempdir", err)
+	}
+	judge, err := NewJudge(tempdir, lang, checker, src, 2.0)
 	if err != nil {
 		t.Fatal("Failed: NewJudge", err)
 	}
