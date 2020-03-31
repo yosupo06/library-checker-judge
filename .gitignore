@@ -10,3 +10,4 @@ judge/executor/executor_core
 secret.*
 judge/judge
 judge.tar.gz
+judge/executor_rust/target
