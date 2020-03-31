@@ -40,7 +40,7 @@ write_files:
     content: |
       [program:judge]
       command=/root/library-checker-judge/judge/judge
-      environment=WORKDIR=/tmp/ramdisk
+      environment=WORKDIR=/ramdisk
       autorestart=true
       stdout_logfile=/root/judge.log
       stderr_logfile=/root/judge-err.log
@@ -54,7 +54,7 @@ write_files:
     permissions: '0755'
     content: |
       #!/bin/bash
-      mount -t tmpfs -o size=4g /dev/shm /tmp/ramdisk
+      mkdir /ramdisk && mount -t tmpfs -o size=4g /dev/shm /ramdisk
       if [[ -f /root/init_end ]]; then
         echo "Second Time"
         touch /root/can_start
