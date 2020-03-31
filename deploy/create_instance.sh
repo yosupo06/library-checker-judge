@@ -41,5 +41,8 @@ gcpexec "pip3 install psutil psycopg2"
 echo "Install compilers"
 gcpexec "cd /root/library-checker-judge/deploy && ./install.sh"
 
+echo "Build executor"
+gcpexec "cd /root/library-checker-judge/judge/executor_rust && cargo build --release"
+
 echo "Build judge"
 gcpexec "cd /root/library-checker-judge/judge && go build ."

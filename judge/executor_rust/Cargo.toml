@@ -1,0 +1,17 @@
+[package]
+name = "executor_rust"
+version = "0.1.0"
+authors = ["Kohei Morita <yosupo06@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "2.33.0"
+tempfile = "3.1.0"
+env_logger = "0.7.1"
+nix = "0.17.0"
+log = "0.4.8"
+failure = "0.1.7"
+libc = "0.2.67"
+rand = "0.7.3"

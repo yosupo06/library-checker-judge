@@ -18,7 +18,6 @@ func TestExecutorHello(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Fail Execute: %v", err)
 	}
-	t.Log(result)
 	if result.ReturnCode != 0 {
 		t.Errorf("Error return code: %v", result.ReturnCode)
 	}
@@ -35,8 +34,8 @@ func TestExecutorTimeOut(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error ", err)
 	}
-	if cmd.ProcessState.ExitCode() != 124 {
-		t.Fatal("Error return code = ", result.ReturnCode)
+	if !result.Tle {
+		t.Fatal("Error not tle")
 	}
 	if result.Time < 0.9 || 1.1 < result.Time {
 		t.Fatal("Error result time = ", result.Time)
@@ -190,7 +189,6 @@ func TestAplusbWA(t *testing.T) {
 	in := strings.NewReader("1 1")
 	expect := strings.NewReader("2")
 	result, err := judge.TestCase(in, expect)
-	log.Println(judge.dir)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -204,7 +202,6 @@ func TestAplusbPE(t *testing.T) {
 	in := strings.NewReader("1 1")
 	expect := strings.NewReader("2")
 	result, err := judge.TestCase(in, expect)
-	log.Println(judge.dir)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -218,7 +215,6 @@ func TestAplusbFail(t *testing.T) {
 	in := strings.NewReader("1 1")
 	expect := strings.NewReader("3") // !?
 	result, err := judge.TestCase(in, expect)
-	log.Println(judge.dir)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/google/shlex"
 	_ "github.com/lib/pq"
 )
 
@@ -53,6 +54,7 @@ type Result struct {
 	ReturnCode int     `json:"returncode"`
 	Time       float64 `json:"time"`
 	Memory     int     `json:"memory"`
+	Tle        bool    `json:"tle"`
 	Stderr     []byte
 }
 
@@ -74,9 +76,8 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	cmd.Path = path.Join(wd, "executor", "executor.py")
+	cmd.Path = path.Join(wd, "executor_rust", "target", "release", "executor_rust")
 	cmd.Args = append([]string{cmd.Path}, newArg...)
-
 	// add stderr
 	os := &outputStripper{N: 1 << 11}
 	if cmd.Stderr != nil {
@@ -98,6 +99,8 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 		return Result{}, err
 	}
 	result.Stderr = os.Bytes()
+	log.Println("execute: ", cmd.Args)
+	log.Println("stderr: ", string(result.Stderr))
 	return result, nil
 }
 
@@ -196,7 +199,10 @@ func NewJudge(lang string, checker, source io.Reader, tl float64) (*Judge, error
 }
 
 func (j *Judge) CompileSource() (Result, error) {
-	compile := strings.Fields(j.lang.Compile)
+	compile, err := shlex.Split(j.lang.Compile)
+	if err != nil {
+		return Result{}, err
+	}
 	cmd := exec.Command(compile[0], compile[1:]...)
 	cmd.Dir = path.Join(j.dir, "source")
 	cmd.Stdout = os.Stdout
@@ -205,7 +211,10 @@ func (j *Judge) CompileSource() (Result, error) {
 }
 
 func (j *Judge) CompileChecker() (Result, error) {
-	compile := strings.Fields(langs["checker"].Compile)
+	compile, err := shlex.Split(langs["checker"].Compile)
+	if err != nil {
+		return Result{}, err
+	}
 	cmd := exec.Command(compile[0], compile[1:]...)
 	cmd.Dir = path.Join(j.dir, "checker")
 	cmd.Stdout = os.Stdout
@@ -273,7 +282,7 @@ func (j *Judge) TestCase(inFile io.Reader, expectFile io.Reader) (CaseResult, er
 		return CaseResult{}, err
 	}
 
-	if cmd.ProcessState.ExitCode() == 124 {
+	if result.Tle {
 		//timeout
 		return CaseResult{"TLE", result}, nil
 	}
@@ -294,7 +303,7 @@ func (j *Judge) TestCase(inFile io.Reader, expectFile io.Reader) (CaseResult, er
 	if err != nil {
 		return CaseResult{}, err
 	}
-	if cmd.ProcessState.ExitCode() == 124 {
+	if checkerResult.Tle {
 		return CaseResult{"ITLE", result}, nil
 	}
 	if cmd.ProcessState.ExitCode() != 0 {
