@@ -144,6 +144,7 @@ type Judge struct {
 }
 
 func NewJudge(tempdir string, lang string, checker, source io.Reader, tl float64) (*Judge, error) {
+	log.Println("New judge:", tempdir)
 	judge := new(Judge)
 	judge.lang = langs[lang]
 	judge.tl = tl
