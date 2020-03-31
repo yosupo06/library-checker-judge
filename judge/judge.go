@@ -100,7 +100,7 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	}
 	result.Stderr = os.Bytes()
 	log.Println("execute: ", cmd.Args)
-	log.Println("stderr: ", string(result.Stderr))
+	log.Printf("stderr: %s\n", string(result.Stderr))
 	return result, nil
 }
 
@@ -143,27 +143,22 @@ type Judge struct {
 	lang Lang
 }
 
-func NewJudge(lang string, checker, source io.Reader, tl float64) (*Judge, error) {
+func NewJudge(tempdir string, lang string, checker, source io.Reader, tl float64) (*Judge, error) {
 	judge := new(Judge)
 	judge.lang = langs[lang]
 	judge.tl = tl
-
-	tempdir, err := ioutil.TempDir("", "hello")
-	if err != nil {
-		return nil, err
-	}
 	judge.dir = tempdir
 
-	if err = os.Mkdir(path.Join(tempdir, "checker"), 0755); err != nil {
+	if err := os.Mkdir(path.Join(tempdir, "checker"), 0755); err != nil {
 		return nil, err
 	}
-	if err = os.Chmod(path.Join(tempdir, "checker"), 0777); err != nil {
+	if err := os.Chmod(path.Join(tempdir, "checker"), 0777); err != nil {
 		return nil, err
 	}
-	if err = os.Mkdir(path.Join(tempdir, "source"), 0755); err != nil {
+	if err := os.Mkdir(path.Join(tempdir, "source"), 0755); err != nil {
 		return nil, err
 	}
-	if err = os.Chmod(path.Join(tempdir, "source"), 0777); err != nil {
+	if err := os.Chmod(path.Join(tempdir, "source"), 0777); err != nil {
 		return nil, err
 	}
 
