@@ -31,6 +31,8 @@ evans --host apiv1.yosupo.com --port 443 library-checker-judge/api/proto/library
 sudo apt install postgresql-client libpq-dev python3 python3-dev python3-pip g++ cgroup-tools libcap2-bin
 
 pip3 install termcolor toml psycopg2 psutil
+
+cargo test -- --test-threads=1 --nocapture
 ```
 
 など

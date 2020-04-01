@@ -5,6 +5,7 @@ use rand::Rng;
 use std::fs::copy;
 use std::fs::set_permissions;
 use std::iter;
+use std::env;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use tempfile::{tempdir, TempDir};
@@ -150,6 +151,23 @@ fn test_overlay() {
     .expect("failed");
     assert_result(&result, Some(0), None);
     assert!(!temp.join("test.txt").exists());
+}
+
+#[test]
+fn test_other_tmp() {
+    let temp = tempdir().expect("failed");
+    let temp = temp.path();
+    let prev_tmp = env::var("TMPDIR");
+    env::set_var("TMPDIR", temp);
+    let result = execute_main(
+        &to_string_vec(vec![]),
+        &to_string_vec(vec!["mktemp"]),
+    ).expect("failed");
+    match prev_tmp {
+        Ok(s) => env::set_var("TMPDIR", s),
+        Err(..) => env::remove_var("TMPDIR"),
+    }
+    assert_result(&result, Some(0), None);
 }
 
 #[test]
