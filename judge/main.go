@@ -52,7 +52,6 @@ type SubmissionTestcaseResult struct {
 }
 
 var casesDir string
-var workDir string
 
 func fetchData(db *gorm.DB, problem Problem) (string, error) {
 	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", problem.Testhash))
@@ -129,7 +128,7 @@ func execJudge(db *gorm.DB, task Task) error {
 	if err != nil {
 		return err
 	}
-	tempdir, err := ioutil.TempDir(workDir, "judge")
+	tempdir, err := ioutil.TempDir("", "judge")
 	if err != nil {
 		return err
 	}
@@ -229,15 +228,12 @@ func gormConnect() *gorm.DB {
 }
 
 func main() {
-	myCasesDir, err := ioutil.TempDir("", "case")
+	myCasesDir, err := ioutil.TempDir(os.Getenv("CASEDIR"), "case")
 	casesDir = myCasesDir
 	if err != nil {
 		log.Fatal(err)
 	}
-	workDir = os.Getenv("WORKDIR")
-	log.Println("Workdir: ", workDir)
 	defer os.RemoveAll(casesDir)
-	log.Println("Case Pool Directory =", myCasesDir)
 
 	db := gormConnect()
 	defer db.Close()
