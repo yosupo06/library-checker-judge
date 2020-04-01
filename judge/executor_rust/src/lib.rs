@@ -13,6 +13,7 @@ use nix::unistd::{
 };
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use std::env;
 use std::ffi::CString;
 use std::fs::File;
 use std::fs::{create_dir, read_to_string, remove_dir_all, set_permissions, OpenOptions};
@@ -205,6 +206,7 @@ fn execute_unshared(
     chdir(&temp_dir.join("root").join("sand"))?;
     chroot("..")?;
     change_uid()?;
+    env::remove_var("TMPDIR");
     let program = CString::new(user_args[0].clone())?;
     let args: Vec<std::ffi::CString> = user_args[..]
         .iter()
