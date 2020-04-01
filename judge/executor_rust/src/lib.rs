@@ -225,7 +225,7 @@ pub struct ExecResult {
 }
 
 fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, Error> {
-    let temp_dir = tempdir(Path::new("/tmp"))?;
+    let temp_dir = tempdir(&std::env::temp_dir())?;
     let (pipe_read, pipe_write) = pipe()?;
     let (start_pipe_read, start_pipe_write) = pipe()?;
     info!("working dir: {:?}", temp_dir);
