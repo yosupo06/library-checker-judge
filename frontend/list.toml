@@ -48,6 +48,7 @@
 [[category]]
     name = 'Math'
     problems = [
+        'counting_primes',
         'enumerate_primes',
         'factorize',
         'convolution_mod',
