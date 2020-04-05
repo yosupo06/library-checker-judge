@@ -10,7 +10,8 @@ ZONE=$2
 echo "Create Instance Name = $NAME, Zone = $ZONE, Extra Opt = ${@:3}"
 gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
---boot-disk-size=200GB \
+--boot-disk-size=20GB \
+--boot-disk-type=pd-ssd \
 --metadata-from-file user-data=cloudinit.yml \
 --image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud ${@:3}
 
