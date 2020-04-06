@@ -70,5 +70,5 @@
     name = "Go"
     version = "Go(ppa:longsleep/golang-backports)"
     source = "main.go"
-    compile = "go main.go"
+    compile = "go build main.go"
     exec = "./main"
