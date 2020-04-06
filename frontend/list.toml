@@ -76,6 +76,7 @@
         'discrete_logarithm_mod',
         'tetration_mod',
         'nim_product_64',
+        'sharp_p_subset_sum',        
         'two_sat',
     ]
 
