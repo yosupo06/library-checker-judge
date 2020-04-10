@@ -9,6 +9,7 @@
     name = 'Data Structure'
     problems = [
         'unionfind',
+        'static_range_sum'
         'staticrmq',
         'point_add_range_sum',
         'point_set_range_composite',
