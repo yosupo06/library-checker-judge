@@ -460,3 +460,30 @@ func TestSubmitJavaAC(t *testing.T) {
 		t.Fatal("Expect status AC, actual ", submission.Status)
 	}
 }
+
+func TestSubmitGoAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, err := Submit(db, "aplusb", "go", src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("submit ok ", id)
+	err = execJudge(db, Task{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var submission Submission
+	if err = db.
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).Take(&submission).Error; err != nil {
+		t.Fatal(err)
+	}
+	if submission.Status != "AC" {
+		t.Fatal("Expect status AC, actual ", submission.Status)
+	}
+}
