@@ -207,6 +207,7 @@ fn execute_unshared(
     chroot("..")?;
     change_uid()?;
     env::remove_var("TMPDIR");
+    env::set_var("HOME", "/home/library-checker-user");
     let program = CString::new(user_args[0].clone())?;
     let args: Vec<std::ffi::CString> = user_args[..]
         .iter()
