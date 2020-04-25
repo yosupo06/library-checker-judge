@@ -7,6 +7,7 @@ service LibraryCheckerService {
     rpc Login (LoginRequest) returns (LoginResponse) {}
     rpc UserInfo (UserInfoRequest) returns (UserInfoResponse) {}
     rpc UserList (UserListRequest) returns (UserListResponse) {}
+    rpc ChangeUserInfo (ChangeUserInfoRequest) returns (ChangeUserInfoResponse) {}
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
@@ -43,7 +44,7 @@ message User {
 message UserInfoRequest {
 }
 message UserInfoResponse {
-    bool is_admin = 1;
+    bool is_admin = 1 [deprecated=true];
     User user = 2;
 }
 
@@ -51,6 +52,12 @@ message UserListRequest {
 }
 message UserListResponse {
     repeated User users = 2;
+}
+
+message ChangeUserInfoRequest {
+    User user = 1;
+}
+message ChangeUserInfoResponse {
 }
 
 // --- Problem ---

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
 )
@@ -168,6 +169,119 @@ func TestNotAdminUserList(t *testing.T) {
 		t.Fatal("Success UserList with tester")
 	}
 	t.Log(err)
+}
+
+func TestCreateUser(t *testing.T) {
+	ctx := context.Background()
+	resp, err := client.Register(ctx, &pb.RegisterRequest{
+		Name:     uuid.New().String(),
+		Password: "password",
+	})
+	if err != nil {
+		t.Fatal("Failed to Register")
+	}
+	ctx = context.WithValue(ctx, tokenKey{}, resp.Token)
+}
+
+func TestChangeUserInfo(t *testing.T) {
+	// admin add bob
+	ctx := context.Background()
+
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "admin",
+		Password: "password",
+	})
+	aliceCtx := context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	if err != nil {
+		t.Fatal("Failed to Login")
+	}
+
+	bobName := uuid.New().String()
+	regResp, err := client.Register(ctx, &pb.RegisterRequest{
+		Name:     bobName,
+		Password: "password",
+	})
+	bobCtx := context.WithValue(ctx, tokenKey{}, regResp.Token)
+	if err != nil {
+		t.Fatal("Failed to Register")
+	}
+
+	_, err = client.ChangeUserInfo(aliceCtx, &pb.ChangeUserInfoRequest{
+		User: &pb.User{
+			Name:    bobName,
+			IsAdmin: true,
+		},
+	})
+	if err != nil {
+		t.Fatal("Failed to add Admin:", err)
+	}
+	resp, err := client.UserInfo(bobCtx, &pb.UserInfoRequest{})
+	if err != nil {
+		t.Fatal("Failed UserInfo")
+	}
+	if !resp.IsAdmin {
+		t.Fatal("Not promote to admin")
+	}
+
+	_, err = client.ChangeUserInfo(aliceCtx, &pb.ChangeUserInfoRequest{
+		User: &pb.User{
+			Name:    bobName,
+			IsAdmin: false,
+		},
+	})
+	if err != nil {
+		t.Fatal("Failed to add Admin:", err)
+	}
+	resp, err = client.UserInfo(bobCtx, &pb.UserInfoRequest{})
+	if err != nil {
+		t.Fatal("Failed UserInfo")
+	}
+	if resp.IsAdmin {
+		t.Fatal("Cannot remove admin")
+	}
+
+}
+
+func TestAddAdminByNotAdmin(t *testing.T) {
+	// admin add bob
+	ctx := context.Background()
+
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "tester",
+		Password: "password",
+	})
+	aliceCtx := context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	if err != nil {
+		t.Fatal("Failed to Login")
+	}
+
+	bobName := uuid.New().String()
+	regResp, err := client.Register(ctx, &pb.RegisterRequest{
+		Name:     bobName,
+		Password: "password",
+	})
+	bobCtx := context.WithValue(ctx, tokenKey{}, regResp.Token)
+	if err != nil {
+		t.Fatal("Failed to Register")
+	}
+
+	_, err = client.ChangeUserInfo(aliceCtx, &pb.ChangeUserInfoRequest{
+		User: &pb.User{
+			Name:    bobName,
+			IsAdmin: true,
+		},
+	})
+	if err == nil {
+		t.Fatal("Success to add Admin")
+	}
+	t.Log(err)
+	resp, err := client.UserInfo(bobCtx, &pb.UserInfoRequest{})
+	if err != nil {
+		t.Fatal("Failed UserInfo")
+	}
+	if resp.IsAdmin {
+		t.Fatal("Promote to admin")
+	}
 }
 
 type loginCreds struct{}
