@@ -18,3 +18,4 @@ services:
     environment:
       - POSTGRE_HOST=db
       - HMAC_SECRET=dummy_secret
+      - API_DB_LOG=true
