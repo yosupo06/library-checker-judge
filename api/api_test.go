@@ -240,6 +240,16 @@ func TestChangeUserInfo(t *testing.T) {
 		t.Fatal("Cannot remove admin")
 	}
 
+	_, err = client.ChangeUserInfo(aliceCtx, &pb.ChangeUserInfoRequest{
+		User: &pb.User{
+			Name:    "admin",
+			IsAdmin: false,
+		},
+	})
+	if err == nil {
+		t.Fatal("Success to remove myself")
+	}
+	t.Log(err)
 }
 
 func TestAddAdminByNotAdmin(t *testing.T) {
