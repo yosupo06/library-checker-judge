@@ -252,6 +252,31 @@ func TestChangeUserInfo(t *testing.T) {
 	t.Log(err)
 }
 
+func TestChangeDummyUserInfo(t *testing.T) {
+	// admin add bob
+	ctx := context.Background()
+
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "admin",
+		Password: "password",
+	})
+	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	if err != nil {
+		t.Fatal("Failed to Login")
+	}
+
+	_, err = client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
+		User: &pb.User{
+			Name:    "this_is_dummy_user_name",
+			IsAdmin: true,
+		},
+	})
+	if err == nil {
+		t.Fatal("Success to change unknown user")
+	}
+	t.Log(err)
+}
+
 func TestAddAdminByNotAdmin(t *testing.T) {
 	// admin add bob
 	ctx := context.Background()

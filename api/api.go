@@ -104,10 +104,24 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 		return nil, errors.New("Cannot remove myself from admin")
 	}
 
-	if err := db.Model(&User{}).Where("name = ?", in.User.Name).Updates(map[string]interface{}{"name": in.User.Name, "admin": in.User.IsAdmin}).Error; err != nil {
+	tx := db.Begin()
+	var user User
+	if err := tx.Where("name = ?", in.User.Name).First(&user).Error; err != nil {
+		// invalid user name
+		tx.Rollback()
+		log.Println(err)
+		return nil, errors.New("No User")
+	}
+	if err := tx.Model(&User{}).Where("name = ?", in.User.Name).Updates(
+		map[string]interface{}{
+			"name":  in.User.Name,
+			"admin": in.User.IsAdmin,
+		}).Error; err != nil {
+		tx.Rollback()
 		log.Println(err)
 		return nil, errors.New("Failed to update user")
 	}
+	tx.Commit()
 	return &pb.ChangeUserInfoResponse{}, nil
 }
 
