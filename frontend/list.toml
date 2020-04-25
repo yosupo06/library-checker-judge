@@ -9,6 +9,7 @@
     name = 'Data Structure'
     problems = [
         'unionfind',
+        'static_range_sum',
         'staticrmq',
         'point_add_range_sum',
         'point_set_range_composite',
@@ -49,6 +50,7 @@
 [[category]]
     name = 'Math'
     problems = [
+        'counting_primes',
         'enumerate_primes',
         'factorize',
         'convolution_mod',
@@ -59,6 +61,7 @@
         'inv_of_formal_power_series',
         'exp_of_formal_power_series',
         'log_of_formal_power_series',
+        'pow_of_formal_power_series',
         'sqrt_of_formal_power_series',
         'stirling_number_of_the_first_kind',
         'stirling_number_of_the_second_kind',
@@ -76,6 +79,7 @@
         'discrete_logarithm_mod',
         'tetration_mod',
         'nim_product_64',
+        'sharp_p_subset_sum',        
         'two_sat',
     ]
 
