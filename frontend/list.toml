@@ -27,6 +27,7 @@
         'queue_operate_all_composite',
         'rectangle_sum',
         'persistent_queue',
+        'persistent_unionfind',
     ]
 
 [[category]]
