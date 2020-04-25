@@ -4,5 +4,4 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build .
 
 ENV PORT 50051
-ENV API_DB_LOG true
 CMD ["/go/src/github.com/yosupo06/library-checker-judge/api/api"]
