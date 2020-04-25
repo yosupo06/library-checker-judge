@@ -114,7 +114,6 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 	}
 	if err := tx.Model(&User{}).Where("name = ?", in.User.Name).Updates(
 		map[string]interface{}{
-			"name":  in.User.Name,
 			"admin": in.User.IsAdmin,
 		}).Error; err != nil {
 		tx.Rollback()
