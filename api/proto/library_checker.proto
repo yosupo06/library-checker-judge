@@ -6,6 +6,7 @@ service LibraryCheckerService {
     rpc Register (RegisterRequest) returns (RegisterResponse) {}
     rpc Login (LoginRequest) returns (LoginResponse) {}
     rpc UserInfo (UserInfoRequest) returns (UserInfoResponse) {}
+    rpc UserList (UserListRequest) returns (UserListResponse) {}
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
@@ -34,10 +35,22 @@ message LoginResponse {
     string token = 1; // JWT Token
 }
 
+message User {
+    string name = 1;
+    bool is_admin = 2;
+}
+
 message UserInfoRequest {
 }
 message UserInfoResponse {
     bool is_admin = 1;
+    User user = 2;
+}
+
+message UserListRequest {
+}
+message UserListResponse {
+    repeated User users = 2;
 }
 
 // --- Problem ---

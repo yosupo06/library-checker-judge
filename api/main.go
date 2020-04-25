@@ -96,7 +96,32 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 	}
 	return &pb.UserInfoResponse{
 		IsAdmin: isAdmin(ctx),
+		User: &pb.User{
+			Name:    getUserName(ctx),
+			IsAdmin: isAdmin(ctx),
+		},
 	}, nil
+}
+
+func (s *server) UserList(ctx context.Context, in *pb.UserListRequest) (*pb.UserListResponse, error) {
+	if getUserName(ctx) == "" {
+		return nil, errors.New("Not login")
+	}
+	if !isAdmin(ctx) {
+		return nil, errors.New("Must be admin")
+	}
+	users := []User{}
+	if err := db.Select("name, admin").Find(&users).Error; err != nil {
+		return nil, errors.New("Failed to get users")
+	}
+	res := &pb.UserListResponse{}
+	for _, user := range users {
+		res.Users = append(res.Users, &pb.User{
+			Name:    user.Name,
+			IsAdmin: user.Admin,
+		})
+	}
+	return res, nil
 }
 
 func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {

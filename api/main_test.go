@@ -111,7 +111,7 @@ func TestAdmin(t *testing.T) {
 	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
-		t.Fatal("Failed isAdmin")
+		t.Fatal("Failed UserInfo")
 	}
 	if !resp.IsAdmin {
 		t.Fatal("isAdmin(admin) = False")
@@ -130,11 +130,44 @@ func TestNotAdmin(t *testing.T) {
 	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
-		t.Fatal("Failed isAdmin")
+		t.Fatal("Failed UserInfo")
 	}
 	if resp.IsAdmin {
 		t.Fatal("isAdmin(tester) = True")
 	}
+}
+
+func TestUserList(t *testing.T) {
+	ctx := context.Background()
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "admin",
+		Password: "password",
+	})
+	if err != nil {
+		t.Fatal("Failed to login")
+	}
+	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	_, err = client.UserList(ctx, &pb.UserListRequest{})
+	if err != nil {
+		t.Fatal("Failed UserList")
+	}
+}
+
+func TestNotAdminUserList(t *testing.T) {
+	ctx := context.Background()
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "tester",
+		Password: "password",
+	})
+	if err != nil {
+		t.Fatal("Failed to login")
+	}
+	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	_, err = client.UserList(ctx, &pb.UserListRequest{})
+	if err == nil {
+		t.Fatal("Success UserList with tester")
+	}
+	t.Log(err)
 }
 
 type loginCreds struct{}
