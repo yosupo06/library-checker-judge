@@ -541,8 +541,8 @@ func main() {
 	router.GET("/help", helpPage)
 
 	router.GET("/admin/userlist", getUserList)
-	router.GET("/admin/addadmin", getAddAdmin)
-	router.GET("/admin/deladmin", getDelAdmin)
+	router.GET("/admin/addadmin/:name", getAddAdmin)
+	router.GET("/admin/deladmin/:name", getDelAdmin)
 
 	port := os.Getenv("PORT")
 	if port == "" {

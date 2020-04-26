@@ -42,9 +42,9 @@
                         <tr>
                             <td>
                                 {{if .IsAdmin}}
-                                    <a class="uk-button uk-button-primary" href="/admin/deladmin?name={{.Name}}">DEL Admin</a>
+                                    <a class="uk-button uk-button-primary" href="/admin/deladmin/{{.Name}}">DEL Admin</a>
                                 {{else}}
-                                    <a class="uk-button uk-button-danger" href="/admin/addadmin?name={{.Name}}">ADD Admin</a>
+                                    <a class="uk-button uk-button-danger" href="/admin/addadmin/{{.Name}}">ADD Admin</a>
                                 {{end}}
                                 {{.Name}}
                             </td>
