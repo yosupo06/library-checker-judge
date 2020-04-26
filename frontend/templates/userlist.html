@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="uft-8">
+    <title>Problem List</title>
+    {{template "css.html" .}}
+    <!-- Katex -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css"
+        integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js"
+        integrity="sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ"
+        crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js"
+        integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+        onload="renderMathInElement(document.body);"></script>
+    <script>// <![CDATA[
+        document.addEventListener("DOMContentLoaded", function () {
+            renderMathInElement(
+                document.body, {
+                delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$", right: "$", display: false }],
+                ignoredTags: [],
+            })
+        });
+    // ]]></script>
+</head>
+
+<body>
+    {{template "navbar.html" .}}
+    <section class="uk-section">
+        <div class="uk-container">
+            <h1 class="uk-heading-medium">User List</h1>
+        </div>
+    </section>
+    <section class="uk-section">
+        <div class="uk-container">
+            <table class="uk-table uk-table-striped">
+                <tbody>
+                    {{range .Users}}
+                        <tr>
+                            <td>
+                                {{if .IsAdmin}}
+                                    <a class="uk-button uk-button-primary" href="/admin/deladmin?name={{.Name}}">DEL Admin</a>
+                                {{else}}
+                                    <a class="uk-button uk-button-danger" href="/admin/addadmin?name={{.Name}}">ADD Admin</a>
+                                {{end}}
+                                {{.Name}}
+                            </td>
+                        </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</body>
+
+</html>

@@ -360,15 +360,6 @@ func helpPage(ctx *gin.Context) {
 	})
 }
 
-/*
-func langList(ctx *gin.Context) ([]*pb.Lang, error) {
-	list, err := client.LangList(ctx, &pb.LangListRequest{})
-	if err != nil {
-		return nil, err
-	}
-	return list.Langs, nil
-}
-*/
 func getRanking(ctx *gin.Context) {
 	stats, err := client.Ranking(ctx, &pb.RankingRequest{})
 	if err != nil {
@@ -397,6 +388,48 @@ func getRanking(ctx *gin.Context) {
 	htmlWithUser(ctx, 200, "ranking.html", gin.H{
 		"Statistics": userInfo,
 	})
+}
+
+func getUserList(ctx *gin.Context) {
+	users, err := client.UserList(ctx, &pb.UserListRequest{})
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	htmlWithUser(ctx, 200, "userlist.html", gin.H{
+		"Users": users.Users,
+	})
+}
+
+func getAddAdmin(ctx *gin.Context) {
+	name := ctx.Param("name")
+	_, err := client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
+		User: &pb.User{
+			Name:    name,
+			IsAdmin: true,
+		},
+	})
+	if err != nil {
+		ctx.AbortWithError(http.StatusServiceUnavailable, err)
+		return
+	}
+	ctx.Redirect(http.StatusFound, "/admin/userlist")
+}
+
+func getDelAdmin(ctx *gin.Context) {
+	name := ctx.Param("name")
+	_, err := client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
+		User: &pb.User{
+			Name:    name,
+			IsAdmin: false,
+		},
+	})
+	if err != nil {
+		ctx.AbortWithError(http.StatusServiceUnavailable, err)
+		return
+	}
+	ctx.Redirect(http.StatusFound, "/admin/userlist")
 }
 
 type loginCreds struct{}
@@ -506,6 +539,10 @@ func main() {
 
 	router.GET("/ranking", getRanking)
 	router.GET("/help", helpPage)
+
+	router.GET("/admin/userlist", getUserList)
+	router.GET("/admin/addadmin", getAddAdmin)
+	router.GET("/admin/deladmin", getDelAdmin)
 
 	port := os.Getenv("PORT")
 	if port == "" {
