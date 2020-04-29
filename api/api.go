@@ -194,6 +194,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	}
 
 	task := Task{}
+	task.Priority = 50
 	task.Submission = submission.ID
 	if err := db.Create(&task).Error; err != nil {
 		return nil, errors.New("Inserting to judge queue is failed")
@@ -310,6 +311,7 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 	}
 	task := Task{}
 	task.Submission = int(in.Id)
+	task.Priority = 40
 	if err := db.Create(&task).Error; err != nil {
 		return nil, errors.New("Cannot insert into queue")
 	}
@@ -385,7 +387,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 	tx.Delete(task)
 	if err := tx.Commit().Error; err != nil {
 		log.Println(err.Error())
-		return nil, errors.New("Connection to db failed")
+		return nil, errors.New("Commit to db failed")
 	}
 	log.Println("Pop Submission:", task.Submission)
 
@@ -398,6 +400,12 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		return &pb.PopJudgeTaskResponse{
 			SubmissionId: -1,
 		}, nil
+	}
+
+	log.Println("Clear SubmissionTestcaseResults")
+	if err := db.Where("submission = ?", id).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
+		log.Println(err)
+		return nil, errors.New("Failed to clear submission testcase results")
 	}
 
 	return &pb.PopJudgeTaskResponse{
@@ -413,7 +421,7 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 		return nil, errors.New("JudgeName is empty")
 	}
 	id := int(in.SubmissionId)
-	ok, err := updateSubmissionRegistration(id, in.JudgeName, true)
+	ok, err := updateSubmissionRegistration(id, in.JudgeName, false)
 
 	if err != nil {
 		log.Println(err)
@@ -439,18 +447,53 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 	}
 	if err := db.Model(&Submission{
 		ID: id,
-	}).Update("status", in.Status).Error; err != nil {
+	}).Updates(&Submission{
+		Status:    in.Status,
+		MaxTime:   int(in.Time * 1000),
+		MaxMemory: int(in.Memory),
+	}).Error; err != nil {
 		return nil, errors.New("Update Status Failed")
 	}
-	if in.IsFinished {
-		if err := db.Model(&Submission{
-			ID: id,
-		}).Updates(map[string]interface{}{
-			"judge_name": "",
-		}).Error; err != nil {
-			log.Print(err)
-			return nil, errors.New("Failed to clear judge_name")
-		}
-	}
 	return &pb.SyncJudgeTaskStatusResponse{}, nil
+}
+
+func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequest) (*pb.FinishJudgeTaskResponse, error) {
+	if !isAdmin(ctx) {
+		return nil, errors.New("Permission denied")
+	}
+	if in.JudgeName == "" {
+		return nil, errors.New("JudgeName is empty")
+	}
+	id := int(in.SubmissionId)
+	ok, err := updateSubmissionRegistration(id, in.JudgeName, false)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if !ok {
+		err := errors.New("Call SyncJudgeTaskStatus to non-registered submission")
+		log.Println(err, id)
+		return nil, err
+	}
+
+	if err := db.Model(&Submission{
+		ID: id,
+	}).Updates(&Submission{
+		Status:    in.Status,
+		MaxTime:   int(in.Time * 1000),
+		MaxMemory: int(in.Memory),
+	}).Error; err != nil {
+		return nil, errors.New("Update Status Failed")
+	}
+	if err := db.Model(&Submission{
+		ID: id,
+	}).Updates(map[string]interface{}{
+		"judge_name": "",
+		"test_hash":  in.CaseVersion,
+	}).Error; err != nil {
+		log.Print(err)
+		return nil, errors.New("Failed to clear judge_name")
+	}
+	return &pb.FinishJudgeTaskResponse{}, nil
 }

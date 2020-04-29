@@ -373,12 +373,8 @@ func clearTask(t *testing.T) {
 	t.Log("Clean Tasks")
 }
 
-func TestOtherJudge(t *testing.T) {
-	clearTask(t)
-
+func submitSomething(t *testing.T) int32 {
 	ctx := context.Background()
-	judgeCtx := loginAsAdmin(t)
-
 	src := "this is a test source"
 	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
 		Problem: "aplusb",
@@ -387,10 +383,17 @@ func TestOtherJudge(t *testing.T) {
 	})
 	id := submitResp.Id
 	if err != nil {
-		t.Fatal("Success to submit big source: ", err)
+		t.Fatal("Failed to submit:", err)
 	}
 	t.Log("Submit: ", id)
+	return id
+}
 
+func TestOtherJudge(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
 	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName: "judge-test",
 	})
@@ -399,14 +402,13 @@ func TestOtherJudge(t *testing.T) {
 	}
 
 	if id != resp.SubmissionId {
-		t.Fatalf("ID is differ, %v vs %v", submitResp.Id, resp.SubmissionId)
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
 	}
 
 	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
 		JudgeName:    "judge-other",
 		Status:       "Judging",
 		SubmissionId: id,
-		IsFinished:   false,
 	})
 	if err == nil {
 		t.Fatal("Success to SyncJudgeTaskStatus")
@@ -417,20 +419,8 @@ func TestOtherJudge(t *testing.T) {
 func TestJudgeSyncAfterFinished(t *testing.T) {
 	clearTask(t)
 
-	ctx := context.Background()
 	judgeCtx := loginAsAdmin(t)
-
-	src := "this is a test source"
-	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
-		Problem: "aplusb",
-		Source:  src,
-		Lang:    "cpp",
-	})
-	id := submitResp.Id
-	if err != nil {
-		t.Fatal("Success to submit big source: ", err)
-	}
-	t.Log("Submit: ", id)
+	id := submitSomething(t)
 
 	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName: "judge-test",
@@ -440,28 +430,35 @@ func TestJudgeSyncAfterFinished(t *testing.T) {
 	}
 
 	if id != resp.SubmissionId {
-		t.Fatalf("ID is differ, %v vs %v", submitResp.Id, resp.SubmissionId)
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
 	}
 
-	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+	_, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
 		JudgeName:    "judge-test",
 		Status:       "AC",
 		SubmissionId: id,
-		IsFinished:   true,
 	})
 
 	if err != nil {
 		t.Fatal("JudgeSync Failed:", err)
 	}
 
+	_, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+	})
+	if err == nil {
+		t.Fatal("Success to FinishJudgeTask Twice")
+	}
+	t.Log(err)
 	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
 		JudgeName:    "judge-test",
 		Status:       "AC",
 		SubmissionId: id,
-		IsFinished:   true,
 	})
 	if err == nil {
-		t.Fatal("Success to SyncJudgeTaskStatus")
+		t.Fatal("Success to SyncJudgeTaskStatus after finished")
 	}
 	t.Log(err)
 }
@@ -469,20 +466,8 @@ func TestJudgeSyncAfterFinished(t *testing.T) {
 func TestSimulateJudge(t *testing.T) {
 	clearTask(t)
 
-	ctx := context.Background()
 	judgeCtx := loginAsAdmin(t)
-
-	src := "this is a test source"
-	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
-		Problem: "aplusb",
-		Source:  src,
-		Lang:    "cpp",
-	})
-	id := submitResp.Id
-	if err != nil {
-		t.Fatal("Success to submit big source: ", err)
-	}
-	t.Log("Submit: ", id)
+	id := submitSomething(t)
 
 	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName: "judge-test",
@@ -492,7 +477,7 @@ func TestSimulateJudge(t *testing.T) {
 	}
 
 	if id != resp.SubmissionId {
-		t.Fatalf("ID is differ, %v vs %v", submitResp.Id, resp.SubmissionId)
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
 	}
 
 	cases := []*pb.SubmissionCaseResult{
@@ -520,7 +505,6 @@ func TestSimulateJudge(t *testing.T) {
 		Status:       "Judging",
 		CaseResults:  cases[0:2],
 		SubmissionId: id,
-		IsFinished:   false,
 	}); err != nil {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
@@ -538,9 +522,10 @@ func TestSimulateJudge(t *testing.T) {
 	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
 		JudgeName:    "judge-test",
 		Status:       "TLE",
+		Time:         1.234,
+		Memory:       5678,
 		CaseResults:  cases[2:3],
 		SubmissionId: id,
-		IsFinished:   true,
 	}); err != nil {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
@@ -549,7 +534,87 @@ func TestSimulateJudge(t *testing.T) {
 	if sub.Overview.Status != "TLE" {
 		t.Fatal("Status is not changed")
 	}
+	if math.Abs(sub.Overview.Time-1.234) >= 0.00001 {
+		t.Fatal("Time is not changed:", sub.Overview.Time)
+	}
+	if sub.Overview.Memory != 5678 {
+		t.Fatal("Memory is not changed")
+	}
 	assertEqualCases(t, cases[0:3], sub.CaseResults)
+
+	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "TLE",
+		Time:         2.345,
+		Memory:       6789,
+		SubmissionId: id,
+		CaseVersion:  "test-version",
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	sub = fetchSubmission(t, id)
+	if sub.Overview.Status != "TLE" {
+		t.Fatal("Status is not changed")
+	}
+	if math.Abs(sub.Overview.Time-2.345) >= 0.00001 {
+		t.Fatal("Time is not changed:", sub.Overview.Time)
+	}
+	if sub.Overview.Memory != 6789 {
+		t.Fatal("Memory is not changed")
+	}
+}
+
+func TestSimulateRejudge(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+
+	for i := 0; i < 3; i++ {
+		log.Printf("Start %v/3", i+1)
+		if i > 0 {
+			if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+				Id: id,
+			}); err != nil {
+				t.Fatal("Failed to Rejudge:", err)
+			}
+		}
+		resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+			JudgeName: "judge-test",
+		})
+		if err != nil {
+			t.Fatal("Failed to PopJudgeTask:", err)
+		}
+
+		if id != resp.SubmissionId {
+			t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+		}
+
+		if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+			JudgeName: "judge-test",
+			Status:    "Judging",
+			CaseResults: []*pb.SubmissionCaseResult{
+				{
+					Case:   "test00",
+					Status: "AC",
+					Time:   1.0,
+					Memory: 1,
+				},
+			},
+			SubmissionId: id,
+		}); err != nil {
+			t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+		}
+
+		if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+			JudgeName:    "judge-test",
+			Status:       "AC",
+			SubmissionId: id,
+		}); err != nil {
+			t.Fatal("Failed to FinishJudgeTaskStatus:", err)
+		}
+	}
 }
 
 type tokenKey struct{}

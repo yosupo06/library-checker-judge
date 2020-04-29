@@ -83,7 +83,7 @@ func updateSubmissionRegistration(id int, judgeName string, register bool) (bool
 		log.Print(err)
 		return false, errors.New("Submission fetch failed")
 	}
-	registered := sub.JudgePing.Add(time.Minute).After(time.Now())
+	registered := sub.JudgeName != "" && sub.JudgePing.Add(time.Minute).After(time.Now())
 	if registered && sub.JudgeName != judgeName {
 		tx.Rollback()
 		return false, tx.Rollback().Error
