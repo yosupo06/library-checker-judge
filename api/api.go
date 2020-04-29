@@ -490,7 +490,7 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 		ID: id,
 	}).Updates(map[string]interface{}{
 		"judge_name": "",
-		"test_hash":  in.CaseVersion,
+		"testhash":   in.CaseVersion,
 	}).Error; err != nil {
 		log.Print(err)
 		return nil, errors.New("Failed to clear judge_name")
