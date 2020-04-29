@@ -40,8 +40,9 @@ func isAdmin(ctx context.Context) bool {
 		return false
 	}
 	var user User
-	if err := db.Where("name = ?", u).First(&user).Error; err != nil {
+	if err := db.Where("name = ?", u).Take(&user).Error; err != nil {
 		// invalid user name
+		log.Print("Invalid user:", u)
 		return false
 	}
 	return user.Admin

@@ -184,8 +184,10 @@ message SyncJudgeTaskStatusRequest {
     string judge_name = 1;
     int32 submission_id = 2;
     string status = 3;
-    repeated SubmissionCaseResult case_results = 4;
-    bool is_finished = 5;
+    double time = 4; // 2.0 = 2 seconds
+    int64 memory = 5; // x bytes
+    repeated SubmissionCaseResult case_results = 6;
+    bool is_finished = 7;
 }
 message SyncJudgeTaskStatusResponse {
 }

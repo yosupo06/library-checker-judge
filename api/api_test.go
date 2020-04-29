@@ -15,8 +15,7 @@ import (
 )
 
 var client pb.LibraryCheckerServiceClient
-
-type tokenKey struct{}
+var judgeCtx context.Context
 
 func loginAsAdmin(t *testing.T) context.Context {
 	ctx := context.Background()
@@ -415,6 +414,58 @@ func TestOtherJudge(t *testing.T) {
 	t.Log(err)
 }
 
+func TestJudgeSyncAfterFinished(t *testing.T) {
+	clearTask(t)
+
+	ctx := context.Background()
+	judgeCtx := loginAsAdmin(t)
+
+	src := "this is a test source"
+	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: "aplusb",
+		Source:  src,
+		Lang:    "cpp",
+	})
+	id := submitResp.Id
+	if err != nil {
+		t.Fatal("Success to submit big source: ", err)
+	}
+	t.Log("Submit: ", id)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", submitResp.Id, resp.SubmissionId)
+	}
+
+	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+		IsFinished:   true,
+	})
+
+	if err != nil {
+		t.Fatal("JudgeSync Failed:", err)
+	}
+
+	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+		IsFinished:   true,
+	})
+	if err == nil {
+		t.Fatal("Success to SyncJudgeTaskStatus")
+	}
+	t.Log(err)
+}
+
 func TestSimulateJudge(t *testing.T) {
 	clearTask(t)
 
@@ -501,6 +552,7 @@ func TestSimulateJudge(t *testing.T) {
 	assertEqualCases(t, cases[0:3], sub.CaseResults)
 }
 
+type tokenKey struct{}
 type loginCreds struct{}
 
 func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {

@@ -43,7 +43,7 @@ func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Regi
 
 func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
 	var user User
-	if err := db.Where("name = ?", in.Name).First(&user).Error; err != nil {
+	if err := db.Where("name = ?", in.Name).Take(&user).Error; err != nil {
 		return nil, errors.New("Invalid username")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(in.Password)); err != nil {
@@ -390,7 +390,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 	log.Println("Pop Submission:", task.Submission)
 
 	id := task.Submission
-	ok, err := registerSubmission(id, in.JudgeName)
+	ok, err := updateSubmissionRegistration(id, in.JudgeName, true)
 	if err != nil {
 		return nil, err
 	}
@@ -413,7 +413,7 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 		return nil, errors.New("JudgeName is empty")
 	}
 	id := int(in.SubmissionId)
-	ok, err := registerSubmission(id, in.JudgeName)
+	ok, err := updateSubmissionRegistration(id, in.JudgeName, true)
 
 	if err != nil {
 		log.Println(err)
@@ -441,6 +441,16 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 		ID: id,
 	}).Update("status", in.Status).Error; err != nil {
 		return nil, errors.New("Update Status Failed")
+	}
+	if in.IsFinished {
+		if err := db.Model(&Submission{
+			ID: id,
+		}).Updates(map[string]interface{}{
+			"judge_name": "",
+		}).Error; err != nil {
+			log.Print(err)
+			return nil, errors.New("Failed to clear judge_name")
+		}
 	}
 	return &pb.SyncJudgeTaskStatusResponse{}, nil
 }

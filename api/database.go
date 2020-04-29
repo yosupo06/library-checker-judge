@@ -75,7 +75,7 @@ func fetchSubmission(id int) (Submission, error) {
 	return sub, nil
 }
 
-func registerSubmission(id int, judgeName string) (bool, error) {
+func updateSubmissionRegistration(id int, judgeName string, register bool) (bool, error) {
 	tx := db.Begin()
 	sub := Submission{}
 	if err := tx.First(&sub, id).Error; err != nil {
@@ -83,9 +83,14 @@ func registerSubmission(id int, judgeName string) (bool, error) {
 		log.Print(err)
 		return false, errors.New("Submission fetch failed")
 	}
-	if sub.JudgePing.Add(time.Minute).After(time.Now()) && sub.JudgeName != judgeName {
+	registered := sub.JudgePing.Add(time.Minute).After(time.Now())
+	if registered && sub.JudgeName != judgeName {
 		tx.Rollback()
-		return false, nil
+		return false, tx.Rollback().Error
+	}
+	myself := registered && sub.JudgeName == judgeName
+	if !register && !myself {
+		return false, tx.Rollback().Error
 	}
 	if err := tx.Model(&sub).Updates(map[string]interface{}{
 		"judge_name": judgeName,
