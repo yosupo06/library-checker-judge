@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -38,6 +39,8 @@ type Submission struct {
 	MaxTime     int
 	MaxMemory   int
 	JudgePing   time.Time
+	JudgeName   string
+	JudgeTasked bool
 	UserName    sql.NullString
 	User        User `gorm:"foreignkey:UserName"`
 }
@@ -54,6 +57,49 @@ type SubmissionTestcaseResult struct {
 // Task is db table
 type Task struct {
 	Submission int
+	Priority   int
+}
+
+func fetchSubmission(id int) (Submission, error) {
+	sub := Submission{}
+	if err := db.
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name")
+		}).
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).First(&sub).Error; err != nil {
+		return Submission{}, errors.New("Submission fetch failed")
+	}
+	return sub, nil
+}
+
+func registerSubmission(id int, judgeName string) (bool, error) {
+	tx := db.Begin()
+	sub := Submission{}
+	if err := tx.First(&sub, id).Error; err != nil {
+		tx.Rollback()
+		log.Print(err)
+		return false, errors.New("Submission fetch failed")
+	}
+	if sub.JudgePing.Add(time.Minute).After(time.Now()) && sub.JudgeName != judgeName {
+		tx.Rollback()
+		return false, nil
+	}
+	if err := tx.Model(&sub).Updates(map[string]interface{}{
+		"judge_name": judgeName,
+		"judge_ping": time.Now(),
+	}).Error; err != nil {
+		tx.Rollback()
+		log.Print(err)
+		return false, errors.New("Submission update failed")
+	}
+	if err := tx.Commit().Error; err != nil {
+		log.Print(err)
+		return false, errors.New("Transaction commit failed")
+	}
+	return true, nil
 }
 
 func dbConnect() *gorm.DB {

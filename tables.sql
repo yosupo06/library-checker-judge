@@ -25,11 +25,13 @@ create table submissions (
   max_time int,
   max_memory int,
   judge_ping timestamp with time zone,
-  details json
+  judge_name varchar(255) not null,
+  judge_tasked boolean not null
 );
 
 create table tasks ( -- Between front and judge
   id serial primary key,
+  priority int not null,
   submission int not null
 );
 

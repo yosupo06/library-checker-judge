@@ -1,4 +1,4 @@
-package main
+package main_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
@@ -16,6 +17,43 @@ import (
 var client pb.LibraryCheckerServiceClient
 
 type tokenKey struct{}
+
+func loginAsAdmin(t *testing.T) context.Context {
+	ctx := context.Background()
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     "admin",
+		Password: "password",
+	})
+	if err != nil {
+		t.Fatal("Failed to Login")
+	}
+	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	return ctx
+}
+
+func fetchSubmission(t *testing.T, id int32) *pb.SubmissionInfoResponse {
+	ctx := context.Background()
+	resp, err := client.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{
+		Id: id,
+	})
+	if err != nil {
+		t.Fatalf("Failed to SubmissionInfo %d %d", id, err)
+	}
+	return resp
+}
+
+func assertEqualCases(t *testing.T, expectCases []*pb.SubmissionCaseResult, actualCases []*pb.SubmissionCaseResult) {
+	if len(actualCases) != len(expectCases) {
+		t.Fatal("Error CaseResults length differ", actualCases, expectCases)
+	}
+	for i := 0; i < len(actualCases); i++ {
+		expect := expectCases[i]
+		actual := actualCases[i]
+		if expect.Case != actual.Case || expect.Memory != actual.Memory || expect.Status != actual.Status || expect.Time != actual.Time {
+			t.Fatal("Case differ", expect, actual)
+		}
+	}
+}
 
 func TestProblemInfo(t *testing.T) {
 	ctx := context.Background()
@@ -319,6 +357,150 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 	}
 }
 
+func clearTask(t *testing.T) {
+	ctx := loginAsAdmin(t)
+	for {
+		task, err := client.PopJudgeTask(ctx, &pb.PopJudgeTaskRequest{
+			JudgeName: "judge-dummy",
+		})
+		if err != nil {
+			t.Fatal("Failed PopJudgeTask: ", err)
+		}
+		if task.SubmissionId == -1 {
+			break
+		}
+		t.Log("Pop Task: ", task.SubmissionId)
+	}
+	t.Log("Clean Tasks")
+}
+
+func TestOtherJudge(t *testing.T) {
+	clearTask(t)
+
+	ctx := context.Background()
+	judgeCtx := loginAsAdmin(t)
+
+	src := "this is a test source"
+	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: "aplusb",
+		Source:  src,
+		Lang:    "cpp",
+	})
+	id := submitResp.Id
+	if err != nil {
+		t.Fatal("Success to submit big source: ", err)
+	}
+	t.Log("Submit: ", id)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", submitResp.Id, resp.SubmissionId)
+	}
+
+	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-other",
+		Status:       "Judging",
+		SubmissionId: id,
+		IsFinished:   false,
+	})
+	if err == nil {
+		t.Fatal("Success to SyncJudgeTaskStatus")
+	}
+	t.Log(err)
+}
+
+func TestSimulateJudge(t *testing.T) {
+	clearTask(t)
+
+	ctx := context.Background()
+	judgeCtx := loginAsAdmin(t)
+
+	src := "this is a test source"
+	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: "aplusb",
+		Source:  src,
+		Lang:    "cpp",
+	})
+	id := submitResp.Id
+	if err != nil {
+		t.Fatal("Success to submit big source: ", err)
+	}
+	t.Log("Submit: ", id)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", submitResp.Id, resp.SubmissionId)
+	}
+
+	cases := []*pb.SubmissionCaseResult{
+		{
+			Case:   "test00",
+			Status: "AC",
+			Time:   1.0,
+			Memory: 1,
+		},
+		{
+			Case:   "test01",
+			Status: "WA",
+			Time:   1.0,
+			Memory: 1,
+		},
+		{
+			Case:   "test02",
+			Status: "TLE",
+			Time:   1.0,
+			Memory: 1,
+		},
+	}
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-test",
+		Status:       "Judging",
+		CaseResults:  cases[0:2],
+		SubmissionId: id,
+		IsFinished:   false,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	sub := fetchSubmission(t, id)
+	if sub.Overview.Status != "Judging" {
+		t.Fatal("Status is not changed: ", sub.Overview.Status)
+	}
+	assertEqualCases(t, cases[0:2], sub.CaseResults)
+
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-test",
+		Status:       "TLE",
+		CaseResults:  cases[2:3],
+		SubmissionId: id,
+		IsFinished:   true,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	sub = fetchSubmission(t, id)
+	if sub.Overview.Status != "TLE" {
+		t.Fatal("Status is not changed")
+	}
+	assertEqualCases(t, cases[0:3], sub.CaseResults)
+}
+
 type loginCreds struct{}
 
 func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
@@ -334,7 +516,7 @@ func (c *loginCreds) RequireTransportSecurity() bool {
 }
 
 func TestMain(m *testing.M) {
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{}), grpc.WithInsecure()}
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{}), grpc.WithInsecure(), grpc.WithTimeout(3 * time.Second)}
 	conn, err := grpc.Dial("localhost:50051", options...)
 	if err != nil {
 		log.Fatal(err)

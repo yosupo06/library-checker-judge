@@ -206,15 +206,9 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 
 func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
 	var sub Submission
-	if err := db.
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name")
-		}).
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", in.Id).First(&sub).Error; err != nil {
-		return nil, errors.New("Submission fetch failed")
+	sub, err := fetchSubmission(int(in.Id))
+	if err != nil {
+		return nil, err
 	}
 	var cases []SubmissionTestcaseResult
 	if err := db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
@@ -365,4 +359,88 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 		Statistics: stats,
 	}
 	return &res, nil
+}
+
+func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (*pb.PopJudgeTaskResponse, error) {
+	if !isAdmin(ctx) {
+		return nil, errors.New("Permission denied")
+	}
+	if in.JudgeName == "" {
+		return nil, errors.New("JudgeName is empty")
+	}
+	tx := db.Begin()
+	task := Task{}
+	err := tx.First(&task).Error
+	if gorm.IsRecordNotFoundError(err) {
+		tx.Rollback()
+		return &pb.PopJudgeTaskResponse{
+			SubmissionId: -1,
+		}, nil
+	}
+	if err != nil {
+		tx.Rollback()
+		log.Print(err.Error())
+		return nil, errors.New("Connection to db failed")
+	}
+	tx.Delete(task)
+	if err := tx.Commit().Error; err != nil {
+		log.Println(err.Error())
+		return nil, errors.New("Connection to db failed")
+	}
+	log.Println("Pop Submission:", task.Submission)
+
+	id := task.Submission
+	ok, err := registerSubmission(id, in.JudgeName)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return &pb.PopJudgeTaskResponse{
+			SubmissionId: -1,
+		}, nil
+	}
+
+	return &pb.PopJudgeTaskResponse{
+		SubmissionId: int32(task.Submission),
+	}, nil
+}
+
+func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskStatusRequest) (*pb.SyncJudgeTaskStatusResponse, error) {
+	if !isAdmin(ctx) {
+		return nil, errors.New("Permission denied")
+	}
+	if in.JudgeName == "" {
+		return nil, errors.New("JudgeName is empty")
+	}
+	id := int(in.SubmissionId)
+	ok, err := registerSubmission(id, in.JudgeName)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if !ok {
+		err := errors.New("Call SyncJudgeTaskStatus to non-registered submission")
+		log.Println(err, id)
+		return nil, err
+	}
+
+	for _, testCase := range in.CaseResults {
+		if err := db.Create(&SubmissionTestcaseResult{
+			Submission: id,
+			Testcase:   testCase.Case,
+			Status:     testCase.Status,
+			Time:       int(testCase.Time * 1000),
+			Memory:     int(testCase.Memory),
+		}).Error; err != nil {
+			log.Println(err)
+			return nil, errors.New("DB update failed")
+		}
+	}
+	if err := db.Model(&Submission{
+		ID: id,
+	}).Update("status", in.Status).Error; err != nil {
+		return nil, errors.New("Update Status Failed")
+	}
+	return &pb.SyncJudgeTaskStatusResponse{}, nil
 }
