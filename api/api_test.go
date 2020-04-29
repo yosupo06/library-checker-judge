@@ -617,6 +617,63 @@ func TestSimulateRejudge(t *testing.T) {
 	}
 }
 
+func TestRejudgeTwice(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName: "judge-test",
+		Status:    "Judging",
+		CaseResults: []*pb.SubmissionCaseResult{
+			{
+				Case:   "test00",
+				Status: "AC",
+				Time:   1.0,
+				Memory: 1,
+			},
+		},
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
+	}
+
+	if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+		Id: id,
+	}); err != nil {
+		t.Fatal("Failed to Rejudge:", err)
+	}
+
+	_, err = client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+		Id: id,
+	})
+
+	if err == nil {
+		t.Fatal("Success to Rejudge")
+	}
+	t.Log(err)
+}
+
 type tokenKey struct{}
 type loginCreds struct{}
 

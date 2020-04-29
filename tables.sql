@@ -32,7 +32,7 @@ create table submissions (
 create table tasks ( -- Between front and judge
   id serial primary key,
   priority int not null,
-  submission int not null
+  submission int not null unique
 );
 
 create table submission_testcase_results (
