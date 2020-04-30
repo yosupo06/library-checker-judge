@@ -147,6 +147,11 @@ func TestRejudge(t *testing.T) {
 	}
 	t.Log("submit ok ", id)
 	for i := 0; i < 3; i++ {
+		if i > 0 {
+			client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+				Id: id,
+			})
+		}
 		submission := runJudge(t, id)
 		overview := submission.Overview
 		checkStatus(t, submission, "AC")
