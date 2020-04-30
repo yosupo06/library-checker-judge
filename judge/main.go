@@ -20,6 +20,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
 
@@ -33,32 +34,6 @@ type Problem struct {
 	Timelimit float64
 	Testhash  string
 	Testzip   []byte
-}
-
-type Submission struct {
-	ID          int
-	ProblemName string
-	Problem     Problem `gorm:"foreignkey:ProblemName"`
-	Lang        string
-	UserName    string
-	Status      string
-	Source      string
-	Testhash    string
-	MaxTime     int
-	MaxMemory   int
-	JudgePing   time.Time
-}
-
-type Task struct {
-	Submission int
-}
-
-type SubmissionTestcaseResult struct {
-	Submission int
-	Testcase   string
-	Status     string
-	Time       int
-	Memory     int
 }
 
 var casesDir string
@@ -231,7 +206,7 @@ func execJudge(db *gorm.DB, submissionID int32) error {
 		SubmissionId: submissionID,
 		Status:       caseResult.Status,
 		Time:         caseResult.Time,
-		Memory:       int64(caseResult.Time),
+		Memory:       int64(caseResult.Memory),
 		CaseVersion:  caseVersion,
 	}); err != nil {
 		return err
@@ -247,54 +222,62 @@ func getEnv(key, defaultValue string) string {
 	return value
 }
 
-func gormConnect() *gorm.DB {
-	var sqlInfo struct {
-		PostgreHost string `toml:"postgre_host"`
-		PostgreUser string `toml:"postgre_user"`
-		PostgrePass string `toml:"postgre_pass"`
-	}
-	if _, err := toml.DecodeFile("./secret.toml", &sqlInfo); err != nil {
+var secretConfig struct {
+	PostgreHost string `toml:"postgre_host"`
+	PostgreUser string `toml:"postgre_user"`
+	PostgrePass string `toml:"postgre_pass"`
+	ApiHost     string `toml:"api_host"`
+	ApiUser     string `toml:"api_user"`
+	ApiPass     string `toml:"api_pass"`
+	Prod        bool   `toml:"use_ssl"`
+}
+
+func init() {
+	if _, err := toml.DecodeFile("./secret.toml", &secretConfig); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func gormConnect() *gorm.DB {
 	connStr := fmt.Sprintf(
 		"host=%s port=5432 user=%s dbname=librarychecker password=%s sslmode=disable",
-		sqlInfo.PostgreHost, sqlInfo.PostgreUser, sqlInfo.PostgrePass)
+		secretConfig.PostgreHost, secretConfig.PostgreUser, secretConfig.PostgrePass)
 
-	log.Println("Connected to DB:", sqlInfo.PostgreHost)
+	log.Println("Connected to DB:", secretConfig.PostgreHost)
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if !secretConfig.Prod {
+		db.LogMode(true)
+	}
+	db.AutoMigrate(Problem{})
 	return db
 }
 
-type tokenKey struct{}
-type loginCreds struct{}
+func initClient(conn *grpc.ClientConn) {
+	client = pb.NewLibraryCheckerServiceClient(conn)
+	ctx := context.Background()
+	resp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     secretConfig.ApiUser,
+		Password: secretConfig.ApiPass,
+	})
 
-func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	dict := map[string]string{}
-	if token, ok := ctx.Value(tokenKey{}).(string); ok && token != "" {
-		dict["authorization"] = "bearer " + token
+	if err != nil {
+		log.Fatal("Cannot login to API Server:", err)
 	}
-	return dict, nil
+	judgeCtx = clientutil.ContextWithToken(ctx, resp.Token)
+
+	judgeName, err = os.Hostname()
+	if err != nil {
+		log.Fatal("Cannot get hostname:", err)
+	}
+	log.Print("JudgeName: ", judgeName)
 }
 
-func (c *loginCreds) RequireTransportSecurity() bool {
-	return false
-}
-
-func apiConnect() (*grpc.ClientConn, pb.LibraryCheckerServiceClient, context.Context) {
-	var apiInfo struct {
-		ApiHost string `toml:"api_host"`
-		ApiUser string `toml:"api_user"`
-		ApiPass string `toml:"api_pass"`
-	}
-	if _, err := toml.DecodeFile("./secret.toml", &apiInfo); err != nil {
-		log.Fatal(err)
-	}
-
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{}), grpc.WithTimeout(10 * time.Second)}
-	if strings.HasPrefix(apiInfo.ApiHost, "localhost") {
+func apiConnect() *grpc.ClientConn {
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithTimeout(10 * time.Second)}
+	if !secretConfig.Prod {
 		log.Print("local mode")
 		options = append(options, grpc.WithInsecure())
 	} else {
@@ -307,24 +290,12 @@ func apiConnect() (*grpc.ClientConn, pb.LibraryCheckerServiceClient, context.Con
 		})
 		options = append(options, grpc.WithTransportCredentials(creds))
 	}
-	log.Printf("Connect to API host: %v", apiInfo.ApiHost)
-	conn, err := grpc.Dial(apiInfo.ApiHost, options...)
+	log.Printf("Connect to API host: %v", secretConfig.ApiHost)
+	conn, err := grpc.Dial(secretConfig.ApiHost, options...)
 	if err != nil {
 		log.Fatal("Cannot connect to the API server:", err)
 	}
-	client = pb.NewLibraryCheckerServiceClient(conn)
-	ctx := context.Background()
-	resp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     apiInfo.ApiUser,
-		Password: apiInfo.ApiPass,
-	})
-
-	if err != nil {
-		log.Fatal("Cannot login to API Server:", err)
-	}
-	judgeCtx = context.WithValue(ctx, tokenKey{}, resp.Token)
-
-	return conn, client, judgeCtx
+	return conn
 }
 
 func main() {
@@ -339,22 +310,13 @@ func main() {
 	// init DB
 	db := gormConnect()
 	defer db.Close()
-	db.AutoMigrate(Problem{})
-	db.AutoMigrate(Submission{})
-	db.AutoMigrate(Task{})
-	db.AutoMigrate(SubmissionTestcaseResult{})
-	// db.LogMode(true)
 
 	// init gRPC
-	var conn *grpc.ClientConn
-	conn, client, judgeCtx = apiConnect()
+	conn := apiConnect()
 	defer conn.Close()
+	initClient(conn)
 
-	judgeName, err = os.Hostname()
-	if err != nil {
-		log.Fatal("Cannot get hostname:", err)
-	}
-	log.Println("Start Pooling JudgeName:", judgeName)
+	log.Println("Start Pooling")
 	for {
 		task, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 			JudgeName: judgeName,

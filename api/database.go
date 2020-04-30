@@ -29,15 +29,15 @@ type User struct {
 
 // Submission is db table
 type Submission struct {
-	ID          int
+	ID          int32
 	ProblemName string
 	Problem     Problem `gorm:"foreignkey:ProblemName"`
 	Lang        string
 	Status      string
 	Source      string
 	Testhash    string
-	MaxTime     int
-	MaxMemory   int
+	MaxTime     int32
+	MaxMemory   int64
 	JudgePing   time.Time
 	JudgeName   string
 	JudgeTasked bool
@@ -47,20 +47,20 @@ type Submission struct {
 
 // SubmissionTestcaseResult is db table
 type SubmissionTestcaseResult struct {
-	Submission int
+	Submission int32
 	Testcase   string
 	Status     string
-	Time       int
-	Memory     int
+	Time       int32
+	Memory     int64
 }
 
 // Task is db table
 type Task struct {
-	Submission int
-	Priority   int
+	Submission int32
+	Priority   int32
 }
 
-func fetchSubmission(id int) (Submission, error) {
+func fetchSubmission(id int32) (Submission, error) {
 	sub := Submission{}
 	if err := db.
 		Preload("User", func(db *gorm.DB) *gorm.DB {
@@ -75,7 +75,7 @@ func fetchSubmission(id int) (Submission, error) {
 	return sub, nil
 }
 
-func updateSubmissionRegistration(id int, judgeName string, register bool) (bool, error) {
+func updateSubmissionRegistration(id int32, judgeName string, register bool) (bool, error) {
 	tx := db.Begin()
 	sub := Submission{}
 	if err := tx.First(&sub, id).Error; err != nil {

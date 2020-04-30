@@ -23,7 +23,7 @@ create table submissions (
   status varchar(32), -- AC, WA, TLE, WJ, ...
   testhash varchar(255),
   max_time int,
-  max_memory int,
+  max_memory bigint,
   judge_ping timestamp with time zone,
   judge_name varchar(255) not null,
   judge_tasked boolean not null
@@ -40,6 +40,6 @@ create table submission_testcase_results (
   testcase varchar(32), -- primary sub
   status varchar(32),
   time int,
-  memory int,
+  memory bigint,
   primary key(submission, testcase)
 );

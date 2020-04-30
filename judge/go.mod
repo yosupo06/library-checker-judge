@@ -3,6 +3,7 @@ module github.com/yosupo06/library-checker-judge/judge
 go 1.13
 
 require (
+	9fans.net/go v0.0.2
 	cloud.google.com/go v0.37.4 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

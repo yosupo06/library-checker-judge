@@ -207,7 +207,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 
 func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
 	var sub Submission
-	sub, err := fetchSubmission(int(in.Id))
+	sub, err := fetchSubmission(in.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 		return nil, errors.New("No permission")
 	}
 	task := Task{}
-	task.Submission = int(in.Id)
+	task.Submission = in.Id
 	task.Priority = 40
 	if err := db.Create(&task).Error; err != nil {
 		return nil, errors.New("Cannot insert into queue")
@@ -420,7 +420,7 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 	if in.JudgeName == "" {
 		return nil, errors.New("JudgeName is empty")
 	}
-	id := int(in.SubmissionId)
+	id := in.SubmissionId
 	ok, err := updateSubmissionRegistration(id, in.JudgeName, false)
 
 	if err != nil {
@@ -438,8 +438,8 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 			Submission: id,
 			Testcase:   testCase.Case,
 			Status:     testCase.Status,
-			Time:       int(testCase.Time * 1000),
-			Memory:     int(testCase.Memory),
+			Time:       int32(testCase.Time * 1000),
+			Memory:     testCase.Memory,
 		}).Error; err != nil {
 			log.Println(err)
 			return nil, errors.New("DB update failed")
@@ -449,8 +449,8 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 		ID: id,
 	}).Updates(&Submission{
 		Status:    in.Status,
-		MaxTime:   int(in.Time * 1000),
-		MaxMemory: int(in.Memory),
+		MaxTime:   int32(in.Time * 1000),
+		MaxMemory: in.Memory,
 	}).Error; err != nil {
 		return nil, errors.New("Update Status Failed")
 	}
@@ -464,7 +464,7 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 	if in.JudgeName == "" {
 		return nil, errors.New("JudgeName is empty")
 	}
-	id := int(in.SubmissionId)
+	id := in.SubmissionId
 	ok, err := updateSubmissionRegistration(id, in.JudgeName, false)
 
 	if err != nil {
@@ -481,8 +481,8 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 		ID: id,
 	}).Updates(&Submission{
 		Status:    in.Status,
-		MaxTime:   int(in.Time * 1000),
-		MaxMemory: int(in.Memory),
+		MaxTime:   int32(in.Time * 1000),
+		MaxMemory: in.Memory,
 	}).Error; err != nil {
 		return nil, errors.New("Update Status Failed")
 	}

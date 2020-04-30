@@ -3,32 +3,36 @@ package main
 import (
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	"github.com/yosupo06/library-checker-judge/api/clientutil"
+	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"google.golang.org/grpc"
 )
 
-func Submit(db *gorm.DB, problem, lang string, srcFile io.Reader) (int, error) {
+func Submit(t *testing.T, problem, lang string, srcFile io.Reader) int32 {
 	src, err := ioutil.ReadAll(srcFile)
 	if err != nil {
-		return -1, err
+		t.Fatal("Cannot read file:", err)
 	}
-	submission := Submission{
-		ProblemName: problem,
-		Lang:        lang,
-		Status:      "WJ",
-		Source:      string(src),
-		MaxTime:     -1,
-		MaxMemory:   -1,
-		UserName:    "tester",
+
+	resp, err := client.Submit(judgeCtx, &pb.SubmitRequest{
+		Problem: problem,
+		Lang:    lang,
+		Source:  string(src),
+	})
+	t.Log("Submit: ", resp.Id)
+
+	if err != nil {
+		t.Fatal("Submit Failed:", err)
 	}
-	if err = db.Create(&submission).Error; err != nil {
-		return -1, err
-	}
-	return submission.ID, nil
+	return resp.Id
 }
 
 var db *gorm.DB
@@ -45,17 +49,74 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure(), grpc.WithTimeout(3 * time.Second)}
+	conn, err := grpc.Dial("localhost:50051", options...)
+	if err != nil {
+		panic(err)
+	}
+	initClient(conn)
+	defer func() {
+		if err := conn.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
 	db = gormConnect()
 	db.AutoMigrate(Problem{})
-	db.AutoMigrate(Submission{})
-	db.AutoMigrate(Task{})
-	//db.LogMode(true)
+	db.LogMode(true)
 	defer func() {
 		if err := db.Close(); err != nil {
 			panic(err)
 		}
 	}()
+
 	os.Exit(m.Run())
+}
+
+func runJudge(t *testing.T, id int32) *pb.SubmissionInfoResponse {
+	task, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: judgeName,
+	})
+	if err != nil {
+		t.Fatal("PopJudgeTask error: ", err)
+	}
+	if task.SubmissionId != id {
+		t.Fatalf("Differ ID %v vs %v", task.SubmissionId, id)
+	}
+	log.Println("Start Judge:", id)
+	err = execJudge(db, id)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	resp, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
+		Id: id,
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	return resp
+}
+
+func checkStatus(t *testing.T, sub *pb.SubmissionInfoResponse, expect string) {
+	overview := sub.Overview
+
+	if overview.Status != expect {
+		t.Fatalf("Expect status %v, actual %v", expect, overview.Status)
+	}
+}
+
+func checkTime(t *testing.T, sub *pb.SubmissionInfoResponse, expectLower float64, expectUpper float64) {
+	overview := sub.Overview
+	if !(expectLower <= overview.Time && overview.Time <= expectUpper) {
+		t.Fatalf("Irregural consume time expect [%f, %f], actual %v", expectLower, expectUpper, overview.Time)
+	}
+}
+
+func checkMemory(t *testing.T, sub *pb.SubmissionInfoResponse, expectLower int64, expectUpper int64) {
+	overview := sub.Overview
+	if !(expectLower <= overview.Memory && overview.Memory <= expectUpper) {
+		t.Fatalf("Irregural consume time expect [%v, %v], actual %v", expectLower, expectUpper, overview.Time)
+	}
 }
 
 func TestSubmitAC(t *testing.T) {
@@ -63,34 +124,15 @@ func TestSubmitAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "cpp", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
-	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
-		t.Fatal("Irregural consume memory ", submission.MaxTime)
-	}
-	if submission.Testhash == "" {
-		t.Fatal("You forgot to set testhash")
+	id := Submit(t, "aplusb", "cpp", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	checkMemory(t, submission, 1, 10_000_000)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -99,35 +141,19 @@ func TestRejudge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "cpp", src)
+	id := Submit(t, "aplusb", "cpp", src)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log("submit ok ", id)
 	for i := 0; i < 3; i++ {
-		err = execJudge(db, Task{id})
-		if err != nil {
-			t.Fatal(err)
-		}
-		var submission Submission
-		if err = db.
-			Preload("Problem", func(db *gorm.DB) *gorm.DB {
-				return db.Select("name, title, testhash")
-			}).
-			Where("id = ?", id).Take(&submission).Error; err != nil {
-			t.Fatal(err)
-		}
-		if submission.Status != "AC" {
-			t.Fatal("Expect status AC, actual ", submission.Status)
-		}
-		if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
-			t.Fatal("Irregural consume time ", submission.MaxTime)
-		}
-		if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
-			t.Fatal("Irregural consume memory ", submission.MaxTime)
-		}
-		if submission.Testhash == "" {
-			t.Fatal("You forgot to set testhash")
+		submission := runJudge(t, id)
+		overview := submission.Overview
+		checkStatus(t, submission, "AC")
+		checkTime(t, submission, 0.001, 0.100)
+		checkMemory(t, submission, 1, 10_000_000)
+		if !overview.IsLatest {
+			t.Fatal("Not latest")
 		}
 	}
 }
@@ -137,29 +163,10 @@ func TestSubmitWA(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "cpp", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "WA" {
-		t.Fatal("Expect status WA, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
+	id := Submit(t, "aplusb", "cpp", src)
+	submission := runJudge(t, id)
+	checkStatus(t, submission, "WA")
+	checkTime(t, submission, 0.001, 0.100)
 }
 
 func TestSubmitTLE(t *testing.T) {
@@ -167,29 +174,10 @@ func TestSubmitTLE(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "cpp", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "TLE" {
-		t.Fatal("Expect status WA, actual ", submission.Status)
-	}
-	if !(1900 <= submission.MaxTime && submission.MaxTime <= 2100) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
+	id := Submit(t, "aplusb", "cpp", src)
+	submission := runJudge(t, id)
+	checkStatus(t, submission, "TLE")
+	checkTime(t, submission, 1900, 2100)
 }
 
 func TestSubmitRE(t *testing.T) {
@@ -197,52 +185,16 @@ func TestSubmitRE(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "cpp", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "RE" {
-		t.Fatal("Expect status WA, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
+	id := Submit(t, "aplusb", "cpp", src)
+	submission := runJudge(t, id)
+	checkStatus(t, submission, "RE")
+	checkTime(t, submission, 0.001, 0.100)
 }
 
 func TestSubmitCE(t *testing.T) {
-	id, err := Submit(db, "aplusb", "cpp", strings.NewReader("The answer is 42..."))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "CE" {
-		t.Fatal("Expect status CE, actual ", submission.Status)
-	}
+	id := Submit(t, "aplusb", "cpp", strings.NewReader("The answer is 42..."))
+	submission := runJudge(t, id)
+	checkStatus(t, submission, "CE")
 }
 
 func TestSubmitRustAC(t *testing.T) {
@@ -250,31 +202,15 @@ func TestSubmitRustAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "rust", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
-	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
-		t.Fatal("Irregural consume memory ", submission.MaxMemory)
+	id := Submit(t, "aplusb", "rust", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	checkMemory(t, submission, 1, 10_000_000)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -283,31 +219,15 @@ func TestSubmitHaskellAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "haskell", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
-	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 10_000_000) {
-		t.Fatal("Irregural consume memory ", submission.MaxMemory)
+	id := Submit(t, "aplusb", "haskell", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	checkMemory(t, submission, 1, 10_000_000)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -316,31 +236,15 @@ func TestSubmitCSharpAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "csharp", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 1000) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
-	}
-	if !(1 <= submission.MaxMemory && submission.MaxMemory <= 100_000_000) {
-		t.Fatal("Irregural consume memory ", submission.MaxMemory)
+	id := Submit(t, "aplusb", "csharp", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 1.000)
+	checkMemory(t, submission, 1, 100_000_000)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -349,28 +253,14 @@ func TestSubmitPythonAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "python3", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 500) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
+	id := Submit(t, "aplusb", "python3", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.500)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -379,28 +269,14 @@ func TestSubmitPyPyAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "pypy3", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 500) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
+	id := Submit(t, "aplusb", "python3", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.500)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -409,28 +285,14 @@ func TestSubmitDlangAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "d", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
-	}
-	if !(1 <= submission.MaxTime && submission.MaxTime <= 100) {
-		t.Fatal("Irregural consume time ", submission.MaxTime)
+	id := Submit(t, "aplusb", "d", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -439,25 +301,14 @@ func TestSubmitJavaAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "java", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
+	id := Submit(t, "aplusb", "java", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }
 
@@ -466,24 +317,13 @@ func TestSubmitGoAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id, err := Submit(db, "aplusb", "go", src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("submit ok ", id)
-	err = execJudge(db, Task{id})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var submission Submission
-	if err = db.
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).Take(&submission).Error; err != nil {
-		t.Fatal(err)
-	}
-	if submission.Status != "AC" {
-		t.Fatal("Expect status AC, actual ", submission.Status)
+	id := Submit(t, "aplusb", "go", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
 	}
 }

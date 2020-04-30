@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
 )
@@ -17,17 +18,24 @@ import (
 var client pb.LibraryCheckerServiceClient
 var judgeCtx context.Context
 
-func loginAsAdmin(t *testing.T) context.Context {
+func loginContext(t *testing.T, name string) context.Context {
 	ctx := context.Background()
 	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
+		Name:     name,
 		Password: "password",
 	})
 	if err != nil {
 		t.Fatal("Failed to Login")
 	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	return ctx
+	return clientutil.ContextWithToken(ctx, loginResp.Token)
+}
+
+func loginAsAdmin(t *testing.T) context.Context {
+	return loginContext(t, "admin")
+}
+
+func loginAsTester(t *testing.T) context.Context {
+	return loginContext(t, "tester")
 }
 
 func fetchSubmission(t *testing.T, id int32) *pb.SubmissionInfoResponse {
@@ -138,15 +146,7 @@ func TestAnonymousRejudge(t *testing.T) {
 }
 
 func TestAdmin(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	ctx := loginAsAdmin(t)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
 		t.Fatal("Failed UserInfo")
@@ -157,15 +157,7 @@ func TestAdmin(t *testing.T) {
 }
 
 func TestNotAdmin(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "tester",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	ctx := loginAsTester(t)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
 		t.Fatal("Failed UserInfo")
@@ -176,32 +168,16 @@ func TestNotAdmin(t *testing.T) {
 }
 
 func TestUserList(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	_, err = client.UserList(ctx, &pb.UserListRequest{})
+	ctx := loginAsAdmin(t)
+	_, err := client.UserList(ctx, &pb.UserListRequest{})
 	if err != nil {
 		t.Fatal("Failed UserList")
 	}
 }
 
 func TestNotAdminUserList(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "tester",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	_, err = client.UserList(ctx, &pb.UserListRequest{})
+	ctx := loginAsTester(t)
+	_, err := client.UserList(ctx, &pb.UserListRequest{})
 	if err == nil {
 		t.Fatal("Success UserList with tester")
 	}
@@ -217,28 +193,23 @@ func TestCreateUser(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to Register")
 	}
-	ctx = context.WithValue(ctx, tokenKey{}, resp.Token)
+	ctx = clientutil.ContextWithToken(ctx, resp.Token)
+	_, err = client.UserInfo(ctx, &pb.UserInfoRequest{})
+	if err != nil {
+		t.Fatal("Failed to UserInfo")
+	}
 }
 
 func TestChangeUserInfo(t *testing.T) {
 	// admin add bob
 	ctx := context.Background()
-
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	aliceCtx := context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	if err != nil {
-		t.Fatal("Failed to Login")
-	}
-
+	aliceCtx := loginAsAdmin(t)
 	bobName := uuid.New().String()
 	regResp, err := client.Register(ctx, &pb.RegisterRequest{
 		Name:     bobName,
 		Password: "password",
 	})
-	bobCtx := context.WithValue(ctx, tokenKey{}, regResp.Token)
+	bobCtx := clientutil.ContextWithToken(ctx, regResp.Token)
 	if err != nil {
 		t.Fatal("Failed to Register")
 	}
@@ -291,18 +262,9 @@ func TestChangeUserInfo(t *testing.T) {
 
 func TestChangeDummyUserInfo(t *testing.T) {
 	// admin add bob
-	ctx := context.Background()
+	ctx := loginAsAdmin(t)
 
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	if err != nil {
-		t.Fatal("Failed to Login")
-	}
-
-	_, err = client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
+	_, err := client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
 		User: &pb.User{
 			Name:    "this_is_dummy_user_name",
 			IsAdmin: true,
@@ -318,24 +280,17 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 	// admin add bob
 	ctx := context.Background()
 
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "tester",
-		Password: "password",
-	})
-	aliceCtx := context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	if err != nil {
-		t.Fatal("Failed to Login")
-	}
+	aliceCtx := loginAsTester(t)
 
 	bobName := uuid.New().String()
 	regResp, err := client.Register(ctx, &pb.RegisterRequest{
 		Name:     bobName,
 		Password: "password",
 	})
-	bobCtx := context.WithValue(ctx, tokenKey{}, regResp.Token)
 	if err != nil {
 		t.Fatal("Failed to Register")
 	}
+	bobCtx := clientutil.ContextWithToken(context.Background(), regResp.Token)
 
 	_, err = client.ChangeUserInfo(aliceCtx, &pb.ChangeUserInfoRequest{
 		User: &pb.User{
@@ -674,23 +629,8 @@ func TestRejudgeTwice(t *testing.T) {
 	t.Log(err)
 }
 
-type tokenKey struct{}
-type loginCreds struct{}
-
-func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	dict := map[string]string{}
-	if token, ok := ctx.Value(tokenKey{}).(string); ok && token != "" {
-		dict["authorization"] = "bearer " + token
-	}
-	return dict, nil
-}
-
-func (c *loginCreds) RequireTransportSecurity() bool {
-	return false
-}
-
 func TestMain(m *testing.M) {
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{}), grpc.WithInsecure(), grpc.WithTimeout(3 * time.Second)}
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure(), grpc.WithTimeout(3 * time.Second)}
 	conn, err := grpc.Dial("localhost:50051", options...)
 	if err != nil {
 		log.Fatal(err)
