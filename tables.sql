@@ -25,8 +25,7 @@ create table submissions (
   max_time int,
   max_memory bigint,
   judge_ping timestamp with time zone,
-  judge_name varchar(255) not null,
-  judge_tasked boolean not null
+  judge_name varchar(255) not null
 );
 
 create table tasks ( -- Between front and judge
