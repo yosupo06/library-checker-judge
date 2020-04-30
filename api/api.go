@@ -190,6 +190,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	}
 
 	if err := db.Create(&submission).Error; err != nil {
+		log.Print(err)
 		return nil, errors.New("Submit failed")
 	}
 
@@ -197,6 +198,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	task.Priority = 50
 	task.Submission = submission.ID
 	if err := db.Create(&task).Error; err != nil {
+		log.Print(err)
 		return nil, errors.New("Inserting to judge queue is failed")
 	}
 
