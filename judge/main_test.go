@@ -182,7 +182,7 @@ func TestSubmitTLE(t *testing.T) {
 	id := Submit(t, "aplusb", "cpp", src)
 	submission := runJudge(t, id)
 	checkStatus(t, submission, "TLE")
-	checkTime(t, submission, 1900, 2100)
+	checkTime(t, submission, 1.900, 2.100)
 }
 
 func TestSubmitRE(t *testing.T) {
@@ -311,7 +311,7 @@ func TestSubmitJavaAC(t *testing.T) {
 	overview := submission.Overview
 
 	checkStatus(t, submission, "AC")
-	checkTime(t, submission, 0.001, 0.100)
+	checkTime(t, submission, 0.001, 1.000)
 	if !overview.IsLatest {
 		t.Fatal("Not latest")
 	}
