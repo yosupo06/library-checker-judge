@@ -16,6 +16,11 @@ service LibraryCheckerService {
     rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
     rpc LangList (LangListRequest) returns (LangListResponse) {}
     rpc Ranking (RankingRequest) returns (RankingResponse) {}
+
+    // --- Judge ---
+    rpc PopJudgeTask (PopJudgeTaskRequest) returns (PopJudgeTaskResponse) {}
+    rpc SyncJudgeTaskStatus (SyncJudgeTaskStatusRequest) returns (SyncJudgeTaskStatusResponse) {}
+    rpc FinishJudgeTask (FinishJudgeTaskRequest) returns (FinishJudgeTaskResponse) {}
 }
 
 // --- Register, Login ---
@@ -79,7 +84,7 @@ message ProblemInfoRequest {
 message ProblemInfoResponse {
     string title = 1; // "A + B"
     string statement = 2;
-    double time_limit = 3; // 2.0 = 2 seconds    
+    double time_limit = 3; // 2.0 = 2 seconds   
 }
 
 // --- Submission ---
@@ -164,4 +169,36 @@ message RankingRequest {
 }
 message RankingResponse {
     repeated UserStatistics statistics = 1;
+}
+
+// --- Judge ---
+
+message PopJudgeTaskRequest {
+    string judge_name = 1;
+}
+
+message PopJudgeTaskResponse {
+    int32 submission_id = 1; // submission id
+}
+
+message SyncJudgeTaskStatusRequest {
+    string judge_name = 1;
+    int32 submission_id = 2;
+    string status = 3;
+    double time = 4; // 2.0 = 2 seconds
+    int64 memory = 5; // x bytes
+    repeated SubmissionCaseResult case_results = 6;
+}
+message SyncJudgeTaskStatusResponse {
+}
+
+message FinishJudgeTaskRequest {
+    string judge_name = 1;
+    int32 submission_id = 2;
+    string status = 3;
+    double time = 4; // 2.0 = 2 seconds
+    int64 memory = 5; // x bytes
+    string case_version = 6;
+}
+message FinishJudgeTaskResponse {
 }

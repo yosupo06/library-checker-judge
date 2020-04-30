@@ -1,4 +1,4 @@
-package main
+package main_test
 
 import (
 	"context"
@@ -7,15 +7,60 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
 )
 
 var client pb.LibraryCheckerServiceClient
+var judgeCtx context.Context
 
-type tokenKey struct{}
+func loginContext(t *testing.T, name string) context.Context {
+	ctx := context.Background()
+	loginResp, err := client.Login(ctx, &pb.LoginRequest{
+		Name:     name,
+		Password: "password",
+	})
+	if err != nil {
+		t.Fatal("Failed to Login")
+	}
+	return clientutil.ContextWithToken(ctx, loginResp.Token)
+}
+
+func loginAsAdmin(t *testing.T) context.Context {
+	return loginContext(t, "admin")
+}
+
+func loginAsTester(t *testing.T) context.Context {
+	return loginContext(t, "tester")
+}
+
+func fetchSubmission(t *testing.T, id int32) *pb.SubmissionInfoResponse {
+	ctx := context.Background()
+	resp, err := client.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{
+		Id: id,
+	})
+	if err != nil {
+		t.Fatalf("Failed to SubmissionInfo %d %d", id, err)
+	}
+	return resp
+}
+
+func assertEqualCases(t *testing.T, expectCases []*pb.SubmissionCaseResult, actualCases []*pb.SubmissionCaseResult) {
+	if len(actualCases) != len(expectCases) {
+		t.Fatal("Error CaseResults length differ", actualCases, expectCases)
+	}
+	for i := 0; i < len(actualCases); i++ {
+		expect := expectCases[i]
+		actual := actualCases[i]
+		if expect.Case != actual.Case || expect.Memory != actual.Memory || expect.Status != actual.Status || expect.Time != actual.Time {
+			t.Fatal("Case differ", expect, actual)
+		}
+	}
+}
 
 func TestProblemInfo(t *testing.T) {
 	ctx := context.Background()
@@ -101,15 +146,7 @@ func TestAnonymousRejudge(t *testing.T) {
 }
 
 func TestAdmin(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	ctx := loginAsAdmin(t)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
 		t.Fatal("Failed UserInfo")
@@ -120,15 +157,7 @@ func TestAdmin(t *testing.T) {
 }
 
 func TestNotAdmin(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "tester",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
+	ctx := loginAsTester(t)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
 		t.Fatal("Failed UserInfo")
@@ -139,32 +168,16 @@ func TestNotAdmin(t *testing.T) {
 }
 
 func TestUserList(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	_, err = client.UserList(ctx, &pb.UserListRequest{})
+	ctx := loginAsAdmin(t)
+	_, err := client.UserList(ctx, &pb.UserListRequest{})
 	if err != nil {
 		t.Fatal("Failed UserList")
 	}
 }
 
 func TestNotAdminUserList(t *testing.T) {
-	ctx := context.Background()
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "tester",
-		Password: "password",
-	})
-	if err != nil {
-		t.Fatal("Failed to login")
-	}
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	_, err = client.UserList(ctx, &pb.UserListRequest{})
+	ctx := loginAsTester(t)
+	_, err := client.UserList(ctx, &pb.UserListRequest{})
 	if err == nil {
 		t.Fatal("Success UserList with tester")
 	}
@@ -180,28 +193,23 @@ func TestCreateUser(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to Register")
 	}
-	ctx = context.WithValue(ctx, tokenKey{}, resp.Token)
+	ctx = clientutil.ContextWithToken(ctx, resp.Token)
+	_, err = client.UserInfo(ctx, &pb.UserInfoRequest{})
+	if err != nil {
+		t.Fatal("Failed to UserInfo")
+	}
 }
 
 func TestChangeUserInfo(t *testing.T) {
 	// admin add bob
 	ctx := context.Background()
-
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	aliceCtx := context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	if err != nil {
-		t.Fatal("Failed to Login")
-	}
-
+	aliceCtx := loginAsAdmin(t)
 	bobName := uuid.New().String()
 	regResp, err := client.Register(ctx, &pb.RegisterRequest{
 		Name:     bobName,
 		Password: "password",
 	})
-	bobCtx := context.WithValue(ctx, tokenKey{}, regResp.Token)
+	bobCtx := clientutil.ContextWithToken(ctx, regResp.Token)
 	if err != nil {
 		t.Fatal("Failed to Register")
 	}
@@ -254,18 +262,9 @@ func TestChangeUserInfo(t *testing.T) {
 
 func TestChangeDummyUserInfo(t *testing.T) {
 	// admin add bob
-	ctx := context.Background()
+	ctx := loginAsAdmin(t)
 
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "admin",
-		Password: "password",
-	})
-	ctx = context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	if err != nil {
-		t.Fatal("Failed to Login")
-	}
-
-	_, err = client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
+	_, err := client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
 		User: &pb.User{
 			Name:    "this_is_dummy_user_name",
 			IsAdmin: true,
@@ -281,24 +280,17 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 	// admin add bob
 	ctx := context.Background()
 
-	loginResp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     "tester",
-		Password: "password",
-	})
-	aliceCtx := context.WithValue(ctx, tokenKey{}, loginResp.Token)
-	if err != nil {
-		t.Fatal("Failed to Login")
-	}
+	aliceCtx := loginAsTester(t)
 
 	bobName := uuid.New().String()
 	regResp, err := client.Register(ctx, &pb.RegisterRequest{
 		Name:     bobName,
 		Password: "password",
 	})
-	bobCtx := context.WithValue(ctx, tokenKey{}, regResp.Token)
 	if err != nil {
 		t.Fatal("Failed to Register")
 	}
+	bobCtx := clientutil.ContextWithToken(context.Background(), regResp.Token)
 
 	_, err = client.ChangeUserInfo(aliceCtx, &pb.ChangeUserInfoRequest{
 		User: &pb.User{
@@ -319,22 +311,326 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 	}
 }
 
-type loginCreds struct{}
-
-func (c *loginCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
-	dict := map[string]string{}
-	if token, ok := ctx.Value(tokenKey{}).(string); ok && token != "" {
-		dict["authorization"] = "bearer " + token
+func clearTask(t *testing.T) {
+	ctx := loginAsAdmin(t)
+	for {
+		task, err := client.PopJudgeTask(ctx, &pb.PopJudgeTaskRequest{
+			JudgeName: "judge-dummy",
+		})
+		if err != nil {
+			t.Fatal("Failed PopJudgeTask: ", err)
+		}
+		if task.SubmissionId == -1 {
+			break
+		}
+		t.Log("Pop Task: ", task.SubmissionId)
 	}
-	return dict, nil
+	t.Log("Clean Tasks")
 }
 
-func (c *loginCreds) RequireTransportSecurity() bool {
-	return false
+func submitSomething(t *testing.T) int32 {
+	ctx := context.Background()
+	src := "this is a test source"
+	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: "aplusb",
+		Source:  src,
+		Lang:    "cpp",
+	})
+	id := submitResp.Id
+	if err != nil {
+		t.Fatal("Failed to submit:", err)
+	}
+	t.Log("Submit: ", id)
+	return id
+}
+
+func TestOtherJudge(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-other",
+		Status:       "Judging",
+		SubmissionId: id,
+	})
+	if err == nil {
+		t.Fatal("Success to SyncJudgeTaskStatus")
+	}
+	t.Log(err)
+}
+
+func TestJudgeSyncAfterFinished(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	_, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+	})
+
+	if err != nil {
+		t.Fatal("JudgeSync Failed:", err)
+	}
+
+	_, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+	})
+	if err == nil {
+		t.Fatal("Success to FinishJudgeTask Twice")
+	}
+	t.Log(err)
+	_, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+	})
+	if err == nil {
+		t.Fatal("Success to SyncJudgeTaskStatus after finished")
+	}
+	t.Log(err)
+}
+
+func TestSimulateJudge(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	cases := []*pb.SubmissionCaseResult{
+		{
+			Case:   "test00",
+			Status: "AC",
+			Time:   1.0,
+			Memory: 1,
+		},
+		{
+			Case:   "test01",
+			Status: "WA",
+			Time:   1.0,
+			Memory: 1,
+		},
+		{
+			Case:   "test02",
+			Status: "TLE",
+			Time:   1.0,
+			Memory: 1,
+		},
+	}
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-test",
+		Status:       "Judging",
+		CaseResults:  cases[0:2],
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	sub := fetchSubmission(t, id)
+	if sub.Overview.Status != "Judging" {
+		t.Fatal("Status is not changed: ", sub.Overview.Status)
+	}
+	assertEqualCases(t, cases[0:2], sub.CaseResults)
+
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName:    "judge-test",
+		Status:       "TLE",
+		Time:         1.234,
+		Memory:       5678,
+		CaseResults:  cases[2:3],
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	sub = fetchSubmission(t, id)
+	if sub.Overview.Status != "TLE" {
+		t.Fatal("Status is not changed")
+	}
+	if math.Abs(sub.Overview.Time-1.234) >= 0.00001 {
+		t.Fatal("Time is not changed:", sub.Overview.Time)
+	}
+	if sub.Overview.Memory != 5678 {
+		t.Fatal("Memory is not changed")
+	}
+	assertEqualCases(t, cases[0:3], sub.CaseResults)
+
+	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "TLE",
+		Time:         2.345,
+		Memory:       6789,
+		SubmissionId: id,
+		CaseVersion:  "test-version",
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	sub = fetchSubmission(t, id)
+	if sub.Overview.Status != "TLE" {
+		t.Fatal("Status is not changed")
+	}
+	if math.Abs(sub.Overview.Time-2.345) >= 0.00001 {
+		t.Fatal("Time is not changed:", sub.Overview.Time)
+	}
+	if sub.Overview.Memory != 6789 {
+		t.Fatal("Memory is not changed")
+	}
+}
+
+func TestSimulateRejudge(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+
+	for i := 0; i < 3; i++ {
+		log.Printf("Start %v/3", i+1)
+		if i > 0 {
+			if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+				Id: id,
+			}); err != nil {
+				t.Fatal("Failed to Rejudge:", err)
+			}
+		}
+		resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+			JudgeName: "judge-test",
+		})
+		if err != nil {
+			t.Fatal("Failed to PopJudgeTask:", err)
+		}
+
+		if id != resp.SubmissionId {
+			t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+		}
+
+		if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+			JudgeName: "judge-test",
+			Status:    "Judging",
+			CaseResults: []*pb.SubmissionCaseResult{
+				{
+					Case:   "test00",
+					Status: "AC",
+					Time:   1.0,
+					Memory: 1,
+				},
+			},
+			SubmissionId: id,
+		}); err != nil {
+			t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+		}
+
+		if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+			JudgeName:    "judge-test",
+			Status:       "AC",
+			SubmissionId: id,
+		}); err != nil {
+			t.Fatal("Failed to FinishJudgeTaskStatus:", err)
+		}
+	}
+}
+
+func TestRejudgeTwice(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName: "judge-test",
+		Status:    "Judging",
+		CaseResults: []*pb.SubmissionCaseResult{
+			{
+				Case:   "test00",
+				Status: "AC",
+				Time:   1.0,
+				Memory: 1,
+			},
+		},
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
+	}
+
+	if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+		Id: id,
+	}); err != nil {
+		t.Fatal("Failed to Rejudge:", err)
+	}
+
+	_, err = client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+		Id: id,
+	})
+
+	if err == nil {
+		t.Fatal("Success to Rejudge")
+	}
+	t.Log(err)
 }
 
 func TestMain(m *testing.M) {
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&loginCreds{}), grpc.WithInsecure()}
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure(), grpc.WithTimeout(3 * time.Second)}
 	conn, err := grpc.Dial("localhost:50051", options...)
 	if err != nil {
 		log.Fatal(err)

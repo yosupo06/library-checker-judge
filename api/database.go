@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -28,32 +29,82 @@ type User struct {
 
 // Submission is db table
 type Submission struct {
-	ID          int
+	ID          int32
 	ProblemName string
 	Problem     Problem `gorm:"foreignkey:ProblemName"`
 	Lang        string
 	Status      string
 	Source      string
 	Testhash    string
-	MaxTime     int
-	MaxMemory   int
+	MaxTime     int32
+	MaxMemory   int64
 	JudgePing   time.Time
+	JudgeName   string
+	JudgeTasked bool
 	UserName    sql.NullString
 	User        User `gorm:"foreignkey:UserName"`
 }
 
 // SubmissionTestcaseResult is db table
 type SubmissionTestcaseResult struct {
-	Submission int
+	Submission int32
 	Testcase   string
 	Status     string
-	Time       int
-	Memory     int
+	Time       int32
+	Memory     int64
 }
 
 // Task is db table
 type Task struct {
-	Submission int
+	Submission int32
+	Priority   int32
+}
+
+func fetchSubmission(id int32) (Submission, error) {
+	sub := Submission{}
+	if err := db.
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name")
+		}).
+		Preload("Problem", func(db *gorm.DB) *gorm.DB {
+			return db.Select("name, title, testhash")
+		}).
+		Where("id = ?", id).First(&sub).Error; err != nil {
+		return Submission{}, errors.New("Submission fetch failed")
+	}
+	return sub, nil
+}
+
+func updateSubmissionRegistration(id int32, judgeName string, register bool) (bool, error) {
+	tx := db.Begin()
+	sub := Submission{}
+	if err := tx.First(&sub, id).Error; err != nil {
+		tx.Rollback()
+		log.Print(err)
+		return false, errors.New("Submission fetch failed")
+	}
+	registered := sub.JudgeName != "" && sub.JudgePing.Add(time.Minute).After(time.Now())
+	if registered && sub.JudgeName != judgeName {
+		tx.Rollback()
+		return false, tx.Rollback().Error
+	}
+	myself := registered && sub.JudgeName == judgeName
+	if !register && !myself {
+		return false, tx.Rollback().Error
+	}
+	if err := tx.Model(&sub).Updates(map[string]interface{}{
+		"judge_name": judgeName,
+		"judge_ping": time.Now(),
+	}).Error; err != nil {
+		tx.Rollback()
+		log.Print(err)
+		return false, errors.New("Submission update failed")
+	}
+	if err := tx.Commit().Error; err != nil {
+		log.Print(err)
+		return false, errors.New("Transaction commit failed")
+	}
+	return true, nil
 }
 
 func dbConnect() *gorm.DB {
