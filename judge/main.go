@@ -229,7 +229,7 @@ var secretConfig struct {
 	ApiHost     string `toml:"api_host"`
 	ApiUser     string `toml:"api_user"`
 	ApiPass     string `toml:"api_pass"`
-	Prod        bool   `toml:"use_ssl"`
+	Prod        bool   `toml:"prod"`
 }
 
 func init() {
