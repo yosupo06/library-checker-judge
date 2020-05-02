@@ -34,6 +34,7 @@
 [[category]]
     name = 'Graph'
     problems = [
+        'shortest_path',
         'lca',
         'scc',
         'two_edge_connected_components',
@@ -67,6 +68,7 @@
         'stirling_number_of_the_second_kind',
         'bernoulli_number',
         'partition_function',
+        'polynomial_taylor_shift',
         'montmort_number_mod',
         'sum_of_totient_function',
         'sum_of_exponential_times_polynomial',
