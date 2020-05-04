@@ -64,6 +64,7 @@
         'log_of_formal_power_series',
         'pow_of_formal_power_series',
         'sqrt_of_formal_power_series',
+        'inv_of_polynomials',
         'stirling_number_of_the_first_kind',
         'stirling_number_of_the_second_kind',
         'bernoulli_number',
