@@ -45,7 +45,8 @@
         'directedmst',
         'manhattanmst',
         'dominatortree',
-        'maximum_independent_set'
+        'maximum_independent_set',
+        'enumerate_triangles',
     ]
 
 [[category]]
