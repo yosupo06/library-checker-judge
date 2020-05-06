@@ -322,12 +322,12 @@ func main() {
 			JudgeName: judgeName,
 		})
 		if err != nil {
-			time.Sleep(1 * time.Second)
+			time.Sleep(3 * time.Second)
 			log.Print("PopJudgeTask error: ", err)
 			continue
 		}
 		if task.SubmissionId == -1 {
-			time.Sleep(1 * time.Second)
+			time.Sleep(3 * time.Second)
 			continue
 		}
 		log.Println("Start Judge:", task.SubmissionId)
