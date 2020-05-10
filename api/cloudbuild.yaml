@@ -25,5 +25,6 @@ steps:
       - --allow-unauthenticated
       - --add-cloudsql-instances=library-checker-sql
       - --set-env-vars=POSTGRE_HOST=${_POSTGRE_HOST},POSTGRE_PASS=${_POSTGRE_PASS},HMAC_SECRET=${_HMAC_SECRET}
+      - --max-instances=2
 
 timeout: 1800s

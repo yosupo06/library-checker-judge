@@ -230,6 +230,8 @@ func dbConnect() *gorm.DB {
 		db.AutoMigrate(SubmissionTestcaseResult{})
 		db.AutoMigrate(Task{})
 		db.BlockGlobalUpdate(true)
+		db.DB().SetMaxOpenConns(10)
+		db.DB().SetConnMaxLifetime(time.Hour)
 		return db
 	}
 	log.Fatal("Cannot connect db 3 times")
