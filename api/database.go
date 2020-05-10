@@ -180,7 +180,7 @@ func (status RegistrationStatus) String() string {
 func updateSubmissionRegistration(id int32, judgeName string, expiration time.Duration) (RegistrationStatus, error) {
 	tx := db.Begin()
 	sub := Submission{}
-	if err := tx.First(&sub, id).Error; err != nil {
+	if err := tx.Set("gorm:query_option", "FOR UPDATE").Take(&sub, id).Error; err != nil {
 		tx.Rollback()
 		log.Print(err)
 		return Undefined, errors.New("Submission fetch failed")
