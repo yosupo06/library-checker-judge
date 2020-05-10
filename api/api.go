@@ -380,13 +380,14 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 				SubmissionId: -1,
 			}, nil
 		}
-		log.Println("Pop Submission:", task.Submission)
 		id := task.Submission
 
 		expectedTime, err := ptypes.Duration(in.ExpectedTime)
 		if err != nil {
 			expectedTime = time.Minute
 		}
+		log.Println("Pop Submission:", id, expectedTime)
+
 		status, err := updateSubmissionRegistration(id, in.JudgeName, expectedTime)
 		if err != nil {
 			log.Print(err)

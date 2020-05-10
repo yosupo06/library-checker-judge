@@ -78,6 +78,7 @@ func fetchSubmission(id int32) (Submission, error) {
 }
 
 func pushTask(task Task) error {
+	log.Print("Insert task:", task)
 	if err := db.Create(&task).Error; err != nil {
 		log.Print(err)
 		return errors.New("Cannot insert into queue")
