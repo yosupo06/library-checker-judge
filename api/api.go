@@ -370,48 +370,52 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 	if in.JudgeName == "" {
 		return nil, errors.New("JudgeName is empty")
 	}
-	task, err := popTask()
-	if err != nil {
-		return nil, err
-	}
-	if task.Submission == -1 {
+	for i := 0; i < 10; i++ {
+		task, err := popTask()
+		if err != nil {
+			return nil, err
+		}
+		if task.Submission == -1 {
+			return &pb.PopJudgeTaskResponse{
+				SubmissionId: -1,
+			}, nil
+		}
+		log.Println("Pop Submission:", task.Submission)
+		id := task.Submission
+
+		expectedTime, err := ptypes.Duration(in.ExpectedTime)
+		if err != nil {
+			expectedTime = time.Minute
+		}
+		status, err := updateSubmissionRegistration(id, in.JudgeName, expectedTime)
+		if err != nil {
+			return nil, err
+		}
+		if status != Finished {
+			pushTask(Task{
+				Submission: id,
+				Priority:   task.Priority,
+				Available:  time.Now().Add(expectedTime),
+			})
+		}
+		if status != Register && status != Update {
+			log.Print("Invalid Status: ", status)
+			continue
+		}
+
+		log.Println("Clear SubmissionTestcaseResults")
+		if err := db.Where("submission = ?", id).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
+			log.Println(err)
+			return nil, errors.New("Failed to clear submission testcase results")
+		}
+
 		return &pb.PopJudgeTaskResponse{
-			SubmissionId: -1,
+			SubmissionId: int32(task.Submission),
 		}, nil
 	}
-	log.Println("Pop Submission:", task.Submission)
-	id := task.Submission
-
-	expectedTime, err := ptypes.Duration(in.ExpectedTime)
-	if err != nil {
-		expectedTime = time.Minute
-	}
-	status, err := updateSubmissionRegistration(id, in.JudgeName, expectedTime)
-	if err != nil {
-		return nil, err
-	}
-	if status != Finished {
-		pushTask(Task{
-			Submission: id,
-			Priority:   task.Priority,
-			Available:  time.Now().Add(expectedTime),
-		})
-	}
-	if status != Register && status != Update {
-		log.Print("Invalid Status: ", status)
-		return &pb.PopJudgeTaskResponse{
-			SubmissionId: -1,
-		}, nil
-	}
-
-	log.Println("Clear SubmissionTestcaseResults")
-	if err := db.Where("submission = ?", id).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
-		log.Println(err)
-		return nil, errors.New("Failed to clear submission testcase results")
-	}
-
+	log.Println("Too many invalid tasks")
 	return &pb.PopJudgeTaskResponse{
-		SubmissionId: int32(task.Submission),
+		SubmissionId: -1,
 	}, nil
 }
 
