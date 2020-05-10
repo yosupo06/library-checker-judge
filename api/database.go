@@ -56,6 +56,7 @@ type SubmissionTestcaseResult struct {
 
 // Task is db table
 type Task struct {
+	ID         int32
 	Submission int32
 	Priority   int32
 	Available  time.Time
@@ -82,6 +83,18 @@ func pushTask(task Task) error {
 		return errors.New("Cannot insert into queue")
 	}
 	return nil
+}
+
+func clearAllTasks() error {
+	for {
+		task := Task{}
+		if err := db.Take(&task).Error; gorm.IsRecordNotFoundError(err) {
+			return nil
+		}
+		if err := db.Delete(task).Error; err != nil {
+			return err
+		}
+	}
 }
 
 func popTask() (Task, error) {
@@ -216,6 +229,7 @@ func dbConnect() *gorm.DB {
 		db.AutoMigrate(Submission{})
 		db.AutoMigrate(SubmissionTestcaseResult{})
 		db.AutoMigrate(Task{})
+		db.BlockGlobalUpdate(true)
 		return db
 	}
 	log.Fatal("Cannot connect db 3 times")

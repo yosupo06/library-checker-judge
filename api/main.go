@@ -60,8 +60,7 @@ func issueToken(name string) (string, error) {
 
 var langs = []*pb.Lang{}
 
-// LoadLangsToml load langs.toml
-func LoadLangsToml(tomlPath string) {
+func init() {
 	var tomlData struct {
 		Langs []struct {
 			ID      string `toml:"id"`
@@ -69,7 +68,7 @@ func LoadLangsToml(tomlPath string) {
 			Version string `toml:"version"`
 		}
 	}
-	if _, err := toml.DecodeFile(tomlPath, &tomlData); err != nil {
+	if _, err := toml.DecodeFile("./langs.toml", &tomlData); err != nil {
 		log.Fatal(err)
 	}
 	for _, lang := range tomlData.Langs {
@@ -98,7 +97,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	LoadLangsToml("./langs.toml")
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})
