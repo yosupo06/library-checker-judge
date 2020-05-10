@@ -56,8 +56,10 @@ type SubmissionTestcaseResult struct {
 
 // Task is db table
 type Task struct {
+	ID         int32
 	Submission int32
 	Priority   int32
+	Available  time.Time
 }
 
 func fetchSubmission(id int32) (Submission, error) {
@@ -75,36 +77,134 @@ func fetchSubmission(id int32) (Submission, error) {
 	return sub, nil
 }
 
-func updateSubmissionRegistration(id int32, judgeName string, register bool) (bool, error) {
+func pushTask(task Task) error {
+	if err := db.Create(&task).Error; err != nil {
+		log.Print(err)
+		return errors.New("Cannot insert into queue")
+	}
+	return nil
+}
+
+func clearAllTasks() error {
+	for {
+		task := Task{}
+		if err := db.Take(&task).Error; gorm.IsRecordNotFoundError(err) {
+			return nil
+		}
+		if err := db.Delete(task).Error; err != nil {
+			return err
+		}
+	}
+}
+
+func popTask() (Task, error) {
+	tx := db.Begin()
+	task := Task{}
+	err := tx.Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
+	if gorm.IsRecordNotFoundError(err) {
+		return Task{Submission: -1}, tx.Rollback().Error
+	}
+	if err != nil {
+		log.Print(err)
+		tx.Rollback()
+		return Task{}, errors.New("Connection to db failed")
+	}
+	tx.Delete(task)
+	if err := tx.Commit().Error; err != nil {
+		log.Print(err)
+		return Task{}, errors.New("Commit to db failed")
+	}
+	return task, nil
+}
+
+func toWaitingJudge(id int32, priority int32, after time.Duration) error {
+	_, err := fetchSubmission(id)
+	if err != nil {
+		return err
+	}
+	if err := db.Model(&Submission{
+		ID: id,
+	}).Updates(map[string]interface{}{
+		"judge_name": "#dummy",
+		"judge_ping": time.UnixDate,
+	}).Error; err != nil {
+		log.Print(err)
+		return errors.New("Failed to clear judge_name")
+	}
+	if err := pushTask(Task{
+		Submission: id,
+		Available:  time.Now().Add(after),
+		Priority:   priority,
+	}); err != nil {
+		return errors.New("Cannot insert into queue")
+	}
+	return nil
+}
+
+type RegistrationStatus int
+
+const (
+	Undefined RegistrationStatus = iota
+	Register                     // WJに自分が登録
+	Update                       // 自分のRegisterを延長
+	OverWrite                    // 他がジャッジだけど放置されてたので上書き
+	Occupied                     // 他がジャッジ中
+	Finished                     // WJではない
+)
+
+func (status RegistrationStatus) String() string {
+	switch status {
+	case Undefined:
+		return "Undefined"
+	case Register:
+		return "Register"
+	case Update:
+		return "Update"
+	case OverWrite:
+		return "OverWrite"
+	case Occupied:
+		return "Occupied"
+	case Finished:
+		return "Finished"
+	default:
+		return "Unknown"
+	}
+}
+
+func updateSubmissionRegistration(id int32, judgeName string, expiration time.Duration) (RegistrationStatus, error) {
 	tx := db.Begin()
 	sub := Submission{}
 	if err := tx.First(&sub, id).Error; err != nil {
 		tx.Rollback()
 		log.Print(err)
-		return false, errors.New("Submission fetch failed")
+		return Undefined, errors.New("Submission fetch failed")
 	}
-	registered := sub.JudgeName != "" && sub.JudgePing.Add(time.Minute).After(time.Now())
+	if sub.JudgeName == "" {
+		return Finished, nil
+	}
+	now := time.Now()
+	registered := sub.JudgeName != "" && sub.JudgePing.After(now)
 	if registered && sub.JudgeName != judgeName {
 		tx.Rollback()
-		return false, tx.Rollback().Error
+		return Occupied, tx.Rollback().Error
 	}
 	myself := registered && sub.JudgeName == judgeName
-	if !register && !myself {
-		return false, tx.Rollback().Error
-	}
 	if err := tx.Model(&sub).Updates(map[string]interface{}{
 		"judge_name": judgeName,
-		"judge_ping": time.Now(),
+		"judge_ping": now.Add(expiration),
 	}).Error; err != nil {
 		tx.Rollback()
 		log.Print(err)
-		return false, errors.New("Submission update failed")
+		return Undefined, errors.New("Submission update failed")
 	}
 	if err := tx.Commit().Error; err != nil {
 		log.Print(err)
-		return false, errors.New("Transaction commit failed")
+		return Undefined, errors.New("Transaction commit failed")
 	}
-	return true, nil
+	if myself {
+		return Update, nil
+	}
+	return Register, nil
 }
 
 func dbConnect() *gorm.DB {
@@ -129,6 +229,7 @@ func dbConnect() *gorm.DB {
 		db.AutoMigrate(Submission{})
 		db.AutoMigrate(SubmissionTestcaseResult{})
 		db.AutoMigrate(Task{})
+		db.BlockGlobalUpdate(true)
 		return db
 	}
 	log.Fatal("Cannot connect db 3 times")

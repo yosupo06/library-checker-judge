@@ -1,15 +1,18 @@
-package main_test
+package main
 
 import (
 	"context"
 	"log"
 	"math"
+	"net"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/google/uuid"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
@@ -38,7 +41,7 @@ func loginAsTester(t *testing.T) context.Context {
 	return loginContext(t, "tester")
 }
 
-func fetchSubmission(t *testing.T, id int32) *pb.SubmissionInfoResponse {
+func testFetchSubmission(t *testing.T, id int32) *pb.SubmissionInfoResponse {
 	ctx := context.Background()
 	resp, err := client.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{
 		Id: id,
@@ -312,20 +315,10 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 }
 
 func clearTask(t *testing.T) {
-	ctx := loginAsAdmin(t)
-	for {
-		task, err := client.PopJudgeTask(ctx, &pb.PopJudgeTaskRequest{
-			JudgeName: "judge-dummy",
-		})
-		if err != nil {
-			t.Fatal("Failed PopJudgeTask: ", err)
-		}
-		if task.SubmissionId == -1 {
-			break
-		}
-		t.Log("Pop Task: ", task.SubmissionId)
+	if err := clearAllTasks(); err != nil {
+		t.Fatal(err)
 	}
-	t.Log("Clean Tasks")
+	t.Log("Clear all tasks")
 }
 
 func submitSomething(t *testing.T) int32 {
@@ -464,7 +457,7 @@ func TestSimulateJudge(t *testing.T) {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
 
-	sub := fetchSubmission(t, id)
+	sub := testFetchSubmission(t, id)
 	if sub.Overview.Status != "Judging" {
 		t.Fatal("Status is not changed: ", sub.Overview.Status)
 	}
@@ -485,7 +478,7 @@ func TestSimulateJudge(t *testing.T) {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
 
-	sub = fetchSubmission(t, id)
+	sub = testFetchSubmission(t, id)
 	if sub.Overview.Status != "TLE" {
 		t.Fatal("Status is not changed")
 	}
@@ -508,7 +501,7 @@ func TestSimulateJudge(t *testing.T) {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
 
-	sub = fetchSubmission(t, id)
+	sub = testFetchSubmission(t, id)
 	if sub.Overview.Status != "TLE" {
 		t.Fatal("Status is not changed")
 	}
@@ -572,66 +565,51 @@ func TestSimulateRejudge(t *testing.T) {
 	}
 }
 
-func TestRejudgeTwice(t *testing.T) {
+func TestSimulateJudgeDown(t *testing.T) {
 	clearTask(t)
 
 	judgeCtx := loginAsAdmin(t)
 	id := submitSomething(t)
 
-	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
-		JudgeName: "judge-test",
-	})
-	if err != nil {
-		t.Fatal("Failed to PopJudgeTask:", err)
+	for i := 0; i < 3; i++ {
+		log.Printf("Start %v/3", i+1)
+		resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+			JudgeName:    "judge-test",
+			ExpectedTime: ptypes.DurationProto(2 * time.Second),
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		if id != resp.SubmissionId {
+			t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+		}
+		time.Sleep(time.Second * 4)
 	}
-
-	if id != resp.SubmissionId {
-		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
-	}
-
-	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
-		JudgeName: "judge-test",
-		Status:    "Judging",
-		CaseResults: []*pb.SubmissionCaseResult{
-			{
-				Case:   "test00",
-				Status: "AC",
-				Time:   1.0,
-				Memory: 1,
-			},
-		},
-		SubmissionId: id,
-	}); err != nil {
-		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
-	}
-
-	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
-		JudgeName:    "judge-test",
-		Status:       "AC",
-		SubmissionId: id,
-	}); err != nil {
-		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
-	}
-
-	if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
-		Id: id,
-	}); err != nil {
-		t.Fatal("Failed to Rejudge:", err)
-	}
-
-	_, err = client.Rejudge(judgeCtx, &pb.RejudgeRequest{
-		Id: id,
-	})
-
-	if err == nil {
-		t.Fatal("Success to Rejudge")
-	}
-	t.Log(err)
 }
 
 func TestMain(m *testing.M) {
+	// connect db
+	db = dbConnect()
+	defer db.Close()
+	db.LogMode(true)
+
+	// launch gRPC server
+	port := getEnv("PORT", "50052")
+	listen, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
+	pb.RegisterLibraryCheckerServiceServer(s, &server{})
+	go func() {
+		if err := s.Serve(listen); err != nil {
+			log.Fatal("Server exited: ", err)
+		}
+	}()
+
 	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure(), grpc.WithTimeout(3 * time.Second)}
-	conn, err := grpc.Dial("localhost:50051", options...)
+	conn, err := grpc.Dial("localhost:50052", options...)
 	if err != nil {
 		log.Fatal(err)
 	}

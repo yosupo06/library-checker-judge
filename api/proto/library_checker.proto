@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/duration.proto";
+
 package librarychecker;
 
 service LibraryCheckerService {
@@ -175,6 +177,7 @@ message RankingResponse {
 
 message PopJudgeTaskRequest {
     string judge_name = 1;
+    google.protobuf.Duration expected_time = 2;
 }
 
 message PopJudgeTaskResponse {
@@ -188,6 +191,7 @@ message SyncJudgeTaskStatusRequest {
     double time = 4; // 2.0 = 2 seconds
     int64 memory = 5; // x bytes
     repeated SubmissionCaseResult case_results = 6;
+    google.protobuf.Duration expected_time = 7;
 }
 message SyncJudgeTaskStatusResponse {
 }
@@ -195,9 +199,9 @@ message SyncJudgeTaskStatusResponse {
 message FinishJudgeTaskRequest {
     string judge_name = 1;
     int32 submission_id = 2;
-    string status = 3;
-    double time = 4; // 2.0 = 2 seconds
-    int64 memory = 5; // x bytes
+    string status = 3 [deprecated=true];
+    double time = 4 [deprecated=true]; // 2.0 = 2 seconds
+    int64 memory = 5 [deprecated=true]; // x bytes
     string case_version = 6;
 }
 message FinishJudgeTaskResponse {
