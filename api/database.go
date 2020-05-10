@@ -186,7 +186,7 @@ func updateSubmissionRegistration(id int32, judgeName string, expiration time.Du
 		return Undefined, errors.New("Submission fetch failed")
 	}
 	if sub.JudgeName == "" {
-		return Finished, nil
+		return Finished, tx.Rollback().Error
 	}
 	now := time.Now()
 	registered := sub.JudgeName != "" && sub.JudgePing.After(now)

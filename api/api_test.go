@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"net"
@@ -637,6 +638,130 @@ func TestParallelJudge(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		if ids[i] != tasks[i] {
 			t.Fatal(i)
+		}
+	}
+}
+
+func TestSimulateParallelRejudge(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+
+	ids := make([]int, 50)
+	for i := 0; i < 50; i++ {
+		ids[i] = -1
+	}
+	var g errgroup.Group
+	for i := 0; i < 50; i++ {
+		i := i
+		g.Go(func() error {
+			ids[i] = int(submitSomething(t))
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	sort.Ints(ids)
+	t.Log(ids)
+
+	for phase := 0; phase < 3; phase++ {
+		log.Printf("Start %v/3", phase+1)
+		if phase > 0 {
+			for _, id := range ids {
+				id := id
+				g.Go(func() error {
+					if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+						Id: int32(id),
+					}); err != nil {
+						return err
+					}
+					return nil
+				})
+			}
+			if err := g.Wait(); err != nil {
+				t.Fatal(err)
+			}
+		}
+		tasks := make([]int, 50)
+		for i := 0; i < 50; i++ {
+			tasks[i] = -1
+		}
+		for i := 0; i < 50; i++ {
+			i := i
+			g.Go(func() error {
+				resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+					JudgeName:    "judge-test",
+					ExpectedTime: ptypes.DurationProto(2 * time.Second),
+				})
+				if err != nil {
+					return err
+				}
+
+				id := resp.SubmissionId
+				if id == -1 {
+					return errors.New("Cannot fetch task")
+				}
+
+				if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+					JudgeName: "judge-test",
+					Status:    "Judging",
+					CaseResults: []*pb.SubmissionCaseResult{
+						{
+							Case:   "test00",
+							Status: "AC",
+							Time:   1.0,
+							Memory: 1,
+						},
+					},
+					SubmissionId: id,
+				}); err != nil {
+					return err
+				}
+
+				if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+					JudgeName:    "judge-test",
+					Status:       "AC",
+					SubmissionId: id,
+				}); err != nil {
+					return err
+				}
+				tasks[i] = int(id)
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(4 * time.Second)
+
+		for i := 0; i < 50; i++ {
+			g.Go(func() error {
+				resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+					JudgeName:    "judge-test",
+					ExpectedTime: ptypes.DurationProto(2 * time.Second),
+				})
+				if err != nil {
+					return err
+				}
+
+				id := resp.SubmissionId
+				if id != -1 {
+					return errors.New(fmt.Sprint("Fetch new task", id))
+				}
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			t.Fatal(err)
+		}
+
+		sort.Ints(tasks)
+		t.Log(tasks)
+		for i := 0; i < 50; i++ {
+			if ids[i] != tasks[i] {
+				t.Fatal(i)
+			}
 		}
 	}
 }
