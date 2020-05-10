@@ -100,7 +100,7 @@ func clearAllTasks() error {
 func popTask() (Task, error) {
 	tx := db.Begin()
 	task := Task{}
-	err := tx.Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
+	err := tx.Set("gorm:query_option", "FOR UPDATE").Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
 	if gorm.IsRecordNotFoundError(err) {
 		return Task{Submission: -1}, tx.Rollback().Error
 	}
@@ -112,6 +112,7 @@ func popTask() (Task, error) {
 		return Task{}, errors.New("Connection to db failed")
 	}
 	if tx.Delete(task).RowsAffected != 1 {
+		log.Print("Failed to delete task:", task.ID)
 		return Task{Submission: -1}, tx.Rollback().Error
 	}
 	if err := tx.Commit().Error; err != nil {

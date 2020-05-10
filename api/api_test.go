@@ -609,26 +609,22 @@ func TestParallelJudge(t *testing.T) {
 	if err := g.Wait(); err != nil {
 		t.Fatal(err)
 	}
-	t.Log(ids)
 	for i := 0; i < 100; i++ {
 		i := i
 		g.Go(func() error {
-			for phase := 0; phase < 100; phase++ {
-				resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
-					JudgeName:    "judge-test",
-					ExpectedTime: ptypes.DurationProto(time.Minute),
-				})
-				if err != nil {
-					return err
-				}
-				if resp.SubmissionId == -1 {
-					continue
-				}
-				log.Print("Returned ", i, resp.SubmissionId)
-				tasks[i] = int(resp.SubmissionId)
-				return nil
+			resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+				JudgeName:    "judge-test",
+				ExpectedTime: ptypes.DurationProto(time.Minute),
+			})
+			if err != nil {
+				return err
 			}
-			return errors.New("Cannot fetch tasks")
+			if resp.SubmissionId == -1 {
+				return errors.New("Cannot fetch tasks")
+			}
+			log.Print("Returned ", i, resp.SubmissionId)
+			tasks[i] = int(resp.SubmissionId)
+			return nil
 		})
 	}
 	if err := g.Wait(); err != nil {
