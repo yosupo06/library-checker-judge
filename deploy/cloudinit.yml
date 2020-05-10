@@ -34,7 +34,7 @@ write_files:
     owner: root:root
     content: GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX_DEFAULT swapaccount=1"
 
-  - path: /etc/supervisor/conf.d/judge.conf
+  - path: /etc/supervisor/conf.d/judge._conf
     owner: root:root
     permissions: '0600'
     content: |

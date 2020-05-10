@@ -410,7 +410,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		}
 
 		return &pb.PopJudgeTaskResponse{
-			SubmissionId: int32(task.Submission),
+			SubmissionId: task.Submission,
 		}, nil
 	}
 	log.Println("Too many invalid tasks")
