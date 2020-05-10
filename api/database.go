@@ -106,10 +106,14 @@ func popTask() (Task, error) {
 	}
 	if err != nil {
 		log.Print(err)
-		tx.Rollback()
+		if err := tx.Rollback().Error; err != nil {
+			log.Print(err)
+		}
 		return Task{}, errors.New("Connection to db failed")
 	}
-	tx.Delete(task)
+	if tx.Delete(task).RowsAffected != 1 {
+		return Task{Submission: -1}, tx.Rollback().Error
+	}
 	if err := tx.Commit().Error; err != nil {
 		log.Print(err)
 		return Task{}, errors.New("Commit to db failed")
@@ -185,7 +189,6 @@ func updateSubmissionRegistration(id int32, judgeName string, expiration time.Du
 	now := time.Now()
 	registered := sub.JudgeName != "" && sub.JudgePing.After(now)
 	if registered && sub.JudgeName != judgeName {
-		tx.Rollback()
 		return Occupied, tx.Rollback().Error
 	}
 	myself := registered && sub.JudgeName == judgeName
@@ -193,8 +196,10 @@ func updateSubmissionRegistration(id int32, judgeName string, expiration time.Du
 		"judge_name": judgeName,
 		"judge_ping": now.Add(expiration),
 	}).Error; err != nil {
-		tx.Rollback()
 		log.Print(err)
+		if tx.Rollback().Error != nil {
+			log.Print("rollback error")
+		}
 		return Undefined, errors.New("Submission update failed")
 	}
 	if err := tx.Commit().Error; err != nil {

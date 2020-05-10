@@ -389,26 +389,29 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		}
 		status, err := updateSubmissionRegistration(id, in.JudgeName, expectedTime)
 		if err != nil {
+			log.Print(err)
 			return nil, err
 		}
 		if status != Finished {
-			pushTask(Task{
+			if err := pushTask(Task{
 				Submission: id,
 				Priority:   task.Priority,
 				Available:  time.Now().Add(expectedTime),
-			})
+			}); err != nil {
+				log.Print(err)
+				return nil, err
+			}
 		}
 		if status != Register && status != Update {
 			log.Print("Invalid Status: ", status)
 			continue
 		}
 
-		log.Println("Clear SubmissionTestcaseResults")
+		log.Print("Clear SubmissionTestcaseResults: ", id)
 		if err := db.Where("submission = ?", id).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
 			log.Println(err)
 			return nil, errors.New("Failed to clear submission testcase results")
 		}
-
 		return &pb.PopJudgeTaskResponse{
 			SubmissionId: task.Submission,
 		}, nil
