@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"math"
 	"net"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -15,11 +17,11 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
 var client pb.LibraryCheckerServiceClient
-var judgeCtx context.Context
 
 func loginContext(t *testing.T, name string) context.Context {
 	ctx := context.Background()
@@ -578,12 +580,64 @@ func TestSimulateJudgeDown(t *testing.T) {
 			ExpectedTime: ptypes.DurationProto(2 * time.Second),
 		})
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		if id != resp.SubmissionId {
 			t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
 		}
 		time.Sleep(time.Second * 4)
+	}
+}
+
+func TestParallelJudge(t *testing.T) {
+	clearTask(t)
+	judgeCtx := loginAsAdmin(t)
+	ids := make([]int, 100)
+	tasks := make([]int, 100)
+	for i := 0; i < 100; i++ {
+		ids[i] = -1
+		tasks[i] = -1
+	}
+	var g errgroup.Group
+	for i := 0; i < 100; i++ {
+		i := i
+		g.Go(func() error {
+			ids[i] = int(submitSomething(t))
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100; i++ {
+		i := i
+		g.Go(func() error {
+			resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+				JudgeName:    "judge-test",
+				ExpectedTime: ptypes.DurationProto(time.Minute),
+			})
+			if err != nil {
+				return err
+			}
+			if resp.SubmissionId == -1 {
+				return errors.New("Cannot fetch tasks")
+			}
+			log.Print("Returned ", i, resp.SubmissionId)
+			tasks[i] = int(resp.SubmissionId)
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	sort.Ints(ids)
+	sort.Ints(tasks)
+	t.Log(ids)
+	t.Log(tasks)
+	for i := 0; i < 100; i++ {
+		if ids[i] != tasks[i] {
+			t.Fatal(i)
+		}
 	}
 }
 
