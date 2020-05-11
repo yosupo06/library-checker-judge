@@ -396,7 +396,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		if status != Finished {
 			if err := pushTask(Task{
 				Submission: id,
-				Priority:   task.Priority,
+				Priority:   task.Priority + 1,
 				Available:  time.Now().Add(expectedTime),
 			}); err != nil {
 				log.Print(err)
