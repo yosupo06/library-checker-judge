@@ -40,13 +40,13 @@ var casesDir string
 
 func fetchData(db *gorm.DB, problemName string) (string, string, error) {
 	problem := Problem{}
-	if err := db.Select("name, testhash").Take(&problem, problemName).Error; err != nil {
+	if err := db.Select("name, testhash").Where("name = ?", problemName).Take(&problem).Error; err != nil {
 		return "", "", err
 	}
 	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", problem.Testhash))
 	data := path.Join(casesDir, fmt.Sprintf("cases-%s", problem.Testhash))
 	if _, err := os.Stat(zipPath); err != nil {
-		if err := db.Take(&problem, problemName).Error; err != nil {
+		if err := db.Where("name = ?", problemName).Take(&problem).Error; err != nil {
 			return "", "", err
 		}
 		// fetch zip
