@@ -24,7 +24,7 @@ services:
     build:
       context: api
     ports:
-      - 50052:50052
+      - 58080:50051
     depends_on:
       - db
     environment:
@@ -32,4 +32,3 @@ services:
       - HMAC_SECRET=dummy_secret
       - API_DB_LOG=true
       - MODE=gRPCWeb
-      - PORT=50052
