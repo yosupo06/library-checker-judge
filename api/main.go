@@ -4,9 +4,11 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/http"
 	"os"
 
 	"github.com/BurntSushi/toml"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
 
@@ -93,12 +95,26 @@ func main() {
 
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
-	listen, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		log.Fatal(err)
-	}
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
 	pb.RegisterLibraryCheckerServiceServer(s, &server{})
-	s.Serve(listen)
+
+	if getEnv("MODE", "") == "gRPCWeb" {
+		log.Print("gRPC-Web Mode port=", port)
+		wrappedGrpc := grpcweb.WrapServer(s)
+		http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			resp.Header().Set("Access-Control-Allow-Origin", "*")
+			resp.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-user-agent, x-grpc-web")
+			if wrappedGrpc.IsGrpcWebRequest(req) {
+				wrappedGrpc.ServeHTTP(resp, req)
+			}
+		}))
+	} else {
+		log.Print("gRPC Mode port=", port)
+		listen, err := net.Listen("tcp", ":"+port)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.Serve(listen)
+	}
 }
