@@ -93,6 +93,7 @@
         'matrix_det',
         'sparse_matrix_det',
         'system_of_linear_equations',
+        'hafnian_of_matrix',
     ]
 
 [[category]]
