@@ -30,13 +30,13 @@ steps:
     args:
       - run
       - deploy
-      - judge-api-${BRANCH_NAME}
+      - judge-grpcweb-api-${BRANCH_NAME}
       - --image=asia.gcr.io/library-checker-project/judge-api
       - --platform=managed
       - --region=asia-northeast1
       - --allow-unauthenticated
       - --add-cloudsql-instances=library-checker-sql
-      - --set-env-vars=POSTGRE_HOST=${_POSTGRE_HOST},POSTGRE_PASS=${_POSTGRE_PASS},HMAC_SECRET=${_HMAC_SECRET}
+      - --set-env-vars=POSTGRE_HOST=${_POSTGRE_HOST},POSTGRE_PASS=${_POSTGRE_PASS},HMAC_SECRET=${_HMAC_SECRET},MODE=gRPCWeb
       - --max-instances=2
 
 timeout: 1800s
