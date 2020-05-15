@@ -15,7 +15,19 @@ steps:
   - id: deploy
     name: gcr.io/cloud-builders/gcloud
     args:
-      - beta
+      - run
+      - deploy
+      - judge-api-${BRANCH_NAME}
+      - --image=asia.gcr.io/library-checker-project/judge-api
+      - --platform=managed
+      - --region=asia-northeast1
+      - --allow-unauthenticated
+      - --add-cloudsql-instances=library-checker-sql
+      - --set-env-vars=POSTGRE_HOST=${_POSTGRE_HOST},POSTGRE_PASS=${_POSTGRE_PASS},HMAC_SECRET=${_HMAC_SECRET}
+      - --max-instances=2
+  - id: deploy-grpcweb
+    name: gcr.io/cloud-builders/gcloud
+    args:
       - run
       - deploy
       - judge-api-${BRANCH_NAME}

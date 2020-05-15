@@ -19,3 +19,17 @@ services:
       - POSTGRE_HOST=db
       - HMAC_SECRET=dummy_secret
       - API_DB_LOG=true
+
+  api-grpcweb:
+    build:
+      context: api
+    ports:
+      - 8081:50051
+    depends_on:
+      - db
+    environment:
+      - POSTGRE_HOST=db
+      - HMAC_SECRET=dummy_secret
+      - API_DB_LOG=true
+      - PORT=50051
+      - MODE=gRPCWeb
