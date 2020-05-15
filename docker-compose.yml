@@ -20,16 +20,16 @@ services:
       - HMAC_SECRET=dummy_secret
       - API_DB_LOG=true
 
-  # api-grpcweb:
-  #   build:
-  #     context: api
-  #   ports:
-  #     - 50052:50052
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     - POSTGRE_HOST=db
-  #     - HMAC_SECRET=dummy_secret
-  #     - API_DB_LOG=true
-  #     - MODE=gRPCWeb
-  #     - PORT=50052
+  api-grpcweb:
+    build:
+      context: api
+    ports:
+      - 50052:50052
+    depends_on:
+      - db
+    environment:
+      - POSTGRE_HOST=db
+      - HMAC_SECRET=dummy_secret
+      - API_DB_LOG=true
+      - MODE=gRPCWeb
+      - PORT=50052
