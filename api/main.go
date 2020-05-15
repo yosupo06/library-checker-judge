@@ -97,18 +97,11 @@ func main() {
 	port := getEnv("PORT", "50051")
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
+	pb.RegisterLibraryCheckerServiceServer(s, &server{})
 
-	if getEnv("MODE", "") != "gRPCWeb" {
-		log.Print("gRPC Mode")
-		listen, err := net.Listen("tcp", ":"+port)
-		if err != nil {
-			log.Fatal(err)
-		}
-		s.Serve(listen)
-	} else {
-		log.Print("gRPC-Web Mode")
+	if getEnv("MODE", "") == "gRPCWeb" {
+		log.Print("gRPC-Web Mode port=", port)
 		wrappedGrpc := grpcweb.WrapServer(s)
-		pb.RegisterLibraryCheckerServiceServer(s, &server{})
 		http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			resp.Header().Set("Access-Control-Allow-Origin", "*")
 			resp.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-user-agent, x-grpc-web")
@@ -116,5 +109,12 @@ func main() {
 				wrappedGrpc.ServeHTTP(resp, req)
 			}
 		}))
+	} else {
+		log.Print("gRPC Mode port=", port)
+		listen, err := net.Listen("tcp", ":"+port)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.Serve(listen)
 	}
 }
