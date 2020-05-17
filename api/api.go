@@ -152,15 +152,23 @@ func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfo
 		return nil, errors.New("Empty problem name")
 	}
 	var problem Problem
-	if err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error; err != nil {
-		return nil, errors.New("Failed to get problem")
+	err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error
+	problem.Name = name
+	problem.Title = in.Title
+	problem.Timelimit = float64(int32(in.TimeLimit * 1000.0))
+	problem.Statement = in.Statement
+	problem.Testhash = in.CaseVersion
+
+	if gorm.IsRecordNotFoundError(err) {
+		log.Printf("add problem: %v", name)
+		if err := db.Create(&problem).Error; err != nil {
+			return nil, errors.New("Failed to insert")
+		}
+	} else if err != nil {
+		log.Print(err)
+		return nil, errors.New("Connect to db failed")
 	}
-	if err := db.Model(&problem).Where("name = ?", name).Updates(map[string]interface{}{
-		"title":     in.Title,
-		"timelimit": int32(in.TimeLimit * 1000.0),
-		"statement": in.Statement,
-		"testhash":  in.CaseVersion,
-	}).Error; err != nil {
+	if err := db.Model(&Problem{}).Where("name = ?", name).Updates(problem).Error; err != nil {
 		return nil, errors.New("Failed to update user")
 	}
 	return &pb.ChangeProblemInfoResponse{}, nil

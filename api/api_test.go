@@ -863,6 +863,41 @@ func TestChangeProblemInfoByTester(t *testing.T) {
 	t.Log(err)
 }
 
+func TestCreateProblem(t *testing.T) {
+	ctx := loginAsAdmin(t)
+
+	name := uuid.New().String()
+	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
+		Name:        name,
+		Title:       "dummy-title-x",
+		TimeLimit:   1234.0,
+		Statement:   "dummy-statement-x",
+		CaseVersion: "dummy-version-x",
+	}); err != nil {
+		t.Fatal("Failed to create problem")
+	}
+
+	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: name,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if problem.Title != "dummy-title-x" {
+		t.Fatal("Title is invalid")
+	}
+	if problem.TimeLimit != 1234.0 {
+		t.Fatalf("TimeLimit is invalid: %v", problem.TimeLimit)
+	}
+	if problem.Statement != "dummy-statement-x" {
+		t.Fatal("statement is invalid")
+	}
+	if problem.CaseVersion != "dummy-version-x" {
+		t.Fatal("CaseVersion is invalid")
+	}
+}
+
 func TestMain(m *testing.M) {
 	// connect db
 	db = dbConnect()
