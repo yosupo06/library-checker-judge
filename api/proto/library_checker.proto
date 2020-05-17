@@ -12,12 +12,13 @@ service LibraryCheckerService {
     rpc ChangeUserInfo (ChangeUserInfoRequest) returns (ChangeUserInfoResponse) {}
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
+    rpc ChangeProblemInfo (ChangeProblemInfoRequest) returns (ChangeProblemInfoResponse) {}
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
     rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
     rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}
     rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
     rpc LangList (LangListRequest) returns (LangListResponse) {}
-    rpc Ranking (RankingRequest) returns (RankingResponse) {}
+    rpc Ranking (RankingRequest) returns (RankingResponse) {} // used by another product
 
     // --- Judge ---
     rpc PopJudgeTask (PopJudgeTaskRequest) returns (PopJudgeTaskResponse) {}
@@ -86,7 +87,18 @@ message ProblemInfoRequest {
 message ProblemInfoResponse {
     string title = 1; // "A + B"
     string statement = 2;
-    double time_limit = 3; // 2.0 = 2 seconds   
+    double time_limit = 3; // 2.0 = 2 seconds
+    string case_version = 4; // hash of testcases
+}
+
+message ChangeProblemInfoRequest {
+    string name = 1; // "aplusb"
+    string title = 2;
+    string statement = 3;
+    double time_limit = 4;
+    string case_version = 5;
+}
+message ChangeProblemInfoResponse {
 }
 
 // --- Submission ---

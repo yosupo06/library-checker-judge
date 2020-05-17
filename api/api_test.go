@@ -82,6 +82,9 @@ func TestProblemInfo(t *testing.T) {
 	if math.Abs(problem.TimeLimit-2.0) > 0.01 {
 		t.Fatal("Differ TimeLimit : ", problem.TimeLimit)
 	}
+	if problem.CaseVersion == "" {
+		t.Fatal("Case Version is empty")
+	}
 }
 
 func TestSubmissionSortOrderList(t *testing.T) {
@@ -764,6 +767,100 @@ func TestSimulateParallelRejudge(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestChangeProblemInfo(t *testing.T) {
+	ctx := loginAsAdmin(t)
+
+	oldProblem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: "aplusb",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
+		Name:        "aplusb",
+		Title:       "dummy-title",
+		TimeLimit:   123.0,
+		Statement:   "dummy-statement",
+		CaseVersion: "dummy-version",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: "aplusb",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if problem.Title != "dummy-title" {
+		t.Fatal("Title is not changed")
+	}
+	if problem.TimeLimit != 123.0 {
+		t.Fatalf("TimeLimit is not changed: %v", problem.TimeLimit)
+	}
+	if problem.Statement != "dummy-statement" {
+		t.Fatal("statement is not changed")
+	}
+	if problem.CaseVersion != "dummy-version" {
+		t.Fatal("CaseVersion is not changed")
+	}
+
+	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
+		Name:        "aplusb",
+		Title:       oldProblem.Title,
+		TimeLimit:   oldProblem.TimeLimit,
+		Statement:   oldProblem.Statement,
+		CaseVersion: oldProblem.CaseVersion,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	nowProblem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: "aplusb",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if nowProblem.Title != oldProblem.Title {
+		t.Fatal("Title is not recovered")
+	}
+	if nowProblem.TimeLimit != oldProblem.TimeLimit {
+		t.Fatalf("TimeLimit is not recovered: %v vs %v", nowProblem.TimeLimit, problem.TimeLimit)
+	}
+	if nowProblem.Statement != oldProblem.Statement {
+		t.Fatal("Statement is not changed")
+	}
+	if nowProblem.CaseVersion != oldProblem.CaseVersion {
+		t.Fatal("CaseVersion is not changed")
+	}
+}
+
+func TestChangeProblemInfoByTester(t *testing.T) {
+	ctx := loginAsTester(t)
+
+	_, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
+		Name: "aplusb",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
+		Name:        "aplusb",
+		Title:       "dummy-title",
+		TimeLimit:   123.0,
+		Statement:   "dummy-statement",
+		CaseVersion: "dummy-version",
+	})
+	if err == nil {
+		t.Fatal("success to ChangeProblemInfo")
+	}
+	t.Log(err)
 }
 
 func TestMain(m *testing.M) {

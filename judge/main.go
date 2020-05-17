@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -38,13 +39,16 @@ type Problem struct {
 
 var casesDir string
 
-func fetchData(db *gorm.DB, problemName string) (string, string, error) {
+func fetchData(db *gorm.DB, caseVersion string, problemName string) (string, string, error) {
 	problem := Problem{}
 	if err := db.Select("name, testhash").Where("name = ?", problemName).Take(&problem).Error; err != nil {
 		return "", "", err
 	}
-	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", problem.Testhash))
-	data := path.Join(casesDir, fmt.Sprintf("cases-%s", problem.Testhash))
+	if caseVersion != problem.Testhash {
+		return "", "", errors.New("caseVersion != problem.TestHash")
+	}
+	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", caseVersion))
+	data := path.Join(casesDir, fmt.Sprintf("cases-%s", caseVersion))
 	if _, err := os.Stat(zipPath); err != nil {
 		if err := db.Where("name = ?", problemName).Take(&problem).Error; err != nil {
 			return "", "", err
@@ -65,7 +69,7 @@ func fetchData(db *gorm.DB, problemName string) (string, string, error) {
 			return "", "", err
 		}
 	}
-	return data, problem.Testhash, nil
+	return data, caseVersion, nil
 }
 
 func getCases(data string) ([]string, error) {
@@ -103,7 +107,7 @@ func execJudge(db *gorm.DB, submissionID int32) error {
 	}); err != nil {
 		return err
 	}
-	caseDir, caseVersion, err := fetchData(db, submission.Overview.ProblemName)
+	caseDir, caseVersion, err := fetchData(db, problem.CaseVersion, submission.Overview.ProblemName)
 	log.Print("Fetched :", caseVersion)
 	if err != nil {
 		log.Println("Fail to fetchData")
