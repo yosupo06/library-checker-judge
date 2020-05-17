@@ -132,14 +132,38 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 		return nil, errors.New("Empty problem name")
 	}
 	var problem Problem
-	if err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error; err != nil {
+	if err := db.Select("name, title, statement, timelimit, testhash").Where("name = ?", name).First(&problem).Error; err != nil {
 		return nil, errors.New("Failed to get problem")
 	}
 	return &pb.ProblemInfoResponse{
-		Title:     problem.Title,
-		Statement: problem.Statement,
-		TimeLimit: problem.Timelimit / 1000.0,
+		Title:       problem.Title,
+		Statement:   problem.Statement,
+		TimeLimit:   problem.Timelimit / 1000.0,
+		CaseVersion: problem.Testhash,
 	}, nil
+}
+
+func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfoRequest) (*pb.ChangeProblemInfoResponse, error) {
+	if !isAdmin(ctx) {
+		return nil, errors.New("Must be admin")
+	}
+	name := in.Name
+	if name == "" {
+		return nil, errors.New("Empty problem name")
+	}
+	var problem Problem
+	if err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error; err != nil {
+		return nil, errors.New("Failed to get problem")
+	}
+	if err := db.Model(&problem).Where("name = ?", name).Updates(map[string]interface{}{
+		"title":     in.Title,
+		"timelimit": int32(in.TimeLimit * 1000.0),
+		"statement": in.Statement,
+		"testhash":  in.CaseVersion,
+	}).Error; err != nil {
+		return nil, errors.New("Failed to update user")
+	}
+	return &pb.ChangeProblemInfoResponse{}, nil
 }
 
 func (s *server) ProblemList(ctx context.Context, in *pb.ProblemListRequest) (*pb.ProblemListResponse, error) {
