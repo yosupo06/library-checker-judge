@@ -12,6 +12,7 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lib/pq v1.4.0
+	github.com/minio/minio-go/v6 v6.0.55
 	github.com/yosupo06/library-checker-judge/api v0.0.0-20200425150722-92dad6d5d37a
 	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0 // indirect
 	golang.org/x/sys v0.0.0-20200428200454-593003d681fa // indirect

@@ -37,7 +37,7 @@ echo "Extract judge.tar.gx"
 gcpexec "cd /root/library-checker-judge && tar -xf judge.tar.gz"
 
 echo "Install pip"
-gcpexec "pip3 install psutil psycopg2"
+gcpexec "python3 -m pip install psutil psycopg2 minio grpcio-tools"
 
 echo "Install compilers"
 gcpexec "cd /root/library-checker-judge/deploy && ./install.sh"
