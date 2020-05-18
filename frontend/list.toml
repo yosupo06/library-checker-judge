@@ -34,6 +34,7 @@
 [[category]]
     name = 'Graph'
     problems = [
+        'tree_diameter',
         'shortest_path',
         'lca',
         'scc',
