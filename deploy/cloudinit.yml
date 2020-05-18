@@ -13,8 +13,6 @@ packages:
   - cgroup-tools
   - supervisor
   - postgresql-client
-  - libpq-dev
-  - libcap2-bin
   - unzip
   # compilers
   - g++

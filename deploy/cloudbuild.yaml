@@ -4,8 +4,6 @@ steps:
     dir: deploy
     args: [./deploy.sh]
     env:
-      - 'PG_HOST=$_PG_HOST'
-      - 'PG_PASS=$_PG_PASS'
       - 'API_PASS=$_API_PASS'
       - 'MINIO_HOST=$_MINIO_HOST'
       - 'MINIO_ACCESS=$_MINIO_ACCESS'

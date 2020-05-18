@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 	"github.com/minio/minio-go/v6"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
@@ -34,17 +33,9 @@ var judgeCtx context.Context
 // minio
 var minioClient *minio.Client
 
-type Problem struct {
-	Name      string
-	Title     string
-	Timelimit float64
-	Testhash  string
-	Testzip   []byte
-}
-
 var casesDir string
 
-func fetchData(db *gorm.DB, caseVersion string, problemName string) (string, string, error) {
+func fetchData(caseVersion string, problemName string) (string, string, error) {
 	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", caseVersion))
 	data := path.Join(casesDir, fmt.Sprintf("cases-%s", caseVersion))
 	if _, err := os.Stat(zipPath); err != nil {
@@ -86,7 +77,7 @@ func getCases(data string) ([]string, error) {
 	return result, nil
 }
 
-func execJudge(db *gorm.DB, submissionID int32) error {
+func execJudge(submissionID int32) error {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
 		Id: submissionID,
 	})
@@ -106,7 +97,7 @@ func execJudge(db *gorm.DB, submissionID int32) error {
 	}); err != nil {
 		return err
 	}
-	caseDir, caseVersion, err := fetchData(db, problem.CaseVersion, submission.Overview.ProblemName)
+	caseDir, caseVersion, err := fetchData(problem.CaseVersion, submission.Overview.ProblemName)
 	log.Print("Fetched :", caseVersion)
 	if err != nil {
 		log.Println("Fail to fetchData")
@@ -229,9 +220,6 @@ func getEnv(key, defaultValue string) string {
 }
 
 var secretConfig struct {
-	PostgreHost string `toml:"postgre_host"`
-	PostgreUser string `toml:"postgre_user"`
-	PostgrePass string `toml:"postgre_pass"`
 	APIHost     string `toml:"api_host"`
 	APIUser     string `toml:"api_user"`
 	APIPass     string `toml:"api_pass"`
@@ -246,23 +234,6 @@ func init() {
 	if _, err := toml.DecodeFile("./secret.toml", &secretConfig); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func gormConnect() *gorm.DB {
-	connStr := fmt.Sprintf(
-		"host=%s port=5432 user=%s dbname=librarychecker password=%s sslmode=disable",
-		secretConfig.PostgreHost, secretConfig.PostgreUser, secretConfig.PostgrePass)
-
-	log.Println("Connected to DB:", secretConfig.PostgreHost)
-	db, err := gorm.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if !secretConfig.Prod {
-		db.LogMode(true)
-	}
-	db.AutoMigrate(Problem{})
-	return db
 }
 
 func initClient(conn *grpc.ClientConn) {
@@ -330,10 +301,6 @@ func main() {
 	}
 	defer os.RemoveAll(casesDir)
 
-	// init DB
-	db := gormConnect()
-	defer db.Close()
-
 	// init gRPC
 	conn := apiConnect()
 	defer conn.Close()
@@ -356,7 +323,7 @@ func main() {
 			continue
 		}
 		log.Println("Start Judge:", task.SubmissionId)
-		err = execJudge(db, task.SubmissionId)
+		err = execJudge(task.SubmissionId)
 		if err != nil {
 			log.Println(err.Error())
 			continue
