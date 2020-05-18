@@ -225,7 +225,10 @@ type CaseResult struct {
 }
 
 func AggregateResults(results []CaseResult) CaseResult {
-	ans := CaseResult{"AC", Result{ReturnCode: -1, Time: -1, Memory: -1}}
+	ans := CaseResult{
+		Status: "AC",
+		Result: Result{ReturnCode: -1, Time: -1, Memory: -1},
+	}
 	for _, res := range results {
 		if res.Status != "AC" {
 			ans.Status = res.Status
@@ -281,15 +284,15 @@ func (j *Judge) TestCase(inFile io.Reader, expectFile io.Reader) (CaseResult, er
 
 	if result.Tle {
 		//timeout
-		return CaseResult{"TLE", result}, nil
+		return CaseResult{Status: "TLE", Result: result}, nil
 	}
 
 	if cmd.ProcessState.ExitCode() != 0 {
-		return CaseResult{"Broken", result}, errors.New("executor return non 0, 124 code")
+		return CaseResult{Status: "Broken", Result: result}, errors.New("executor return non 0, 124 code")
 	}
 
 	if result.ReturnCode != 0 {
-		return CaseResult{"RE", result}, nil
+		return CaseResult{Status: "RE", Result: result}, nil
 	}
 	actual.Close()
 
@@ -301,22 +304,22 @@ func (j *Judge) TestCase(inFile io.Reader, expectFile io.Reader) (CaseResult, er
 		return CaseResult{}, err
 	}
 	if checkerResult.Tle {
-		return CaseResult{"ITLE", result}, nil
+		return CaseResult{Status: "ITLE", Result: result}, nil
 	}
 	if cmd.ProcessState.ExitCode() != 0 {
-		return CaseResult{"Broken", result}, errors.New("executor return non 0, 124 code")
+		return CaseResult{Status: "Broken", Result: result}, errors.New("executor return non 0, 124 code")
 	}
 	if checkerResult.ReturnCode == 1 {
-		return CaseResult{"WA", result}, nil
+		return CaseResult{Status: "WA", Result: result}, nil
 	}
 	if checkerResult.ReturnCode == 2 {
-		return CaseResult{"PE", result}, nil
+		return CaseResult{Status: "PE", Result: result}, nil
 	}
 	if checkerResult.ReturnCode == 3 {
-		return CaseResult{"Fail", result}, nil
+		return CaseResult{Status: "Fail", Result: result}, nil
 	}
 	if checkerResult.ReturnCode != 0 {
-		return CaseResult{"Unknown", result}, nil
+		return CaseResult{Status: "Unknown", Result: result}, nil
 	}
-	return CaseResult{"AC", result}, nil
+	return CaseResult{Status: "AC", Result: result}, nil
 }
