@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
@@ -35,8 +34,6 @@ func Submit(t *testing.T, problem, lang string, srcFile io.Reader) int32 {
 	return resp.Id
 }
 
-var db *gorm.DB
-
 func TestMain(m *testing.M) {
 	myCasesDir, err := ioutil.TempDir("", "case")
 	casesDir = myCasesDir
@@ -61,15 +58,6 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	db = gormConnect()
-	db.AutoMigrate(Problem{})
-	db.LogMode(true)
-	defer func() {
-		if err := db.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
 	minioClient = minioConnect()
 
 	os.Exit(m.Run())
@@ -86,7 +74,7 @@ func runJudge(t *testing.T, id int32) *pb.SubmissionInfoResponse {
 		t.Fatalf("Differ ID %v vs %v", task.SubmissionId, id)
 	}
 	log.Println("Start Judge:", id)
-	err = execJudge(db, id)
+	err = execJudge(id)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
