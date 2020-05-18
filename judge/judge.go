@@ -219,7 +219,8 @@ func (j *Judge) CompileChecker() (Result, error) {
 }
 
 type CaseResult struct {
-	Status string
+	CaseName string
+	Status   string
 	Result
 }
 

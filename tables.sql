@@ -9,8 +9,7 @@ create table problems (
   title varchar(255),
   statement text,
   timelimit int,
-  testhash varchar(255),
-  testzip bytea
+  testhash varchar(255)
 );
 
 create table submissions (

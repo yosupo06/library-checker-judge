@@ -166,7 +166,43 @@ func execJudge(submissionID int32) error {
 	if err != nil {
 		return err
 	}
+	unsendCases := []CaseResult{}
+	sendCase := func() error {
+		cases := []*pb.SubmissionCaseResult{}
+		for _, caseResult := range unsendCases {
+			cases = append(cases, &pb.SubmissionCaseResult{
+				Case:   caseResult.CaseName,
+				Status: caseResult.Status,
+				Time:   caseResult.Time,
+				Memory: int64(caseResult.Memory),
+			})
+		}
+		if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+			JudgeName:    judgeName,
+			SubmissionId: submissionID,
+			Status:       "Executing",
+			CaseResults:  cases,
+		}); err != nil {
+			return err
+		}
+		unsendCases = []CaseResult{}
+		return nil
+	}
 	caseResults := []CaseResult{}
+	lastSend := time.Time{}
+	addCase := func(caseResult *CaseResult) error {
+		if caseResult != nil {
+			caseResults = append(caseResults, *caseResult)
+			unsendCases = append(unsendCases, *caseResult)
+		}
+		if lastSend.Add(time.Second).Before(time.Now()) {
+			lastSend = time.Now()
+			if err := sendCase(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	for _, caseName := range cases {
 		inFile, err := os.Open(path.Join(caseDir, "in", caseName+".in"))
 		if err != nil {
@@ -180,22 +216,13 @@ func execJudge(submissionID int32) error {
 		if err != nil {
 			return err
 		}
-		caseResults = append(caseResults, caseResult)
-		if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
-			JudgeName:    judgeName,
-			SubmissionId: submissionID,
-			Status:       "Executing",
-			CaseResults: []*pb.SubmissionCaseResult{
-				{
-					Case:   caseName,
-					Status: caseResult.Status,
-					Time:   caseResult.Time,
-					Memory: int64(caseResult.Memory),
-				},
-			},
-		}); err != nil {
+		caseResult.CaseName = caseName
+		if err := addCase(&caseResult); err != nil {
 			return err
 		}
+	}
+	if err := sendCase(); err != nil {
+		return err
 	}
 	caseResult := AggregateResults(caseResults)
 	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
