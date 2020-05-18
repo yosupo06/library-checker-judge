@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,13 +21,18 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	"github.com/minio/minio-go/v6"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
 
+// gRPC
 var client pb.LibraryCheckerServiceClient
 var judgeName string
 var judgeCtx context.Context
+
+// minio
+var minioClient *minio.Client
 
 type Problem struct {
 	Name      string
@@ -40,25 +45,19 @@ type Problem struct {
 var casesDir string
 
 func fetchData(db *gorm.DB, caseVersion string, problemName string) (string, string, error) {
-	problem := Problem{}
-	if err := db.Select("name, testhash").Where("name = ?", problemName).Take(&problem).Error; err != nil {
-		return "", "", err
-	}
-	if caseVersion != problem.Testhash {
-		return "", "", errors.New("caseVersion != problem.TestHash")
-	}
 	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", caseVersion))
 	data := path.Join(casesDir, fmt.Sprintf("cases-%s", caseVersion))
 	if _, err := os.Stat(zipPath); err != nil {
-		if err := db.Where("name = ?", problemName).Take(&problem).Error; err != nil {
-			return "", "", err
-		}
 		// fetch zip
 		zipFile, err := os.Create(zipPath)
 		if err != nil {
 			return "", "", err
 		}
-		if _, err = zipFile.Write(problem.Testzip); err != nil {
+		object, err := minioClient.GetObject(secretConfig.MinioBucket, caseVersion+".zip", minio.GetObjectOptions{})
+		if err != nil {
+			return "", "", err
+		}
+		if _, err = io.Copy(zipFile, object); err != nil {
 			return "", "", err
 		}
 		if err = zipFile.Close(); err != nil {
@@ -233,9 +232,13 @@ var secretConfig struct {
 	PostgreHost string `toml:"postgre_host"`
 	PostgreUser string `toml:"postgre_user"`
 	PostgrePass string `toml:"postgre_pass"`
-	ApiHost     string `toml:"api_host"`
-	ApiUser     string `toml:"api_user"`
-	ApiPass     string `toml:"api_pass"`
+	APIHost     string `toml:"api_host"`
+	APIUser     string `toml:"api_user"`
+	APIPass     string `toml:"api_pass"`
+	MinioHost   string `toml:"minio_host"`
+	MinioAccess string `toml:"minio_access"`
+	MinioSecret string `toml:"minio_secret"`
+	MinioBucket string `toml:"minio_bucket"`
 	Prod        bool   `toml:"prod"`
 }
 
@@ -266,8 +269,8 @@ func initClient(conn *grpc.ClientConn) {
 	client = pb.NewLibraryCheckerServiceClient(conn)
 	ctx := context.Background()
 	resp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     secretConfig.ApiUser,
-		Password: secretConfig.ApiPass,
+		Name:     secretConfig.APIUser,
+		Password: secretConfig.APIPass,
 	})
 
 	if err != nil {
@@ -297,12 +300,25 @@ func apiConnect() *grpc.ClientConn {
 		})
 		options = append(options, grpc.WithTransportCredentials(creds))
 	}
-	log.Printf("Connect to API host: %v", secretConfig.ApiHost)
-	conn, err := grpc.Dial(secretConfig.ApiHost, options...)
+	log.Printf("Connect to API host: %v", secretConfig.APIHost)
+	conn, err := grpc.Dial(secretConfig.APIHost, options...)
 	if err != nil {
 		log.Fatal("Cannot connect to the API server:", err)
 	}
 	return conn
+}
+
+func minioConnect() *minio.Client {
+	client, err := minio.New(
+		secretConfig.MinioHost,
+		secretConfig.MinioAccess,
+		secretConfig.MinioSecret,
+		secretConfig.Prod,
+	)
+	if err != nil {
+		log.Fatal("Cannot connect to Minio: ", err)
+	}
+	return client
 }
 
 func main() {
@@ -322,6 +338,8 @@ func main() {
 	conn := apiConnect()
 	defer conn.Close()
 	initClient(conn)
+
+	minioClient = minioConnect()
 
 	log.Println("Start Pooling")
 	for {

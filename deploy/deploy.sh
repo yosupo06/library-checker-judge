@@ -16,6 +16,16 @@ function gcpexec() {
 }
 
 echo "Make Secret HOST=${PG_HOST} / PASS=${PG_PASS}"
-gcpexec "cd /root/library-checker-judge/judge && PG_HOST=${PG_HOST} PG_PASS=${PG_PASS} API_HOST=apiv1.yosupo.jp:443 API_PASS=${API_PASS} PROD=true ./make_secret.sh"
+gcpexec "cd /root/library-checker-judge/judge &&
+    PG_HOST=${PG_HOST}
+    PG_PASS=${PG_PASS}
+    API_HOST=apiv1.yosupo.jp:443
+    API_PASS=${API_PASS}
+    MINIO_HOST=${MINIO_HOST}
+    MINIO_ACCESS=${MINIO_ACCESS}
+    MINIO_SECRET=${MINIO_SECRET}
+    MINIO_BUCKET=${MINIO_BUCKET}
+    PROD=true
+    ./make_secret.sh"
 gcpexec "cp /etc/supervisor/conf.d/judge._conf /etc/supervisor/conf.d/judge.conf"
 gcpexec "supervisorctl reload"

@@ -24,7 +24,7 @@ packages:
   - python3-dev
   - python3-pip
   - python3.7
-  - python3.7-dev
+  - python3.7-dev  
   - rustc
   - cargo
   - ghc
@@ -67,6 +67,7 @@ write_files:
 
 runcmd:
   - update-grub
+  - python3 -m pip install --upgrade pip
   # install docker, docker-compose
   - curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh
   - curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -75,6 +76,7 @@ runcmd:
   - add-apt-repository -y ppa:longsleep/golang-backports
   - apt-get install -y golang-go
   # install numpy, scipy
+  - python3.7 -m pip install --upgrade pip
   - python3.7 -m pip install --upgrade numpy scipy
 
 power_state:

@@ -70,6 +70,8 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
+	minioClient = minioConnect()
+
 	os.Exit(m.Run())
 }
 

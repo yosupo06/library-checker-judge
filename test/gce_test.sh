@@ -33,7 +33,7 @@ echo "Extract problems.tar.gx"
 gcpexec "cd /root/library-checker-problems && tar -xf problems.tar.gz"
 
 echo "Install pip"
-gcpexec "cd /root/library-checker-problems && pip3 install -r requirements.txt"
+gcpexec "cd /root/library-checker-problems && python3 -m pip install -r requirements.txt"
 
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"

@@ -8,6 +8,17 @@ services:
     environment:
       - POSTGRES_DB=librarychecker
       - POSTGRES_PASSWORD=passwd
+
+  minio:
+    image: minio/minio
+    entrypoint: sh
+    command: -c 'mkdir -p /data/testcase && /usr/bin/minio server /data'
+    ports:
+      - 9000:9000
+    environment:
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=miniopass
+
   api:
     build:
       context: api
