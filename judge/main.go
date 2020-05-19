@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -74,6 +75,7 @@ func getCases(data string) ([]string, error) {
 		name = strings.TrimSuffix(name, ".in")
 		result = append(result, name)
 	}
+	sort.Strings(result)
 	return result, nil
 }
 
