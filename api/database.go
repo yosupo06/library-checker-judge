@@ -16,7 +16,7 @@ type Problem struct {
 	Name      string
 	Title     string
 	Statement string
-	Timelimit float64
+	Timelimit int32
 	Testhash  string
 }
 

@@ -138,7 +138,7 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 	return &pb.ProblemInfoResponse{
 		Title:       problem.Title,
 		Statement:   problem.Statement,
-		TimeLimit:   problem.Timelimit / 1000.0,
+		TimeLimit:   float64(problem.Timelimit) / 1000.0,
 		CaseVersion: problem.Testhash,
 	}, nil
 }
@@ -155,7 +155,7 @@ func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfo
 	err := db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error
 	problem.Name = name
 	problem.Title = in.Title
-	problem.Timelimit = float64(int32(in.TimeLimit * 1000.0))
+	problem.Timelimit = int32(in.TimeLimit * 1000.0)
 	problem.Statement = in.Statement
 	problem.Testhash = in.CaseVersion
 
