@@ -267,6 +267,10 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 		CanRejudge: canRejudge(ctx, overview),
 	}
 
+	sort.Slice(cases, func(i, j int) bool {
+		return cases[i].Testcase < cases[j].Testcase
+	})
+
 	for _, c := range cases {
 		res.CaseResults = append(res.CaseResults, &pb.SubmissionCaseResult{
 			Case:   c.Testcase,
