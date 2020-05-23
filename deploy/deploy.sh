@@ -3,7 +3,7 @@
 set -e
 
 NAME=lib-judge-executor-$(cat /dev/urandom | LC_CTYPE=C tr -d -c '[:lower:]' | fold -w 10 | head -n 1)
-ZONE=asia-northeast1-c
+ZONE=asia-east1
 
 ./create_instance.sh $NAME $ZONE $CREATE_OPTION
 
