@@ -8,6 +8,7 @@
 [[category]]
     name = 'Data Structure'
     problems = [
+        'associative_array',
         'unionfind',
         'static_range_sum',
         'staticrmq',
