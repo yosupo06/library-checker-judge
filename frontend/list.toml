@@ -49,6 +49,7 @@
         'dominatortree',
         'maximum_independent_set',
         'enumerate_triangles',
+        'tree_decomposition_width_2',
     ]
 
 [[category]]
