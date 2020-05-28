@@ -50,6 +50,7 @@
         'maximum_independent_set',
         'enumerate_triangles',
         'tree_decomposition_width_2',
+        'frequency_table_of_tree_distance',
     ]
 
 [[category]]
