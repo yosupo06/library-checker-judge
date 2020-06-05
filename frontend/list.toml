@@ -43,6 +43,7 @@
         'three_edge_connected_components',
         'bipartitematching',
         'general_matching',
+        'bipartite_edge_coloring',
         'assignment',
         'directedmst',
         'manhattanmst',
