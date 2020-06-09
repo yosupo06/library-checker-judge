@@ -40,6 +40,7 @@
         'shortest_path',
         'lca',
         'scc',
+        'k_shortest_walk',
         'two_edge_connected_components',
         'three_edge_connected_components',
         'bipartitematching',
