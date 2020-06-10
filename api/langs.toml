@@ -72,3 +72,10 @@
     source = "main.go"
     compile = "go build main.go"
     exec = "./main"
+[[langs]]
+    id = "lisp"
+    name = "Common Lisp"
+    version = "sbcl(ubuntu18.04 apt)"
+    source = "main.lisp"
+    compile = 'sbcl --noinform --eval "(compile-file \"main.lisp\")" --quit'
+    exec = "sbcl --control-stack-size 1GB --script main.fasl"

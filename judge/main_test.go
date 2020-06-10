@@ -322,3 +322,19 @@ func TestSubmitGoAC(t *testing.T) {
 		t.Fatal("Not latest")
 	}
 }
+
+func TestSubmitCommonLispAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac.lisp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := Submit(t, "aplusb", "lisp", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.500)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
+	}
+}
