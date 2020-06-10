@@ -192,6 +192,20 @@ func TestAplusbCSharpAC(t *testing.T) {
 	}
 }
 
+func TestAplusbCommonLispAC(t *testing.T) {
+	judge := generateAplusB(t, "lisp", "ac.lisp")
+	in := strings.NewReader("1 1")
+	expect := strings.NewReader("2")
+	result, err := judge.TestCase(in, expect)
+	log.Println(judge.dir)
+	if err != nil {
+		t.Fatal("error Run Test", err)
+	}
+	if result.Status != "AC" {
+		t.Fatal("error Status", result)
+	}
+}
+
 func TestAplusbWA(t *testing.T) {
 	judge := generateAplusB(t, "cpp", "wa.cpp")
 	in := strings.NewReader("1 1")
