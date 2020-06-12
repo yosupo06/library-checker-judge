@@ -29,6 +29,7 @@
         'segment_add_get_min',
         'queue_operate_all_composite',
         'rectangle_sum',
+        'point_add_rectangle_sum',
         'persistent_queue',
         'persistent_unionfind',
     ]
