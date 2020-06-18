@@ -23,6 +23,7 @@
         'dynamic_tree_vertex_add_path_sum',
         'dynamic_tree_vertex_set_path_composite',
         'dynamic_tree_vertex_add_subtree_sum',
+        'dynamic_tree_subtree_add_subtree_sum',
         'dynamic_graph_vertex_add_component_sum',
         'set_xor_min',
         'line_add_get_min',
