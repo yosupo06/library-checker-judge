@@ -83,7 +83,7 @@
                     if (lang.startsWith("java")) {
                         editor.getSession().setMode("ace/mode/java");
                     }
-                    if (lang.startsWith("pypy3")) {
+                    if (lang.startsWith("py")) {
                         editor.getSession().setMode("ace/mode/python");
                     }
                     if (lang.startsWith("rust")) {
@@ -91,6 +91,18 @@
                     }
                     if (lang.startsWith("d")) {
                         editor.getSession().setMode("ace/mode/d");
+                    }
+                    if (lang.startsWith("haskell")) {
+                        editor.getSession().setMode("ace/mode/haskell");
+                    }
+                    if (lang.startsWith("csharp")) {
+                        editor.getSession().setMode("ace/mode/csharp");
+                    }
+                    if (lang.startsWith("go")) {
+                        editor.getSession().setMode("ace/mode/golang");
+                    }
+                    if (lang.startsWith("lisp")) {
+                        editor.getSession().setMode("ace/mode/lisp");
                     }
                 </script>
             </div>
