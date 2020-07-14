@@ -39,6 +39,7 @@
     name = 'Graph'
     problems = [
         'tree_diameter',
+        'cycle_detection',
         'shortest_path',
         'lca',
         'scc',
