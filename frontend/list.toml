@@ -46,6 +46,7 @@
         'k_shortest_walk',
         'two_edge_connected_components',
         'three_edge_connected_components',
+        'min_cost_b_flow',
         'bipartitematching',
         'general_matching',
         'bipartite_edge_coloring',
