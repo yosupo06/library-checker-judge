@@ -54,7 +54,13 @@
             <ul class="uk-pagination uk-flex-center">
                 {{range $p := .Pages}}
                     <li>
-                        <a href="?page={{$p}}{{if $.Problem}}&amp;problem={{$.Problem}}{{end}}{{if $.FilterUser}}&amp;user={{$.FilterUser}}{{end}}{{if $.Status}}&amp;status={{$.Status}}{{end}}{{if $.Order}}&amp;order={{$.Order}}{{end}}">{{$p}}</a>
+                        <a href="?page={{$p}}{{if $.Problem}}&amp;problem={{$.Problem}}{{end}}{{if $.FilterUser}}&amp;user={{$.FilterUser}}{{end}}{{if $.Status}}&amp;status={{$.Status}}{{end}}{{if $.Order}}&amp;order={{$.Order}}{{end}}">
+                            {{if eq $p $.Page}}
+                                <span class="uk-badge">{{$p}}</span>
+                            {{else}}
+                                {{$p}}
+                            {{end}}
+                        </a>
                     </li>
                 {{end}}
             </ul>
