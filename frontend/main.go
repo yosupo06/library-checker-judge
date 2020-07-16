@@ -247,7 +247,7 @@ func submitList(ctx *gin.Context) {
 		"Problem":     submitFilter.Problem,
 		"Status":      submitFilter.Status,
 		"Pages":       pages,
-    "Page":        submitFilter.Page,
+		"Page":        submitFilter.Page,
 		"Order":       submitFilter.Order,
 		"FilterUser":  submitFilter.User,
 		"LangMap":     langMap,
