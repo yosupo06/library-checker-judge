@@ -711,6 +711,23 @@ func TestSimulateHack(t *testing.T) {
 	if !testFetchSubmission(t, id).Overview.Hacked {
 		t.Fatal("Hacked should be true")
 	}
+
+	subList, err := client.SubmissionList(judgeCtx, &pb.SubmissionListRequest{
+		Hacked: true,
+		Skip:   0,
+		Limit:  1000,
+	})
+	if err != nil {
+		t.Fatal("Failed to SubmissionList", err)
+	}
+	if subList.Count == 0 {
+		t.Fatal("Cannot get hacked submission")
+	}
+	for _, sub := range subList.Submissions {
+		if !sub.Hacked {
+			t.Fatal("List unhacked submission")
+		}
+	}
 }
 
 func TestSimulateJudgeDown(t *testing.T) {

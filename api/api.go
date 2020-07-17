@@ -309,7 +309,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Select("id, user_name, problem_name, lang, status, testhash, max_time, max_memory").
+		Select("id, user_name, problem_name, lang, status, hacked, testhash, max_time, max_memory").
 		Order(order).
 		Find(&submissions).Error; err != nil {
 		return nil, errors.New("Select Query Failed")
