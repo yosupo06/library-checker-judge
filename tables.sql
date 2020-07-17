@@ -36,7 +36,7 @@ create table tasks ( -- Between front and judge
 
 create table submission_testcase_results (
   submission int references submissions(id),       -- primary main
-  testcase varchar(32), -- primary sub
+  testcase varchar(63), -- primary sub
   status varchar(32),
   time int,
   memory bigint,
