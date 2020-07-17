@@ -249,16 +249,10 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	if err := db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
 		return nil, errors.New("Submission fetch failed")
 	}
-	overview := &pb.SubmissionOverview{
-		Id:           int32(sub.ID),
-		ProblemName:  sub.Problem.Name,
-		ProblemTitle: sub.Problem.Title,
-		UserName:     sub.User.Name,
-		Lang:         sub.Lang,
-		IsLatest:     sub.Testhash == sub.Problem.Testhash,
-		Status:       sub.Status,
-		Time:         float64(sub.MaxTime) / 1000.0,
-		Memory:       int64(sub.MaxMemory),
+	overview, err := toProtoSubmission(&sub)
+	if err != nil {
+		log.Print(err)
+		return nil, err
 	}
 
 	res := &pb.SubmissionInfoResponse{
@@ -291,6 +285,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		ProblemName: in.Problem,
 		Status:      in.Status,
 		UserName:    sql.NullString{String: in.User, Valid: (in.User != "")},
+		Hacked:      in.Hacked,
 	}
 
 	count := 0
@@ -324,17 +319,12 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		Count: int32(count),
 	}
 	for _, sub := range submissions {
-		res.Submissions = append(res.Submissions, &pb.SubmissionOverview{
-			Id:           int32(sub.ID),
-			ProblemName:  sub.Problem.Name,
-			ProblemTitle: sub.Problem.Title,
-			UserName:     sub.User.Name,
-			Lang:         sub.Lang,
-			IsLatest:     sub.Testhash == sub.Problem.Testhash,
-			Status:       sub.Status,
-			Time:         float64(sub.MaxTime) / 1000.0,
-			Memory:       int64(sub.MaxMemory),
-		})
+		protoSub, err := toProtoSubmission(&sub)
+		if err != nil {
+			log.Print(err)
+			return nil, err
+		}
+		res.Submissions = append(res.Submissions, protoSub)
 	}
 	return &res, nil
 }
@@ -517,7 +507,6 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 	}
 	id := in.SubmissionId
 	status, err := updateSubmissionRegistration(id, in.JudgeName, 10*time.Second)
-
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -526,6 +515,11 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 		log.Println(status, id)
 		return nil, errors.New("Call FinishJudgeTaskStatus to non-registered submission")
 	}
+	sub, err := fetchSubmission(id)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
 	if err := db.Model(&Submission{
 		ID: id,
@@ -533,6 +527,7 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 		Status:    in.Status,
 		MaxTime:   int32(in.Time * 1000),
 		MaxMemory: in.Memory,
+		Hacked:    sub.PrevStatus == "AC" && in.Status != "AC",
 	}).Error; err != nil {
 		return nil, errors.New("Update Status Failed")
 	}
