@@ -37,7 +37,9 @@
                     <td>{{if .UserName}}{{.UserName}}{{else}}(anonymous){{end}}</td>
                     <!-- Status -->
                     <td>
-                        {{if and .IsLatest (eq .Status "AC")}}
+                        {{if and .Hacked}}
+                        <span class="uk-label uk-label-danger">Hacked({{.Status}})</span>
+                        {{else if and .IsLatest (eq .Status "AC")}}
                         <span class="uk-label uk-label-success">AC</span>
                         {{else}}
                         <span class="uk-label">{{.Status}}</span>
