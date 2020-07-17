@@ -34,6 +34,8 @@ type Submission struct {
 	Problem     Problem `gorm:"foreignkey:ProblemName"`
 	Lang        string
 	Status      string
+	PrevStatus  string
+	Hacked      bool
 	Source      string
 	Testhash    string
 	MaxTime     int32
@@ -124,15 +126,16 @@ func popTask() (Task, error) {
 }
 
 func toWaitingJudge(id int32, priority int32, after time.Duration) error {
-	_, err := fetchSubmission(id)
+	sub, err := fetchSubmission(id)
 	if err != nil {
 		return err
 	}
 	if err := db.Model(&Submission{
 		ID: id,
 	}).Updates(map[string]interface{}{
-		"judge_name": "#dummy",
-		"judge_ping": time.UnixDate,
+		"prev_status": sub.Status,
+		"judge_name":  "#dummy",
+		"judge_ping":  time.UnixDate,
 	}).Error; err != nil {
 		log.Print(err)
 		return errors.New("Failed to clear judge_name")

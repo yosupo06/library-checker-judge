@@ -571,6 +571,148 @@ func TestSimulateRejudge(t *testing.T) {
 	}
 }
 
+func TestSimulateHack(t *testing.T) {
+	clearTask(t)
+
+	judgeCtx := loginAsAdmin(t)
+	id := submitSomething(t)
+
+	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName: "judge-test",
+		Status:    "Judging",
+		CaseResults: []*pb.SubmissionCaseResult{
+			{
+				Case:   "test00",
+				Status: "AC",
+				Time:   1.0,
+				Memory: 1,
+			},
+		},
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "AC",
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
+	}
+
+	// AC -> WA
+	if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+		Id: id,
+	}); err != nil {
+		t.Fatal("Failed to Rejudge:", err)
+	}
+
+	resp, err = client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	if testFetchSubmission(t, id).Overview.Hacked {
+		t.Fatal("Hacked should not be true")
+	}
+
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName: "judge-test",
+		Status:    "Judging",
+		CaseResults: []*pb.SubmissionCaseResult{
+			{
+				Case:   "test00",
+				Status: "WA",
+				Time:   1.0,
+				Memory: 1,
+			},
+		},
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "WA",
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
+	}
+
+	if !testFetchSubmission(t, id).Overview.Hacked {
+		t.Fatal("Hacked should be true")
+	}
+
+	// WA -> TLE
+	if _, err := client.Rejudge(judgeCtx, &pb.RejudgeRequest{
+		Id: id,
+	}); err != nil {
+		t.Fatal("Failed to Rejudge:", err)
+	}
+
+	resp, err = client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
+		JudgeName: "judge-test",
+	})
+	if err != nil {
+		t.Fatal("Failed to PopJudgeTask:", err)
+	}
+
+	if id != resp.SubmissionId {
+		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
+	}
+
+	if !testFetchSubmission(t, id).Overview.Hacked {
+		t.Fatal("Hacked should be true")
+	}
+
+	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
+		JudgeName: "judge-test",
+		Status:    "Judging",
+		CaseResults: []*pb.SubmissionCaseResult{
+			{
+				Case:   "test00",
+				Status: "TLE",
+				Time:   1.0,
+				Memory: 1,
+			},
+		},
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
+	}
+
+	if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		JudgeName:    "judge-test",
+		Status:       "TLE",
+		SubmissionId: id,
+	}); err != nil {
+		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
+	}
+
+	if !testFetchSubmission(t, id).Overview.Hacked {
+		t.Fatal("Hacked should be true")
+	}
+}
+
 func TestSimulateJudgeDown(t *testing.T) {
 	clearTask(t)
 

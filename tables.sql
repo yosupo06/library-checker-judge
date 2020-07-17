@@ -20,6 +20,8 @@ create table submissions (
   lang varchar(32) not null,
   source text not null,
   status varchar(32), -- AC, WA, TLE, WJ, ...
+  prev_status varchar(32),
+  hacked boolean,
   testhash varchar(255),
   max_time int,
   max_memory bigint,

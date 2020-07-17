@@ -119,7 +119,8 @@ message SubmissionOverview {
     string user_name = 4; // "admin"
     string lang = 5; // "cpp"
     bool is_latest = 6;
-    string status = 7; // "AC"    
+    string status = 7; // "AC"
+    bool hacked = 10;
     double time = 8; // 2.0 = 2 seconds
     int64 memory = 9; // x bytes
 }
@@ -145,6 +146,7 @@ message SubmissionListRequest {
     uint32 limit = 2; // # of submissions (max 1000)
     string problem = 3; // "aplusb"(filter)
     string status = 4; // "AC"(filter)
+    bool hacked = 7; // (filter)
     string user = 5; // "admin"(filter)
     string order = 6; // sort order (default: "-id", "time")
 }
