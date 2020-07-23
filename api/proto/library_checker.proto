@@ -148,6 +148,7 @@ message SubmissionListRequest {
     string status = 4; // "AC"(filter)
     bool hacked = 7; // (filter)
     string user = 5; // "admin"(filter)
+    string lang = 8; // "cpp"(filter)
     string order = 6; // sort order (default: "-id", "time")
 }
 message SubmissionListResponse {

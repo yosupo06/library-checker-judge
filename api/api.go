@@ -284,6 +284,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 	filter := &Submission{
 		ProblemName: in.Problem,
 		Status:      in.Status,
+		Lang:        in.Lang,
 		UserName:    sql.NullString{String: in.User, Valid: (in.User != "")},
 		Hacked:      in.Hacked,
 	}
