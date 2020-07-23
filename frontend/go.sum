@@ -126,6 +126,8 @@ github.com/yosupo06/library-checker-judge/api v0.0.0-20200717102016-5b8d3a62acb2
 github.com/yosupo06/library-checker-judge/api v0.0.0-20200717102016-5b8d3a62acb2/go.mod h1:+4t0zXkl+LvgYdMeKQB84P1oBlWGjVEadO0g63bLRXg=
 github.com/yosupo06/library-checker-judge/api v0.0.0-20200717112541-b5449304cf6c h1:Lb7/3SqrGARvx/YBtV6QHy2owP9tP7928LJ7KukPnS8=
 github.com/yosupo06/library-checker-judge/api v0.0.0-20200717112541-b5449304cf6c/go.mod h1:+4t0zXkl+LvgYdMeKQB84P1oBlWGjVEadO0g63bLRXg=
+github.com/yosupo06/library-checker-judge/api v0.0.0-20200723031016-4c021e50b7cc h1:lGC7/t3KbBAXacd+Vh5eGZ1EaoKJAOP7cYIqCte7qKE=
+github.com/yosupo06/library-checker-judge/api v0.0.0-20200723031016-4c021e50b7cc/go.mod h1:heKHa3bSXalNo9Dev9WEIlFkn76ncVE7OJwx+J0FgUY=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
 go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
