@@ -38,6 +38,19 @@
                         </button>
                     </div>
                     <div uk-form-custom="target: > * > span:first-child">
+                        <select name="lang">
+                            <option value="">Lang</option>
+                            {{range $langid, $langdisplay := .LangMap}}
+                            <option value="{{$langid}}" {{if eq $.FilterLang $langid}}selected{{end}}>{{$langdisplay}}</option>
+                            {{end}}
+                            </select>
+                        </select>
+                        <button class="uk-button uk-button-default uk-form-width-medium" type="button" tabindex="-1">
+                            <span></span>
+                            <span uk-icon="icon: chevron-down"></span>
+                        </button>
+                    </div>
+                    <div uk-form-custom="target: > * > span:first-child">
                         <select name="order">
                             <option value="-id" {{if eq $.Order "-id" }}selected{{end}}>ID</option>
                             <option value="+time" {{if eq $.Order "+time" }}selected{{end}}>Time</option>
@@ -54,7 +67,7 @@
             <ul class="uk-pagination uk-flex-center">
                 {{range $p := .Pages}}
                     <li>
-                        <a href="?page={{$p}}{{if $.Problem}}&amp;problem={{$.Problem}}{{end}}{{if $.FilterUser}}&amp;user={{$.FilterUser}}{{end}}{{if $.Status}}&amp;status={{$.Status}}{{end}}{{if $.Order}}&amp;order={{$.Order}}{{end}}">
+                        <a href="?page={{$p}}{{if $.Problem}}&amp;problem={{$.Problem}}{{end}}{{if $.FilterUser}}&amp;user={{$.FilterUser}}{{end}}{{if $.Status}}&amp;status={{$.Status}}{{end}}{{if $.FilterLang}}&amp;lang={{$.FilterLang}}{{end}}{{if $.Order}}&amp;order={{$.Order}}{{end}}">
                             {{if eq $p $.Page}}
                                 <span class="uk-badge">{{$p}}</span>
                             {{else}}

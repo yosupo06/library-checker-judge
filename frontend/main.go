@@ -204,6 +204,7 @@ func submitList(ctx *gin.Context) {
 		Page    int    `form:"page,default=1" binding:"gte=1,lte=1000"`
 		Problem string `form:"problem" binding:"lte=100"`
 		Status  string `form:"status" binding:"lte=100"`
+		Lang    string `form:"lang" binding:"lte=100"`
 		User    string `form:"user" binding:"lte=100"`
 		Order   string `form:"order"`
 	}
@@ -217,6 +218,7 @@ func submitList(ctx *gin.Context) {
 		Limit:   100,
 		Problem: submitFilter.Problem,
 		Status:  submitFilter.Status,
+		Lang:    submitFilter.Lang,
 		User:    submitFilter.User,
 		Order:   submitFilter.Order,
 	})
@@ -249,6 +251,7 @@ func submitList(ctx *gin.Context) {
 		"Pages":       pages,
 		"Page":        submitFilter.Page,
 		"Order":       submitFilter.Order,
+		"FilterLang":  submitFilter.Lang,
 		"FilterUser":  submitFilter.User,
 		"LangMap":     langMap,
 		"NumPage":     numPage,
