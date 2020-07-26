@@ -51,6 +51,7 @@
         'general_matching',
         'bipartite_edge_coloring',
         'assignment',
+        'cartesian_tree',
         'directedmst',
         'manhattanmst',
         'dominatortree',
