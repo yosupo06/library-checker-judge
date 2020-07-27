@@ -23,7 +23,7 @@ packages:
   - rustc
   - cargo
   - ghc
-  - stack
+  - haskell-stack
   - sbcl
   
 write_files:
