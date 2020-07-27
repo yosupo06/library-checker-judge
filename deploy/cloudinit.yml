@@ -26,6 +26,7 @@ packages:
   - rustc
   - cargo
   - ghc
+  - stack
   - sbcl
   
 write_files:
