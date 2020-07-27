@@ -75,6 +75,8 @@ runcmd:
   # install numpy, scipy
   - python3.7 -m pip install --upgrade pip
   - python3.7 -m pip install --upgrade numpy scipy
+  # install minio, grpc
+  - python3 -m pip install minio grpcio-tools
 
 power_state:
   mode: reboot

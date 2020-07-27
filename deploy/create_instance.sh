@@ -36,9 +36,6 @@ gcloud compute scp --zone ${ZONE} ../judge.tar.gz root@${NAME}:/root/library-che
 echo "Extract judge.tar.gx"
 gcpexec "cd /root/library-checker-judge && tar -xf judge.tar.gz"
 
-echo "Install pip"
-gcpexec "python3 -m pip install minio grpcio-tools"
-
 echo "Install compilers"
 gcpexec "cd /root/library-checker-judge/deploy && ./install.sh"
 
