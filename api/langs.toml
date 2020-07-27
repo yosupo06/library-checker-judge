@@ -56,7 +56,7 @@
     name = "GHC"
     version = "ghc(ubuntu18.04 apt)"
     source = "main.hs"
-    compile = "ghc -O2 main.hs"
+    compile = "stack ghc -- main.hs -O2"
     exec = "./main"
 [[langs]]
     id = "csharp"

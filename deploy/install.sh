@@ -20,6 +20,10 @@ echo 'Init C# Project'
 dirname="/opt"
 project_name="C-Sharp"
 
+echo 'Install Haskell packages'
+stack update
+stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers mtl random strict text transformers vector vector-algorithms
+
 su -c """
 dotnet new console -o /tmp/${project_name} -lang \"C#\" &&
 sed -i -e '/<PropertyGroup>/a <AllowUnsafeBlocks>true</AllowUnsafeBlocks>' /tmp/${project_name}/${project_name}.csproj &&
