@@ -13,7 +13,7 @@ gcloud compute instances create $NAME --zone=$ZONE \
 --boot-disk-size=25GB \
 --boot-disk-type=pd-ssd \
 --metadata-from-file user-data=cloudinit.yml \
---image-family=ubuntu-1804-lts --image-project=ubuntu-os-cloud ${@:3}
+--image-family=ubuntu-2004-lts --image-project=ubuntu-os-cloud ${@:3}
 
 function gcpexec() {
     echo "Start: ${1}"
