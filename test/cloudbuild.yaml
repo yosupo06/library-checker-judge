@@ -7,5 +7,6 @@ steps:
       - |
         apt-get install git && \
         git clone https://github.com/yosupo06/library-checker-problems/ && \
-        test/gce_test.sh
+        cd test && \
+        ./gce_test.sh
 timeout: 1800s
