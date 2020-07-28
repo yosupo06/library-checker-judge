@@ -1,5 +1,5 @@
 use clap::{App, Arg};
-use failure::{format_err, Error};
+use anyhow::{format_err, Error};
 use libc::pid_t;
 use libc::{rlimit, setrlimit, RLIMIT_STACK, RLIM_INFINITY};
 use log::{info, warn};
@@ -244,21 +244,21 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
                     close(pipe_write)?;
                     mount(
                         None::<&str>,
-                        &Some("/"),
+                        "/",
                         None::<&str>,
                         MsFlags::MS_REC | MsFlags::MS_PRIVATE,
                         None::<&str>,
                     )?;
                     mount(
                         Some("none"),
-                        &Some("/proc"),
+                        "/proc",
                         None::<&str>,
                         MsFlags::MS_PRIVATE | MsFlags::MS_REC,
                         None::<&str>,
                     )?;
                     mount(
                         Some("proc"),
-                        &Some("/proc"),
+                        "/proc",
                         Some("proc"),
                         MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC | MsFlags::MS_NODEV,
                         None::<&str>,

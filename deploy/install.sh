@@ -9,12 +9,12 @@ tar -xf pypy3.6-v7.1.1-linux64.tar.bz2 -C /opt
 ln -s /opt/pypy3.6-v7.1.1-linux64/bin/pypy3 /usr/bin/pypy3
 
 echo 'Install .NET Core'
-wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 apt install -y  ./packages-microsoft-prod.deb
 add-apt-repository universe
 apt install -y apt-transport-https
 apt update
-apt install dotnet-sdk-3.0 -y
+apt install dotnet-sdk-3.1 -y
 
 echo 'Init C# Project'
 dirname="/opt"

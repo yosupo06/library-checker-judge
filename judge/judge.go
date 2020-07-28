@@ -76,7 +76,7 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	cmd.Path = path.Join(wd, "executor_rust", "target", "release", "executor_rust")
+	cmd.Path = path.Join(wd, "executor_rust", "target", "x86_64-unknown-linux-gnu", "release", "executor_rust")
 	cmd.Args = append([]string{cmd.Path}, newArg...)
 	// add stderr
 	os := &outputStripper{N: 1 << 11}
