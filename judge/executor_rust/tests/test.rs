@@ -1,5 +1,5 @@
 use executor_rust::{execute_main, ExecResult};
-use failure::Error;
+use anyhow::Error;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::fs::copy;
