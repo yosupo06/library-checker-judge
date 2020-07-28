@@ -29,7 +29,13 @@ until gcpexec "ls /root/can_start > /dev/null"; do
 done
 
 echo "Make judge.tar.gz(compressed library-checker-judge)"
-(cd .. && tar -cf judge.tar.gz $(git ls-files))
+if [ -d "../.git" ]; then
+    files=$(cd .. && git ls-files)
+else
+    files=$(cd .. && find .)
+fi
+(cd .. && tar -cf judge.tar.gz $files)
+
 echo "Copy judge.tar.gz"
 gcpexec "cd /root/ && mkdir library-checker-judge"
 gcloud compute scp --zone ${ZONE} ../judge.tar.gz root@${NAME}:/root/library-checker-judge/judge.tar.gz
