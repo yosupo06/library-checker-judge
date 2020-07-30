@@ -105,7 +105,7 @@ fn prepare_mount(base_dir: &Path, temp_dir: &Path, overlay: bool) -> Result<(), 
     )?;
     // mount files
     for dir_name in vec![
-        "dev", "sys", "bin", "lib", "lib64", "usr", "etc", "opt", "var", "home",
+        "dev", "sys", "bin", "sbin", "lib", "lib64", "usr", "etc", "opt", "var", "home",
     ] {
         let dir = root_dir.join(dir_name);
         create_dir(&dir)?;
