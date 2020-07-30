@@ -20,10 +20,6 @@ echo 'Init C# Project'
 dirname="/opt"
 project_name="C-Sharp"
 
-echo 'Install Haskell packages'
-stack update
-stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8
-
 su -c """
 dotnet new console -o /tmp/${project_name} -lang \"C#\" &&
 sed -i -e '/<PropertyGroup>/a <AllowUnsafeBlocks>true</AllowUnsafeBlocks>' /tmp/${project_name}/${project_name}.csproj &&
@@ -32,3 +28,15 @@ dotnet restore /tmp/${project_name} -r ubuntu.18.04-x64
 """ -- library-checker-user
 
 cp -r /tmp/${project_name} ${dirname}/${project_name}
+
+echo 'Install Haskell packages'
+
+curl -sSL https://get.haskellstack.org/ | sh
+stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8
+
+su -c """
+cp /var/haskell_load.hs /tmp/haskell_load.hs &&
+cd ~ && stack ghc -- /tmp/haskell_load.hs
+""" -- library-checker-user
+
+exit 0

@@ -1,0 +1,12 @@
+steps:
+  - id: judge-test
+    name:	gcr.io/google.com/cloudsdktool/cloud-sdk:debian_component_based
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        apt-get install git && \
+        git clone https://github.com/yosupo06/library-checker-problems/ ../library-checker-problems && \
+        cd test && \
+        ./gce_test.sh
+timeout: 1800s
