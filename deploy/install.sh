@@ -22,7 +22,7 @@ project_name="C-Sharp"
 
 echo 'Install Haskell packages'
 stack update
-stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers mtl random strict text transformers vector vector-algorithms
+stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8
 
 su -c """
 dotnet new console -o /tmp/${project_name} -lang \"C#\" &&
