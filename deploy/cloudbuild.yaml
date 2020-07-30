@@ -11,4 +11,4 @@ steps:
       - 'MINIO_BUCKET=$_MINIO_BUCKET'
       - 'CREATE_OPTION=$_CREATE_OPTION'
 
-timeout: 1800s
+timeout: 3600s
