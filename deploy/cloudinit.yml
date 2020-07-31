@@ -103,6 +103,23 @@ runcmd:
   # install numpy, scipy
   - python3.8 -m pip install --upgrade pip
   - python3.8 -m pip install --upgrade numpy scipy
+  # install ldc
+  - wget https://github.com/ldc-developers/ldc/releases/download/v1.22.0/ldc2-1.22.0-linux-x86_64.tar.xz
+  - tar -xf ldc2-1.22.0-linux-x86_64.tar.xz -C /opt
+  - ln -s /opt/ldc2-1.22.0-linux-x86_64/bin/ldc2 /usr/bin/ldc2
+  # install pypy
+  - wget https://bitbucket.org/pypy/pypy/downloads/pypy3.6-v7.3.1-linux64.tar.bz2
+  - tar -xf pypy3.6-v7.3.1-linux64.tar.bz2 -C /opt
+  - ln -s /opt/pypy3.6-v7.3.1-linux64/bin/pypy3 /usr/bin/pypy3
+  # install haskell-stack
+  - stack upgrade --binary-only
+  - |
+    su -c """
+    stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8 &&
+    cp /var/haskell_load.hs /tmp/haskell_load.hs &&
+    cd ~ && stack ghc -- /tmp/haskell_load.hs
+    """ -- library-checker-user
+
 
 power_state:
   mode: reboot
