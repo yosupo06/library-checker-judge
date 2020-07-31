@@ -32,9 +32,9 @@ cp -r /tmp/${project_name} ${dirname}/${project_name}
 echo 'Install Haskell packages'
 
 stack upgrade --binary-only
-stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8
 
 su -c """
+stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8 &&
 cp /var/haskell_load.hs /tmp/haskell_load.hs &&
 cd ~ && stack ghc -- /tmp/haskell_load.hs
 """ -- library-checker-user
