@@ -38,5 +38,3 @@ su -c """
 cp /var/haskell_load.hs /tmp/haskell_load.hs &&
 cd ~ && stack ghc -- /tmp/haskell_load.hs
 """ -- library-checker-user
-
-exit 0
