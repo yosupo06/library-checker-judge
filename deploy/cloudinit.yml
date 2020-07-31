@@ -112,7 +112,7 @@ runcmd:
   - tar -xf pypy3.6-v7.3.1-linux64.tar.bz2 -C /opt
   - ln -s /opt/pypy3.6-v7.3.1-linux64/bin/pypy3 /usr/bin/pypy3
   # install haskell-stack
-  - stack upgrade --binary-only
+  - HOME=/root stack upgrade --binary-only
   - |
     su -c """
     stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8 &&
