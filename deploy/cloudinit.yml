@@ -24,6 +24,8 @@ packages:
   - rustc
   - cargo
   - sbcl
+  - ghc
+  - haskell-stack
   
 write_files:
   - path: /etc/default/grub.d/99-lib-judge.cfg
