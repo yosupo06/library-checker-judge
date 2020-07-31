@@ -54,7 +54,7 @@
 [[langs]]
     id = "haskell"
     name = "GHC"
-    version = "ghc(ubuntu20.04 apt)"
+    version = "ghc + stack (ubuntu20.04 apt)"
     source = "main.hs"
     compile = "stack ghc -- main.hs -O2"
     exec = "./main"
