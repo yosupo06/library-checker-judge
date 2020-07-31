@@ -226,6 +226,23 @@ func TestSubmitHaskellAC(t *testing.T) {
 	}
 }
 
+func TestSubmitHaskellStackAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac_stack.hs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := Submit(t, "aplusb", "haskell", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	checkMemory(t, submission, 1, 10_000_000)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
+	}
+}
+
 func TestSubmitCSharpAC(t *testing.T) {
 	src, err := os.Open("test_src/aplusb/ac.cs")
 	if err != nil {
