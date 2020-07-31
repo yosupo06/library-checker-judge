@@ -13,7 +13,8 @@ steps:
       - push
       - asia.gcr.io/library-checker-project/judge-api
   - id: deploy
-    name: gcr.io/cloud-builders/gcloud
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
     args:
       - run
       - deploy
@@ -26,7 +27,8 @@ steps:
       - --set-env-vars=POSTGRE_HOST=${_POSTGRE_HOST},POSTGRE_PASS=${_POSTGRE_PASS},HMAC_SECRET=${_HMAC_SECRET}
       - --max-instances=2
   - id: deploy-grpcweb
-    name: gcr.io/cloud-builders/gcloud
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
     args:
       - run
       - deploy
