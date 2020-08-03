@@ -5,7 +5,7 @@ set -e
 echo "Start Test"
 
 NAME=lib-judge-test-$(date +%d-%s)-$RANDOM
-ZONE=asia-northeast1-c
+ZONE=asia-east1-c
 
 if [ $# -ge 1 ] && [ $1 = "remain" ]; then
     echo "[WARN!] Remain Instance"
