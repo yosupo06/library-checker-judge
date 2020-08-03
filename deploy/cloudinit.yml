@@ -16,7 +16,7 @@ packages:
   - unzip
   # compilers
   - g++
-  - golang-1.14-go
+  - golang-go
   - default-jdk
   - default-jre
   - python3-pip
