@@ -281,7 +281,7 @@ func TestSubmitPyPyAC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	id := Submit(t, "aplusb", "python3", src)
+	id := Submit(t, "aplusb", "pypy3", src)
 	submission := runJudge(t, id)
 	overview := submission.Overview
 
