@@ -1,6 +1,6 @@
 steps:
   - id: judge-test
-    name:	gcr.io/google.com/cloudsdktool/cloud-sdk:debian_component_based
+    name:	gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: bash
     args:
       - '-c'
