@@ -16,12 +16,14 @@ packages:
   - unzip
   # compilers
   - g++
+  - golang-go
   - default-jdk
   - default-jre
   - python3-pip
   - python3.8
   - python3.8-dev
   - pypy3
+  - ldc
   - rustc
   - cargo
   - sbcl
@@ -98,31 +100,23 @@ runcmd:
   - curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh
   - curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - chmod +x /usr/local/bin/docker-compose
-  # install go
-  - add-apt-repository -y ppa:longsleep/golang-backports
-  - apt-get install -y golang-go
   # install numpy, scipy
-  - python3.8 -m pip install --upgrade pip
   - python3.8 -m pip install --upgrade numpy scipy
-  # install ldc
-  - wget https://github.com/ldc-developers/ldc/releases/download/v1.22.0/ldc2-1.22.0-linux-x86_64.tar.xz
-  - tar -xf ldc2-1.22.0-linux-x86_64.tar.xz -C /opt
-  - ln -s /opt/ldc2-1.22.0-linux-x86_64/bin/ldc2 /usr/bin/ldc2
   # install haskell-stack
   - HOME=/root stack upgrade --binary-only
   - |
     su -c """
-    stack install --resolver lts-16.3 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8 &&
+    stack install --resolver lts-16.7 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8 &&
     cp /var/haskell_load.hs /tmp/haskell_load.hs &&
     cd ~ && stack ghc -- /tmp/haskell_load.hs
     """ -- library-checker-user
   # install C#
   - wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  - apt install -y  ./packages-microsoft-prod.deb
+  - apt-get install -y  ./packages-microsoft-prod.deb
   - add-apt-repository universe
-  - apt install -y apt-transport-https
-  - apt update
-  - apt install dotnet-sdk-3.1 -y
+  - apt-get install -y apt-transport-https
+  - apt-get update
+  - apt-get install -y dotnet-sdk-3.1
   - |
     su -c """
     dotnet new console -o /tmp/C-Sharp -lang \"C#\" &&
