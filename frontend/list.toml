@@ -124,4 +124,5 @@
     name = 'Geometry'
     problems = [
         'sort_points_by_argument',
+        'convex_layers',
     ]
