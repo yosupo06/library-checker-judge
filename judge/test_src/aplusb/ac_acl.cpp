@@ -1,5 +1,5 @@
 #include <iostream>
-#include <atcoder/unionfind>
+#include <atcoder/dsu>
 
 using namespace std;
 
