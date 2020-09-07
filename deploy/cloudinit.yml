@@ -125,6 +125,10 @@ runcmd:
     dotnet restore /tmp/C-Sharp -r ubuntu.18.04-x64
     """ -- library-checker-user
   - cp -r /tmp/C-Sharp /opt/C-Sharp
+  # install AC Library
+  - curl https://img.atcoder.jp/practice2/ac-library.zip --output ac-library.zip
+  - unzip ac-library.zip -d ac-library
+  - cp -r ac-library /opt/
 
 
 
