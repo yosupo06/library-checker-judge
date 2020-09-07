@@ -10,6 +10,13 @@
     compile = "g++ -O2 -std=c++17 -DEVAL -march=native -o main main.cpp"
     exec = "./main"
 [[langs]]
+    id = "cpp-acl"
+    name = "C++17 + Atcoder Library"
+    version = "g++(ubuntu20.04 apt)"
+    source = "main.cpp"    
+    compile = "g++ -O2 -std=c++17 -DEVAL -march=native -o main main.cpp -I /opt/ac-library"
+    exec = "./main"
+[[langs]]
     id = "cpp14"
     name = "C++14"
     version = "g++(ubuntu20.04 apt)"

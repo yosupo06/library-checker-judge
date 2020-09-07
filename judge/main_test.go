@@ -192,6 +192,22 @@ func TestSubmitCE(t *testing.T) {
 	checkStatus(t, submission, "CE")
 }
 
+func TestSubmitACLAC(t *testing.T) {
+	src, err := os.Open("test_src/aplusb/ac_acl.cpp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := Submit(t, "aplusb", "cpp-acl", src)
+	submission := runJudge(t, id)
+	overview := submission.Overview
+
+	checkStatus(t, submission, "AC")
+	checkTime(t, submission, 0.001, 0.100)
+	checkMemory(t, submission, 1, 10_000_000)
+	if !overview.IsLatest {
+		t.Fatal("Not latest")
+	}
+}
 func TestSubmitRustAC(t *testing.T) {
 	src, err := os.Open("test_src/aplusb/ac.rs")
 	if err != nil {
