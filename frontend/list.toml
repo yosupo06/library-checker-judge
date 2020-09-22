@@ -61,6 +61,7 @@
         'tree_decomposition_width_2',
         'frequency_table_of_tree_distance',
         'global_minimum_cut_of_dynamic_star_augmented_graph',
+        'chordal_graph_recognition',
     ]
 
 [[category]]
