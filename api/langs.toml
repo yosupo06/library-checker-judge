@@ -28,7 +28,7 @@
     name = "Rust"
     version = "rustc(ubuntu20.04 apt)"
     source = "main.rs"
-    compile = "rustc -O main.rs"
+    compile = "rustc --edition 2018 -O main.rs"
     exec = "./main"
 [[langs]]
     id = "d"
