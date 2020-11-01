@@ -1,5 +1,8 @@
 set -e
 
+# check psql was installed
+psql --version
+
 docker-compose down -v
 docker-compose up -d --build
 
