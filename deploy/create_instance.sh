@@ -42,8 +42,8 @@ gcloud compute scp --zone ${ZONE} ../judge.tar.gz root@${NAME}:/root/library-che
 echo "Extract judge.tar.gx"
 gcpexec "cd /root/library-checker-judge && tar -xf judge.tar.gz"
 
-echo "Build executor"
-gcpexec "cd /root/library-checker-judge/judge/executor_rust && cargo build --release"
+echo "Install executor"
+gcpexec "cd /root/library-checker-judge/judge/executor_rust && cargo install --path . --root /usr/"
 
 echo "Build judge"
 gcpexec "cd /root/library-checker-judge/judge && go build ."
