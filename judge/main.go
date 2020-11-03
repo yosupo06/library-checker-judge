@@ -79,7 +79,7 @@ func getCases(data string) ([]string, error) {
 	return result, nil
 }
 
-func execJudge(submissionID int32) error {
+func execJudge(submissionID int32) (err error) {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
 		Id: submissionID,
 	})
@@ -119,6 +119,18 @@ func execJudge(submissionID int32) error {
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if err != nil {
+			// error detected, try to change status into IE
+			client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+				JudgeName:    judgeName,
+				SubmissionId: submissionID,
+				Status:       "IE",
+				CaseVersion:  caseVersion,
+			})
+		}
+	}()
 
 	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
 		JudgeName:    judgeName,
