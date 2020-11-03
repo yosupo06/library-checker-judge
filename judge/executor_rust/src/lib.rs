@@ -1,22 +1,31 @@
-use clap::{App, Arg};
 use anyhow::{format_err, Error};
+use clap::{App, Arg};
 use libc::pid_t;
 use libc::{rlimit, setrlimit, RLIMIT_STACK, RLIM_INFINITY};
-use log::{info, warn};
+use log::{info, warn, error};
+
+#[cfg(feature = "sandbox")]
 use nix::mount::{mount, MsFlags};
+#[cfg(feature = "sandbox")]
 use nix::sched::{unshare, CloneFlags};
+
 use nix::sys::signal::{kill, SIGKILL};
 use nix::sys::wait::{waitpid, WaitStatus};
-use nix::unistd::{
-    chdir, chroot, close, execvp, fork, getpid, pipe, read, setgid, setuid, write, ForkResult, Gid,
-    Pid, Uid,
-};
+use nix::unistd::{chdir, chroot, close, execvp, fork, getpid, pipe, read, write, ForkResult, Pid};
+
+#[cfg(feature = "sandbox")]
+use nix::unistd::{setgid, setuid, Gid, Uid};
+
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::env;
 use std::ffi::CString;
 use std::fs::File;
-use std::fs::{create_dir, read_to_string, remove_dir_all, set_permissions, OpenOptions};
+
+#[cfg(feature = "sandbox")]
+use std::fs::OpenOptions;
+use std::fs::{create_dir, read_to_string, remove_dir_all, set_permissions};
+
 use std::io;
 use std::io::Write;
 use std::iter;
@@ -25,7 +34,10 @@ use std::os::unix::fs::PermissionsExt;
 use std::os::unix::io::RawFd;
 use std::path::{Path, PathBuf};
 use std::process::exit;
+
+#[cfg(feature = "sandbox")]
 use std::process::Command;
+
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -55,6 +67,7 @@ fn tempdir(temp_dir: &Path) -> io::Result<PathBuf> {
     ))
 }
 
+#[cfg(feature = "sandbox")]
 fn prepare_mount(base_dir: &Path, temp_dir: &Path, overlay: bool) -> Result<(), Error> {
     let root_dir = temp_dir.join("root");
     let sand_dir = root_dir.join("sand");
@@ -120,6 +133,12 @@ fn prepare_mount(base_dir: &Path, temp_dir: &Path, overlay: bool) -> Result<(), 
     Ok(())
 }
 
+#[cfg(not(feature = "sandbox"))]
+fn prepare_mount(_: &Path, _: &Path, _: bool) -> Result<(), Error> {
+    Ok(())
+}
+
+#[cfg(feature = "sandbox")]
 fn prepare_cgroup(pid: &Pid) -> Result<(), Error> {
     Command::new("cgdelete")
         .arg("pids,cpuset,memory:/lib-judge")
@@ -160,6 +179,12 @@ fn prepare_cgroup(pid: &Pid) -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg(not(feature = "sandbox"))]
+fn prepare_cgroup(_: &Pid) -> Result<(), Error> {
+    Ok(())
+}
+
+#[cfg(feature = "sandbox")]
 fn change_uid() -> Result<(), Error> {
     let output = Command::new("id")
         .args(&["-g", "library-checker-user"])
@@ -178,6 +203,11 @@ fn change_uid() -> Result<(), Error> {
     let uid = String::from_utf8(output.stdout)?.trim().parse()?;
     setuid(Uid::from_raw(uid))?;
 
+    Ok(())
+}
+
+#[cfg(not(feature = "sandbox"))]
+fn change_uid() -> Result<(), Error> {
     Ok(())
 }
 
@@ -200,14 +230,28 @@ fn execute_unshared(
             },
         );
         if res != 0 {
-            return Err(format_err!("setrlimit(stack) failed"));
+            if cfg!(feature = "sandbox") {
+                return Err(format_err!("setrlimit(stack unlimited) failed"))
+            } else {
+                warn!("setrlimit(stack unlimited) failed")
+            }
         }
     }
-    chdir(&temp_dir.join("root").join("sand"))?;
-    chroot("..")?;
-    change_uid()?;
-    env::remove_var("TMPDIR");
-    env::set_var("HOME", "/home/library-checker-user");
+
+
+    if cfg!(feature="sandbox") {
+        chdir(&temp_dir.join("root").join("sand"))?; 
+    } else {
+        chdir(base_dir)?;
+    }
+
+    if cfg!(feature="sandbox") {
+        chroot("..")?;
+        change_uid()?;
+        env::remove_var("TMPDIR");
+        env::set_var("HOME", "/home/library-checker-user");
+    }
+
     let program = CString::new(user_args[0].clone())?;
     let args: Vec<std::ffi::CString> = user_args[..]
         .iter()
@@ -219,12 +263,55 @@ fn execute_unshared(
     execvp(&program, &args[..])?;
     Ok(())
 }
+
 #[derive(Debug)]
 pub struct ExecResult {
     pub status: i32,
     pub time: f64,
     pub memory: i64,
     pub tle: bool,
+}
+
+#[cfg(feature = "sandbox")]
+fn sandbox_unshare() -> Result<(), Error> {
+    unshare(CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWNET)?;
+    OK(())
+}
+
+#[cfg(not(feature = "sandbox"))]
+fn sandbox_unshare() -> Result<(), Error> {
+    Ok(())
+}
+
+#[cfg(feature = "sandbox")]
+fn sandbox_mount() -> Result<(), Error> {
+    mount(
+        None::<&str>,
+        "/",
+        None::<&str>,
+        MsFlags::MS_REC | MsFlags::MS_PRIVATE,
+        None::<&str>,
+    )?;
+    mount(
+        Some("none"),
+        "/proc",
+        None::<&str>,
+        MsFlags::MS_PRIVATE | MsFlags::MS_REC,
+        None::<&str>,
+    )?;
+    mount(
+        Some("proc"),
+        "/proc",
+        Some("proc"),
+        MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC | MsFlags::MS_NODEV,
+        None::<&str>,
+    )?;
+    Ok(())
+}
+
+#[cfg(not(feature = "sandbox"))]
+fn sandbox_mount() -> Result<(), Error> {
+    Ok(())
 }
 
 fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, Error> {
@@ -237,12 +324,14 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
         ForkResult::Child => {
             close(pipe_read)?;
             close(start_pipe_read)?;
-            unshare(CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWNET)
-                .expect("unshare failed");
+
+            sandbox_unshare().expect("failed unshare");
+
             match fork()? {
                 ForkResult::Child => {
                     close(pipe_write)?;
-                    mount(
+                    sandbox_mount()?;
+                    /*                    mount(
                         None::<&str>,
                         "/",
                         None::<&str>,
@@ -262,12 +351,12 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
                         Some("proc"),
                         MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC | MsFlags::MS_NODEV,
                         None::<&str>,
-                    )?;
+                    )?;*/
                     exit(
                         match execute_unshared(app, &temp_dir, user_args, start_pipe_write) {
                             Ok(()) => 0,
                             Err(msg) => {
-                                warn!("{}", msg);
+                                error!("{}", msg);
                                 1
                             }
                         },
@@ -347,8 +436,12 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
                 tle.store(true, Ordering::Relaxed);
                 result.time = tl;
             }
-            let mem = read_to_string("/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes")?;
-            result.memory = mem.trim().parse()?;
+            result.memory = if cfg!(feature = "sandbox") {
+                let mem = read_to_string("/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes")?;
+                mem.trim().parse()?
+            } else {
+                0
+            };
             result.tle = tle.load(Ordering::Relaxed);
             Ok(result)
         }
