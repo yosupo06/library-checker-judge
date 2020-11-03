@@ -43,7 +43,7 @@ echo "Extract judge.tar.gx"
 gcpexec "cd /root/library-checker-judge && tar -xf judge.tar.gz"
 
 echo "Install executor"
-gcpexec "cd /root/library-checker-judge/judge/executor_rust && cargo install --path . --root /usr/bin"
+gcpexec "cd /root/library-checker-judge/judge/executor_rust && cargo install --path . --root /usr/"
 
 echo "Build judge"
 gcpexec "cd /root/library-checker-judge/judge && go build ."
