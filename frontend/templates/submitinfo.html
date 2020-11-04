@@ -50,6 +50,13 @@
                 </tr>
                 {{end}}
             </table>
+            {{if .CompileError}}
+            <pre>
+                <code>
+                    {{.CompileError}}
+                </code>
+            </pre>
+            {{end}}
             <hr class="uk-margin-medium">
             <details open="true">
                 <summary>ケース詳細</summary>
