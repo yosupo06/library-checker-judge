@@ -331,27 +331,6 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
                 ForkResult::Child => {
                     close(pipe_write)?;
                     sandbox_mount()?;
-                    /*                    mount(
-                        None::<&str>,
-                        "/",
-                        None::<&str>,
-                        MsFlags::MS_REC | MsFlags::MS_PRIVATE,
-                        None::<&str>,
-                    )?;
-                    mount(
-                        Some("none"),
-                        "/proc",
-                        None::<&str>,
-                        MsFlags::MS_PRIVATE | MsFlags::MS_REC,
-                        None::<&str>,
-                    )?;
-                    mount(
-                        Some("proc"),
-                        "/proc",
-                        Some("proc"),
-                        MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC | MsFlags::MS_NODEV,
-                        None::<&str>,
-                    )?;*/
                     exit(
                         match execute_unshared(app, &temp_dir, user_args, start_pipe_write) {
                             Ok(()) => 0,
