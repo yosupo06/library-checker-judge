@@ -256,9 +256,10 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	}
 
 	res := &pb.SubmissionInfoResponse{
-		Overview:   overview,
-		Source:     sub.Source,
-		CanRejudge: canRejudge(ctx, overview),
+		Overview:     overview,
+		Source:       sub.Source,
+		CompileError: sub.CompileError,
+		CanRejudge:   canRejudge(ctx, overview),
 	}
 
 	sort.Slice(cases, func(i, j int) bool {
@@ -490,9 +491,10 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 	if err := db.Model(&Submission{
 		ID: id,
 	}).Updates(&Submission{
-		Status:    in.Status,
-		MaxTime:   int32(in.Time * 1000),
-		MaxMemory: in.Memory,
+		Status:       in.Status,
+		MaxTime:      int32(in.Time * 1000),
+		MaxMemory:    in.Memory,
+		CompileError: in.CompileError,
 	}).Error; err != nil {
 		return nil, errors.New("Update Status Failed")
 	}

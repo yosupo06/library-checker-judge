@@ -23,6 +23,7 @@ create table submissions (
   prev_status varchar(32),
   hacked boolean,
   testhash varchar(255),
+  compile_error text,
   max_time int,
   max_memory bigint,
   judge_ping timestamp with time zone,

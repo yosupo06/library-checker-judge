@@ -29,22 +29,23 @@ type User struct {
 
 // Submission is db table
 type Submission struct {
-	ID          int32
-	ProblemName string
-	Problem     Problem `gorm:"foreignkey:ProblemName"`
-	Lang        string
-	Status      string
-	PrevStatus  string
-	Hacked      bool
-	Source      string
-	Testhash    string
-	MaxTime     int32
-	MaxMemory   int64
-	JudgePing   time.Time
-	JudgeName   string
-	JudgeTasked bool
-	UserName    sql.NullString
-	User        User `gorm:"foreignkey:UserName"`
+	ID           int32
+	ProblemName  string
+	Problem      Problem `gorm:"foreignkey:ProblemName"`
+	Lang         string
+	Status       string
+	PrevStatus   string
+	Hacked       bool
+	Source       string
+	Testhash     string
+	MaxTime      int32
+	MaxMemory    int64
+	CompileError []byte
+	JudgePing    time.Time
+	JudgeName    string
+	JudgeTasked  bool
+	UserName     sql.NullString
+	User         User `gorm:"foreignkey:UserName"`
 }
 
 // SubmissionTestcaseResult is db table
