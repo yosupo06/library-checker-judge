@@ -2,7 +2,6 @@ use std::env;
 use executor_rust::execute_main;
 
 fn main() {
-    env::set_var("RUST_LOG", "info");
     env_logger::Builder::from_default_env()
         .format_timestamp(None)
         .format_module_path(false)
