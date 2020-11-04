@@ -138,6 +138,7 @@ message SubmissionInfoResponse {
     SubmissionOverview overview = 1;
     repeated SubmissionCaseResult case_results = 2;
     string source = 3; // "source"
+    bytes compile_error = 5;
     bool can_rejudge = 4;
 }
 
@@ -205,6 +206,7 @@ message SyncJudgeTaskStatusRequest {
     string status = 3;
     double time = 4; // 2.0 = 2 seconds
     int64 memory = 5; // x bytes
+    bytes compile_error = 8;
     repeated SubmissionCaseResult case_results = 6;
     google.protobuf.Duration expected_time = 7;
 }
