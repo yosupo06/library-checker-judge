@@ -1,15 +1,31 @@
-use executor_rust::{execute_main, ExecResult};
 use anyhow::Error;
+use executor_rust::{execute_main, ExecResult};
+#[cfg(feature = "sandbox")]
 use rand::distributions::Alphanumeric;
+#[cfg(feature = "sandbox")]
 use rand::Rng;
 use std::fs::copy;
 use std::fs::set_permissions;
-use std::iter;
+
+#[cfg(feature = "sandbox")]
 use std::env;
+#[cfg(feature = "sandbox")]
+use std::iter;
+
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use tempfile::{tempdir, TempDir};
 
+#[cfg(test)]
+#[ctor::ctor]
+fn init() {
+    env_logger::Builder::from_default_env()
+        .format_timestamp(None)
+        .format_module_path(false)
+        .init();
+}
+
+#[cfg(feature = "sandbox")]
 fn random_string(len: usize) -> String {
     let mut rng = rand::thread_rng();
     iter::repeat(())
@@ -33,7 +49,7 @@ fn to_string_vec(s: Vec<&str>) -> Vec<String> {
 fn assert_result(result: &ExecResult, status_expect: Option<i32>, time_upper: Option<f64>) {
     println!("result: {:?}", result);
     if let Some(status) = status_expect {
-        assert!(result.status == status);
+        assert_eq!(result.status, status);
     }
     if let Some(time) = time_upper {
         assert!(result.time <= time);
@@ -135,6 +151,7 @@ fn test_tle() {
     assert!(result.tle);
 }
 
+#[cfg(feature = "sandbox")]
 #[test]
 fn test_overlay() {
     let temp = tempdir().expect("failed");
@@ -153,16 +170,15 @@ fn test_overlay() {
     assert!(!temp.join("test.txt").exists());
 }
 
+#[cfg(feature = "sandbox")]
 #[test]
 fn test_other_tmp() {
     let temp = tempdir().expect("failed");
     let temp = temp.path();
     let prev_tmp = env::var("TMPDIR");
     env::set_var("TMPDIR", temp);
-    let result = execute_main(
-        &to_string_vec(vec![]),
-        &to_string_vec(vec!["mktemp"]),
-    ).expect("failed");
+    let result =
+        execute_main(&to_string_vec(vec![]), &to_string_vec(vec!["mktemp"])).expect("failed");
     match prev_tmp {
         Ok(s) => env::set_var("TMPDIR", s),
         Err(..) => env::remove_var("TMPDIR"),
@@ -170,6 +186,7 @@ fn test_other_tmp() {
     assert_result(&result, Some(0), None);
 }
 
+#[cfg(feature = "sandbox")]
 #[test]
 fn test_tempdir() {
     let temp = tempdir().expect("failed");
@@ -208,6 +225,7 @@ fn test_no_binary() {
     assert_result(&result, Some(1), Some(0.05));
 }
 
+#[cfg(feature = "sandbox")]
 #[test]
 fn test_stack_over_flow() {
     let temp = get_dir(Path::new("../test_src/stack.cpp")).expect("failed");
@@ -227,6 +245,7 @@ fn test_stack_over_flow() {
     assert_result(&result, Some(0), None);
 }
 
+#[cfg(feature = "sandbox")]
 #[test]
 fn test_fork_bomb() {
     let temp = get_dir(Path::new("../test_src/fork_bomb.sh")).expect("failed");
