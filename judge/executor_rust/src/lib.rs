@@ -275,7 +275,7 @@ pub struct ExecResult {
 #[cfg(feature = "sandbox")]
 fn sandbox_unshare() -> Result<(), Error> {
     unshare(CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNS | CloneFlags::CLONE_NEWNET)?;
-    OK(())
+    Ok(())
 }
 
 #[cfg(not(feature = "sandbox"))]
