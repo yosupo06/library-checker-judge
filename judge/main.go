@@ -159,10 +159,18 @@ func execJudge(submissionID int32) (err error) {
 		return err
 	}
 	if result.ReturnCode != 0 {
-		if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+		if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
 			JudgeName:    judgeName,
 			SubmissionId: submissionID,
 			Status:       "CE",
+			CompileError: result.Stderr,
+		}); err != nil {
+			return err
+		}
+
+		if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
+			JudgeName:    judgeName,
+			SubmissionId: submissionID,
 			CaseVersion:  caseVersion,
 		}); err != nil {
 			return err
