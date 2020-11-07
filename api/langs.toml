@@ -11,7 +11,7 @@
     exec = "./main"
 [[langs]]
     id = "cpp-acl"
-    name = "C++17 + Atcoder Library"
+    name = "C++17(ACL)"
     version = "g++(ubuntu20.04 apt)"
     source = "main.cpp"    
     compile = "g++ -O2 -std=c++17 -DEVAL -march=native -o main main.cpp -I /opt/ac-library"
