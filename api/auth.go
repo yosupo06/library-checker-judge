@@ -33,14 +33,6 @@ func getCurrentUser(ctx context.Context) User {
 	return User{}
 }
 
-func getUserName(ctx context.Context) string {
-	return getCurrentUser(ctx).Name
-}
-
-func isAdmin(ctx context.Context) bool {
-	return getCurrentUser(ctx).Admin
-}
-
 func authnFunc(ctx context.Context) (context.Context, error) {
 	tokenStr, err := grpc_auth.AuthFromMD(ctx, "bearer")
 	if err != nil {

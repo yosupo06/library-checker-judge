@@ -64,7 +64,8 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 
 func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
 	name := ""
-	myName := getCurrentUser(ctx).Name
+	currentUser := getCurrentUser(ctx)
+	myName := currentUser.Name
 	if in.Name != "" {
 		name = in.Name
 	} else {
@@ -84,7 +85,7 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 		LibraryUrl: user.LibraryURL,
 	}
 
-	if in.Name != myName && !isAdmin(ctx) {
+	if in.Name != myName && !currentUser.Admin {
 		respUser.Email = ""
 	}
 
@@ -133,7 +134,7 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 	if name != currentUser.Name && !currentUser.Admin {
 		return nil, errors.New("Permission denied")
 	}
-	if name == currentUser.Name && isAdmin(ctx) && !in.User.IsAdmin {
+	if name == currentUser.Name && currentUser.Admin && !in.User.IsAdmin {
 		return nil, errors.New("Cannot remove myself from admin group")
 	}
 
@@ -175,7 +176,8 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 }
 
 func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfoRequest) (*pb.ChangeProblemInfoResponse, error) {
-	if !isAdmin(ctx) {
+	currentUser := getCurrentUser(ctx)
+	if !currentUser.Admin {
 		return nil, errors.New("Must be admin")
 	}
 	name := in.Name
@@ -244,7 +246,8 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 		log.Print(err)
 		return nil, errors.New("Unknown problem")
 	}
-	user := getUserName(ctx)
+	currentUser := getCurrentUser(ctx)
+	name := currentUser.Name
 	submission := Submission{
 		ProblemName: in.Problem,
 		Lang:        in.Lang,
@@ -252,7 +255,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 		Source:      in.Source,
 		MaxTime:     -1,
 		MaxMemory:   -1,
-		UserName:    sql.NullString{String: user, Valid: user != ""},
+		UserName:    sql.NullString{String: name, Valid: name != ""},
 	}
 
 	if err := db.Create(&submission).Error; err != nil {
@@ -423,7 +426,8 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 }
 
 func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (*pb.PopJudgeTaskResponse, error) {
-	if !isAdmin(ctx) {
+	currentUser := getCurrentUser(ctx)
+	if !currentUser.Admin {
 		return nil, errors.New("Permission denied")
 	}
 	if in.JudgeName == "" {
@@ -483,7 +487,8 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 }
 
 func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskStatusRequest) (*pb.SyncJudgeTaskStatusResponse, error) {
-	if !isAdmin(ctx) {
+	currentUser := getCurrentUser(ctx)
+	if !currentUser.Admin {
 		return nil, errors.New("Permission denied")
 	}
 	if in.JudgeName == "" {
@@ -533,7 +538,8 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 }
 
 func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequest) (*pb.FinishJudgeTaskResponse, error) {
-	if !isAdmin(ctx) {
+	currentUser := getCurrentUser(ctx)
+	if !currentUser.Admin {
 		return nil, errors.New("Permission denied")
 	}
 	if in.JudgeName == "" {

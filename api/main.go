@@ -27,17 +27,18 @@ func getEnv(key, defaultValue string) string {
 }
 
 func canRejudge(ctx context.Context, submission *pb.SubmissionOverview) bool {
-	userName := getUserName(ctx)
-	if userName == "" {
+	currentUser := getCurrentUser(ctx)
+	name := currentUser.Name
+	if name == "" {
 		return false
 	}
-	if userName == submission.UserName {
+	if name == submission.UserName {
 		return true
 	}
 	if !submission.IsLatest && submission.Status == "AC" {
 		return true
 	}
-	if isAdmin(ctx) {
+	if currentUser.Admin {
 		return true
 	}
 	return false
