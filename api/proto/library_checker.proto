@@ -47,9 +47,12 @@ message LoginResponse {
 message User {
     string name = 1;
     bool is_admin = 2;
+    string email = 3;
+    string library_url = 4;
 }
 
 message UserInfoRequest {
+    string name = 1; // if empty, return self information
 }
 message UserInfoResponse {
     bool is_admin = 1 [deprecated=true];

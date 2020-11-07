@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
@@ -62,23 +63,43 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 }
 
 func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
-	if getUserName(ctx) == "" {
-		return nil, errors.New("Not login")
+	name := ""
+	myName := getCurrentUser(ctx).Name
+	if in.Name != "" {
+		name = in.Name
+	} else {
+		name = myName
 	}
+	if name == "" {
+		return nil, errors.New("Empty name")
+	}
+	user, err := fetchUser(db, name)
+	if err != nil {
+		return nil, errors.New("Invalid user name")
+	}
+	respUser := &pb.User{
+		Name:       name,
+		IsAdmin:    user.Admin,
+		Email:      user.Email,
+		LibraryUrl: user.LibraryURL,
+	}
+
+	if in.Name != myName && !isAdmin(ctx) {
+		respUser.Email = ""
+	}
+
 	return &pb.UserInfoResponse{
-		IsAdmin: isAdmin(ctx),
-		User: &pb.User{
-			Name:    getUserName(ctx),
-			IsAdmin: isAdmin(ctx),
-		},
+		IsAdmin: user.Admin,
+		User:    respUser,
 	}, nil
 }
 
 func (s *server) UserList(ctx context.Context, in *pb.UserListRequest) (*pb.UserListResponse, error) {
-	if getUserName(ctx) == "" {
+	currentUser := getCurrentUser(ctx)
+	if currentUser.Name == "" {
 		return nil, errors.New("Not login")
 	}
-	if !isAdmin(ctx) {
+	if !currentUser.Admin {
 		return nil, errors.New("Must be admin")
 	}
 	users := []User{}
@@ -96,33 +117,43 @@ func (s *server) UserList(ctx context.Context, in *pb.UserListRequest) (*pb.User
 }
 
 func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoRequest) (*pb.ChangeUserInfoResponse, error) {
-	if getUserName(ctx) == "" {
+	type NewUserInfo struct {
+		Email      string `validate:"omitempty,email,lt=50"`
+		LibraryURL string `validate:"omitempty,url,lt=50"`
+	}
+	name := in.User.Name
+	currentUser := getCurrentUser(ctx)
+
+	if currentUser.Name == "" {
 		return nil, errors.New("Not login")
 	}
-	if !isAdmin(ctx) {
-		return nil, errors.New("Must be admin")
+	if name == "" {
+		return nil, errors.New("Requested name is empty")
 	}
-	if getUserName(ctx) == in.User.Name && !in.User.IsAdmin {
-		return nil, errors.New("Cannot remove myself from admin")
+	if name != currentUser.Name && !currentUser.Admin {
+		return nil, errors.New("Permission denied")
+	}
+	if name == currentUser.Name && isAdmin(ctx) && !in.User.IsAdmin {
+		return nil, errors.New("Cannot remove myself from admin group")
 	}
 
-	tx := db.Begin()
-	var user User
-	if err := tx.Where("name = ?", in.User.Name).First(&user).Error; err != nil {
-		// invalid user name
-		tx.Rollback()
-		log.Println(err)
-		return nil, errors.New("No User")
+	userInfo := &NewUserInfo{
+		Email:      in.User.Email,
+		LibraryURL: in.User.LibraryUrl,
 	}
-	if err := tx.Model(&User{}).Where("name = ?", in.User.Name).Updates(
-		map[string]interface{}{
-			"admin": in.User.IsAdmin,
-		}).Error; err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return nil, errors.New("Failed to update user")
+	if err := validator.New().Struct(userInfo); err != nil {
+		return nil, err
 	}
-	tx.Commit()
+
+	if err := updateUser(db, User{
+		Name:       in.User.Name,
+		Admin:      in.User.IsAdmin,
+		Email:      userInfo.Email,
+		LibraryURL: userInfo.LibraryURL,
+	}); err != nil {
+		return nil, err
+	}
+
 	return &pb.ChangeUserInfoResponse{}, nil
 }
 

@@ -22,9 +22,11 @@ type Problem struct {
 
 // User is db table
 type User struct {
-	Name     string
-	Passhash string
-	Admin    bool
+	Name       string
+	Passhash   string
+	Admin      bool
+	Email      string
+	LibraryURL string
 }
 
 // Submission is db table
@@ -63,6 +65,38 @@ type Task struct {
 	Submission int32
 	Priority   int32
 	Available  time.Time
+}
+
+func fetchUser(db *gorm.DB, name string) (User, error) {
+	user := User{}
+	if name == "" {
+		return User{}, errors.New("User name is empty")
+	}
+	if err := db.Where("name = ?", name).Take(&user).Error; err != nil {
+		return User{}, errors.New("User not found")
+	}
+	return user, nil
+}
+
+func updateUser(db *gorm.DB, user User) error {
+	name := user.Name
+	if name == "" {
+		return errors.New("User name is empty")
+	}
+	result := db.Model(&User{}).Where("name = ?", name).Updates(
+		map[string]interface{}{
+			"admin":       user.Admin,
+			"email":       user.Email,
+			"library_url": user.LibraryURL,
+		})
+	if err := result.Error; err != nil {
+		log.Print(err)
+		return errors.New("Failed to update user")
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("User not found")
+	}
+	return nil
 }
 
 func fetchSubmission(id int32) (Submission, error) {
