@@ -22,30 +22,15 @@ func init() {
 	hmacSecret = []byte(s)
 }
 
-// UserKey is context key of username
+// UserKey is context key of User
 type UserKey struct{}
 
-func getUserName(ctx context.Context) string {
+func getCurrentUser(ctx context.Context) User {
 	u := ctx.Value(UserKey{})
-	if name, ok := u.(string); ok {
-		return name
+	if user, ok := u.(User); ok {
+		return user
 	}
-	return ""
-}
-
-func isAdmin(ctx context.Context) bool {
-	u := getUserName(ctx)
-	if u == "" {
-		// don't login
-		return false
-	}
-	var user User
-	if err := db.Where("name = ?", u).Take(&user).Error; err != nil {
-		// invalid user name
-		log.Print("Invalid user:", u)
-		return false
-	}
-	return user.Admin
+	return User{}
 }
 
 func authnFunc(ctx context.Context) (context.Context, error) {
@@ -71,7 +56,12 @@ func authnFunc(ctx context.Context) (context.Context, error) {
 	}
 
 	if val, ok := claims["user"]; ok {
-		if user, ok := val.(string); ok {
+		if name, ok := val.(string); ok {
+			user, err := fetchUser(db, name)
+			if err != nil {
+				log.Println("Failed to fetch user")
+				return ctx, nil
+			}
 			ctx = context.WithValue(ctx, UserKey{}, user)
 		}
 	}

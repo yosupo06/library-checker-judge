@@ -1,7 +1,9 @@
 create table users (  
   name varchar(255) primary key,
   passhash varchar(255),
-  admin boolean
+  admin boolean,
+  email varchar(255),
+  library_url varchar(255)
 );
 
 create table problems (
