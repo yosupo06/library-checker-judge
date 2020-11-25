@@ -1,15 +1,13 @@
-runtime: go112
-
-env_variables:
-  GIN_MODE: release
+service: spa
+runtime: nodejs12
 
 handlers:
-- url: /.*
-  script: auto
-  secure: always
-
-automatic_scaling:
-  min_idle_instances: automatic
-  max_idle_instances: 1
-  min_pending_latency: 3000ms
-  max_pending_latency: automatic
+  - url: /static
+    static_dir: build/static
+  - url: /(.*\.(json|ico|js))$
+    static_files: build/\1
+    upload: build/.*\.(json|ico|js)$
+  - url: .*
+    static_files: build/index.html
+    upload: build/index.html
+    expiration: '0s'

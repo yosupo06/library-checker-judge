@@ -1,0 +1,60 @@
+{
+  "name": "library-checker-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/lab": "^4.0.0-alpha.56",
+    "@types/katex": "^0.11.0",
+    "@types/node": "^12.19.3",
+    "@types/react": "^16.9.56",
+    "@types/react-dom": "^16.9.9",
+    "@types/react-router-dom": "^5.1.6",
+    "customize-cra": "^1.0.0",
+    "fontsource-roboto": "^3.0.3",
+    "google-protobuf": "^3.14.0-rc.1",
+    "grpc-web": "^1.2.1",
+    "katex": "^0.9.0",
+    "react": "^16.0.1",
+    "react-ace": "^9.2.0",
+    "react-dom": "^16.0.1",
+    "react-refetch": "4.0.0-0",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "4.0.0",
+    "typescript": "^3.2.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ],
+    "ignorePatterns": [
+      "**/*_pb.js"
+    ],
+    "rules": {
+      "indent": [
+        "error",
+        2
+      ]
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
