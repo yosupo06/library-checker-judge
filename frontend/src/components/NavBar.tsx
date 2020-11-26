@@ -13,6 +13,7 @@ import React, { useContext } from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { LangContext } from "../contexts/LangContext";
 import { AuthContext } from "../contexts/AuthContext";
+import { GitHub } from "@material-ui/icons";
 
 const NavBar = (props: RouteComponentProps) => {
   const { history } = props;
@@ -85,6 +86,14 @@ const NavBar = (props: RouteComponentProps) => {
             {auth?.state.user}
           </Typography>
         )}
+        <Button
+          color="inherit"
+          href="https://github.com/yosupo06/library-checker-problems"
+          target="_blank"
+          rel="noopener"
+        >
+          <GitHub />
+        </Button>
       </Toolbar>
     </AppBar>
   );
