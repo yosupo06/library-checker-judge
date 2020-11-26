@@ -11,14 +11,39 @@ import {
 } from "@material-ui/core";
 import React, { useContext } from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { LangContext } from "../contexts/LangContext";
-import { AuthContext } from "../contexts/AuthContext";
+import { LangContext } from "../../contexts/LangContext";
+import { AuthContext } from "../../contexts/AuthContext";
 import { GitHub } from "@material-ui/icons";
+import flagUS from "./flag_us.svg";
+import flagJA from "./flag_ja.svg";
 
 const NavBar = (props: RouteComponentProps) => {
   const { history } = props;
   const lang = useContext(LangContext);
   const auth = useContext(AuthContext);
+
+  const langSelect = (
+    <Select
+      value={lang?.state.lang}
+      variant="outlined"
+      onChange={e =>
+        lang?.dispatch({
+          type: "change",
+          payload: (e.target.value as string) === "ja" ? "ja" : "en"
+        })
+      }
+      style={{
+        marginLeft: "auto"
+      }}
+    >
+      <MenuItem value="en">
+        <img src={flagUS} alt="us" height="20px"></img>
+      </MenuItem>
+      <MenuItem value="ja">
+        <img src={flagJA} alt="ja" height="20px"></img>
+      </MenuItem>
+    </Select>
+  );
   return (
     <AppBar position="static">
       <Toolbar>
@@ -60,22 +85,7 @@ const NavBar = (props: RouteComponentProps) => {
             </ListItemText>
           </ListItem>
         </List>
-        <Select
-          value={lang?.state.lang}
-          onChange={e =>
-            lang?.dispatch({
-              type: "change",
-              payload: (e.target.value as string) === "ja" ? "ja" : "en"
-            })
-          }
-          style={{
-            marginLeft: "auto",
-            minWidth: 120
-          }}
-        >
-          <MenuItem value="ja">Japanese</MenuItem>
-          <MenuItem value="en">English</MenuItem>
-        </Select>
+        {langSelect}
         {!auth?.state.user && (
           <Button color="inherit" onClick={() => history.push("/login")}>
             Login

@@ -7,20 +7,19 @@ import {
   TableHead,
   TableRow
 } from "@material-ui/core";
+import { green } from "@material-ui/core/colors";
+import { DoneOutline } from "@material-ui/icons";
 import "katex/dist/katex.min.css";
 import React from "react";
+import { Link } from "react-router-dom";
 import { SubmissionOverview } from "../api/library_checker_pb";
-import { Link, RouteComponentProps, withRouter } from "react-router-dom";
 import KatexRender from "./KatexRender";
-import { DoneOutline } from "@material-ui/icons";
-import { green } from "@material-ui/core/colors";
 
 interface Props {
   submissionOverviews: SubmissionOverview[];
 }
 
-const SubmissionList: React.FC<RouteComponentProps & Props> = props => {
-  const { history } = props;
+const SubmissionList: React.FC<Props> = props => {
   const { submissionOverviews } = props;
 
   return (
@@ -69,4 +68,4 @@ const SubmissionList: React.FC<RouteComponentProps & Props> = props => {
   );
 };
 
-export default withRouter(SubmissionList);
+export default SubmissionList;

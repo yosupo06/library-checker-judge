@@ -1,9 +1,11 @@
 import {
+  Box,
   Card,
   CardContent,
-  Container,
+  CircularProgress,
   List,
-  ListItem
+  ListItem,
+  Typography
 } from "@material-ui/core";
 import React from "react";
 import { connect, PromiseState } from "react-refetch";
@@ -23,13 +25,21 @@ const ProblemList: React.FC<Props> = props => {
   const { problemListFetch } = props;
 
   if (problemListFetch.pending) {
-    return <h1>Loading</h1>;
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
   }
   if (problemListFetch.rejected) {
-    return <h1>Error</h1>;
+    return (
+      <Box>
+        <Typography variant="body1">Error</Typography>
+      </Box>
+    );
   }
   return (
-    <Container>
+    <Box>
       <List>
         {problemListFetch.value.getProblemsList().map(problem => {
           return (
@@ -45,7 +55,7 @@ const ProblemList: React.FC<Props> = props => {
           );
         })}
       </List>
-    </Container>
+    </Box>
   );
 };
 

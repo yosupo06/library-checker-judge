@@ -1,64 +1,78 @@
-import { Container, Typography } from "@material-ui/core";
+import { Box, makeStyles, Typography } from "@material-ui/core";
 import React from "react";
-import { connect } from "react-refetch";
 import JudgeStatusList from "../components/JudgeStatusList";
 import LangList from "../components/LangList";
 
-interface Props {}
+const useStyles = makeStyles(theme => ({
+  paragraph: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2)
+  }
+}));
 
-const Help: React.FC<Props> = props => {
+const Help: React.FC = props => {
+  const classes = useStyles();
+
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Help
-      </Typography>
-      <Typography variant="h3" paragraph={true}>
-        Terms and conditions
-      </Typography>
-      <Typography variant="body1" paragraph={true}>
-        Users retain ownership of all intellectual and industrial property
-        rights (including moral rights) in and to Submissions.
-      </Typography>
-      <Typography variant="body1" paragraph={true}>
-        As a condition of submission, User grants the organizer a license to
-        use, reproduce, adapt, modify, publish, distribute, publicly perform,
-        create a derivative work from, and publicly display the Submission.
-      </Typography>
-      <Typography variant="body1" paragraph={true}>
-        This license is based on{" "}
-        <a href="https://opensource.google/docs/hackathons/#judge">
-          Google Open Source Docs
-        </a>
-        , with some modifications
-      </Typography>
+    <Box>
+      <Typography variant="h2">Help</Typography>
 
-      <Typography variant="h3">Lang List</Typography>
-      <LangList />
-      <Typography variant="body1" paragraph={true}>
-        より詳しくは
-        <a href="https://github.com/yosupo06/library-checker-judge/blob/master/api/langs.toml">
-          langs.toml
-        </a>
-        ,
-        <a href="https://github.com/yosupo06/library-checker-judge/blob/master/deploy/install.sh">
-          install.sh
-        </a>
-        を参照してください
-      </Typography>
+      <Box className={classes.paragraph}>
+        <Typography variant="h3" paragraph={true}>
+          Terms and conditions
+        </Typography>
+        <Typography variant="body1" paragraph={true}>
+          Users retain ownership of all intellectual and industrial property
+          rights (including moral rights) in and to Submissions.
+        </Typography>
+        <Typography variant="body1" paragraph={true}>
+          As a condition of submission, User grants the organizer a license to
+          use, reproduce, adapt, modify, publish, distribute, publicly perform,
+          create a derivative work from, and publicly display the Submission.
+        </Typography>
+        <Typography variant="body1" paragraph={true}>
+          This license is based on{" "}
+          <a href="https://opensource.google/docs/hackathons/#judge">
+            Google Open Source Docs
+          </a>
+          , with some modifications
+        </Typography>
+      </Box>
 
-      <Typography variant="h3">Judge Status</Typography>
-      <JudgeStatusList />
+      <Box className={classes.paragraph}>
+        <Typography variant="h3">Lang List</Typography>
+        <LangList />
+        <Typography variant="body1" paragraph={true}>
+          より詳しくは
+          <a href="https://github.com/yosupo06/library-checker-judge/blob/master/api/langs.toml">
+            langs.toml
+          </a>
+          ,
+          <a href="https://github.com/yosupo06/library-checker-judge/blob/master/deploy/install.sh">
+            install.sh
+          </a>
+          を参照してください
+        </Typography>
+      </Box>
 
-      <Typography variant="h3">Tips</Typography>
-      <Typography variant="body1" paragraph={true}>
-        Memory Limit is an 1G for all problems. Stack Size Limit is unlimited.
-      </Typography>
-      <Typography variant="body1" paragraph={true}>
-        We will restart judge servers sometimes. If you submit your solution
-        while restarting, it may take a longer time (~ 5min) rather than usual.
-      </Typography>
-    </Container>
+      <Box className={classes.paragraph}>
+        <Typography variant="h3">Judge Status</Typography>
+        <JudgeStatusList />
+      </Box>
+
+      <Box className={classes.paragraph}>
+        <Typography variant="h3">Tips</Typography>
+        <Typography variant="body1" paragraph={true}>
+          Memory Limit is an 1G for all problems. Stack Size Limit is unlimited.
+        </Typography>
+        <Typography variant="body1">
+          We will restart judge servers sometimes. If you submit your solution
+          while restarting, it may take a longer time (~ 5min) rather than
+          usual.
+        </Typography>
+      </Box>
+    </Box>
   );
 };
 
-export default connect<{}, Props>(() => ({}))(Help);
+export default Help;
