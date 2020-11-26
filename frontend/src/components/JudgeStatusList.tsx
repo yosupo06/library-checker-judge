@@ -1,5 +1,13 @@
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
-import React from 'react';
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
+} from "@material-ui/core";
+import React from "react";
 
 const JudgeStatusList = () => {
   const judge_status = [
@@ -34,7 +42,7 @@ const JudgeStatusList = () => {
     {
       name: "WJ",
       text: "Waiting Judge"
-    },
+    }
   ];
 
   return (
@@ -47,7 +55,7 @@ const JudgeStatusList = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {judge_status.map((row) => (
+          {judge_status.map(row => (
             <TableRow key={row.name}>
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.text}</TableCell>
@@ -57,6 +65,6 @@ const JudgeStatusList = () => {
       </Table>
     </TableContainer>
   );
-}
+};
 
-export default JudgeStatusList
+export default JudgeStatusList;

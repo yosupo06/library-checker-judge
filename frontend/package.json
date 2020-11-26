@@ -28,7 +28,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "format": "prettier-eslint --write $PWD/'src/**/*.{ts,js,tsx,jsx}'"
   },
   "eslintConfig": {
     "extends": [
@@ -36,7 +37,9 @@
       "react-app/jest"
     ],
     "ignorePatterns": [
-      "**/*_pb.js"
+      "build",
+      "**/*_pb.js",
+      "**/*_pb.d.ts"
     ],
     "rules": {
       "indent": [
@@ -56,5 +59,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "prettier-eslint-cli": "^5.0.0"
   }
 }
