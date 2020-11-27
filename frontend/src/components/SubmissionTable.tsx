@@ -1,5 +1,4 @@
 import {
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -16,14 +15,14 @@ import { SubmissionOverview } from "../api/library_checker_pb";
 import KatexRender from "./KatexRender";
 
 interface Props {
-  submissionOverviews: SubmissionOverview[];
+  overviews: SubmissionOverview[];
 }
 
-const SubmissionList: React.FC<Props> = props => {
-  const { submissionOverviews } = props;
+const SubmissionTable: React.FC<Props> = props => {
+  const { overviews } = props;
 
   return (
-    <TableContainer component={Paper}>
+    <TableContainer>
       <Table>
         <TableHead>
           <TableRow>
@@ -37,7 +36,7 @@ const SubmissionList: React.FC<Props> = props => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {submissionOverviews.map(row => (
+          {overviews.map(row => (
             <TableRow key={row.getId()}>
               <TableCell>
                 <Link to={`/submission/${row.getId()}`}>{row.getId()}</Link>
@@ -50,10 +49,10 @@ const SubmissionList: React.FC<Props> = props => {
                 {row.getUserName() === "" ? "(Anonymous)" : row.getUserName()}
               </TableCell>
               <TableCell>
-                {row.getIsLatest() && (
-                  <DoneOutline style={{ color: green[500] }} />
-                )}
                 {row.getStatus()}
+                {row.getIsLatest() && row.getStatus() === "AC" && (
+                  <DoneOutline style={{ color: green[500], height: "15px" }} />
+                )}
               </TableCell>
               <TableCell>{Math.round(row.getTime() * 1000)} ms</TableCell>
               <TableCell>
@@ -68,4 +67,4 @@ const SubmissionList: React.FC<Props> = props => {
   );
 };
 
-export default SubmissionList;
+export default SubmissionTable;

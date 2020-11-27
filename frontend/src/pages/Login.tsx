@@ -7,7 +7,6 @@ import {
 } from "@material-ui/core";
 import { Alert, AlertTitle } from "@material-ui/lab";
 import React, { useContext } from "react";
-import { connect } from "react-refetch";
 import library_checker_client from "../api/library_checker_client";
 import { LoginRequest } from "../api/library_checker_pb";
 import { AuthContext } from "../contexts/AuthContext";
@@ -79,4 +78,4 @@ const Help: React.FC<Props> = props => {
   );
 };
 
-export default connect<{}, Props>(() => ({}))(Help);
+export default Help;

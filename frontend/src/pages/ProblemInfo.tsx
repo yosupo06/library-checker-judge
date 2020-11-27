@@ -1,5 +1,7 @@
 import {
+  Box,
   Button,
+  CircularProgress,
   Container,
   FormControl,
   MenuItem,
@@ -7,9 +9,10 @@ import {
   TextField,
   Typography
 } from "@material-ui/core";
+import { Alert } from "@material-ui/lab";
 import React, { useContext, useState } from "react";
 import { connect, PromiseState } from "react-refetch";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { Link, RouteComponentProps } from "react-router-dom";
 import library_checker_client, {
   authMetadata
 } from "../api/library_checker_client";
@@ -35,10 +38,18 @@ const ProblemInfo: React.FC<Props> = props => {
   const [lang, setLang] = useState("");
 
   if (problemInfoFetch.pending) {
-    return <h1>Loading</h1>;
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
   }
   if (problemInfoFetch.rejected) {
-    return <h1>Error</h1>;
+    return (
+      <Box>
+        <Typography variant="body1">Error</Typography>
+      </Box>
+    );
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,13 +117,14 @@ export default connect<RouteComponentProps<{ problemId: string }>, Props>(
   props => ({
     problemInfoFetch: {
       comparison: null,
-      value: library_checker_client.problemInfo(
-        new ProblemInfoRequest().setName(props.match.params.problemId)
-      )
+      value: () =>
+        library_checker_client.problemInfo(
+          new ProblemInfoRequest().setName(props.match.params.problemId)
+        )
     },
     langListFetch: {
       comparison: null,
-      value: library_checker_client.langList(new LangListRequest())
+      value: () => library_checker_client.langList(new LangListRequest())
     }
   })
 )(ProblemInfo);

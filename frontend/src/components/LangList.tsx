@@ -60,6 +60,6 @@ const LangList: React.FC<Props> = props => {
 export default connect<{}, Props>(() => ({
   langListFetch: {
     comparison: null,
-    value: library_checker_client.langList(new LangListRequest())
+    value: () => library_checker_client.langList(new LangListRequest())
   }
 }))(LangList);

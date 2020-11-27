@@ -3,3 +3,5 @@ dispatch:
     service: default
   - url: "*beta.yosupo.jp/*"
     service: spa
+  - url: "*old.yosupo.jp/*"
+    service: default

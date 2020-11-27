@@ -48,6 +48,6 @@ const RankingList: React.FC<Props> = props => {
 export default connect<{}, Props>(() => ({
   rankingFetch: {
     comparison: null,
-    value: library_checker_client.ranking(new RankingRequest())
+    value: () => library_checker_client.ranking(new RankingRequest())
   }
 }))(RankingList);

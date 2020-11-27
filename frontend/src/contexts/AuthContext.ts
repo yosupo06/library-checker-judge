@@ -5,19 +5,28 @@ export interface AuthState {
   token: string;
 }
 
-export interface AuthAction {
+interface AuthLoginAction {
   type: "login";
   payload: AuthState;
 }
+interface AuthLogoutAction {
+  type: "logout";
+}
+
+export type AuthAction = AuthLoginAction | AuthLogoutAction;
 
 export const AuthReducer: React.Reducer<AuthState, AuthAction> = (
   state,
   action
 ) => {
-  console.log(state, action);
   switch (action.type) {
   case "login":
     return action.payload;
+  case "logout":
+    return {
+      user: "",
+      token: ""
+    };
   default:
     return state;
   }

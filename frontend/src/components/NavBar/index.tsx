@@ -1,21 +1,23 @@
 import {
   AppBar,
+  Box,
   Button,
   List,
   ListItem,
   ListItemText,
   MenuItem,
+  Popover,
   Select,
   Toolbar,
   Typography
 } from "@material-ui/core";
+import { GitHub } from "@material-ui/icons";
 import React, { useContext } from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { LangContext } from "../../contexts/LangContext";
 import { AuthContext } from "../../contexts/AuthContext";
-import { GitHub } from "@material-ui/icons";
-import flagUS from "./flag_us.svg";
+import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
+import flagUS from "./flag_us.svg";
 
 const NavBar = (props: RouteComponentProps) => {
   const { history } = props;
@@ -44,6 +46,54 @@ const NavBar = (props: RouteComponentProps) => {
       </MenuItem>
     </Select>
   );
+
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    auth?.dispatch({ type: "logout" });
+    handleClose();
+  };
+
+  const userMenu = (() => {
+    if (!auth || !auth.state.user) {
+      return (
+        <Button color="inherit" onClick={() => history.push("/login")}>
+          Login
+        </Button>
+      );
+    }
+    return (
+      <Box>
+        <Button color="inherit" onClick={handleClick}>
+          {auth.state.user}
+        </Button>
+        <Popover
+          anchorEl={anchorEl}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "center"
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "center"
+          }}
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+        >
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        </Popover>
+      </Box>
+    );
+  })();
+
   return (
     <AppBar position="static">
       <Toolbar>
@@ -52,50 +102,32 @@ const NavBar = (props: RouteComponentProps) => {
             <ListItemText>
               <Typography color="inherit" variant="h6">
                 <Button color="inherit" onClick={() => history.push("/")}>
-                  LIBRARY-CHECKER
+                  Library-Checker
                 </Button>
               </Typography>
             </ListItemText>
             <ListItemText inset>
-              <Typography color="inherit" variant="h6">
-                <Button
-                  color="inherit"
-                  onClick={() => history.push("/submissions")}
-                >
-                  SUBMISSIONS
-                </Button>
-              </Typography>
+              <Button
+                color="inherit"
+                onClick={() => history.push("/submissions")}
+              >
+                Submissions
+              </Button>
             </ListItemText>
             <ListItemText>
-              <Typography color="inherit" variant="h6">
-                <Button
-                  color="inherit"
-                  onClick={() => history.push("/ranking")}
-                >
-                  RANKING
-                </Button>
-              </Typography>
+              <Button color="inherit" onClick={() => history.push("/ranking")}>
+                Ranking
+              </Button>
             </ListItemText>
             <ListItemText>
-              <Typography color="inherit" variant="h6">
-                <Button color="inherit" onClick={() => history.push("/help")}>
-                  HELP
-                </Button>
-              </Typography>
+              <Button color="inherit" onClick={() => history.push("/help")}>
+                Help
+              </Button>
             </ListItemText>
           </ListItem>
         </List>
         {langSelect}
-        {!auth?.state.user && (
-          <Button color="inherit" onClick={() => history.push("/login")}>
-            Login
-          </Button>
-        )}
-        {auth?.state.user && (
-          <Typography color="inherit" variant="h6">
-            {auth?.state.user}
-          </Typography>
-        )}
+        {userMenu}
         <Button
           color="inherit"
           href="https://github.com/yosupo06/library-checker-problems"

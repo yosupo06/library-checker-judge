@@ -1,6 +1,5 @@
 import { Box, Typography } from "@material-ui/core";
 import React from "react";
-import { connect } from "react-refetch";
 import RankingList from "../components/RankingList";
 
 interface Props {}
@@ -16,4 +15,4 @@ const Ranking: React.FC<Props> = props => {
   );
 };
 
-export default connect<{}, Props>(() => ({}))(Ranking);
+export default Ranking;

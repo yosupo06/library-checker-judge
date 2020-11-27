@@ -13,7 +13,7 @@ const JudgeStatusList = () => {
   const judge_status = [
     {
       name: "AC",
-      text: "Accepted (Green: latest testcase)"
+      text: "Accepted (Green check: in the latest testcase)"
     },
     {
       name: "WA",
@@ -42,6 +42,10 @@ const JudgeStatusList = () => {
     {
       name: "WJ",
       text: "Waiting Judge"
+    },
+    {
+      name: "IE",
+      text: "Judge Server is broken 😢"
     }
   ];
 
