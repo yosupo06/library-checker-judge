@@ -121,7 +121,7 @@ func main() {
 		wrappedGrpc := grpcweb.WrapServer(s)
 		http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			resp.Header().Set("Access-Control-Allow-Origin", "*")
-			resp.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-user-agent, x-grpc-web")
+			resp.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-user-agent, x-grpc-web, authorization")
 			if wrappedGrpc.IsGrpcWebRequest(req) {
 				wrappedGrpc.ServeHTTP(resp, req)
 			}
