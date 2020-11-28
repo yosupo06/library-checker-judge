@@ -2,11 +2,26 @@ service: spa
 runtime: nodejs12
 
 handlers:
+  # Following items are necessary: https://github.com/atcoder/ac-library/issues/74
+  - url: /public/css/uikit.min.css
+    static_files: keep_for_compatibility/uikit.min.css
+    upload: keep_for_compatibility/uikit.min.css
+  - url: /public/css/uikit-rtl.min.css
+    static_files: keep_for_compatibility/uikit-rtl.min.css
+    upload: keep_for_compatibility/uikit-rtl.min.css
+  - url: /public/js/uikit.min.js
+    static_files: keep_for_compatibility/uikit.min.js
+    upload: keep_for_compatibility/uikit.min.js
+  - url: /public/js/uikit-icons.min.js
+    static_files: keep_for_compatibility/uikit-icons.min.js
+    upload: keep_for_compatibility/uikit-icons.min.js
+
   - url: /static
     static_dir: build/static
   - url: /(.*\.(json|ico|js))$
     static_files: build/\1
     upload: build/.*\.(json|ico|js)$
+  
   - url: .*
     static_files: build/index.html
     upload: build/index.html

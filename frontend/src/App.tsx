@@ -17,7 +17,7 @@ import Ranking from "./pages/Ranking";
 import SubmissionInfo from "./pages/SubmissionInfo";
 import Submissions from "./pages/Submissions";
 import { AuthReducer, AuthContext } from "./contexts/AuthContext";
-import { LangReducer, LangContext } from "./contexts/LangContext";
+import { LangReducer, LangContext, LangState } from "./contexts/LangContext";
 
 const theme = createMuiTheme({
   typography: {
@@ -37,23 +37,33 @@ function App() {
   const classes = useStyles();
 
   const savedLangState = localStorage.getItem("lang");
-  const initialLangState = savedLangState
-    ? JSON.parse(savedLangState)
-    : {
-      lang: "en"
-    };
+  let initialLangState : LangState  = {
+    lang: "en"
+  }
+  try {
+    if (savedLangState) {
+      initialLangState = JSON.parse(savedLangState);
+    }
+  } catch (_) {
+    localStorage.removeItem("lang")
+  }
   const [langState, langDispatch] = useReducer(LangReducer, initialLangState);
   useEffect(() => {
     localStorage.setItem("lang", JSON.stringify(langState));
   }, [langState]);
 
   const savedAuthState = localStorage.getItem("auth");
-  const initialAuthState = savedAuthState
-    ? JSON.parse(savedAuthState)
-    : {
-      user: "",
-      token: ""
-    };
+  let initialAuthState = {
+    user: "",
+    token: ""
+  };
+  try {
+    if (savedAuthState) {
+      initialAuthState = JSON.parse(savedAuthState)
+    }
+  } catch (_) {
+    localStorage.removeItem("auth")
+  }
   const [authState, authDispatch] = useReducer(AuthReducer, initialAuthState);
   useEffect(() => {
     localStorage.setItem("auth", JSON.stringify(authState));

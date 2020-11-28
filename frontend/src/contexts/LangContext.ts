@@ -2,11 +2,11 @@ import React from "react";
 
 type Lang = "en" | "ja";
 
-interface LangState {
+export interface LangState {
   lang: Lang;
 }
 
-interface LangAction {
+export interface LangAction {
   type: "change";
   payload: Lang;
 }
