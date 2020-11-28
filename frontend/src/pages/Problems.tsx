@@ -1,4 +1,10 @@
-import { Box, CircularProgress, Link, makeStyles, Typography } from "@material-ui/core";
+import {
+  Box,
+  CircularProgress,
+  Link,
+  makeStyles,
+  Typography
+} from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
 import React from "react";
 import { connect, PromiseState } from "react-refetch";
@@ -23,7 +29,7 @@ const useStyles = makeStyles(theme => ({
 
 const Problems: React.FC<Props> = props => {
   const { problemListFetch } = props;
-  const classes = useStyles()
+  const classes = useStyles();
 
   if (problemListFetch.pending) {
     return (
@@ -40,20 +46,23 @@ const Problems: React.FC<Props> = props => {
     );
   }
 
-  const problemList = problemListFetch.value.getProblemsList()
+  const problemList = problemListFetch.value.getProblemsList();
 
-  const categories = getCategories(problemList)
+  const categories = getCategories(problemList);
 
   return (
     <Box>
-      <Alert severity="info">If you have some trouble, please use <Link href="https://old.yosupo.jp">old.yosupo.jp</Link></Alert>
+      <Alert severity="info">
+        If you have some trouble, please use{" "}
+        <Link href="https://old.yosupo.jp">old.yosupo.jp</Link>
+      </Alert>
       {categories.map(category => (
         <Box className={classes.category}>
           <Typography variant="h3">{category.name}</Typography>
           <ProblemList
             problems={category.problems.map(problem => ({
               name: problem.name,
-              title: problem.title,
+              title: problem.title
             }))}
           />
         </Box>

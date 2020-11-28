@@ -37,15 +37,15 @@ function App() {
   const classes = useStyles();
 
   const savedLangState = localStorage.getItem("lang");
-  let initialLangState : LangState  = {
+  let initialLangState: LangState = {
     lang: "en"
-  }
+  };
   try {
     if (savedLangState) {
       initialLangState = JSON.parse(savedLangState);
     }
   } catch (_) {
-    localStorage.removeItem("lang")
+    localStorage.removeItem("lang");
   }
   const [langState, langDispatch] = useReducer(LangReducer, initialLangState);
   useEffect(() => {
@@ -59,10 +59,10 @@ function App() {
   };
   try {
     if (savedAuthState) {
-      initialAuthState = JSON.parse(savedAuthState)
+      initialAuthState = JSON.parse(savedAuthState);
     }
   } catch (_) {
-    localStorage.removeItem("auth")
+    localStorage.removeItem("auth");
   }
   const [authState, authDispatch] = useReducer(AuthReducer, initialAuthState);
   useEffect(() => {

@@ -20,15 +20,15 @@ export const AuthReducer: React.Reducer<AuthState, AuthAction> = (
   action
 ) => {
   switch (action.type) {
-  case "login":
-    return action.payload;
-  case "logout":
-    return {
-      user: "",
-      token: ""
-    };
-  default:
-    return state;
+    case "login":
+      return action.payload;
+    case "logout":
+      return {
+        user: "",
+        token: ""
+      };
+    default:
+      return state;
   }
 };
 
