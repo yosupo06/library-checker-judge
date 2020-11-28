@@ -41,11 +41,6 @@ const Problems: React.FC<Props> = props => {
   }
 
   const problemList = problemListFetch.value.getProblemsList()
-  const nameToTitle = problemList
-    .reduce<{ [name: string]: string }>((dict, problem) => {
-      dict[problem.getName()] = problem.getTitle();
-      return dict;
-    }, {});
 
   const categories = getCategories(problemList)
 
@@ -57,8 +52,8 @@ const Problems: React.FC<Props> = props => {
           <Typography variant="h3">{category.name}</Typography>
           <ProblemList
             problems={category.problems.map(problem => ({
-              name: problem,
-              title: nameToTitle[problem]
+              name: problem.name,
+              title: problem.title,
             }))}
           />
         </Box>
