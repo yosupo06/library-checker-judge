@@ -151,7 +151,7 @@ const SubmissionInfo: React.FC<Props> = props => {
                             {row.getMemory() === -1
                               ? -1
                               : row.getMemory() / 1024 / 1024}{" "}
-                            Mib
+                            MiB
                           </TableCell>
                         </TableRow>
                       ))}
