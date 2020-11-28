@@ -70,11 +70,9 @@ const SubmissionInfo: React.FC<Props> = props => {
   const status = overview.getStatus();
   const lang = overview.getLang()!;
 
-  console.log(status);
   if (
     new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(status)
   ) {
-    console.log(info);
     props.fixSubmissionInfo(info);
   }
 
