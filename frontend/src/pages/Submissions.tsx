@@ -36,6 +36,7 @@ interface Props {
     user: string,
     status: string,
     lang: string,
+    order: string,
     skip: number,
     limit: number
   ) => void;
@@ -67,6 +68,8 @@ const Submissions: React.FC<Props> = props => {
   const [statusFilter, setStatusFilter] = React.useState("");
   const [queryLang, setQueryLang] = React.useState("");
   const [langFilter, setLangFilter] = React.useState("");
+  const [queryOrder, setQueryOrder] = React.useState("-id");
+  const [sortOrder, setSortOrder] = React.useState("-id");
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(100);
 
@@ -77,6 +80,7 @@ const Submissions: React.FC<Props> = props => {
         queryUserName,
         queryStatus,
         queryLang,
+        queryOrder,
         page * rowsPerPage,
         rowsPerPage
       ),
@@ -86,6 +90,7 @@ const Submissions: React.FC<Props> = props => {
       queryUserName,
       queryStatus,
       queryLang,
+      queryOrder,
       page,
       rowsPerPage
     ]
@@ -97,6 +102,7 @@ const Submissions: React.FC<Props> = props => {
     setQueryUserName(userName);
     setQueryStatus(statusFilter);
     setQueryLang(langFilter);
+    setQueryOrder(sortOrder);
     setPage(0);
   };
 
@@ -196,6 +202,16 @@ const Submissions: React.FC<Props> = props => {
               ))}
           </Select>
         </FormControl>
+        <FormControl className={classes.formControl}>
+          <Select
+            value={sortOrder}
+            displayEmpty
+            onChange={e => setSortOrder(e.target.value as string)}
+          >
+            <MenuItem value="-id">Sort</MenuItem>
+            <MenuItem value="+time">Time</MenuItem>
+          </Select>
+        </FormControl>
         <Button color="primary" type="submit">
           Search
         </Button>
@@ -224,11 +240,12 @@ export default connect<{}, Props>(() => ({
     user: string,
     status: string,
     lang: string,
+    order: string,
     skip: number,
     limit: number
   ) => ({
     submissionListFetch: {
-      comparison: `${problem}:${user}:${status}:${lang}:${skip}:${limit}`,
+      comparison: `${problem}:${user}:${status}:${lang}:${order}:${skip}:${limit}`,
       refreshing: true,
       value: () =>
         library_checker_client.submissionList(
@@ -237,6 +254,7 @@ export default connect<{}, Props>(() => ({
             .setUser(user)
             .setStatus(status)
             .setLang(lang)
+            .setOrder(order)
             .setSkip(skip)
             .setLimit(limit)
         )
