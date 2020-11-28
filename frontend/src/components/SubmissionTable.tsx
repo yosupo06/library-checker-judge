@@ -1,4 +1,5 @@
 import {
+  CircularProgress,
   Table,
   TableBody,
   TableCell,
@@ -10,16 +11,55 @@ import { green } from "@material-ui/core/colors";
 import { DoneOutline } from "@material-ui/icons";
 import "katex/dist/katex.min.css";
 import React from "react";
+import { connect, PromiseState } from "react-refetch";
 import { Link } from "react-router-dom";
-import { SubmissionOverview } from "../api/library_checker_pb";
+import library_checker_client from "../api/library_checker_client";
+import {
+  LangListRequest,
+  LangListResponse,
+  SubmissionOverview
+} from "../api/library_checker_pb";
 import KatexRender from "./KatexRender";
 
-interface Props {
+interface OuterProps {
   overviews: SubmissionOverview[];
 }
+interface InnerProps {
+  overviews: SubmissionOverview[];
+  langListFetch: PromiseState<LangListResponse>;
+}
 
-const SubmissionTable: React.FC<Props> = props => {
-  const { overviews } = props;
+const SubmissionTable: React.FC<InnerProps> = props => {
+  const { overviews, langListFetch } = props;
+
+  if (!langListFetch.fulfilled) {
+    return (
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Problem</TableCell>
+              <TableCell>Lang</TableCell>
+              <TableCell>User</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Time</TableCell>
+              <TableCell>Memory</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <CircularProgress />
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  }
+  const idToName = langListFetch.value
+    .getLangsList()
+    .reduce<{ [name: string]: string }>((dict, problem) => {
+      dict[problem.getId()] = problem.getName();
+      return dict;
+    }, {});
 
   return (
     <TableContainer>
@@ -44,7 +84,7 @@ const SubmissionTable: React.FC<Props> = props => {
               <TableCell>
                 <KatexRender text={row.getProblemTitle()} />
               </TableCell>
-              <TableCell>{row.getLang()}</TableCell>
+              <TableCell>{idToName[row.getLang()]}</TableCell>
               <TableCell>
                 {row.getUserName() === "" ? "(Anonymous)" : row.getUserName()}
               </TableCell>
@@ -67,4 +107,9 @@ const SubmissionTable: React.FC<Props> = props => {
   );
 };
 
-export default SubmissionTable;
+export default connect<OuterProps, InnerProps>(props => ({
+  langListFetch: {
+    comparison: null,
+    value: () => library_checker_client.langList(new LangListRequest())
+  }
+}))(SubmissionTable);
