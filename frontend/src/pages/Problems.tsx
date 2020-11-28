@@ -131,6 +131,7 @@ const categories = [
     name: "String",
     problems: [
       "zalgorithm",
+      "enumerate_palindromes",
       "suffixarray",
       "number_of_substrings",
       "runenumerate"
