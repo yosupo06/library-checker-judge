@@ -177,14 +177,6 @@ const SubmissionInfo: React.FC<Props> = props => {
           </Paper>
         )}
       </Box>
-      {/* <Editor
-        mode={aceMode}
-        value={info.getSource()}
-        maxLines={Infinity}
-        readOnly={true}
-        width="100%"
-        showPrintMargin={false}
-      /> */}
       <Paper>
         <Editor
           value={info.getSource()}
