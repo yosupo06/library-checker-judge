@@ -9,10 +9,9 @@ import {
   TextField,
   Typography
 } from "@material-ui/core";
-import { Alert } from "@material-ui/lab";
 import React, { useContext, useState } from "react";
 import { connect, PromiseState } from "react-refetch";
-import { Link, RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import library_checker_client, {
   authMetadata
 } from "../api/library_checker_client";

@@ -30,6 +30,7 @@ const categories = [
       "vertex_add_path_sum",
       "vertex_set_path_composite",
       "vertex_add_subtree_sum",
+      "dynamic_sequence_range_affine_range_sum",
       "dynamic_tree_vertex_add_path_sum",
       "dynamic_tree_vertex_set_path_composite",
       "dynamic_tree_vertex_add_subtree_sum",
