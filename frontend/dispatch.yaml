@@ -1,0 +1,7 @@
+dispatch:
+  - url: "*judge.yosupo.jp/*"
+    service: spa
+  - url: "*beta.yosupo.jp/*"
+    service: spa
+  - url: "*old.yosupo.jp/*"
+    service: default
