@@ -1,9 +1,11 @@
 import {
+  Box,
   Button,
   CircularProgress,
   Container,
   createStyles,
   FormControl,
+  ListSubheader,
   makeStyles,
   MenuItem,
   Paper,
@@ -26,6 +28,7 @@ import {
 } from "../api/library_checker_pb";
 import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
+import { getCategories } from "../utils/ProblemCategory";
 
 interface Props {
   langListFetch: PromiseState<LangListResponse>;
@@ -96,6 +99,27 @@ const Submissions: React.FC<Props> = props => {
     ]
   );
 
+  if (langListFetch.pending || problemListFetch.pending) {
+    return (
+      <Box>
+        <Typography variant="h2" paragraph={true}>
+          Submission List
+        </Typography>
+        <CircularProgress />
+      </Box>
+    )
+  }
+  if (langListFetch.rejected || problemListFetch.rejected) {
+    return (
+      <Box>
+        <Typography variant="h2" paragraph={true}>
+          Submission List
+        </Typography>
+        Error
+      </Box>
+    )
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setQueryProblemName(problemName);
@@ -149,8 +173,10 @@ const Submissions: React.FC<Props> = props => {
     );
   })();
 
+  const categories = getCategories(problemListFetch.value.getProblemsList())
+
   return (
-    <Container>
+    <Box>
       <Typography variant="h2" paragraph={true}>
         Submission List
       </Typography>
@@ -162,12 +188,15 @@ const Submissions: React.FC<Props> = props => {
             onChange={e => setProblemName(e.target.value as string)}
           >
             <MenuItem value="">Problem Name</MenuItem>
-            {problemListFetch.fulfilled &&
-              problemListFetch.value.getProblemsList().map(e => (
-                <MenuItem key={e.getName()} value={e.getName()}>
-                  <KatexRender text={e.getTitle()} />
-                </MenuItem>
-              ))}
+            {categories.map(category => (
+              [<ListSubheader>{category.name}</ListSubheader>].concat(
+                category.problems.map(e => (
+                  <MenuItem key={e.name} value={e.name}>
+                    <KatexRender text={e.title} />
+                  </MenuItem>
+                ))
+              )
+            ))}
           </Select>
         </FormControl>
         <FormControl className={classes.formControl}>
@@ -218,7 +247,7 @@ const Submissions: React.FC<Props> = props => {
       </form>
 
       {submissionList}
-    </Container>
+    </Box>
   );
 };
 
