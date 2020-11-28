@@ -17,10 +17,10 @@ export const LangReducer: React.Reducer<LangState, LangAction> = (
 ) => {
   console.log(state, action);
   switch (action.type) {
-  case "change":
-    return { lang: action.payload };
-  default:
-    return state;
+    case "change":
+      return { lang: action.payload };
+    default:
+      return state;
   }
 };
 

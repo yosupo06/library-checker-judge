@@ -7,6 +7,7 @@
     "@material-ui/data-grid": "^4.0.0-alpha.10",
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.56",
+    "@monaco-editor/react": "^3.7.0",
     "@types/katex": "^0.11.0",
     "@types/node": "^12.19.3",
     "@types/react": "^16.9.56",
@@ -17,8 +18,8 @@
     "google-protobuf": "^3.14.0-rc.1",
     "grpc-web": "^1.2.1",
     "katex": "^0.9.0",
+    "monaco-editor": "^0.21.2",
     "react": "^16.0.1",
-    "react-ace": "^9.2.0",
     "react-dom": "^16.0.1",
     "react-refetch": "4.0.1-0",
     "react-router-dom": "^5.2.0",
@@ -41,13 +42,7 @@
       "build",
       "**/*_pb.js",
       "**/*_pb.d.ts"
-    ],
-    "rules": {
-      "indent": [
-        "error",
-        2
-      ]
-    }
+    ]
   },
   "browserslist": {
     "production": [

@@ -107,7 +107,7 @@ const Submissions: React.FC<Props> = props => {
         </Typography>
         <CircularProgress />
       </Box>
-    )
+    );
   }
   if (langListFetch.rejected || problemListFetch.rejected) {
     return (
@@ -117,7 +117,7 @@ const Submissions: React.FC<Props> = props => {
         </Typography>
         Error
       </Box>
-    )
+    );
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -173,7 +173,7 @@ const Submissions: React.FC<Props> = props => {
     );
   })();
 
-  const categories = getCategories(problemListFetch.value.getProblemsList())
+  const categories = getCategories(problemListFetch.value.getProblemsList());
 
   return (
     <Box>
@@ -188,7 +188,7 @@ const Submissions: React.FC<Props> = props => {
             onChange={e => setProblemName(e.target.value as string)}
           >
             <MenuItem value="">Problem Name</MenuItem>
-            {categories.map(category => (
+            {categories.map(category =>
               [<ListSubheader>{category.name}</ListSubheader>].concat(
                 category.problems.map(e => (
                   <MenuItem key={e.name} value={e.name}>
@@ -196,7 +196,7 @@ const Submissions: React.FC<Props> = props => {
                   </MenuItem>
                 ))
               )
-            ))}
+            )}
           </Select>
         </FormControl>
         <FormControl className={classes.formControl}>

@@ -14,8 +14,8 @@ import {
   Typography
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
-import React from "react";
-import AceEditor from "react-ace";
+import Editor from "@monaco-editor/react";
+import React, { useState } from "react";
 import { connect, PromiseState } from "react-refetch";
 import { RouteComponentProps } from "react-router-dom";
 import library_checker_client from "../api/library_checker_client";
@@ -24,17 +24,6 @@ import {
   SubmissionInfoResponse
 } from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
-
-import "ace-builds/src-min-noconflict/mode-csharp";
-import "ace-builds/src-min-noconflict/mode-c_cpp";
-import "ace-builds/src-min-noconflict/mode-d";
-import "ace-builds/src-min-noconflict/mode-golang";
-import "ace-builds/src-min-noconflict/mode-haskell";
-import "ace-builds/src-min-noconflict/mode-java";
-import "ace-builds/src-min-noconflict/mode-lisp";
-import "ace-builds/src-min-noconflict/mode-python";
-import "ace-builds/src-min-noconflict/mode-rust";
-import "ace-builds/src-min-noconflict/mode-text";
 
 interface Props {
   submissionInfoFetch: PromiseState<SubmissionInfoResponse>;
@@ -56,6 +45,7 @@ const useStyles = makeStyles(theme => ({
 
 const SubmissionInfo: React.FC<Props> = props => {
   const { submissionInfoFetch } = props;
+  const [editorHeight, setEditorHeight] = useState(100);
   const classes = useStyles();
 
   if (submissionInfoFetch.pending) {
@@ -76,9 +66,9 @@ const SubmissionInfo: React.FC<Props> = props => {
     props.fixSubmissionInfo(info);
   }
 
-  const aceMode = (() => {
+  const editorMode = (() => {
     if (lang.startsWith("cpp")) {
-      return "c_cpp";
+      return "cpp";
     }
     if (lang.startsWith("java")) {
       return "java";
@@ -90,21 +80,21 @@ const SubmissionInfo: React.FC<Props> = props => {
       return "rust";
     }
     if (lang.startsWith("d")) {
-      return "d";
+      return "plaintext";
     }
     if (lang.startsWith("haskell")) {
-      return "haskell";
+      return "plaintext";
     }
     if (lang.startsWith("csharp")) {
       return "csharp";
     }
     if (lang.startsWith("go")) {
-      return "golang";
+      return "go";
     }
     if (lang.startsWith("lisp")) {
-      return "lisp";
+      return "plaintext";
     }
-    return "text";
+    return "plaintext";
   })();
 
   return (
@@ -187,14 +177,35 @@ const SubmissionInfo: React.FC<Props> = props => {
           </Paper>
         )}
       </Box>
-      <AceEditor
+      {/* <Editor
         mode={aceMode}
         value={info.getSource()}
         maxLines={Infinity}
         readOnly={true}
         width="100%"
         showPrintMargin={false}
-      />
+      /> */}
+      <Paper>
+        <Editor
+          value={info.getSource()}
+          language={editorMode}
+          height={editorHeight}
+          editorDidMount={(_, editor) =>
+            setEditorHeight(editor.getContentHeight() + 18)
+          }
+          options={{
+            readOnly: true,
+            scrollBeyondLastColumn: 0,
+            scrollBeyondLastLine: false,
+            minimap: {
+              enabled: false
+            },
+            scrollbar: {
+              alwaysConsumeMouseWheel: false
+            }
+          }}
+        />
+      </Paper>
     </Box>
   );
 };
