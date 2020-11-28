@@ -7,10 +7,13 @@
 ## How to Use
 
 ```sh
-cd /path/to/library-checker-frontend
+npm install
 
-go run . # access to apiv1.yosupo.jp:443 (API server of judge.yosupo.jp)
-go run . --local # access to localhost:50051 (you must launch api server in local)
+# access to the API server of judge.yosupo.jp
+npm run start
+
+# access to the API server of local (you must launch api server in local)
+REACT_APP_API_URL=http://localhost:58080 npm run start
 ```
 
 ## Contributing
