@@ -96,8 +96,10 @@ const SubmissionTable: React.FC<InnerProps> = props => {
               </TableCell>
               <TableCell>{Math.round(row.getTime() * 1000)} ms</TableCell>
               <TableCell>
-                {row.getMemory() === -1 ? -1 : row.getMemory() / 1024 / 1024}{" "}
-                MiB
+                {row.getMemory() === -1
+                  ? -1
+                  : (row.getMemory() / 1024 / 1024).toFixed(2)}{" "}
+                Mib
               </TableCell>
             </TableRow>
           ))}
