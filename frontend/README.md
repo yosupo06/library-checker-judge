@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- go 1.12 ~
+- npm
 
 ## How to Use
 
