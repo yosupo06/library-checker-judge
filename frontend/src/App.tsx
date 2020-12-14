@@ -18,8 +18,8 @@ import SubmissionInfo from "./pages/SubmissionInfo";
 import Submissions from "./pages/Submissions";
 import { AuthReducer, AuthContext } from "./contexts/AuthContext";
 import { LangReducer, LangContext, LangState } from "./contexts/LangContext";
-import { CssBaseline } from '@material-ui/core';
-import { grey } from '@material-ui/core/colors';
+import { CssBaseline } from "@material-ui/core";
+import { grey } from "@material-ui/core/colors";
 
 const theme = createMuiTheme({
   typography: {
@@ -29,18 +29,15 @@ const theme = createMuiTheme({
   },
   overrides: {
     MuiCssBaseline: {
-      '@global': {
+      "@global": {
         pre: {
           fontFamily: '"Courier New", Consolas, monospace',
           fontSize: "13px",
           background: grey[200]
-        },
+        }
       }
     }
   }
-/*  components: {
-    whiteSpace: "pre",
-  }*/
 });
 
 const useStyles = makeStyles(theme => ({

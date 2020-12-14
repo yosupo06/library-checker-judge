@@ -119,7 +119,11 @@ const NavBar = (props: RouteComponentProps) => {
         <List>
           <ListItem>
             <ListItemText>
-              <Button color="inherit" onClick={() => history.push("/")} className={classes.navbarTop}>
+              <Button
+                color="inherit"
+                onClick={() => history.push("/")}
+                className={classes.navbarTop}
+              >
                 Library-Checker
               </Button>
             </ListItemText>
@@ -133,12 +137,20 @@ const NavBar = (props: RouteComponentProps) => {
               </Button>
             </ListItemText>
             <ListItemText>
-              <Button color="inherit" onClick={() => history.push("/ranking")} className={classes.navbarItem}>
+              <Button
+                color="inherit"
+                onClick={() => history.push("/ranking")}
+                className={classes.navbarItem}
+              >
                 Ranking
               </Button>
             </ListItemText>
             <ListItemText>
-              <Button color="inherit" onClick={() => history.push("/help")} className={classes.navbarItem}>
+              <Button
+                color="inherit"
+                onClick={() => history.push("/help")}
+                className={classes.navbarItem}
+              >
                 Help
               </Button>
             </ListItemText>

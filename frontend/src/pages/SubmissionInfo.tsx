@@ -113,9 +113,7 @@ const SubmissionInfo: React.FC<Props> = props => {
                 <Typography>Compile Error</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <pre className={classes.compileErrorText}>
-                  {compileError}
-                </pre>
+                <pre className={classes.compileErrorText}>{compileError}</pre>
               </AccordionDetails>
             </Accordion>
           </Paper>
