@@ -18,13 +18,29 @@ import SubmissionInfo from "./pages/SubmissionInfo";
 import Submissions from "./pages/Submissions";
 import { AuthReducer, AuthContext } from "./contexts/AuthContext";
 import { LangReducer, LangContext, LangState } from "./contexts/LangContext";
+import { CssBaseline } from '@material-ui/core';
+import { grey } from '@material-ui/core/colors';
 
 const theme = createMuiTheme({
   typography: {
     button: {
       textTransform: "none"
     }
+  },
+  overrides: {
+    MuiCssBaseline: {
+      '@global': {
+        pre: {
+          fontFamily: '"Courier New", Consolas, monospace',
+          fontSize: "13px",
+          background: grey[200]
+        },
+      }
+    }
   }
+/*  components: {
+    whiteSpace: "pre",
+  }*/
 });
 
 const useStyles = makeStyles(theme => ({
@@ -71,6 +87,7 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />
       <AuthContext.Provider
         value={{ state: authState, dispatch: authDispatch }}
       >

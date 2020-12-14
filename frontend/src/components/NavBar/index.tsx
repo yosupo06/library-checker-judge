@@ -5,6 +5,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  makeStyles,
   MenuItem,
   Popover,
   Select,
@@ -19,10 +20,30 @@ import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
 
+const useStyles = makeStyles(theme => ({
+  langSelect: {
+    marginLeft: "auto",
+    marginRight: theme.spacing(0.2)
+  },
+  navbarItem: {
+    minWidth: 0,
+    marginLeft: theme.spacing(0.2),
+    marginRight: theme.spacing(0.2)
+  },
+  navbarTop: {
+    fontSize: "16px",
+    fontWeight: "bolder",
+    minWidth: 0,
+    marginLeft: theme.spacing(0.4),
+    marginRight: theme.spacing(0.4)
+  }
+}));
+
 const NavBar = (props: RouteComponentProps) => {
   const { history } = props;
   const lang = useContext(LangContext);
   const auth = useContext(AuthContext);
+  const classes = useStyles();
 
   const langSelect = (
     <Select
@@ -34,9 +55,7 @@ const NavBar = (props: RouteComponentProps) => {
           payload: (e.target.value as string) === "ja" ? "ja" : "en"
         })
       }
-      style={{
-        marginLeft: "auto"
-      }}
+      className={classes.langSelect}
     >
       <MenuItem value="en">
         <img src={flagUS} alt="us" height="20px"></img>
@@ -100,27 +119,26 @@ const NavBar = (props: RouteComponentProps) => {
         <List>
           <ListItem>
             <ListItemText>
-              <Typography color="inherit" variant="h6">
-                <Button color="inherit" onClick={() => history.push("/")}>
-                  Library-Checker
-                </Button>
-              </Typography>
+              <Button color="inherit" onClick={() => history.push("/")} className={classes.navbarTop}>
+                Library-Checker
+              </Button>
             </ListItemText>
-            <ListItemText inset>
+            <ListItemText>
               <Button
                 color="inherit"
                 onClick={() => history.push("/submissions")}
+                className={classes.navbarItem}
               >
                 Submissions
               </Button>
             </ListItemText>
             <ListItemText>
-              <Button color="inherit" onClick={() => history.push("/ranking")}>
+              <Button color="inherit" onClick={() => history.push("/ranking")} className={classes.navbarItem}>
                 Ranking
               </Button>
             </ListItemText>
             <ListItemText>
-              <Button color="inherit" onClick={() => history.push("/help")}>
+              <Button color="inherit" onClick={() => history.push("/help")} className={classes.navbarItem}>
                 Help
               </Button>
             </ListItemText>

@@ -37,8 +37,6 @@ const useStyles = makeStyles(theme => ({
   compileErrorText: {
     whiteSpace: "pre",
     fontSize: "11px",
-    fontFamily: '"Courier New", Consolas, monospace',
-    background: theme.palette.grey[50],
     width: "100%"
   }
 }));
@@ -115,14 +113,14 @@ const SubmissionInfo: React.FC<Props> = props => {
                 <Typography>Compile Error</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Typography className={classes.compileErrorText}>
+                <pre className={classes.compileErrorText}>
                   {compileError}
-                </Typography>
+                </pre>
               </AccordionDetails>
             </Accordion>
           </Paper>
         )}
-        {info.getCaseResultsList().length && (
+        {info.getCaseResultsList().length !== 0 && (
           <Paper>
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMore />}>
@@ -158,20 +156,6 @@ const SubmissionInfo: React.FC<Props> = props => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              </AccordionDetails>
-            </Accordion>
-          </Paper>
-        )}
-        {compileError && (
-          <Paper>
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography>Compile Error</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Typography className={classes.compileErrorText}>
-                  {compileError}
-                </Typography>
               </AccordionDetails>
             </Accordion>
           </Paper>
