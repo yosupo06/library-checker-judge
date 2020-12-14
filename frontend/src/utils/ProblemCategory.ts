@@ -158,8 +158,8 @@ export const getCategories = (problems: Problem[]) => {
   }));
   const unclassified = problemNames.filter(e => !classifiedSet.has(e));
   if (unclassified.length) {
-    classified.push({
-      name: "Unclassified",
+    classified.unshift({
+      name: "New",
       problems: unclassified.map(e => ({
         name: e,
         title: nameToTitle[e]
