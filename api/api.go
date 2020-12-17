@@ -439,6 +439,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 			return nil, err
 		}
 		if task.Submission == -1 {
+			// Judge queue is empty
 			return &pb.PopJudgeTaskResponse{
 				SubmissionId: -1,
 			}, nil
@@ -451,24 +452,17 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		}
 		log.Println("Pop Submission:", id, expectedTime)
 
-		status, err := updateSubmissionRegistration(id, in.JudgeName, expectedTime)
-		if err != nil {
+		if err := registerSubmission(id, in.JudgeName, expectedTime, Waiting); err != nil {
+			log.Print(err)
+			continue
+		}
+		if err := pushTask(Task{
+			Submission: id,
+			Priority:   task.Priority + 1,
+			Available:  time.Now().Add(expectedTime),
+		}); err != nil {
 			log.Print(err)
 			return nil, err
-		}
-		if status != Finished {
-			if err := pushTask(Task{
-				Submission: id,
-				Priority:   task.Priority + 1,
-				Available:  time.Now().Add(expectedTime),
-			}); err != nil {
-				log.Print(err)
-				return nil, err
-			}
-		}
-		if status != Register && status != Update {
-			log.Print("Invalid Status: ", status)
-			continue
 		}
 
 		log.Print("Clear SubmissionTestcaseResults: ", id)
@@ -500,15 +494,9 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 	if err != nil {
 		expectedTime = time.Minute
 	}
-	status, err := updateSubmissionRegistration(id, in.JudgeName, expectedTime)
 
-	if err != nil {
+	if err := updateSubmissionRegistration(id, in.JudgeName, expectedTime); err != nil {
 		log.Println(err)
-		return nil, err
-	}
-	if status != Update {
-		err := errors.New("Call SyncJudgeTaskStatus to non-registered submission")
-		log.Println(err, id)
 		return nil, err
 	}
 
@@ -546,15 +534,12 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 		return nil, errors.New("JudgeName is empty")
 	}
 	id := in.SubmissionId
-	status, err := updateSubmissionRegistration(id, in.JudgeName, 10*time.Second)
-	if err != nil {
+
+	if err := updateSubmissionRegistration(id, in.JudgeName, 10*time.Second); err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	if status != Update {
-		log.Println(status, id)
-		return nil, errors.New("Call FinishJudgeTaskStatus to non-registered submission")
-	}
+
 	sub, err := fetchSubmission(id)
 	if err != nil {
 		log.Println(err)
@@ -574,11 +559,14 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 	if err := db.Model(&Submission{
 		ID: id,
 	}).Updates(map[string]interface{}{
-		"judge_name": "",
-		"testhash":   in.CaseVersion,
+		"testhash": in.CaseVersion,
 	}).Error; err != nil {
 		log.Print(err)
 		return nil, errors.New("Failed to clear judge_name")
+	}
+
+	if err := releaseSubmissionRegistration(id, in.JudgeName); err != nil {
+		return nil, errors.New("Failed to release Submission")
 	}
 	return &pb.FinishJudgeTaskResponse{}, nil
 }

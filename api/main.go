@@ -104,11 +104,8 @@ func init() {
 
 func main() {
 	// connect db
-	db = dbConnect()
+	db = dbConnect(getEnv("API_DB_LOG", "") != "")
 	defer db.Close()
-	if getEnv("API_DB_LOG", "") != "" {
-		db.LogMode(true)
-	}
 
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
