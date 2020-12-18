@@ -14,7 +14,7 @@ import {
 } from "@material-ui/core";
 import { GitHub } from "@material-ui/icons";
 import React, { useContext } from "react";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { Link, RouteComponentProps, withRouter } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
 import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
@@ -31,11 +31,19 @@ const useStyles = makeStyles(theme => ({
     marginRight: theme.spacing(0.2)
   },
   navbarTop: {
-    fontSize: "16px",
-    fontWeight: "bolder",
     minWidth: 0,
     marginLeft: theme.spacing(0.4),
     marginRight: theme.spacing(0.4)
+  },
+  navbarTopLink: {
+    color: " inherit",
+    textDecoration: "none",
+    fontSize: "16px",
+    fontWeight: "bolder"
+  },
+  navbarLink: {
+    color: " inherit",
+    textDecoration: "none"
   }
 }));
 
@@ -119,39 +127,31 @@ const NavBar = (props: RouteComponentProps) => {
         <List>
           <ListItem>
             <ListItemText>
-              <Button
-                color="inherit"
-                onClick={() => history.push("/")}
-                className={classes.navbarTop}
-              >
-                Library-Checker
+              <Button color="inherit" className={classes.navbarTop}>
+                <Link to="/" className={classes.navbarTopLink}>
+                  Library-Checker
+                </Link>
               </Button>
             </ListItemText>
             <ListItemText>
-              <Button
-                color="inherit"
-                onClick={() => history.push("/submissions")}
-                className={classes.navbarItem}
-              >
-                Submissions
+              <Button color="inherit" className={classes.navbarItem}>
+                <Link to="/submissions" className={classes.navbarLink}>
+                  Submissions
+                </Link>
               </Button>
             </ListItemText>
             <ListItemText>
-              <Button
-                color="inherit"
-                onClick={() => history.push("/ranking")}
-                className={classes.navbarItem}
-              >
-                Ranking
+              <Button color="inherit" className={classes.navbarItem}>
+                <Link to="/ranking" className={classes.navbarLink}>
+                  Ranking
+                </Link>
               </Button>
             </ListItemText>
             <ListItemText>
-              <Button
-                color="inherit"
-                onClick={() => history.push("/help")}
-                className={classes.navbarItem}
-              >
-                Help
+              <Button color="inherit" className={classes.navbarItem}>
+                <Link to="/help" className={classes.navbarLink}>
+                  Help
+                </Link>
               </Button>
             </ListItemText>
           </ListItem>
