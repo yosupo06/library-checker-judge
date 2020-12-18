@@ -12,6 +12,7 @@ import {
 import React, { useContext, useState } from "react";
 import { connect, PromiseState } from "react-refetch";
 import { RouteComponentProps } from "react-router-dom";
+import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata
 } from "../api/library_checker_client";
@@ -34,7 +35,7 @@ const ProblemInfo: React.FC<Props> = props => {
   const { problemInfoFetch, history } = props;
   const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
-  const [lang, setLang] = useState("");
+  const [lang, setLang] = useLocalStorage("programming-lang", "");
 
   if (problemInfoFetch.pending) {
     return (
@@ -53,7 +54,10 @@ const ProblemInfo: React.FC<Props> = props => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(props);
+    if (!lang) {
+      console.log("Please select lang");
+      return;
+    }
     library_checker_client
       .submit(
         new SubmitRequest()
@@ -67,7 +71,7 @@ const ProblemInfo: React.FC<Props> = props => {
       });
   };
   return (
-    <Container>
+    <Box>
       <Typography variant="h2" paragraph={true}>
         <KatexRender text={problemInfoFetch.value.getTitle()} />
       </Typography>
@@ -108,7 +112,7 @@ const ProblemInfo: React.FC<Props> = props => {
           Submit
         </Button>
       </form>
-    </Container>
+    </Box>
   );
 };
 
