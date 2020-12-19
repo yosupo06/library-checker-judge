@@ -3,7 +3,9 @@ import {
   Button,
   CircularProgress,
   Container,
+  Divider,
   FormControl,
+  makeStyles,
   MenuItem,
   Select,
   TextField,
@@ -23,6 +25,7 @@ import {
   ProblemInfoResponse,
   SubmitRequest
 } from "../api/library_checker_pb";
+import Editor from "../components/Editor";
 import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 
@@ -31,7 +34,18 @@ interface Props extends RouteComponentProps<{ problemId: string }> {
   langListFetch: PromiseState<LangListResponse>;
 }
 
+const useStyles = makeStyles(theme => ({
+  divider: {
+    margin: theme.spacing(1)
+  },
+  editor: {
+    height: "400px",
+    width: "100%"
+  }
+}));
+
 const ProblemInfo: React.FC<Props> = props => {
+  const classes = useStyles();
   const { problemInfoFetch, history } = props;
   const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
@@ -81,15 +95,18 @@ const ProblemInfo: React.FC<Props> = props => {
 
       <KatexRender text={problemInfoFetch.value.getStatement()} html={true} />
 
+      <Divider className={classes.divider} />
+
       <form onSubmit={e => handleSubmit(e)}>
-        <FormControl>
-          <TextField
-            required
-            multiline
-            label="source"
+        <FormControl className={classes.editor}>
+          <Editor
             value={source}
-            rows={10}
-            onChange={e => setSource(e.target.value)}
+            language={lang}
+            onChange={e => {
+              setSource(e);
+            }}
+            readOnly={false}
+            autoHeight={false}
           />
         </FormControl>
         <FormControl>

@@ -14,7 +14,6 @@ import {
   Typography
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
-import Editor from "@monaco-editor/react";
 import React, { useState } from "react";
 import { connect, PromiseState } from "react-refetch";
 import { RouteComponentProps } from "react-router-dom";
@@ -24,6 +23,7 @@ import {
   SubmissionInfoResponse
 } from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
+import Editor from "../components/Editor";
 
 interface Props {
   submissionInfoFetch: PromiseState<SubmissionInfoResponse>;
@@ -162,22 +162,9 @@ const SubmissionInfo: React.FC<Props> = props => {
       <Paper>
         <Editor
           value={info.getSource()}
-          language={editorMode}
-          height={editorHeight}
-          editorDidMount={(_, editor) =>
-            setEditorHeight(editor.getContentHeight() + 18)
-          }
-          options={{
-            readOnly: true,
-            scrollBeyondLastColumn: 0,
-            scrollBeyondLastLine: false,
-            minimap: {
-              enabled: false
-            },
-            scrollbar: {
-              alwaysConsumeMouseWheel: false
-            }
-          }}
+          language={lang}
+          readOnly={true}
+          autoHeight={true}
         />
       </Paper>
     </Box>
