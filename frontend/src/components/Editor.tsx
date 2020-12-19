@@ -58,7 +58,6 @@ const Editor: React.FC<Props> = props => {
       language={mode}
       height={autoHeight ? editorHeight : undefined}
       onChange={(_, e) => {
-        console.log("Change! ", e, onChange);
         if (e !== undefined && onChange) onChange(e);
       }}
       editorDidMount={(_, editor) => {
