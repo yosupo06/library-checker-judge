@@ -82,7 +82,9 @@ const SubmissionTable: React.FC<InnerProps> = props => {
                 <Link to={`/submission/${row.getId()}`}>{row.getId()}</Link>
               </TableCell>
               <TableCell>
-                <Link to={`/problem/${row.getProblemName()}`}><KatexRender text={row.getProblemTitle()} /></Link>
+                <Link to={`/problem/${row.getProblemName()}`}>
+                  <KatexRender text={row.getProblemTitle()} />
+                </Link>
               </TableCell>
               <TableCell>{idToName[row.getLang()]}</TableCell>
               <TableCell>

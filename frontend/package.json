@@ -25,14 +25,15 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.0",
     "react-use": "^15.3.4",
-    "typescript": "^3.2.1"
+    "typescript": "~3.5"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "format": "prettier-eslint --write $PWD/'src/**/*.{ts,js,tsx,jsx}'"
+    "format": "prettier-eslint --write \"src/**/*.{ts,js,tsx,jsx}\"",
+    "lint": "prettier-eslint --list-different \"src/**/*.{ts,js,tsx,jsx}\""
   },
   "eslintConfig": {
     "extends": [
