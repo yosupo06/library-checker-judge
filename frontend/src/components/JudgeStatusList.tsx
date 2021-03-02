@@ -5,48 +5,48 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
 } from "@material-ui/core";
 import React from "react";
 
-const JudgeStatusList = () => {
+const JudgeStatusList = (): JSX.Element => {
   const judge_status = [
     {
       name: "AC",
-      text: "Accepted (Green check: in the latest testcase)"
+      text: "Accepted (Green check: in the latest testcase)",
     },
     {
       name: "WA",
-      text: "Wrong Answer"
+      text: "Wrong Answer",
     },
     {
       name: "RE",
-      text: "Runtime Error"
+      text: "Runtime Error",
     },
     {
       name: "TLE",
-      text: "Time Limit Exceeded"
+      text: "Time Limit Exceeded",
     },
     {
       name: "PE",
-      text: "Presentation Error"
+      text: "Presentation Error",
     },
     {
       name: "Fail",
-      text: "An author's solution is wrong"
+      text: "An author's solution is wrong",
     },
     {
       name: "CE",
-      text: "Compile Error"
+      text: "Compile Error",
     },
     {
       name: "WJ",
-      text: "Waiting Judge"
+      text: "Waiting Judge",
     },
     {
       name: "IE",
-      text: "Judge Server is broken 😢"
-    }
+      text: "Judge Server is broken 😢",
+    },
   ];
 
   return (
@@ -59,7 +59,7 @@ const JudgeStatusList = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {judge_status.map(row => (
+          {judge_status.map((row) => (
             <TableRow key={row.name}>
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.text}</TableCell>

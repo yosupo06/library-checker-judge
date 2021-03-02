@@ -25,26 +25,41 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.0",
     "react-use": "^15.3.4",
-    "typescript": "~3.5"
+    "typescript": "~3.9.5"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "format": "prettier-eslint --write \"src/**/*.{ts,js,tsx,jsx}\"",
-    "lint": "prettier-eslint --list-different \"src/**/*.{ts,js,tsx,jsx}\""
+    "prettier": "prettier --write \"src/**/*.{ts,js,tsx,jsx}\"",
+    "prettier:check": "prettier --check \"src/**/*.{ts,js,tsx,jsx}\"",
+    "lint": "eslint --max-warnings 0 \"src/**/*.{ts,js,tsx,jsx}\"",
+    "lint:fix": "eslint --fix \"src/**/*.{ts,js,tsx,jsx}\""
   },
   "eslintConfig": {
+    "env": {
+      "browser": true
+    },
     "extends": [
       "react-app",
-      "react-app/jest"
+      "react-app/jest",
+      "plugin:@typescript-eslint/recommended"
     ],
     "ignorePatterns": [
       "build",
       "**/*_pb.js",
       "**/*_pb.d.ts"
-    ]
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": [
+        "./tsconfig.json"
+      ]
+    },
+    "rules": {
+      "@typescript-eslint/no-empty-interface": "off"
+    }
   },
   "browserslist": {
     "production": [
@@ -59,6 +74,7 @@
     ]
   },
   "devDependencies": {
-    "prettier-eslint-cli": "^5.0.0"
+    "@typescript-eslint/parser": "^4.16.1",
+    "prettier": "2.2.1"
   }
 }

@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Container,
   createStyles,
   FormControl,
   ListSubheader,
@@ -13,7 +12,7 @@ import {
   TablePagination,
   TextField,
   Theme,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import React, { useEffect } from "react";
 import { connect, PromiseState } from "react-refetch";
@@ -24,13 +23,14 @@ import {
   ProblemListRequest,
   ProblemListResponse,
   SubmissionListRequest,
-  SubmissionListResponse
+  SubmissionListResponse,
 } from "../api/library_checker_pb";
 import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
 
-interface Props {
+interface OuterProps {}
+interface InnerProps {
   langListFetch: PromiseState<LangListResponse>;
   problemListFetch: PromiseState<ProblemListResponse>;
   submissionListFetch: PromiseState<SubmissionListResponse>;
@@ -50,17 +50,17 @@ const useStyles = makeStyles((theme: Theme) =>
     formControl: {
       margin: theme.spacing(1),
       verticalAlign: "bottom",
-      minWidth: 120
-    }
+      minWidth: 120,
+    },
   })
 );
 
-const Submissions: React.FC<Props> = props => {
+const Submissions: React.FC<InnerProps> = (props) => {
   const {
     langListFetch,
     problemListFetch,
     submissionListFetch,
-    refreshSubmissionList
+    refreshSubmissionList,
   } = props;
   const classes = useStyles();
   const [queryProblemName, setQueryProblemName] = React.useState("");
@@ -95,7 +95,7 @@ const Submissions: React.FC<Props> = props => {
       queryLang,
       queryOrder,
       page,
-      rowsPerPage
+      rowsPerPage,
     ]
   );
 
@@ -180,17 +180,17 @@ const Submissions: React.FC<Props> = props => {
       <Typography variant="h2" paragraph={true}>
         Submission List
       </Typography>
-      <form onSubmit={e => handleSubmit(e)}>
+      <form onSubmit={(e) => handleSubmit(e)}>
         <FormControl className={classes.formControl}>
           <Select
             value={problemName}
             displayEmpty
-            onChange={e => setProblemName(e.target.value as string)}
+            onChange={(e) => setProblemName(e.target.value as string)}
           >
             <MenuItem value="">Problem Name</MenuItem>
-            {categories.map(category =>
+            {categories.map((category) =>
               [<ListSubheader>{category.name}</ListSubheader>].concat(
-                category.problems.map(e => (
+                category.problems.map((e) => (
                   <MenuItem key={e.name} value={e.name}>
                     <KatexRender text={e.title} />
                   </MenuItem>
@@ -203,14 +203,14 @@ const Submissions: React.FC<Props> = props => {
           <TextField
             label="User Name"
             value={userName}
-            onChange={e => setUserName(e.target.value)}
+            onChange={(e) => setUserName(e.target.value)}
           />
         </FormControl>
         <FormControl className={classes.formControl}>
           <Select
             value={statusFilter}
             displayEmpty
-            onChange={e => setStatusFilter(e.target.value as string)}
+            onChange={(e) => setStatusFilter(e.target.value as string)}
           >
             <MenuItem value="">Status</MenuItem>
             <MenuItem value="AC">AC</MenuItem>
@@ -220,11 +220,11 @@ const Submissions: React.FC<Props> = props => {
           <Select
             value={langFilter}
             displayEmpty
-            onChange={e => setLangFilter(e.target.value as string)}
+            onChange={(e) => setLangFilter(e.target.value as string)}
           >
             <MenuItem value="">Lang</MenuItem>
             {langListFetch.fulfilled &&
-              langListFetch.value.getLangsList().map(e => (
+              langListFetch.value.getLangsList().map((e) => (
                 <MenuItem key={e.getId()} value={e.getId()}>
                   {e.getName()}
                 </MenuItem>
@@ -235,7 +235,7 @@ const Submissions: React.FC<Props> = props => {
           <Select
             value={sortOrder}
             displayEmpty
-            onChange={e => setSortOrder(e.target.value as string)}
+            onChange={(e) => setSortOrder(e.target.value as string)}
           >
             <MenuItem value="-id">Sort</MenuItem>
             <MenuItem value="+time">Time</MenuItem>
@@ -251,18 +251,18 @@ const Submissions: React.FC<Props> = props => {
   );
 };
 
-export default connect<{}, Props>(() => ({
+export default connect<OuterProps, InnerProps>(() => ({
   langListFetch: {
     comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest())
+    value: () => library_checker_client.langList(new LangListRequest()),
   },
   problemListFetch: {
     comparison: null,
-    value: () => library_checker_client.problemList(new ProblemListRequest())
+    value: () => library_checker_client.problemList(new ProblemListRequest()),
   },
   submissionListFetch: {
     comparison: null,
-    value: []
+    value: [],
   },
   refreshSubmissionList: (
     problem: string,
@@ -286,7 +286,7 @@ export default connect<{}, Props>(() => ({
             .setOrder(order)
             .setSkip(skip)
             .setLimit(limit)
-        )
-    }
-  })
+        ),
+    },
+  }),
 }))(Submissions);

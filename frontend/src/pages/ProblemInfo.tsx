@@ -2,28 +2,26 @@ import {
   Box,
   Button,
   CircularProgress,
-  Container,
   Divider,
   FormControl,
   makeStyles,
   MenuItem,
   Select,
-  TextField,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import React, { useContext, useState } from "react";
 import { connect, PromiseState } from "react-refetch";
 import { RouteComponentProps } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
-  authMetadata
+  authMetadata,
 } from "../api/library_checker_client";
 import {
   LangListRequest,
   LangListResponse,
   ProblemInfoRequest,
   ProblemInfoResponse,
-  SubmitRequest
+  SubmitRequest,
 } from "../api/library_checker_pb";
 import Editor from "../components/Editor";
 import KatexRender from "../components/KatexRender";
@@ -34,17 +32,17 @@ interface Props extends RouteComponentProps<{ problemId: string }> {
   langListFetch: PromiseState<LangListResponse>;
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   divider: {
-    margin: theme.spacing(1)
+    margin: theme.spacing(1),
   },
   editor: {
     height: "400px",
-    width: "100%"
-  }
+    width: "100%",
+  },
 }));
 
-const ProblemInfo: React.FC<Props> = props => {
+const ProblemInfo: React.FC<Props> = (props) => {
   const classes = useStyles();
   const { problemInfoFetch, history } = props;
   const auth = useContext(AuthContext);
@@ -78,9 +76,9 @@ const ProblemInfo: React.FC<Props> = props => {
           .setLang(lang)
           .setProblem(props.match.params.problemId)
           .setSource(source),
-        authMetadata(auth?.state!)
+        auth ? authMetadata(auth.state) : undefined
       )
-      .then(resp => {
+      .then((resp) => {
         history.push(`/submission/${resp.getId()}`);
       });
   };
@@ -97,12 +95,12 @@ const ProblemInfo: React.FC<Props> = props => {
 
       <Divider className={classes.divider} />
 
-      <form onSubmit={e => handleSubmit(e)}>
+      <form onSubmit={(e) => handleSubmit(e)}>
         <FormControl className={classes.editor}>
           <Editor
             value={source}
             language={lang}
-            onChange={e => {
+            onChange={(e) => {
               setSource(e);
             }}
             readOnly={false}
@@ -114,11 +112,11 @@ const ProblemInfo: React.FC<Props> = props => {
             displayEmpty
             required
             value={lang}
-            onChange={e => setLang(e.target.value as string)}
+            onChange={(e) => setLang(e.target.value as string)}
           >
             <MenuItem value="">Lang</MenuItem>
             {props.langListFetch.fulfilled &&
-              props.langListFetch.value.getLangsList().map(e => (
+              props.langListFetch.value.getLangsList().map((e) => (
                 <MenuItem key={e.getId()} value={e.getId()}>
                   {e.getName()}
                 </MenuItem>
@@ -134,17 +132,17 @@ const ProblemInfo: React.FC<Props> = props => {
 };
 
 export default connect<RouteComponentProps<{ problemId: string }>, Props>(
-  props => ({
+  (props) => ({
     problemInfoFetch: {
       comparison: null,
       value: () =>
         library_checker_client.problemInfo(
           new ProblemInfoRequest().setName(props.match.params.problemId)
-        )
+        ),
     },
     langListFetch: {
       comparison: null,
-      value: () => library_checker_client.langList(new LangListRequest())
-    }
+      value: () => library_checker_client.langList(new LangListRequest()),
+    },
   })
 )(ProblemInfo);

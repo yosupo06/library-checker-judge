@@ -5,7 +5,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
 } from "@material-ui/core";
 import React from "react";
 import { Link } from "react-router-dom";
@@ -19,7 +19,7 @@ interface Props {
   }[];
 }
 
-const ProblemList: React.FC<Props> = props => {
+const ProblemList: React.FC<Props> = (props) => {
   const { problems } = props;
 
   return (
@@ -31,7 +31,7 @@ const ProblemList: React.FC<Props> = props => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {problems.map(problem => (
+          {problems.map((problem) => (
             <TableRow key={problem.name}>
               <TableCell>
                 <Link to={`/problem/${problem.name}`}>

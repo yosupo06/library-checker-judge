@@ -3,7 +3,7 @@ import {
   CircularProgress,
   Container,
   TextField,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import { Alert, AlertTitle } from "@material-ui/lab";
 import React, { useContext } from "react";
@@ -13,7 +13,7 @@ import { AuthContext } from "../contexts/AuthContext";
 
 interface Props {}
 
-const Help: React.FC<Props> = props => {
+const Help: React.FC<Props> = (props) => {
   const auth = useContext(AuthContext);
   const [userName, setUserName] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -25,27 +25,27 @@ const Help: React.FC<Props> = props => {
     setLoginStatus("wait");
     library_checker_client
       .login(new LoginRequest().setName(userName).setPassword(password))
-      .then(resp => {
+      .then((resp) => {
         auth?.dispatch({
           type: "login",
-          payload: { token: resp.getToken(), user: userName }
+          payload: { token: resp.getToken(), user: userName },
         });
         setLoginStatus("success");
       })
-      .catch(reason => setLoginStatus("failed"));
+      .catch((reason) => setLoginStatus("failed"));
   };
   return (
     <Container>
       <Typography variant="h2" paragraph={true}>
         Login
       </Typography>
-      <form onSubmit={e => handleSubmit(e)}>
+      <form onSubmit={(e) => handleSubmit(e)}>
         <div>
           <TextField
             required
             label="User Name"
             value={userName}
-            onChange={e => setUserName(e.target.value)}
+            onChange={(e) => setUserName(e.target.value)}
           />
         </div>
         <div>
@@ -54,7 +54,7 @@ const Help: React.FC<Props> = props => {
             label="Password"
             type="password"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
         <Button color="primary" type="submit">

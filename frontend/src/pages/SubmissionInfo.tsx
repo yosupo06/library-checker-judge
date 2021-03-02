@@ -11,16 +11,16 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
-import React, { useState } from "react";
+import React from "react";
 import { connect, PromiseState } from "react-refetch";
 import { RouteComponentProps } from "react-router-dom";
 import library_checker_client from "../api/library_checker_client";
 import {
   SubmissionInfoRequest,
-  SubmissionInfoResponse
+  SubmissionInfoResponse,
 } from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
 import Editor from "../components/Editor";
@@ -30,20 +30,19 @@ interface Props {
   fixSubmissionInfo: (value: SubmissionInfoResponse) => void;
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   overviewBox: {
-    marginBottom: theme.spacing(0.2)
+    marginBottom: theme.spacing(0.2),
   },
   compileErrorText: {
     whiteSpace: "pre",
     fontSize: "11px",
-    width: "100%"
-  }
+    width: "100%",
+  },
 }));
 
-const SubmissionInfo: React.FC<Props> = props => {
+const SubmissionInfo: React.FC<Props> = (props) => {
   const { submissionInfoFetch } = props;
-  const [editorHeight, setEditorHeight] = useState(100);
   const classes = useStyles();
 
   if (submissionInfoFetch.pending) {
@@ -54,46 +53,16 @@ const SubmissionInfo: React.FC<Props> = props => {
   }
   const info = submissionInfoFetch.value;
   const compileError = new TextDecoder().decode(info.getCompileError_asU8());
-  const overview = info.getOverview()!;
-  const status = overview.getStatus();
-  const lang = overview.getLang()!;
+  const overview = info.getOverview();
+  const status = overview ? overview.getStatus() : undefined;
+  const lang = overview ? overview.getLang() : undefined;
 
   if (
+    status &&
     new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(status)
   ) {
     props.fixSubmissionInfo(info);
   }
-
-  const editorMode = (() => {
-    if (lang.startsWith("cpp")) {
-      return "cpp";
-    }
-    if (lang.startsWith("java")) {
-      return "java";
-    }
-    if (lang.startsWith("py")) {
-      return "python";
-    }
-    if (lang.startsWith("rust")) {
-      return "rust";
-    }
-    if (lang.startsWith("d")) {
-      return "plaintext";
-    }
-    if (lang.startsWith("haskell")) {
-      return "plaintext";
-    }
-    if (lang.startsWith("csharp")) {
-      return "csharp";
-    }
-    if (lang.startsWith("go")) {
-      return "go";
-    }
-    if (lang.startsWith("lisp")) {
-      return "plaintext";
-    }
-    return "plaintext";
-  })();
 
   return (
     <Box>
@@ -136,7 +105,7 @@ const SubmissionInfo: React.FC<Props> = props => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {info.getCaseResultsList().map(row => (
+                      {info.getCaseResultsList().map((row) => (
                         <TableRow key={row.getCase()}>
                           <TableCell>{row.getCase()}</TableCell>
                           <TableCell>{row.getStatus()}</TableCell>
@@ -172,7 +141,7 @@ const SubmissionInfo: React.FC<Props> = props => {
 };
 
 export default connect<RouteComponentProps<{ submissionId: string }>, Props>(
-  props => ({
+  (props) => ({
     submissionInfoFetch: {
       comparison: null,
       refreshInterval: 2000,
@@ -181,13 +150,13 @@ export default connect<RouteComponentProps<{ submissionId: string }>, Props>(
           new SubmissionInfoRequest().setId(
             parseInt(props.match.params.submissionId)
           )
-        )
+        ),
     },
     fixSubmissionInfo: (value: SubmissionInfoResponse) => ({
       submissionInfoFetch: {
         refreshing: true,
-        value: value
-      }
-    })
+        value: value,
+      },
+    }),
   })
 )(SubmissionInfo);
