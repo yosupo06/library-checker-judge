@@ -3,7 +3,13 @@ import { LibraryCheckerServicePromiseClient } from "./library_checker_grpc_web_p
 
 const api_url = process.env.REACT_APP_API_URL;
 
-export const authMetadata = (state: AuthState) => {
+export const authMetadata = (
+  state: AuthState
+):
+  | {
+      authorization: string;
+    }
+  | undefined => {
   if (!state.token) {
     return undefined;
   } else {

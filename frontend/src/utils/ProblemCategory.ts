@@ -135,7 +135,15 @@ const categories = [
   },
 ];
 
-export const getCategories = (problems: Problem[]) => {
+export const getCategories = (
+  problems: Problem[]
+): {
+  name: string;
+  problems: {
+    name: string;
+    title: string;
+  }[];
+}[] => {
   const classifiedSet = new Set(categories.map((e) => e.problems).flat());
   const problemNames = problems.map((e) => e.getName());
   const nameToTitle = problems.reduce<{ [name: string]: string }>(

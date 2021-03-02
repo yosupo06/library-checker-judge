@@ -10,7 +10,6 @@ import {
   Popover,
   Select,
   Toolbar,
-  Typography,
 } from "@material-ui/core";
 import { GitHub } from "@material-ui/icons";
 import React, { useContext } from "react";

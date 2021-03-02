@@ -34,7 +34,7 @@
     "eject": "react-scripts eject",
     "prettier": "prettier --write \"src/**/*.{ts,js,tsx,jsx}\"",
     "prettier:check": "prettier --check \"src/**/*.{ts,js,tsx,jsx}\"",
-    "lint": "eslint \"src/**/*.{ts,js,tsx,jsx}\"",
+    "lint": "eslint --max-warnings 0 \"src/**/*.{ts,js,tsx,jsx}\"",
     "lint:fix": "eslint --fix \"src/**/*.{ts,js,tsx,jsx}\""
   },
   "eslintConfig": {

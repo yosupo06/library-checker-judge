@@ -9,7 +9,7 @@ import {
 } from "@material-ui/core";
 import React from "react";
 
-const JudgeStatusList = () => {
+const JudgeStatusList = (): JSX.Element => {
   const judge_status = [
     {
       name: "AC",

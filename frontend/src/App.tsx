@@ -46,7 +46,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function App() {
+function App(): JSX.Element {
   const classes = useStyles();
 
   const savedLangState = localStorage.getItem("lang");

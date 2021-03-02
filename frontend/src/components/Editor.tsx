@@ -1,7 +1,5 @@
-import renderMathInElement from "katex/dist/contrib/auto-render";
 import "katex/dist/katex.min.css";
-import React, { useContext, useState } from "react";
-import { LangContext } from "../contexts/LangContext";
+import React, { useState } from "react";
 import { ControlledEditor } from "@monaco-editor/react";
 
 interface Props {
