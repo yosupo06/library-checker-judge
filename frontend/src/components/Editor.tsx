@@ -46,7 +46,7 @@ const editorMode = (lang?: string) => {
   return "plaintext";
 };
 
-const Editor: React.FC<Props> = props => {
+const Editor: React.FC<Props> = (props) => {
   const { value, language, onChange, readOnly, autoHeight } = props;
   const [editorHeight, setEditorHeight] = useState(100);
 
@@ -68,11 +68,11 @@ const Editor: React.FC<Props> = props => {
         scrollBeyondLastColumn: 0,
         scrollBeyondLastLine: false,
         minimap: {
-          enabled: false
+          enabled: false,
         },
         scrollbar: {
-          alwaysConsumeMouseWheel: false
-        }
+          alwaysConsumeMouseWheel: false,
+        },
       }}
     />
   );

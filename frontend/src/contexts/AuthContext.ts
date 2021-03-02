@@ -25,7 +25,7 @@ export const AuthReducer: React.Reducer<AuthState, AuthAction> = (
     case "logout":
       return {
         user: "",
-        token: ""
+        token: "",
       };
     default:
       return state;

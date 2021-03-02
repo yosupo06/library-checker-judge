@@ -4,7 +4,7 @@ import RankingList from "../components/RankingList";
 
 interface Props {}
 
-const Ranking: React.FC<Props> = props => {
+const Ranking: React.FC<Props> = (props) => {
   return (
     <Box>
       <Typography variant="h2" paragraph={true}>

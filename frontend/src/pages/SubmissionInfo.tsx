@@ -11,7 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
 import React, { useState } from "react";
@@ -20,7 +20,7 @@ import { RouteComponentProps } from "react-router-dom";
 import library_checker_client from "../api/library_checker_client";
 import {
   SubmissionInfoRequest,
-  SubmissionInfoResponse
+  SubmissionInfoResponse,
 } from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
 import Editor from "../components/Editor";
@@ -30,18 +30,18 @@ interface Props {
   fixSubmissionInfo: (value: SubmissionInfoResponse) => void;
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   overviewBox: {
-    marginBottom: theme.spacing(0.2)
+    marginBottom: theme.spacing(0.2),
   },
   compileErrorText: {
     whiteSpace: "pre",
     fontSize: "11px",
-    width: "100%"
-  }
+    width: "100%",
+  },
 }));
 
-const SubmissionInfo: React.FC<Props> = props => {
+const SubmissionInfo: React.FC<Props> = (props) => {
   const { submissionInfoFetch } = props;
   const [editorHeight, setEditorHeight] = useState(100);
   const classes = useStyles();
@@ -136,7 +136,7 @@ const SubmissionInfo: React.FC<Props> = props => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {info.getCaseResultsList().map(row => (
+                      {info.getCaseResultsList().map((row) => (
                         <TableRow key={row.getCase()}>
                           <TableCell>{row.getCase()}</TableCell>
                           <TableCell>{row.getStatus()}</TableCell>
@@ -172,7 +172,7 @@ const SubmissionInfo: React.FC<Props> = props => {
 };
 
 export default connect<RouteComponentProps<{ submissionId: string }>, Props>(
-  props => ({
+  (props) => ({
     submissionInfoFetch: {
       comparison: null,
       refreshInterval: 2000,
@@ -181,13 +181,13 @@ export default connect<RouteComponentProps<{ submissionId: string }>, Props>(
           new SubmissionInfoRequest().setId(
             parseInt(props.match.params.submissionId)
           )
-        )
+        ),
     },
     fixSubmissionInfo: (value: SubmissionInfoResponse) => ({
       submissionInfoFetch: {
         refreshing: true,
-        value: value
-      }
-    })
+        value: value,
+      },
+    }),
   })
 )(SubmissionInfo);

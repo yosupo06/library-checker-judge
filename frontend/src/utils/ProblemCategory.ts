@@ -3,7 +3,7 @@ import { Problem } from "../api/library_checker_pb";
 const categories = [
   {
     name: "Sample",
-    problems: ["aplusb", "many_aplusb"]
+    problems: ["aplusb", "many_aplusb"],
   },
 
   {
@@ -35,8 +35,8 @@ const categories = [
       "rectangle_sum",
       "point_add_rectangle_sum",
       "persistent_queue",
-      "persistent_unionfind"
-    ]
+      "persistent_unionfind",
+    ],
   },
 
   {
@@ -64,8 +64,8 @@ const categories = [
       "tree_decomposition_width_2",
       "frequency_table_of_tree_distance",
       "global_minimum_cut_of_dynamic_star_augmented_graph",
-      "chordal_graph_recognition"
-    ]
+      "chordal_graph_recognition",
+    ],
   },
 
   {
@@ -104,8 +104,8 @@ const categories = [
       "tetration_mod",
       "nim_product_64",
       "sharp_p_subset_sum",
-      "two_sat"
-    ]
+      "two_sat",
+    ],
   },
 
   {
@@ -114,8 +114,8 @@ const categories = [
       "matrix_det",
       "sparse_matrix_det",
       "system_of_linear_equations",
-      "hafnian_of_matrix"
-    ]
+      "hafnian_of_matrix",
+    ],
   },
 
   {
@@ -125,19 +125,19 @@ const categories = [
       "enumerate_palindromes",
       "suffixarray",
       "number_of_substrings",
-      "runenumerate"
-    ]
+      "runenumerate",
+    ],
   },
 
   {
     name: "Geometry",
-    problems: ["sort_points_by_argument", "convex_layers"]
-  }
+    problems: ["sort_points_by_argument", "convex_layers"],
+  },
 ];
 
 export const getCategories = (problems: Problem[]) => {
-  const classifiedSet = new Set(categories.map(e => e.problems).flat());
-  const problemNames = problems.map(e => e.getName());
+  const classifiedSet = new Set(categories.map((e) => e.problems).flat());
+  const problemNames = problems.map((e) => e.getName());
   const nameToTitle = problems.reduce<{ [name: string]: string }>(
     (dict, problem) => {
       dict[problem.getName()] = problem.getTitle();
@@ -147,23 +147,23 @@ export const getCategories = (problems: Problem[]) => {
   );
 
   const problemNameSet = new Set(problemNames);
-  const classified = categories.map(e => ({
+  const classified = categories.map((e) => ({
     name: e.name,
     problems: e.problems
-      .filter(e => problemNameSet.has(e))
-      .map(e => ({
+      .filter((e) => problemNameSet.has(e))
+      .map((e) => ({
         name: e,
-        title: nameToTitle[e]
-      }))
+        title: nameToTitle[e],
+      })),
   }));
-  const unclassified = problemNames.filter(e => !classifiedSet.has(e));
+  const unclassified = problemNames.filter((e) => !classifiedSet.has(e));
   if (unclassified.length) {
     classified.unshift({
       name: "New",
-      problems: unclassified.map(e => ({
+      problems: unclassified.map((e) => ({
         name: e,
-        title: nameToTitle[e]
-      }))
+        title: nameToTitle[e],
+      })),
     });
   }
   return classified;

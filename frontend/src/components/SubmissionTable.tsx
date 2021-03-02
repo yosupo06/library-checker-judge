@@ -5,7 +5,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
 } from "@material-ui/core";
 import { green } from "@material-ui/core/colors";
 import { DoneOutline } from "@material-ui/icons";
@@ -17,7 +17,7 @@ import library_checker_client from "../api/library_checker_client";
 import {
   LangListRequest,
   LangListResponse,
-  SubmissionOverview
+  SubmissionOverview,
 } from "../api/library_checker_pb";
 import KatexRender from "./KatexRender";
 
@@ -29,7 +29,7 @@ interface InnerProps {
   langListFetch: PromiseState<LangListResponse>;
 }
 
-const SubmissionTable: React.FC<InnerProps> = props => {
+const SubmissionTable: React.FC<InnerProps> = (props) => {
   const { overviews, langListFetch } = props;
 
   if (!langListFetch.fulfilled) {
@@ -76,7 +76,7 @@ const SubmissionTable: React.FC<InnerProps> = props => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {overviews.map(row => (
+          {overviews.map((row) => (
             <TableRow key={row.getId()}>
               <TableCell>
                 <Link to={`/submission/${row.getId()}`}>{row.getId()}</Link>
@@ -111,9 +111,9 @@ const SubmissionTable: React.FC<InnerProps> = props => {
   );
 };
 
-export default connect<OuterProps, InnerProps>(props => ({
+export default connect<OuterProps, InnerProps>((props) => ({
   langListFetch: {
     comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest())
-  }
+    value: () => library_checker_client.langList(new LangListRequest()),
+  },
 }))(SubmissionTable);

@@ -10,7 +10,7 @@ import {
   Popover,
   Select,
   Toolbar,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import { GitHub } from "@material-ui/icons";
 import React, { useContext } from "react";
@@ -20,31 +20,31 @@ import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   langSelect: {
     marginLeft: "auto",
-    marginRight: theme.spacing(0.2)
+    marginRight: theme.spacing(0.2),
   },
   navbarItem: {
     minWidth: 0,
     marginLeft: theme.spacing(0.2),
-    marginRight: theme.spacing(0.2)
+    marginRight: theme.spacing(0.2),
   },
   navbarTop: {
     minWidth: 0,
     marginLeft: theme.spacing(0.4),
-    marginRight: theme.spacing(0.4)
+    marginRight: theme.spacing(0.4),
   },
   navbarTopLink: {
     color: " inherit",
     textDecoration: "none",
     fontSize: "16px",
-    fontWeight: "bolder"
+    fontWeight: "bolder",
   },
   navbarLink: {
     color: " inherit",
-    textDecoration: "none"
-  }
+    textDecoration: "none",
+  },
 }));
 
 const NavBar = (props: RouteComponentProps) => {
@@ -57,10 +57,10 @@ const NavBar = (props: RouteComponentProps) => {
     <Select
       value={lang?.state.lang}
       variant="outlined"
-      onChange={e =>
+      onChange={(e) =>
         lang?.dispatch({
           type: "change",
-          payload: (e.target.value as string) === "ja" ? "ja" : "en"
+          payload: (e.target.value as string) === "ja" ? "ja" : "en",
         })
       }
       className={classes.langSelect}
@@ -106,11 +106,11 @@ const NavBar = (props: RouteComponentProps) => {
           anchorEl={anchorEl}
           anchorOrigin={{
             vertical: "bottom",
-            horizontal: "center"
+            horizontal: "center",
           }}
           transformOrigin={{
             vertical: "top",
-            horizontal: "center"
+            horizontal: "center",
           }}
           open={Boolean(anchorEl)}
           onClose={handleClose}

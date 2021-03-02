@@ -8,7 +8,7 @@ export const authMetadata = (state: AuthState) => {
     return undefined;
   } else {
     return {
-      authorization: "bearer " + state.token
+      authorization: "bearer " + state.token,
     };
   }
 };

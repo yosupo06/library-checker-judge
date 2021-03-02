@@ -3,7 +3,7 @@ import {
   CircularProgress,
   Link,
   makeStyles,
-  Typography
+  Typography,
 } from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
 import React from "react";
@@ -11,7 +11,7 @@ import { connect, PromiseState } from "react-refetch";
 import library_checker_client from "../api/library_checker_client";
 import {
   ProblemInfoRequest,
-  ProblemListResponse
+  ProblemListResponse,
 } from "../api/library_checker_pb";
 import ProblemList from "../components/ProblemList";
 import { getCategories } from "../utils/ProblemCategory";
@@ -21,14 +21,14 @@ interface InnerProps {
   problemListFetch: PromiseState<ProblemListResponse>;
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   category: {
     marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2)
-  }
+    marginBottom: theme.spacing(2),
+  },
 }));
 
-const Problems: React.FC<InnerProps> = props => {
+const Problems: React.FC<InnerProps> = (props) => {
   const { problemListFetch } = props;
   const classes = useStyles();
 
@@ -57,13 +57,13 @@ const Problems: React.FC<InnerProps> = props => {
         If you have some trouble, please use{" "}
         <Link href="https://old.yosupo.jp">old.yosupo.jp</Link>
       </Alert>
-      {categories.map(category => (
+      {categories.map((category) => (
         <Box className={classes.category}>
           <Typography variant="h3">{category.name}</Typography>
           <ProblemList
-            problems={category.problems.map(problem => ({
+            problems={category.problems.map((problem) => ({
               name: problem.name,
-              title: problem.title
+              title: problem.title,
             }))}
           />
         </Box>
@@ -75,6 +75,6 @@ const Problems: React.FC<InnerProps> = props => {
 export default connect<OuterProps, InnerProps>(() => ({
   problemListFetch: {
     comparison: null,
-    value: () => library_checker_client.problemList(new ProblemInfoRequest())
-  }
+    value: () => library_checker_client.problemList(new ProblemInfoRequest()),
+  },
 }))(Problems);

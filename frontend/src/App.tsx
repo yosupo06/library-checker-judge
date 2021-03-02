@@ -3,7 +3,7 @@ import {
   createMuiTheme,
   makeStyles,
   ThemeProvider,
-  Toolbar
+  Toolbar,
 } from "@material-ui/core";
 import React, { useEffect, useReducer } from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
@@ -24,8 +24,8 @@ import { grey } from "@material-ui/core/colors";
 const theme = createMuiTheme({
   typography: {
     button: {
-      textTransform: "none"
-    }
+      textTransform: "none",
+    },
   },
   overrides: {
     MuiCssBaseline: {
@@ -33,17 +33,17 @@ const theme = createMuiTheme({
         pre: {
           fontFamily: '"Courier New", Consolas, monospace',
           fontSize: "13px",
-          background: grey[200]
-        }
-      }
-    }
-  }
+          background: grey[200],
+        },
+      },
+    },
+  },
 });
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
-    marginBottom: theme.spacing(4)
-  }
+    marginBottom: theme.spacing(4),
+  },
 }));
 
 function App() {
@@ -51,7 +51,7 @@ function App() {
 
   const savedLangState = localStorage.getItem("lang");
   let initialLangState: LangState = {
-    lang: "en"
+    lang: "en",
   };
   try {
     if (savedLangState) {
@@ -68,7 +68,7 @@ function App() {
   const savedAuthState = localStorage.getItem("auth");
   let initialAuthState = {
     user: "",
-    token: ""
+    token: "",
   };
   try {
     if (savedAuthState) {

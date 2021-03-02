@@ -8,7 +8,7 @@ interface Props {
   html?: boolean;
 }
 
-const KatexRender: React.FC<Props> = props => {
+const KatexRender: React.FC<Props> = (props) => {
   const lang = useContext(LangContext);
   const ref = React.useRef<HTMLDivElement>(null);
 
@@ -19,14 +19,14 @@ const KatexRender: React.FC<Props> = props => {
           { left: "$$", right: "$$", display: true },
           { left: "\\[", right: "\\]", display: true },
           { left: "$", right: "$", display: false },
-          { left: "\\(", right: "\\)", display: false }
+          { left: "\\(", right: "\\)", display: false },
         ],
-        ignoredTags: ["script", "noscript", "style"]
+        ignoredTags: ["script", "noscript", "style"],
       });
       const elems = Array.from(
         ref.current?.getElementsByClassName("lang-ja")
       ).concat(Array.from(ref.current?.getElementsByClassName("lang-en")));
-      elems.forEach(e => {
+      elems.forEach((e) => {
         if (e.classList.contains(`lang-${lang?.state.lang}`)) {
           e.removeAttribute("hidden");
         } else {
@@ -44,7 +44,7 @@ const KatexRender: React.FC<Props> = props => {
 };
 
 KatexRender.defaultProps = {
-  html: false
+  html: false,
 };
 
 export default KatexRender;

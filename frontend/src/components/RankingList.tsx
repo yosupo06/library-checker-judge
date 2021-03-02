@@ -5,13 +5,12 @@ import { connect, PromiseState } from "react-refetch";
 import library_checker_client from "../api/library_checker_client";
 import { RankingRequest, RankingResponse } from "../api/library_checker_pb";
 
-interface OuterProps {
-}
+interface OuterProps {}
 interface InnerProps {
   rankingFetch: PromiseState<RankingResponse>;
 }
 
-const RankingList: React.FC<InnerProps> = props => {
+const RankingList: React.FC<InnerProps> = (props) => {
   const { rankingFetch } = props;
 
   if (rankingFetch.pending) {
@@ -31,13 +30,13 @@ const RankingList: React.FC<InnerProps> = props => {
 
   const columns: GridColDef[] = [
     { field: "name", headerName: "ID", width: 130 },
-    { field: "count", headerName: "AC Count" }
+    { field: "count", headerName: "AC Count" },
   ];
   const rows = rankingFetch.value.getStatisticsList().map((e, index) => {
     return {
       id: index,
       name: e.getName(),
-      count: e.getCount()
+      count: e.getCount(),
     };
   });
   return (
@@ -50,6 +49,6 @@ const RankingList: React.FC<InnerProps> = props => {
 export default connect<OuterProps, InnerProps>(() => ({
   rankingFetch: {
     comparison: null,
-    value: () => library_checker_client.ranking(new RankingRequest())
-  }
+    value: () => library_checker_client.ranking(new RankingRequest()),
+  },
 }))(RankingList);
