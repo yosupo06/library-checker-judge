@@ -16,7 +16,8 @@ import {
 import ProblemList from "../components/ProblemList";
 import { getCategories } from "../utils/ProblemCategory";
 
-interface Props {
+interface OuterProps {}
+interface InnerProps {
   problemListFetch: PromiseState<ProblemListResponse>;
 }
 
@@ -27,7 +28,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Problems: React.FC<Props> = props => {
+const Problems: React.FC<InnerProps> = props => {
   const { problemListFetch } = props;
   const classes = useStyles();
 
@@ -71,7 +72,7 @@ const Problems: React.FC<Props> = props => {
   );
 };
 
-export default connect<{}, Props>(() => ({
+export default connect<OuterProps, InnerProps>(() => ({
   problemListFetch: {
     comparison: null,
     value: () => library_checker_client.problemList(new ProblemInfoRequest())

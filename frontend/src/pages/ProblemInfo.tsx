@@ -78,7 +78,7 @@ const ProblemInfo: React.FC<Props> = props => {
           .setLang(lang)
           .setProblem(props.match.params.problemId)
           .setSource(source),
-        authMetadata(auth?.state!)
+        auth ? authMetadata(auth.state) : undefined
       )
       .then(resp => {
         history.push(`/submission/${resp.getId()}`);

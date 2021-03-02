@@ -30,7 +30,8 @@ import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
 
-interface Props {
+interface OuterProps {}
+interface InnerProps {
   langListFetch: PromiseState<LangListResponse>;
   problemListFetch: PromiseState<ProblemListResponse>;
   submissionListFetch: PromiseState<SubmissionListResponse>;
@@ -55,7 +56,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const Submissions: React.FC<Props> = props => {
+const Submissions: React.FC<InnerProps> = props => {
   const {
     langListFetch,
     problemListFetch,
@@ -251,7 +252,7 @@ const Submissions: React.FC<Props> = props => {
   );
 };
 
-export default connect<{}, Props>(() => ({
+export default connect<OuterProps, InnerProps>(() => ({
   langListFetch: {
     comparison: null,
     value: () => library_checker_client.langList(new LangListRequest())
