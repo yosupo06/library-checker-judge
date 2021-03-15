@@ -49,6 +49,6 @@ const RankingList: React.FC<InnerProps> = (props) => {
 export default connect<OuterProps, InnerProps>(() => ({
   rankingFetch: {
     comparison: null,
-    value: () => library_checker_client.ranking(new RankingRequest()),
+    value: () => library_checker_client.ranking(new RankingRequest(), {}),
   },
 }))(RankingList);

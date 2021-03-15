@@ -254,11 +254,12 @@ const Submissions: React.FC<InnerProps> = (props) => {
 export default connect<OuterProps, InnerProps>(() => ({
   langListFetch: {
     comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest()),
+    value: () => library_checker_client.langList(new LangListRequest(), {}),
   },
   problemListFetch: {
     comparison: null,
-    value: () => library_checker_client.problemList(new ProblemListRequest()),
+    value: () =>
+      library_checker_client.problemList(new ProblemListRequest(), {}),
   },
   submissionListFetch: {
     comparison: null,
@@ -285,7 +286,8 @@ export default connect<OuterProps, InnerProps>(() => ({
             .setLang(lang)
             .setOrder(order)
             .setSkip(skip)
-            .setLimit(limit)
+            .setLimit(limit),
+          {}
         ),
     },
   }),

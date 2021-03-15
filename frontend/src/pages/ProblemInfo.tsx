@@ -76,7 +76,7 @@ const ProblemInfo: React.FC<Props> = (props) => {
           .setLang(lang)
           .setProblem(props.match.params.problemId)
           .setSource(source),
-        auth ? authMetadata(auth.state) : undefined
+        (auth && authMetadata(auth.state)) ?? null
       )
       .then((resp) => {
         history.push(`/submission/${resp.getId()}`);
@@ -137,12 +137,13 @@ export default connect<RouteComponentProps<{ problemId: string }>, Props>(
       comparison: null,
       value: () =>
         library_checker_client.problemInfo(
-          new ProblemInfoRequest().setName(props.match.params.problemId)
+          new ProblemInfoRequest().setName(props.match.params.problemId),
+          {}
         ),
     },
     langListFetch: {
       comparison: null,
-      value: () => library_checker_client.langList(new LangListRequest()),
+      value: () => library_checker_client.langList(new LangListRequest(), {}),
     },
   })
 )(ProblemInfo);
