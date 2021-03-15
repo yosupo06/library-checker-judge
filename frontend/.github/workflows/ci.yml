@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          path: library-checker-frontend
       - uses: actions/checkout@v2
         with:
           repository: yosupo06/library-checker-judge
@@ -23,20 +21,15 @@ jobs:
       - name: install
         run: |
           npm install
-        working-directory: ./library-checker-frontend
       - name: gen protoc
         run: |
-          ./gen_protoc.sh
-        working-directory: ./library-checker-frontend
+          ./gen_protoc.sh library-checker-judge/api/proto/library_checker.proto
       - name: prettier:check
         run: |
           npm run prettier:check
-        working-directory: ./library-checker-frontend
       - name: lint
         run: |
           npm run lint
-        working-directory: ./library-checker-frontend
       - name: build
         run: |
           npm run build
-        working-directory: ./library-checker-frontend
