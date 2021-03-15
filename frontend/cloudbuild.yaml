@@ -3,7 +3,7 @@ steps:
   args: ['clone', 'https://github.com/yosupo06/library-checker-judge', 'library-checker-judge']
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: 'sh'
-  args: ['-c', 'mv library-checker-judge .. && ls .. && ls && ./gen_protoc.sh']
+  args: ['-c', 'mv library-checker-judge .. && ls ../library-checker-judge && ls && ./gen_protoc.sh']
 - name: 'gcr.io/cloud-builders/npm'
   args: ['install']
 - name: 'gcr.io/cloud-builders/npm'
