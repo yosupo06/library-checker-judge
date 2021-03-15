@@ -149,7 +149,8 @@ export default connect<RouteComponentProps<{ submissionId: string }>, Props>(
         library_checker_client.submissionInfo(
           new SubmissionInfoRequest().setId(
             parseInt(props.match.params.submissionId)
-          ), {}
+          ),
+          {}
         ),
     },
     fixSubmissionInfo: (value: SubmissionInfoResponse) => ({

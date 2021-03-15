@@ -258,7 +258,8 @@ export default connect<OuterProps, InnerProps>(() => ({
   },
   problemListFetch: {
     comparison: null,
-    value: () => library_checker_client.problemList(new ProblemListRequest(), {}),
+    value: () =>
+      library_checker_client.problemList(new ProblemListRequest(), {}),
   },
   submissionListFetch: {
     comparison: null,
@@ -286,7 +287,7 @@ export default connect<OuterProps, InnerProps>(() => ({
             .setOrder(order)
             .setSkip(skip)
             .setLimit(limit),
-            {}
+          {}
         ),
     },
   }),

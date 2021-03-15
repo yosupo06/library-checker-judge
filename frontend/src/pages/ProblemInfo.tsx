@@ -137,8 +137,9 @@ export default connect<RouteComponentProps<{ problemId: string }>, Props>(
       comparison: null,
       value: () =>
         library_checker_client.problemInfo(
-          new ProblemInfoRequest().setName(props.match.params.problemId)
-        , {}),
+          new ProblemInfoRequest().setName(props.match.params.problemId),
+          {}
+        ),
     },
     langListFetch: {
       comparison: null,

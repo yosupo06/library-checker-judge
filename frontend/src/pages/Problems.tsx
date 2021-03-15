@@ -75,6 +75,7 @@ const Problems: React.FC<InnerProps> = (props) => {
 export default connect<OuterProps, InnerProps>(() => ({
   problemListFetch: {
     comparison: null,
-    value: () => library_checker_client.problemList(new ProblemInfoRequest(), {}),
+    value: () =>
+      library_checker_client.problemList(new ProblemInfoRequest(), {}),
   },
 }))(Problems);
