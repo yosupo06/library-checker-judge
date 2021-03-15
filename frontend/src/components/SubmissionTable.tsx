@@ -114,6 +114,6 @@ const SubmissionTable: React.FC<InnerProps> = (props) => {
 export default connect<OuterProps, InnerProps>((props) => ({
   langListFetch: {
     comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest()),
+    value: () => library_checker_client.langList(new LangListRequest(), {}),
   },
 }))(SubmissionTable);

@@ -24,7 +24,7 @@ const Help: React.FC<Props> = (props) => {
     e.preventDefault();
     setLoginStatus("wait");
     library_checker_client
-      .login(new LoginRequest().setName(userName).setPassword(password))
+      .login(new LoginRequest().setName(userName).setPassword(password), {})
       .then((resp) => {
         auth?.dispatch({
           type: "login",

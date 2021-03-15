@@ -62,6 +62,6 @@ const LangList: React.FC<InnerProps> = (props) => {
 export default connect<OuterProps, InnerProps>(() => ({
   langListFetch: {
     comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest()),
+    value: () => library_checker_client.langList(new LangListRequest(), {}),
   },
 }))(LangList);

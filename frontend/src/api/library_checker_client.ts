@@ -1,5 +1,5 @@
 import { AuthState } from "../contexts/AuthContext";
-import { LibraryCheckerServicePromiseClient } from "./library_checker_grpc_web_pb";
+import { LibraryCheckerServiceClient } from "./Library_checkerServiceClientPb";
 
 const api_url = process.env.REACT_APP_API_URL;
 
@@ -19,6 +19,6 @@ export const authMetadata = (
   }
 };
 
-export default new LibraryCheckerServicePromiseClient(
+export default new LibraryCheckerServiceClient(
   api_url ?? "https://grpcweb-apiv1.yosupo.jp:443"
 );
