@@ -20,17 +20,13 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '15'
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          version: '3.x'
       - name: install
         run: |
           npm install
         working-directory: ./library-checker-frontend
-      - name: protoc
+      - name: gen protoc
         run: |
-          npm run protoc
+          ./gen_protoc.sh
         working-directory: ./library-checker-frontend
       - name: prettier:check
         run: |
