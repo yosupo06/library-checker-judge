@@ -2,3 +2,4 @@
 /build
 /src/api/*
 !/src/api/library_checker_client.ts
+*.proto

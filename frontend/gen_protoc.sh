@@ -1,7 +1,3 @@
 #!/usr/bin/env bash
-pdir=$(cd $(dirname $0)/..;pwd)
-echo $pdir
-ls $pdir
-docker run -v /:/defs ubuntu ls /
-docker run -v /:/defs ubuntu ls /defs
-docker run -v $pdir:/defs namely/protoc-all -i library-checker-judge/api/proto -f library_checker.proto -l web -o library-checker-frontend/src/api
+cp $1 .
+docker run -v `pwd`:/defs namely/protoc-all -f library_checker.proto -l web -o src/api
