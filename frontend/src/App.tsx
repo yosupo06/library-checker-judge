@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import ProblemInfo from "./pages/ProblemInfo";
 import Problems from "./pages/Problems";
 import Ranking from "./pages/Ranking";
+import Profile from "./pages/Profile";
 import SubmissionInfo from "./pages/SubmissionInfo";
 import Submissions from "./pages/Submissions";
 import { AuthReducer, AuthContext } from "./contexts/AuthContext";
@@ -107,6 +108,7 @@ function App(): JSX.Element {
                 <Route exact path="/ranking" component={Ranking} />
                 <Route exact path="/help" component={Help} />
                 <Route exact path="/login" component={Login} />
+                <Route path="/user/:userId" component={Profile} />
               </Switch>
             </Container>
           </Router>

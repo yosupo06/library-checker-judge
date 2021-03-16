@@ -88,7 +88,13 @@ const SubmissionTable: React.FC<InnerProps> = (props) => {
               </TableCell>
               <TableCell>{idToName[row.getLang()]}</TableCell>
               <TableCell>
-                {row.getUserName() === "" ? "(Anonymous)" : row.getUserName()}
+                {row.getUserName() === "" ? (
+                  "(Anonymous)"
+                ) : (
+                  <Link to={`/user/${row.getUserName()}`}>
+                    {row.getUserName()}
+                  </Link>
+                )}
               </TableCell>
               <TableCell>
                 {row.getStatus()}

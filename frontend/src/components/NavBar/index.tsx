@@ -114,6 +114,9 @@ const NavBar = (props: RouteComponentProps) => {
           open={Boolean(anchorEl)}
           onClose={handleClose}
         >
+          <MenuItem onClick={() => history.push(`/user/${auth.state.user}`)}>
+            Profile
+          </MenuItem>
           <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Popover>
       </Box>
