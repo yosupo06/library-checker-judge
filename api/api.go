@@ -120,7 +120,7 @@ func (s *server) UserList(ctx context.Context, in *pb.UserListRequest) (*pb.User
 func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoRequest) (*pb.ChangeUserInfoResponse, error) {
 	type NewUserInfo struct {
 		Email      string `validate:"omitempty,email,lt=50"`
-		LibraryURL string `validate:"omitempty,url,lt=50"`
+		LibraryURL string `validate:"omitempty,url,lt=200"`
 	}
 	name := in.User.Name
 	currentUser := getCurrentUser(ctx)
