@@ -21,6 +21,7 @@ import { AuthReducer, AuthContext } from "./contexts/AuthContext";
 import { LangReducer, LangContext, LangState } from "./contexts/LangContext";
 import { CssBaseline } from "@material-ui/core";
 import { grey } from "@material-ui/core/colors";
+import NotFound from "./pages/NotFound";
 
 const theme = createMuiTheme({
   typography: {
@@ -109,6 +110,7 @@ function App(): JSX.Element {
                 <Route exact path="/help" component={Help} />
                 <Route exact path="/login" component={Login} />
                 <Route path="/user/:userId" component={Profile} />
+                <Route component={NotFound} />
               </Switch>
             </Container>
           </Router>
