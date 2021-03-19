@@ -1,3 +1,6 @@
 #!/usr/bin/env bash
+
+set -e -o pipefail
+
 cp $1 .
-docker run -v `pwd`:/defs namely/protoc-all -f library_checker.proto -l web -o src/api
+docker run -v `pwd`:/defs namely/protoc-all:1.34_4 -f library_checker.proto -l web -o src/api
