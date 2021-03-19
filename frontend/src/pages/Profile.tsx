@@ -22,16 +22,23 @@ import {
   ChangeUserInfoRequest,
   UserInfoRequest,
   UserInfoResponse,
+  User,
 } from "../api/library_checker_pb";
 import { RouteComponentProps } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
 import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
+import * as H from "history";
 
 interface OuterProps extends RouteComponentProps<{ userId: string }> {}
 
 interface InnerProps extends OuterProps {
   userInfoFetch: PromiseState<UserInfoResponse>;
+}
+
+interface InnerProfileProps {
+  user: User;
+  history: H.History;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -40,29 +47,11 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Profile: React.FC<InnerProps> = (props) => {
+const InnerProfile: React.FC<InnerProfileProps> = (props) => {
+  const { user, history } = props;
   const classes = useStyles();
-  const { userInfoFetch, history } = props;
-  const [libraryURL, setLibraryURL] = useState("");
+  const [libraryURL, setLibraryURL] = useState(user.getLibraryUrl());
   const auth = useContext(AuthContext);
-
-  if (userInfoFetch.pending) {
-    return (
-      <Box>
-        <CircularProgress />
-      </Box>
-    );
-  }
-  if (userInfoFetch.rejected) {
-    return <NotFound />;
-  }
-
-  const userInfo = userInfoFetch.value;
-  const user = userInfo.getUser();
-
-  if (!user) {
-    return <NotFound />;
-  }
 
   const showUser = user.getName();
 
@@ -102,7 +91,6 @@ const Profile: React.FC<InnerProps> = (props) => {
             <ListItemText
               secondary={
                 <TextField
-                  required
                   label="Library URL"
                   value={libraryURL}
                   onChange={(e) => setLibraryURL(e.target.value)}
@@ -144,6 +132,30 @@ const Profile: React.FC<InnerProps> = (props) => {
       {showUser && currentUser && showUser === currentUser && form}
     </Box>
   );
+};
+
+const Profile: React.FC<InnerProps> = (props) => {
+  const { userInfoFetch, history } = props;
+
+  if (userInfoFetch.pending) {
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (userInfoFetch.rejected) {
+    return <NotFound />;
+  }
+
+  const userInfo = userInfoFetch.value;
+  const user = userInfo.getUser();
+
+  if (!user) {
+    return <NotFound />;
+  }
+
+  return <InnerProfile user={user} history={history} />;
 };
 
 export default connect<OuterProps, InnerProps>((props) => ({
