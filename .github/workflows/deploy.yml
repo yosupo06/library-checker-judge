@@ -33,10 +33,10 @@ jobs:
           ulimit -s unlimited
           PYTHONPATH=library-checker-problems ./deploy/problems_deploy.py library-checker-problems \
             --host=apiv1.yosupo.jp --prod \
-            --api-pass $API_PASS
-            --minio-host $MINIO_HOST
-            --minio-access $MINIO_ACCESS_KEY
-            --minio-secret $MINIO_SECRET_KEY
+            --api-pass $API_PASS \
+            --minio-host $MINIO_HOST \
+            --minio-access $MINIO_ACCESS_KEY \
+            --minio-secret $MINIO_SECRET_KEY \
             --minio-bucket $MINIO_BUCKET
         env:
           API_PASS: ${{ secrets.API_PASS }}
