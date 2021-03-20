@@ -31,7 +31,7 @@ jobs:
       - name: Run deploy.py
         run: |
           ulimit -s unlimited
-          ./deploy/problems_deploy.py library-checker-problems \
+          PYTHONPATH=library-checker-problem ./deploy/problems_deploy.py library-checker-problems \
             --host=apiv1.yosupo.jp --prod \
             --api-pass $API_PASS
             --minio-host $MINIO_HOST
