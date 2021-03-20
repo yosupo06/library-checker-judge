@@ -26,7 +26,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install --user -r library-checker-problems/requirements.txt
-          pip install grpcio grpcio-tools minio
+          pip install --user -r deploy/requirements.txt
       - name: Run deploy.py
         run: |
           ulimit -s unlimited
