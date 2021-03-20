@@ -30,4 +30,6 @@ echo "insert into users(name, passhash, admin) values ('tester', '\$2a\$10\$Aqft
 | PGPASSWORD=passwd psql -h localhost -U postgres librarychecker
 
 sleep 5 # wait to launch
-cd ../library-checker-problems && ./deploy.py -p aplusb unionfind
+
+cd deploy && ./gen_protoc.sh && cd ..
+PYTHONPATH=../library-checker-problems ./deploy/problems_deploy.py ../library-checker-problems -p aplusb unionfind
