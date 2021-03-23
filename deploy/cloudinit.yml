@@ -6,29 +6,6 @@ timezone: Asia/Tokyo
 locale: ja_JP.utf8
 
 runcmd:
-  # install haskell-stack
-  - HOME=/root stack upgrade --binary-only
-  - |
-    su -c """
-    stack install --resolver lts-16.7 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8 &&
-    cp /var/haskell_load.hs /tmp/haskell_load.hs &&
-    cd ~ && stack ghc -- /tmp/haskell_load.hs
-    """ -- library-checker-user
-  # install C#
-  - wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-  - apt-get install -y  ./packages-microsoft-prod.deb
-  - add-apt-repository universe
-  - apt-get install -y apt-transport-https
-  - apt-get update
-  - apt-get install -y dotnet-sdk-3.1
-  - |
-    su -c """
-    dotnet new console -o /tmp/C-Sharp -lang \"C#\" &&
-    sed -i -e '/<PropertyGroup>/a <AllowUnsafeBlocks>true</AllowUnsafeBlocks>' /tmp/C-Sharp/C-Sharp.csproj &&
-    dotnet add /tmp/C-Sharp package System.Runtime.CompilerServices.Unsafe -v 4.6.0 &&
-    dotnet restore /tmp/C-Sharp -r ubuntu.18.04-x64
-    """ -- library-checker-user
-  - cp -r /tmp/C-Sharp /opt/C-Sharp
   # install AC Library
   - curl https://img.atcoder.jp/practice2/ac-library.zip --output ac-library.zip
   - unzip ac-library.zip -d ac-library

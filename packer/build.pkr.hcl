@@ -1,7 +1,7 @@
 source "googlecompute" "judge" {
   project_id = "library-checker-project"
   source_image = "ubuntu-2004-focal-v20210315"
-  zone = "asia-east1-c"
+  zone = "asia-northeast1-c"
   disk_size = 25
   machine_type = "n1-standard-2"
   ssh_username = "ubuntu"
@@ -65,8 +65,8 @@ build {
   }
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/judge.conf /etc/supervisor/conf.d/judge.conf",
-      "sudo chmod 600 /etc/supervisor/conf.d/judge.conf",
+      "sudo cp /tmp/judge.conf /etc/supervisor/conf.d/judge._conf",
+      "sudo chmod 600 /etc/supervisor/conf.d/judge._conf",
     ]
   }
 
@@ -107,11 +107,12 @@ build {
     destination = "/tmp/haskell_load.hs"
   }
   provisioner "shell" {
-    inline = [
-      "sudo apt-get install -y ghc haskell-stack",
-      "sudo cp /tmp/haskell_load.hs /var/haskell_load.hs",
-      "HOME=/root sudo stack upgrade --binary-only",
-    ]
+    script = "haskell_setup.sh"
+  }
+
+  # install C#
+  provisioner "shell" {
+    script = "c_sharp_setup.sh"
   }
 
   # install python (numpy, scipy)
