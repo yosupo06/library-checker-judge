@@ -12,6 +12,8 @@ judge/judge
 judge.tar.gz
 judge/executor_rust/target
 
+api/proto/library_checker.pb.go
+
 deploy/__init__.py
 deploy/library_checker_pb2.py
 deploy/library_checker_pb2_grpc.py
