@@ -1,4 +1,9 @@
 steps:
+  - id: gen-protoc
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - './api/gen_protoc.sh'
   - id: build
     name: gcr.io/cloud-builders/docker
     dir: api
