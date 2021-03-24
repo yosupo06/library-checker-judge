@@ -12,8 +12,7 @@ gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
 --boot-disk-size=25GB \
 --boot-disk-type=pd-ssd \
---metadata-from-file user-data=cloudinit.yml \
---image-family=ubuntu-2004-lts --image-project=ubuntu-os-cloud ${@:3}
+--image-family=judge-image-family ${@:3}
 
 function gcpexec() {
     echo "Start: ${1}"
@@ -23,7 +22,7 @@ function gcpexec() {
     return $RET
 }
 
-until gcpexec "ls /root/can_start > /dev/null"; do
+until gcpexec "echo connected"; do
     echo 'waiting...'
     sleep 10
 done
