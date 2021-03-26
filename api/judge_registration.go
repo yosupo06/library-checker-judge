@@ -5,7 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // RegistrationStatus : status of judge registration
@@ -57,7 +58,7 @@ func currentRegistrationStatus(sub *Submission, judgeName string) RegistrationSt
 func changeRegistrationStatus(id int32, judgeName string, updateJudgeName string, expiration time.Duration, expect RegistrationStatus) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		sub := &Submission{}
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").Take(sub, id).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(sub, id).Error; err != nil {
 			log.Print(err)
 			return errors.New("Submission fetch failed")
 		}
