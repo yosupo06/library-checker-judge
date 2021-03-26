@@ -16,11 +16,11 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/uuid"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/jinzhu/gorm"
 	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
 var client pb.LibraryCheckerServiceClient
@@ -28,7 +28,11 @@ var client pb.LibraryCheckerServiceClient
 func TestMain(m *testing.M) {
 	// connect db
 	db = dbConnect(getEnv("API_DB_LOG", "") != "")
-	defer db.Close()
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sqlDB.Close()
 
 	// launch gRPC server
 	port := getEnv("PORT", "50052")
@@ -59,7 +63,7 @@ func TestMain(m *testing.M) {
 func clearJudgeQueue(t *testing.T) {
 	for {
 		task := Task{}
-		if err := db.Take(&task).Error; gorm.IsRecordNotFoundError(err) {
+		if err := db.Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			break
 		}
 		if err := db.Delete(task).Error; err != nil {

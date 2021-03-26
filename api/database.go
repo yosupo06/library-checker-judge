@@ -7,13 +7,16 @@ import (
 	"log"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 )
 
 // Problem is db table
 type Problem struct {
-	Name      string
+	Name      string `gorm:"primaryKey"`
 	Title     string
 	SourceUrl string
 	Statement string
@@ -23,7 +26,7 @@ type Problem struct {
 
 // User is db table
 type User struct {
-	Name       string
+	Name       string `gorm:"primaryKey"`
 	Passhash   string
 	Admin      bool
 	Email      string
@@ -32,9 +35,9 @@ type User struct {
 
 // Submission is db table
 type Submission struct {
-	ID           int32
+	ID           int32 `gorm:"primaryKey"`
 	ProblemName  string
-	Problem      Problem `gorm:"foreignkey:ProblemName"`
+	Problem      Problem `gorm:"foreignKey:ProblemName"`
 	Lang         string
 	Status       string
 	PrevStatus   string
@@ -48,7 +51,7 @@ type Submission struct {
 	JudgeName    string
 	JudgeTasked  bool
 	UserName     sql.NullString
-	User         User `gorm:"foreignkey:UserName"`
+	User         User `gorm:"foreignKey:UserName"`
 }
 
 // SubmissionTestcaseResult is db table
@@ -62,7 +65,7 @@ type SubmissionTestcaseResult struct {
 
 // Task is db table
 type Task struct {
-	ID         int32
+	ID         int32 `gorm:"primaryKey"`
 	Submission int32
 	Priority   int32
 	Available  time.Time
@@ -129,17 +132,17 @@ func popTask() (Task, error) {
 	task.Submission = -1
 
 	err := db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Set("gorm:query_option", "FOR UPDATE").Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
-		if gorm.IsRecordNotFoundError(err) {
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		}
 		if err != nil {
 			log.Print(err)
-			return errors.New("Connection to db failed")
+			return errors.New("connection to db failed")
 		}
-		if tx.Delete(task).RowsAffected != 1 {
+		if tx.Delete(&task).RowsAffected != 1 {
 			log.Print("Failed to delete task:", task.ID)
-			return errors.New("Failed to delete task")
+			return errors.New("failed to delete task")
 		}
 		return nil
 	})
@@ -157,24 +160,28 @@ func dbConnect(logMode bool) *gorm.DB {
 		host, port, user, pass)
 	log.Printf("Try connect %s", connStr)
 	for i := 0; i < 3; i++ {
-		db, err := gorm.Open("postgres", connStr)
+		config := gorm.Config{}
+		if logMode {
+			config.Logger = logger.Default.LogMode(logger.Info)
+		}
+		db, err := gorm.Open(postgres.Open(connStr), &config)
 		if err != nil {
 			log.Printf("Cannot connect db %d/3", i)
 			time.Sleep(5 * time.Second)
 			continue
+		}
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Fatal("db.DB() failed")
 		}
 		db.AutoMigrate(Problem{})
 		db.AutoMigrate(User{})
 		db.AutoMigrate(Submission{})
 		db.AutoMigrate(SubmissionTestcaseResult{})
 		db.AutoMigrate(Task{})
-		db.BlockGlobalUpdate(true)
-		db.DB().SetMaxOpenConns(10)
-		db.DB().SetConnMaxLifetime(time.Hour)
 
-		if logMode {
-			db.LogMode(true)
-		}
+		sqlDB.SetMaxOpenConns(10)
+		sqlDB.SetConnMaxLifetime(time.Hour)
 
 		return db
 	}

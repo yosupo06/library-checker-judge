@@ -10,9 +10,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
@@ -195,7 +195,7 @@ func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfo
 	problem.Testhash = in.CaseVersion
 	problem.SourceUrl = in.SourceUrl
 
-	if gorm.IsRecordNotFoundError(err) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Printf("add problem: %v", name)
 		if err := db.Create(&problem).Error; err != nil {
 			return nil, errors.New("Failed to insert")
@@ -327,7 +327,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		Hacked:      in.Hacked,
 	}
 
-	count := 0
+	count := int64(0)
 	if err := db.Model(&Submission{}).Where(filter).Count(&count).Error; err != nil {
 		return nil, errors.New("Count Query Failed")
 	}
@@ -341,7 +341,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 	}
 
 	var submissions = make([]Submission, 0)
-	if err := db.Where(filter).Limit(in.Limit).Offset(in.Skip).
+	if err := db.Where(filter).Limit(int(in.Limit)).Offset(int(in.Skip)).
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name")
 		}).

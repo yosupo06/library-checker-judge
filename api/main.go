@@ -14,8 +14,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 func getEnv(key, defaultValue string) string {
@@ -105,7 +105,11 @@ func init() {
 func main() {
 	// connect db
 	db = dbConnect(getEnv("API_DB_LOG", "") != "")
-	defer db.Close()
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal("db.DB() failed", err)
+	}
+	defer sqlDB.Close()
 
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
