@@ -69,7 +69,7 @@ if __name__ == "__main__":
         tomls.append(problem_dir / 'info.toml')
     if len(tomls) == 0:
         tomls = list(filter(lambda p: not p.match(
-            'test/**/info.toml'), Path('.').glob('**/info.toml')))
+            'test/**/info.toml'), rootdir.glob('**/info.toml')))
 
     logger.info('connect to API {} ssl={}'.format(args.host, args.prod))
     if args.prod:
