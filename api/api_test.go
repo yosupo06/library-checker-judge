@@ -140,6 +140,9 @@ func TestProblemInfo(t *testing.T) {
 	if problem.Title != "A + B" {
 		t.Fatal("Differ Title : ", problem.Title)
 	}
+	if problem.SourceUrl != "https://github.com/yosupo06/library-checker-problems/tree/master/sample/aplusb" {
+		t.Fatal("Differ SourceURL : ", problem.SourceUrl)
+	}
 	if math.Abs(problem.TimeLimit-2.0) > 0.01 {
 		t.Fatal("Differ TimeLimit : ", problem.TimeLimit)
 	}
