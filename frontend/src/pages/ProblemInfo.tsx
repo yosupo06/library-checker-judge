@@ -26,6 +26,7 @@ import {
 import Editor from "../components/Editor";
 import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
+import GitHubIcon from "@material-ui/icons/GitHub";
 
 interface Props extends RouteComponentProps<{ problemId: string }> {
   problemInfoFetch: PromiseState<ProblemInfoResponse>;
@@ -40,6 +41,7 @@ const useStyles = makeStyles((theme) => ({
     height: "400px",
     width: "100%",
   },
+  button: {},
 }));
 
 const ProblemInfo: React.FC<Props> = (props) => {
@@ -93,6 +95,16 @@ const ProblemInfo: React.FC<Props> = (props) => {
 
       <KatexRender text={problemInfoFetch.value.getStatement()} html={true} />
 
+      <Divider className={classes.divider} />
+      <Button
+        variant="contained"
+        color="primary"
+        className={classes.button}
+        startIcon={<GitHubIcon />}
+        href={problemInfoFetch.value.getSourceUrl()}
+      >
+        Source
+      </Button>
       <Divider className={classes.divider} />
 
       <form onSubmit={(e) => handleSubmit(e)}>
