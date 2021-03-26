@@ -15,6 +15,7 @@ import (
 type Problem struct {
 	Name      string
 	Title     string
+	SourceUrl string
 	Statement string
 	Timelimit int32
 	Testhash  string

@@ -150,6 +150,10 @@ if __name__ == "__main__":
         problem.generate(problem.Mode.DEFAULT, None)
 
         title = problem.config['title']
+        source_url = "https://github.com/yosupo06/library-checker-problems/tree/master/{}/{}".format(
+            probdir.parent.name,
+            probdir.name
+        )
         timelimit = problem.config['timelimit']
 
         if new_version != old_version:
@@ -171,7 +175,6 @@ if __name__ == "__main__":
 
         html = problem.gen_html()
         statement = html.statement
-
         stub.ChangeProblemInfo(libpb.ChangeProblemInfoRequest(
-            name=name, title=title, statement=statement, time_limit=timelimit, case_version=new_version
+            name=name, title=title, statement=statement, time_limit=timelimit, case_version=new_version, source_url=source_url
         ), credentials=cred_token)
