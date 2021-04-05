@@ -388,32 +388,24 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 }
 
 func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.RankingResponse, error) {
-	filter := &Submission{
-		Status: "AC",
+	type Result struct {
+		UserName string
+		AcCount  int
 	}
-
-	var submissions = make([]Submission, 0)
+	var results = make([]Result, 0)
 	if err := db.
-		Select("id, user_name, problem_name, status").Where(filter).Find(&submissions).Error; err != nil {
-		return nil, errors.New("Select Query Failed")
-	}
-
-	ac := make(map[string]map[string]bool)
-	for _, sub := range submissions {
-		if !sub.UserName.Valid {
-			continue
-		}
-		userName := sub.UserName.String
-		if _, ok := ac[userName]; !ok {
-			ac[userName] = make(map[string]bool)
-		}
-		ac[userName][sub.ProblemName] = true
+		Model(&Submission{}).
+		Select("user_name, count(distinct problem_name) as ac_count").
+		Where("status = 'AC' and user_name is not null").
+		Group("user_name").
+		Find(&results); err != nil {
+		return nil, errors.New("failed sql query")
 	}
 	stats := make([]*pb.UserStatistics, 0)
-	for name, acs := range ac {
+	for _, result := range results {
 		stats = append(stats, &pb.UserStatistics{
-			Name:  name,
-			Count: int32(len(acs)),
+			Name:  result.UserName,
+			Count: int32(result.AcCount),
 		})
 	}
 	sort.Slice(stats, func(i, j int) bool {
