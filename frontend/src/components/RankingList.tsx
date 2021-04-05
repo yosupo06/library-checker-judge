@@ -1,4 +1,4 @@
-import { Box, Container, Typography } from "@material-ui/core";
+import { Box, Typography } from "@material-ui/core";
 import { GridColDef, DataGrid } from "@material-ui/data-grid";
 import React from "react";
 import { connect, PromiseState } from "react-refetch";
@@ -15,16 +15,16 @@ const RankingList: React.FC<InnerProps> = (props) => {
 
   if (rankingFetch.pending) {
     return (
-      <Container>
+      <Box>
         <Typography>Loading...</Typography>
-      </Container>
+      </Box>
     );
   }
   if (rankingFetch.rejected) {
     return (
-      <Container>
-        <Typography>Error: {rankingFetch.reason}</Typography>
-      </Container>
+      <Box>
+        <Typography>Error: {rankingFetch.reason.message}</Typography>
+      </Box>
     );
   }
 
