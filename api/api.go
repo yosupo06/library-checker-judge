@@ -398,7 +398,8 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 		Select("user_name, count(distinct problem_name) as ac_count").
 		Where("status = 'AC' and user_name is not null").
 		Group("user_name").
-		Find(&results); err != nil {
+		Find(&results).Error; err != nil {
+		log.Print(err)
 		return nil, errors.New("failed sql query")
 	}
 	stats := make([]*pb.UserStatistics, 0)
