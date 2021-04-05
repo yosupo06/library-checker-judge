@@ -49,8 +49,14 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure(), grpc.WithTimeout(3 * time.Second)}
-	conn, err := grpc.Dial("localhost:50052", options...)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure()}
+	conn, err := grpc.DialContext(
+		ctx,
+		"localhost:50052",
+		options...,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -298,7 +304,7 @@ func TestAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed UserInfo")
 	}
-	if !resp.IsAdmin {
+	if !resp.User.IsAdmin {
 		t.Fatal("isAdmin(admin) = False")
 	}
 }
@@ -309,7 +315,7 @@ func TestNotAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed UserInfo")
 	}
-	if resp.IsAdmin {
+	if resp.User.IsAdmin {
 		t.Fatal("isAdmin(tester) = True")
 	}
 }
@@ -374,7 +380,7 @@ func TestChangeUserInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed UserInfo")
 	}
-	if !resp.IsAdmin {
+	if !resp.User.IsAdmin {
 		t.Fatal("Not promote to admin")
 	}
 
@@ -391,7 +397,7 @@ func TestChangeUserInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed UserInfo")
 	}
-	if resp.IsAdmin {
+	if resp.User.IsAdmin {
 		t.Fatal("Cannot remove admin")
 	}
 
@@ -453,7 +459,7 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed UserInfo")
 	}
-	if resp.IsAdmin {
+	if resp.User.IsAdmin {
 		t.Fatal("Promote to admin")
 	}
 }
