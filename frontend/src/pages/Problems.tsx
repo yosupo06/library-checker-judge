@@ -27,7 +27,7 @@ interface BridgeProps {
 
 interface InnerProps {
   problemListFetch: PromiseState<ProblemListResponse>;
-  userInfoFetch: PromiseState<UserInfoResponse>;
+  userInfoFetch: PromiseState<UserInfoResponse | null>;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -49,6 +49,8 @@ const InnerProblems: React.FC<InnerProps> = (props) => {
     );
   }
   if (problemListFetch.rejected || userInfoFetch.rejected) {
+    console.error(problemListFetch.reason);
+    console.error(userInfoFetch.reason);
     return (
       <Box>
         <Typography variant="body1">Error</Typography>
@@ -59,22 +61,20 @@ const InnerProblems: React.FC<InnerProps> = (props) => {
   const problemList = problemListFetch.value.getProblemsList();
 
   const solvedStatus: { [problem: string]: "latest_ac" | "ac" } = {};
-  userInfoFetch.value.toObject().solvedMapMap.forEach((value) => {
-    if (value[1] === SolvedStatus.LATEST_AC) {
-      solvedStatus[value[0]] = "latest_ac";
-    } else if (value[1] === SolvedStatus.AC) {
-      solvedStatus[value[0]] = "ac";
-    }
-  });
+  if (userInfoFetch.value != null) {
+    userInfoFetch.value.toObject().solvedMapMap.forEach((value) => {
+      if (value[1] === SolvedStatus.LATEST_AC) {
+        solvedStatus[value[0]] = "latest_ac";
+      } else if (value[1] === SolvedStatus.AC) {
+        solvedStatus[value[0]] = "ac";
+      }
+    });
+  }
 
   const categories = getCategories(problemList);
 
   return (
     <Box>
-      <Alert severity="info">
-        If you have some trouble, please use{" "}
-        <Link href="https://old.yosupo.jp">old.yosupo.jp</Link>
-      </Alert>
       {categories.map((category) => (
         <Box className={classes.category}>
           <Typography variant="h3">{category.name}</Typography>
@@ -100,16 +100,26 @@ const BridgeProblem = connect<BridgeProps, InnerProps>((props) => ({
   userInfoFetch: {
     comparison: null,
     value: () =>
-      library_checker_client.userInfo(
-        new UserInfoRequest().setName(props.userName ?? ""),
-        {}
-      ),
+      props.userName
+        ? library_checker_client.userInfo(
+            new UserInfoRequest().setName(props.userName),
+            {}
+          )
+        : null,
   },
 }))(InnerProblems);
 
 const Problems: React.FC<OuterProps> = (props: OuterProps) => {
   const auth = useContext(AuthContext);
-  return <BridgeProblem userName={auth?.state.user ?? ""} />;
+  return (
+    <Box>
+      <Alert severity="info">
+        If you have some trouble, please use{" "}
+        <Link href="https://old.yosupo.jp">old.yosupo.jp</Link>
+      </Alert>
+      <BridgeProblem userName={auth?.state.user ?? ""} />
+    </Box>
+  );
 };
 
 export default Problems;
