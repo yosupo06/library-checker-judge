@@ -1,4 +1,5 @@
 import {
+  makeStyles,
   Paper,
   Table,
   TableBody,
@@ -6,21 +7,43 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Theme,
 } from "@material-ui/core";
 import React from "react";
 import { Link } from "react-router-dom";
 import KatexRender from "./KatexRender";
+import lightGreen from "@material-ui/core/colors/lightGreen";
+import cyan from "@material-ui/core/colors/cyan";
 
+const useStyles = makeStyles((theme: Theme) => ({
+  default: {},
+  latest_ac: {
+    backgroundColor: lightGreen.A200,
+  },
+  ac: {
+    backgroundColor: cyan.A400,
+  },
+}));
 interface Props {
   problems: {
     name: string;
     title: string;
     status?: "ac";
   }[];
+  solvedStatus: {
+    [problem: string]: "latest_ac" | "ac" | "unknown";
+  };
 }
 
 const ProblemList: React.FC<Props> = (props) => {
-  const { problems } = props;
+  const classes = useStyles(props);
+  const { problems, solvedStatus } = props;
+
+  const classNameMap = {
+    latest_ac: classes.latest_ac,
+    ac: classes.ac,
+    unknown: classes.default,
+  };
 
   return (
     <TableContainer component={Paper}>
@@ -33,7 +56,7 @@ const ProblemList: React.FC<Props> = (props) => {
         <TableBody>
           {problems.map((problem) => (
             <TableRow key={problem.name}>
-              <TableCell>
+              <TableCell className={classNameMap[solvedStatus[problem.name]]}>
                 <Link to={`/problem/${problem.name}`}>
                   <KatexRender text={problem.title} />
                 </Link>

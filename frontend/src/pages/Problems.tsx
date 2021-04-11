@@ -6,19 +6,28 @@ import {
   Typography,
 } from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
-import React from "react";
+import React, { useContext } from "react";
 import { connect, PromiseState } from "react-refetch";
 import library_checker_client from "../api/library_checker_client";
 import {
   ProblemInfoRequest,
   ProblemListResponse,
+  SolvedStatus,
+  UserInfoRequest,
+  UserInfoResponse,
 } from "../api/library_checker_pb";
 import ProblemList from "../components/ProblemList";
+import { AuthContext } from "../contexts/AuthContext";
 import { getCategories } from "../utils/ProblemCategory";
 
 interface OuterProps {}
+interface BridgeProps {
+  userName: string;
+}
+
 interface InnerProps {
   problemListFetch: PromiseState<ProblemListResponse>;
+  userInfoFetch: PromiseState<UserInfoResponse>;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -28,18 +37,18 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Problems: React.FC<InnerProps> = (props) => {
-  const { problemListFetch } = props;
+const InnerProblems: React.FC<InnerProps> = (props) => {
+  const { problemListFetch, userInfoFetch } = props;
   const classes = useStyles();
 
-  if (problemListFetch.pending) {
+  if (problemListFetch.pending || userInfoFetch.pending) {
     return (
       <Box>
         <CircularProgress />
       </Box>
     );
   }
-  if (problemListFetch.rejected) {
+  if (problemListFetch.rejected || userInfoFetch.rejected) {
     return (
       <Box>
         <Typography variant="body1">Error</Typography>
@@ -48,6 +57,15 @@ const Problems: React.FC<InnerProps> = (props) => {
   }
 
   const problemList = problemListFetch.value.getProblemsList();
+
+  const solvedStatus: { [problem: string]: "latest_ac" | "ac" } = {};
+  userInfoFetch.value.toObject().solvedMapMap.forEach((value) => {
+    if (value[1] === SolvedStatus.LATEST_AC) {
+      solvedStatus[value[0]] = "latest_ac";
+    } else if (value[1] === SolvedStatus.AC) {
+      solvedStatus[value[0]] = "ac";
+    }
+  });
 
   const categories = getCategories(problemList);
 
@@ -65,6 +83,7 @@ const Problems: React.FC<InnerProps> = (props) => {
               name: problem.name,
               title: problem.title,
             }))}
+            solvedStatus={solvedStatus}
           />
         </Box>
       ))}
@@ -72,10 +91,25 @@ const Problems: React.FC<InnerProps> = (props) => {
   );
 };
 
-export default connect<OuterProps, InnerProps>(() => ({
+const BridgeProblem = connect<BridgeProps, InnerProps>((props) => ({
   problemListFetch: {
     comparison: null,
     value: () =>
       library_checker_client.problemList(new ProblemInfoRequest(), {}),
   },
-}))(Problems);
+  userInfoFetch: {
+    comparison: null,
+    value: () =>
+      library_checker_client.userInfo(
+        new UserInfoRequest().setName(props.userName ?? ""),
+        {}
+      ),
+  },
+}))(InnerProblems);
+
+const Problems: React.FC<OuterProps> = (props: OuterProps) => {
+  const auth = useContext(AuthContext);
+  return <BridgeProblem userName={auth?.state.user ?? ""} />;
+};
+
+export default Problems;
