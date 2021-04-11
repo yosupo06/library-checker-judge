@@ -51,12 +51,19 @@ message User {
     string library_url = 4;
 }
 
+enum SolvedStatus {
+    UNKNOWN = 0;
+    LATEST_AC = 1;
+    AC = 2;
+}
+
 message UserInfoRequest {
     string name = 1; // if empty, return self information
 }
 message UserInfoResponse {
     bool is_admin = 1 [deprecated=true];
     User user = 2;
+    map<string, SolvedStatus> solved_map = 3;
 }
 
 message UserListRequest {

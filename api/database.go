@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -116,6 +117,33 @@ func fetchSubmission(id int32) (Submission, error) {
 		return Submission{}, errors.New("Submission fetch failed")
 	}
 	return sub, nil
+}
+
+func fetchUserStatistics(userName string) (map[string]pb.SolvedStatus, error) {
+	type Result struct {
+		ProblemName string
+		LatestAC    bool
+	}
+	var results = make([]Result, 0)
+	if err := db.
+		Model(&Submission{}).
+		Joins("left join problems on submissions.problem_name = problems.name").
+		Select("problem_name, bool_or(submissions.testhash=problems.testhash) as latest_ac").
+		Where("status = 'AC' and user_name = ?", userName).
+		Group("problem_name").
+		Find(&results).Error; err != nil {
+		log.Print(err)
+		return nil, errors.New("failed sql query")
+	}
+	stats := make(map[string]pb.SolvedStatus)
+	for _, result := range results {
+		if result.LatestAC {
+			stats[result.ProblemName] = pb.SolvedStatus_LATEST_AC
+		} else {
+			stats[result.ProblemName] = pb.SolvedStatus_AC
+		}
+	}
+	return stats, nil
 }
 
 func pushTask(task Task) error {
