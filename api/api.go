@@ -72,11 +72,15 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 		name = myName
 	}
 	if name == "" {
-		return nil, errors.New("Empty name")
+		return nil, errors.New("empty name")
 	}
 	user, err := fetchUser(db, name)
 	if err != nil {
-		return nil, errors.New("Invalid user name")
+		return nil, errors.New("invalid user name")
+	}
+	stats, err := fetchUserStatistics(name)
+	if err != nil {
+		return nil, errors.New("failed to fetch statistics")
 	}
 	respUser := &pb.User{
 		Name:       name,
@@ -89,10 +93,15 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 		respUser.Email = ""
 	}
 
-	return &pb.UserInfoResponse{
+	resp := &pb.UserInfoResponse{
 		IsAdmin: user.Admin,
 		User:    respUser,
-	}, nil
+	}
+	resp.SolvedMap = make(map[string]pb.SolvedStatus)
+	for key, value := range stats {
+		resp.SolvedMap[key] = value
+	}
+	return resp, nil
 }
 
 func (s *server) UserList(ctx context.Context, in *pb.UserListRequest) (*pb.UserListResponse, error) {
