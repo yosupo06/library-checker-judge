@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  createStyles,
   FormControl,
   ListSubheader,
   makeStyles,
@@ -14,8 +13,10 @@ import {
   Theme,
   Typography,
 } from "@material-ui/core";
-import React, { useEffect } from "react";
+import React from "react";
 import { connect, PromiseState } from "react-refetch";
+import { Link } from "react-router-dom";
+import { useLocation } from "react-use";
 import library_checker_client from "../api/library_checker_client";
 import {
   LangListRequest,
@@ -30,74 +31,55 @@ import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
 
 interface OuterProps {}
-interface InnerProps {
+
+interface BridgeProps {
+  problem: string;
+  user: string;
+  status: string;
+  lang: string;
+  order: string;
+  page: number;
+  pageSize: number;
+}
+
+interface InnerProps extends BridgeProps {
   langListFetch: PromiseState<LangListResponse>;
   problemListFetch: PromiseState<ProblemListResponse>;
   submissionListFetch: PromiseState<SubmissionListResponse>;
-  refreshSubmissionList: (
-    problem: string,
-    user: string,
-    status: string,
-    lang: string,
-    order: string,
-    skip: number,
-    limit: number
-  ) => void;
 }
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    formControl: {
-      margin: theme.spacing(1),
-      verticalAlign: "bottom",
-      minWidth: 120,
-    },
-  })
-);
+const useStyles = makeStyles((theme: Theme) => ({
+  formControl: {
+    margin: theme.spacing(1),
+    verticalAlign: "bottom",
+    minWidth: 120,
+  },
+  searchLink: {
+    color: "inherit",
+    textDecoration: "none",
+  },
+}));
 
-const Submissions: React.FC<InnerProps> = (props) => {
-  const {
-    langListFetch,
-    problemListFetch,
-    submissionListFetch,
-    refreshSubmissionList,
-  } = props;
+const InnerSubmissions: React.FC<InnerProps> = (props) => {
+  const { langListFetch, problemListFetch, submissionListFetch } = props;
   const classes = useStyles();
-  const [queryProblemName, setQueryProblemName] = React.useState("");
-  const [problemName, setProblemName] = React.useState("");
-  const [queryUserName, setQueryUserName] = React.useState("");
-  const [userName, setUserName] = React.useState("");
-  const [queryStatus, setQueryStatus] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState("");
-  const [queryLang, setQueryLang] = React.useState("");
-  const [langFilter, setLangFilter] = React.useState("");
-  const [queryOrder, setQueryOrder] = React.useState("-id");
-  const [sortOrder, setSortOrder] = React.useState("-id");
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(100);
+  const [problemName, setProblemName] = React.useState(props.problem);
+  const [userName, setUserName] = React.useState(props.user);
+  const [statusFilter, setStatusFilter] = React.useState(props.status);
+  const [langFilter, setLangFilter] = React.useState(props.lang);
+  const [sortOrder, setSortOrder] = React.useState(props.order);
+  const [page, setPage] = React.useState(props.page);
+  const [rowsPerPage, setRowsPerPage] = React.useState(props.pageSize);
 
-  useEffect(
-    () =>
-      refreshSubmissionList(
-        queryProblemName,
-        queryUserName,
-        queryStatus,
-        queryLang,
-        queryOrder,
-        page * rowsPerPage,
-        rowsPerPage
-      ),
-    [
-      refreshSubmissionList,
-      queryProblemName,
-      queryUserName,
-      queryStatus,
-      queryLang,
-      queryOrder,
-      page,
-      rowsPerPage,
-    ]
-  );
+  const searchParams = new URLSearchParams({
+    problem: problemName,
+    user: userName,
+    status: statusFilter,
+    lang: langFilter,
+    order: sortOrder,
+    page: page.toString(),
+    pageSize: rowsPerPage.toString(),
+  });
 
   if (langListFetch.pending || problemListFetch.pending) {
     return (
@@ -119,16 +101,6 @@ const Submissions: React.FC<InnerProps> = (props) => {
       </Box>
     );
   }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setQueryProblemName(problemName);
-    setQueryUserName(userName);
-    setQueryStatus(statusFilter);
-    setQueryLang(langFilter);
-    setQueryOrder(sortOrder);
-    setPage(0);
-  };
 
   const handleChangePage = (
     _: React.MouseEvent<HTMLButtonElement> | null,
@@ -180,7 +152,7 @@ const Submissions: React.FC<InnerProps> = (props) => {
       <Typography variant="h2" paragraph={true}>
         Submission List
       </Typography>
-      <form onSubmit={(e) => handleSubmit(e)}>
+      <Box>
         <FormControl className={classes.formControl}>
           <Select
             value={problemName}
@@ -241,17 +213,22 @@ const Submissions: React.FC<InnerProps> = (props) => {
             <MenuItem value="+time">Time</MenuItem>
           </Select>
         </FormControl>
-        <Button color="primary" type="submit">
-          Search
+        <Button variant="outlined" type="submit">
+          <Link
+            to={`/submissions?${searchParams.toString()}`}
+            className={classes.searchLink}
+          >
+            search
+          </Link>
         </Button>
-      </form>
+      </Box>
 
       {submissionList}
     </Box>
   );
 };
 
-export default connect<OuterProps, InnerProps>(() => ({
+const BridgeSubmissions = connect<BridgeProps, InnerProps>((props) => ({
   langListFetch: {
     comparison: null,
     value: () => library_checker_client.langList(new LangListRequest(), {}),
@@ -262,33 +239,36 @@ export default connect<OuterProps, InnerProps>(() => ({
       library_checker_client.problemList(new ProblemListRequest(), {}),
   },
   submissionListFetch: {
-    comparison: null,
-    value: [],
+    comparison: `${props.problem}/${props.user}/${props.status}/${props.lang}/${props.order}/${props.page}/${props.pageSize}`,
+    value: () =>
+      library_checker_client.submissionList(
+        new SubmissionListRequest()
+          .setProblem(props.problem)
+          .setUser(props.user)
+          .setStatus(props.status)
+          .setLang(props.lang)
+          .setOrder(props.order)
+          .setSkip(props.page * props.pageSize)
+          .setLimit(props.pageSize),
+        {}
+      ),
   },
-  refreshSubmissionList: (
-    problem: string,
-    user: string,
-    status: string,
-    lang: string,
-    order: string,
-    skip: number,
-    limit: number
-  ) => ({
-    submissionListFetch: {
-      comparison: `${problem}:${user}:${status}:${lang}:${order}:${skip}:${limit}`,
-      refreshing: true,
-      value: () =>
-        library_checker_client.submissionList(
-          new SubmissionListRequest()
-            .setProblem(problem)
-            .setUser(user)
-            .setStatus(status)
-            .setLang(lang)
-            .setOrder(order)
-            .setSkip(skip)
-            .setLimit(limit),
-          {}
-        ),
-    },
-  }),
-}))(Submissions);
+}))(InnerSubmissions);
+
+const Submissions: React.FC<OuterProps> = (props: OuterProps) => {
+  const params = new URLSearchParams(useLocation().search);
+  console.log("Yosupo");
+  return (
+    <BridgeSubmissions
+      user={params.get("user") ?? ""}
+      problem={params.get("problem") ?? ""}
+      status={params.get("status") ?? ""}
+      lang={params.get("lang") ?? ""}
+      order={params.get("order") ?? "-id"}
+      page={parseInt(params.get("page") ?? "0")}
+      pageSize={parseInt(params.get("page_size") ?? "100")}
+    />
+  );
+};
+
+export default Submissions;

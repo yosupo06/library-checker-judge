@@ -11,7 +11,7 @@ import {
 } from "@material-ui/core";
 import React, { useContext, useState } from "react";
 import { connect, PromiseState } from "react-refetch";
-import { RouteComponentProps } from "react-router-dom";
+import { Link, RouteComponentProps } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata,
@@ -27,6 +27,7 @@ import Editor from "../components/Editor";
 import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import GitHubIcon from "@material-ui/icons/GitHub";
+import FlashOnIcon from "@material-ui/icons/FlashOn";
 
 interface Props extends RouteComponentProps<{ problemId: string }> {
   problemInfoFetch: PromiseState<ProblemInfoResponse>;
@@ -41,7 +42,14 @@ const useStyles = makeStyles((theme) => ({
     height: "400px",
     width: "100%",
   },
-  button: {},
+  button: {
+    marginLeft: theme.spacing(1),
+    marginRight: theme.spacing(1),
+  },
+  fastestLink: {
+    color: "inherit",
+    textDecoration: "none",
+  },
 }));
 
 const ProblemInfo: React.FC<Props> = (props) => {
@@ -84,6 +92,11 @@ const ProblemInfo: React.FC<Props> = (props) => {
         history.push(`/submission/${resp.getId()}`);
       });
   };
+  const fastestParams = new URLSearchParams({
+    problem: props.match.params.problemId,
+    order: "+time",
+    status: "AC",
+  });
   return (
     <Box>
       <Typography variant="h2" paragraph={true}>
@@ -92,20 +105,31 @@ const ProblemInfo: React.FC<Props> = (props) => {
       <Typography variant="body1" paragraph={true}>
         Time Limit: {problemInfoFetch.value.getTimeLimit()} sec
       </Typography>
-
-      <KatexRender text={problemInfoFetch.value.getStatement()} html={true} />
-
-      <Divider className={classes.divider} />
       <Button
         variant="contained"
-        color="primary"
+        color="default"
+        className={classes.button}
+        startIcon={<FlashOnIcon />}
+      >
+        <Link
+          to={`/submissions/?${fastestParams.toString()}`}
+          className={classes.fastestLink}
+        >
+          Fastest
+        </Link>
+      </Button>
+      <Button
+        variant="contained"
+        color="default"
         className={classes.button}
         startIcon={<GitHubIcon />}
         href={problemInfoFetch.value.getSourceUrl()}
       >
-        Source
+        Github
       </Button>
       <Divider className={classes.divider} />
+
+      <KatexRender text={problemInfoFetch.value.getStatement()} html={true} />
 
       <form onSubmit={(e) => handleSubmit(e)}>
         <FormControl className={classes.editor}>
