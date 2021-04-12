@@ -35,13 +35,13 @@ const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(0.4),
   },
   navbarTopLink: {
-    color: " inherit",
+    color: "inherit",
     textDecoration: "none",
     fontSize: "16px",
     fontWeight: "bolder",
   },
   navbarLink: {
-    color: " inherit",
+    color: "inherit",
     textDecoration: "none",
   },
 }));
@@ -117,7 +117,7 @@ const NavBar = (props: RouteComponentProps) => {
           <MenuItem>
             <Link
               to={`/user/${auth.state.user}`}
-              className={classes.navbarItem}
+              className={classes.navbarLink}
             >
               Profile
             </Link>
