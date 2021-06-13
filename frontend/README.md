@@ -3,10 +3,13 @@
 ## Requirements
 
 - npm
+- docker
 
 ## How to Use
 
 ```sh
+./gen_protoc.sh /path/to/library-checker-judge/api/proto/library_checker.proto
+
 npm install
 
 # access to the API server of judge.yosupo.jp
