@@ -175,6 +175,7 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
           <TextField
             label="User Name"
             value={userName}
+            autoComplete="off"
             onChange={(e) => setUserName(e.target.value)}
           />
         </FormControl>
