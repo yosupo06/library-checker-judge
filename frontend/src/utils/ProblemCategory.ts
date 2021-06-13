@@ -42,10 +42,8 @@ const categories = [
   {
     name: "Graph",
     problems: [
-      "tree_diameter",
       "cycle_detection",
       "shortest_path",
-      "lca",
       "scc",
       "k_shortest_walk",
       "two_edge_connected_components",
@@ -55,16 +53,25 @@ const categories = [
       "general_matching",
       "bipartite_edge_coloring",
       "assignment",
-      "cartesian_tree",
       "directedmst",
       "manhattanmst",
       "dominatortree",
       "maximum_independent_set",
+      "chromatic_number",
       "enumerate_triangles",
       "tree_decomposition_width_2",
-      "frequency_table_of_tree_distance",
       "global_minimum_cut_of_dynamic_star_augmented_graph",
       "chordal_graph_recognition",
+    ],
+  },
+
+  {
+    name: "Tree",
+    problems: [
+      "tree_diameter",
+      "lca",
+      "cartesian_tree",
+      "frequency_table_of_tree_distance",
     ],
   },
 
@@ -74,9 +81,6 @@ const categories = [
       "counting_primes",
       "enumerate_primes",
       "factorize",
-      "convolution_mod",
-      "convolution_mod_1000000007",
-      "subset_convolution",
       "multipoint_evaluation",
       "polynomial_interpolation",
       "inv_of_formal_power_series",
@@ -109,8 +113,22 @@ const categories = [
   },
 
   {
+    name: "Convolution",
+    problems: [
+      "convolution_mod",
+      "convolution_mod_1000000007",
+      "convolution_mod_2_64",
+      "subset_convolution",
+      "bitwise_and_convolution",
+      "bitwise_xor_convolution",
+      "multivariate_convolution",
+    ],
+  },
+
+  {
     name: "Matrix",
     problems: [
+      "matrix_product",
       "matrix_det",
       "sparse_matrix_det",
       "system_of_linear_equations",
