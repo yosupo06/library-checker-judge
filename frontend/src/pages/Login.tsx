@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   CircularProgress,
   Container,
@@ -7,22 +8,22 @@ import {
 } from "@material-ui/core";
 import { Alert, AlertTitle } from "@material-ui/lab";
 import React, { useContext } from "react";
+import { RouteComponentProps } from "react-router-dom";
 import library_checker_client from "../api/library_checker_client";
 import { LoginRequest } from "../api/library_checker_pb";
 import { AuthContext } from "../contexts/AuthContext";
 
-interface Props {}
+interface Props extends RouteComponentProps<Record<string, never>> {}
 
-const Help: React.FC<Props> = (props) => {
+const Login: React.FC<Props> = (props) => {
+  const { history } = props;
   const auth = useContext(AuthContext);
   const [userName, setUserName] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [loginStatus, setLoginStatus] = React.useState<
-    "none" | "wait" | "success" | "failed"
-  >("none");
+  const [loginStatus, setLoginStatus] = React.useState<JSX.Element>(<Box />);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginStatus("wait");
+    setLoginStatus(<CircularProgress />);
     library_checker_client
       .login(new LoginRequest().setName(userName).setPassword(password), {})
       .then((resp) => {
@@ -30,9 +31,15 @@ const Help: React.FC<Props> = (props) => {
           type: "login",
           payload: { token: resp.getToken(), user: userName },
         });
-        setLoginStatus("success");
+        history.push(`/`);
       })
-      .catch((reason) => setLoginStatus("failed"));
+      .catch((reason) =>
+        setLoginStatus(
+          <Alert severity="error">
+            <AlertTitle>Login failed: {reason.message}</AlertTitle>
+          </Alert>
+        )
+      );
   };
   return (
     <Container>
@@ -61,21 +68,9 @@ const Help: React.FC<Props> = (props) => {
           Login
         </Button>
       </form>
-      {loginStatus === "wait" && <CircularProgress />}
-      {loginStatus === "success" && (
-        <Alert severity="success">
-          <AlertTitle>Success</AlertTitle>
-          Success: Login
-        </Alert>
-      )}
-      {loginStatus === "failed" && (
-        <Alert severity="error">
-          <AlertTitle>Failed</AlertTitle>
-          Failed: Login
-        </Alert>
-      )}
+      {loginStatus}
     </Container>
   );
 };
 
-export default Help;
+export default Login;
