@@ -91,9 +91,14 @@ const NavBar = (props: RouteComponentProps) => {
   const userMenu = (() => {
     if (!auth || !auth.state.user) {
       return (
-        <Button color="inherit" onClick={() => history.push("/login")}>
-          Login
-        </Button>
+        <Box>
+          <Button color="inherit" onClick={() => history.push("/register")}>
+            Register
+          </Button>
+          <Button color="inherit" onClick={() => history.push("/login")}>
+            Login
+          </Button>
+        </Box>
       );
     }
     return (

@@ -22,6 +22,7 @@ import { LangReducer, LangContext, LangState } from "./contexts/LangContext";
 import { CssBaseline } from "@material-ui/core";
 import { grey } from "@material-ui/core/colors";
 import NotFound from "./pages/NotFound";
+import Register from "./pages/Register";
 
 const theme = createMuiTheme({
   typography: {
@@ -109,6 +110,7 @@ function App(): JSX.Element {
                 <Route exact path="/ranking" component={Ranking} />
                 <Route exact path="/help" component={Help} />
                 <Route exact path="/login" component={Login} />
+                <Route exact path="/register" component={Register} />
                 <Route path="/user/:userId" component={Profile} />
                 <Route component={NotFound} />
               </Switch>
