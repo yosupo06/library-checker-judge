@@ -10,6 +10,7 @@
 ## Launch API & SQL
 
 ```sh
+./api/gen_protoc.sh
 ./launch_local.sh
 ```
 
