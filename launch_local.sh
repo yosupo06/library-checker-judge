@@ -1,5 +1,7 @@
 set -e
 
+./api/gen_protoc.sh
+
 # check psql was installed
 psql --version
 
