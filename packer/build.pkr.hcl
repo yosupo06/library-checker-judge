@@ -129,10 +129,10 @@ build {
     ]
   }
 
-  # install acl(v1.3)
+  # install acl(v1.4)
   provisioner "shell" {
     inline = [
-      "git clone https://github.com/atcoder/ac-library -b v1.3 /tmp/ac-library",
+      "git clone https://github.com/atcoder/ac-library -b v1.4 /tmp/ac-library",
       "sudo cp -r /tmp/ac-library /opt",
     ]
   }
