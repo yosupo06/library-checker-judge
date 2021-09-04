@@ -128,6 +128,17 @@ sudo go run *.go
 
 各種機能をガンガン使うのでrootじゃないと動かない　多分
 
+### Build Judge Image for GCP
+
+```
+gcloud auth application-default login
+cd packer
+packer build .
+```
+
+Library Checkerで稼働するジャッジサーバーのイメージは[packer](https://www.packer.io/)でビルドされている。
+
+
 ## Contribution
 
 なんでも歓迎
