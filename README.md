@@ -84,12 +84,12 @@ cd library-checker-judge/judge
 ./make_secret.sh
 ```
 
-`executor_rust` をビルドして PATH の通ったところに置く。
+`executor` をビルドして PATH の通ったところに置く。
 
-```
-cd library-checker-judge/judge/executor_rust
-cargo build --release
-cp target/release/executor_rust path/to/...
+```sh
+cd library-checker-judge/executor
+cargo install --path . --features sandbox
+# or: cargo build --release --features sandbox && cp target/release/executor_rust path/to/...
 ```
 
 ユーザの提出を実行するための処理系をインストールする。

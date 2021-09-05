@@ -1,20 +1,18 @@
 use anyhow::Error;
-use executor_rust::{execute_main, ExecResult};
+use executor::{execute_main, tempdir, ExecResult};
 #[cfg(feature = "sandbox")]
 use rand::distributions::Alphanumeric;
 #[cfg(feature = "sandbox")]
 use rand::Rng;
-use std::fs::copy;
-use std::fs::set_permissions;
+use std::fs::File;
 
 #[cfg(feature = "sandbox")]
 use std::env;
 #[cfg(feature = "sandbox")]
 use std::iter;
 
-use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
-use tempfile::{tempdir, TempDir};
+use std::io::Write;
+use std::path::PathBuf;
 
 #[cfg(test)]
 #[ctor::ctor]
@@ -25,21 +23,11 @@ fn init() {
         .init();
 }
 
-#[cfg(feature = "sandbox")]
-fn random_string(len: usize) -> String {
-    let mut rng = rand::thread_rng();
-    iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
-        .take(len)
-        .collect()
-}
-
-fn get_dir(src: &Path) -> Result<TempDir, Error> {
-    let dir = tempdir()?;
-    copy(src, dir.path().join(src.file_name().unwrap()))?;
-    set_permissions(&dir.path(), PermissionsExt::from_mode(0o777))?;
-    println!("tempdir: {:?}", dir);
-    Ok(dir)
+fn str2testdir(src: &str, name: &str) -> Result<PathBuf, Error> {
+    let temp_dir = tempdir(&std::env::temp_dir())?;
+    let file = File::create(temp_dir.join(name))?;
+    writeln!(&file, "{}", src)?;
+    Ok(temp_dir)
 }
 
 fn to_string_vec(s: Vec<&str>) -> Vec<String> {
@@ -56,97 +44,66 @@ fn assert_result(result: &ExecResult, status_expect: Option<i32>, time_upper: Op
     }
 }
 
-#[test]
-fn hello_world_cpp() {
-    let temp = get_dir(Path::new("../test_src/Hello.cpp")).expect("failed");
-    let temp = temp.path();
+fn compile_cpp_file(src: &str) -> Result<PathBuf, Error> {
+    let dir = str2testdir(src, "source.cpp")?;
+
     let result = execute_main(
-        &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
-        &to_string_vec(vec!["g++", "Hello.cpp"]),
-    )
-    .expect("failed");
+        &to_string_vec(vec!["executor", "--cwd", dir.to_str().unwrap()]),
+        &to_string_vec(vec!["g++", "source.cpp"]),
+    )?;
     assert_result(&result, Some(0), None);
 
-    assert!(temp.join("a.out").exists());
-
-    let result = execute_main(
-        &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
-        &to_string_vec(vec!["./a.out"]),
-    )
-    .expect("failed");
-    assert_result(&result, Some(0), Some(0.05));
+    Ok(dir)
 }
 
 #[test]
-fn hello_world_cpp_flag() {
-    let temp = get_dir(Path::new("../test_src/Hello.cpp")).expect("failed");
-    let temp = temp.path();
-    let result = execute_main(
-        &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
-        &to_string_vec(vec!["g++", "Hello.cpp", "-o", "Hello"]),
-    )
-    .expect("failed");
-    assert_result(&result, Some(0), None);
-
-    assert!(temp.join("Hello").exists());
+fn hello_world_cpp() {
+    let dir = compile_cpp_file(include_str!("../res/Hello.cpp")).expect("compile failed");
 
     let result = execute_main(
-        &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
-        &to_string_vec(vec!["./Hello"]),
+        &to_string_vec(vec!["executor", "--cwd", dir.to_str().unwrap()]),
+        &to_string_vec(vec!["./a.out"]),
     )
     .expect("failed");
+
     assert_result(&result, Some(0), Some(0.05));
 }
 
 #[test]
 fn test_unused_tle() {
-    let temp = get_dir(Path::new("../test_src/Hello.cpp")).expect("failed");
-    let temp = temp.path();
-    let result = execute_main(
-        &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
-        &to_string_vec(vec!["g++", "Hello.cpp"]),
-    )
-    .expect("failed");
-    assert_result(&result, Some(0), None);
-
-    assert!(temp.join("a.out").exists());
+    let dir = compile_cpp_file(include_str!("../res/Hello.cpp")).expect("compile failed");
 
     let result = execute_main(
         &to_string_vec(vec![
             "executor",
             "--cwd",
-            temp.to_str().unwrap(),
+            dir.to_str().unwrap(),
             "--tl",
             "2.0",
         ]),
         &to_string_vec(vec!["./a.out"]),
     )
     .expect("failed");
+
     assert_result(&result, Some(0), Some(0.05));
 }
 
 #[test]
 fn test_tle() {
-    let temp = get_dir(Path::new("../test_src/TLE.cpp")).expect("failed");
-    let temp = temp.path();
-    let result = execute_main(
-        &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
-        &to_string_vec(vec!["g++", "TLE.cpp"]),
-    )
-    .expect("failed");
-    assert_result(&result, Some(0), None);
-    assert!(temp.join("a.out").exists());
+    let dir = compile_cpp_file(include_str!("../res/TLE.cpp")).expect("compile failed");
+
     let result = execute_main(
         &to_string_vec(vec![
             "executor",
             "--cwd",
-            temp.to_str().unwrap(),
+            dir.to_str().unwrap(),
             "--tl",
             "2.0",
         ]),
         &to_string_vec(vec!["./a.out"]),
     )
     .expect("failed");
+
     assert!(result.status != 0);
     assert!(result.tle);
 }
@@ -203,8 +160,7 @@ fn test_tempdir() {
 
 #[test]
 fn test_re() {
-    let temp = tempdir().expect("failed");
-    let temp = temp.path();
+    let temp = tempdir(&std::env::temp_dir()).expect("failed");
     let result = execute_main(
         &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
         &to_string_vec(vec!["cat", "dummy.dummy"]),
@@ -215,8 +171,7 @@ fn test_re() {
 
 #[test]
 fn test_no_binary() {
-    let temp = tempdir().expect("failed");
-    let temp = temp.path();
+    let temp = tempdir(&std::env::temp_dir()).expect("failed");
     let result = execute_main(
         &to_string_vec(vec!["executor", "--cwd", temp.to_str().unwrap()]),
         &to_string_vec(vec!["./dummy_binary"]),
@@ -261,6 +216,5 @@ fn test_fork_bomb() {
         &to_string_vec(vec!["./fork_bomb.sh"]),
     )
     .expect("failed");
-    println!("{:?}", result);
     assert!(result.tle);
 }

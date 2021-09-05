@@ -2,7 +2,7 @@ use anyhow::{format_err, Error};
 use clap::{App, Arg};
 use libc::pid_t;
 use libc::{rlimit, setrlimit, RLIMIT_STACK, RLIM_INFINITY};
-use log::{info, warn, error};
+use log::{error, info, warn};
 
 #[cfg(feature = "sandbox")]
 use nix::mount::{mount, MsFlags};
@@ -51,7 +51,7 @@ fn random_string(len: usize) -> String {
         .collect()
 }
 
-fn tempdir(temp_dir: &Path) -> io::Result<PathBuf> {
+pub fn tempdir(temp_dir: &Path) -> io::Result<PathBuf> {
     for _ in 0..10 {
         let chars: String = random_string(10);
         let temp_dir = temp_dir.join(chars);
@@ -231,21 +231,20 @@ fn execute_unshared(
         );
         if res != 0 {
             if cfg!(feature = "sandbox") {
-                return Err(format_err!("setrlimit(stack unlimited) failed"))
+                return Err(format_err!("setrlimit(stack unlimited) failed"));
             } else {
                 warn!("setrlimit(stack unlimited) failed")
             }
         }
     }
 
-
-    if cfg!(feature="sandbox") {
-        chdir(&temp_dir.join("root").join("sand"))?; 
+    if cfg!(feature = "sandbox") {
+        chdir(&temp_dir.join("root").join("sand"))?;
     } else {
         chdir(base_dir)?;
     }
 
-    if cfg!(feature="sandbox") {
+    if cfg!(feature = "sandbox") {
         chroot("..")?;
         change_uid()?;
         env::remove_var("TMPDIR");
@@ -416,7 +415,8 @@ fn execute(app: &clap::ArgMatches, user_args: &[String]) -> Result<ExecResult, E
                 result.time = tl;
             }
             result.memory = if cfg!(feature = "sandbox") {
-                let mem = read_to_string("/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes")?;
+                let mem =
+                    read_to_string("/sys/fs/cgroup/memory/lib-judge/memory.max_usage_in_bytes")?;
                 mem.trim().parse()?
             } else {
                 0
