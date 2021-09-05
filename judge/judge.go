@@ -72,10 +72,10 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	newArg = append(newArg, "--")
 	newArg = append(newArg, cmd.Args...)
 
-	if cmd.Path, err = exec.LookPath("executor_rust"); err != nil {
+	if cmd.Path, err = exec.LookPath("executor"); err != nil {
 		return Result{}, err
 	}
-	cmd.Args = append([]string{"executor_rust"}, newArg...)
+	cmd.Args = append([]string{"executor"}, newArg...)
 	// add stderr
 	os := &outputStripper{N: 1 << 11}
 	if cmd.Stderr != nil {

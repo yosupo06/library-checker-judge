@@ -1,5 +1,5 @@
 [package]
-name = "executor_rust"
+name = "executor"
 version = "0.1.0"
 authors = ["Kohei Morita <yosupo06@gmail.com>"]
 edition = "2018"

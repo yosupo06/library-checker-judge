@@ -39,7 +39,7 @@ echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
 
 echo 'Start executor_rust test'
-gcpexec "cd /root/library-checker-judge/judge/executor_rust && cargo test -- --test-threads=1"
+gcpexec "cd /root/library-checker-judge/executor && cargo test -- --test-threads=1"
 
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py -p aplusb unionfind"

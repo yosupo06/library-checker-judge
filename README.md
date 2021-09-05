@@ -42,6 +42,8 @@ evans --host localhost --port 58080 api/proto/library_checker.proto --web
 
 ## Judge Server
 
+ジャッジサーバーはgoで書かれたAPIサーバーと通信するクライアント(`/judge`)と、このクライアントが呼び出す軽量コンテナ(`/executor`)からなる。
+
 ### 準備
 
 ```sh
@@ -53,27 +55,16 @@ pip3 -r ../library-checker-problems/requirements.txt
 
 など
 
-#### cgroupでmemory swapを管理する
+#### executorをinstallする
 
-/etc/default/grubに以下を書き、reboot
-
-```sh
-GRUB_CMDLINE_LINUX="swapaccount=1"
-```
-
-- References: https://unix.stackexchange.com/questions/147158/how-to-enable-swap-accounting-for-memory-cgroup-in-archlinux
-
-
-#### ジャッジ用のシステムユーザーを作成する
+executorの[README](./executor/README.md)を参照。Ubuntu以外で動作確認をしていない、かつ色々準備が必要なので注意。
+`executor` をビルドして PATH の通ったところに置く。
 
 ```sh
-sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
+cd library-checker-judge/executor
+cargo install --path . --features sandbox
+# or: cargo build --release --features sandbox && cp target/release/executor_rust path/to/...
 ```
-
-ジャッジはpkill -u library-checker-user(このユーザーのプロセスを全部消す)を使用するため、UIDが他のユーザーと被ってはいけない。
-特にpostgreコンテナはデフォルトで999をUIDとして使うため注意。
-
-どちらかを変更すること
 
 #### 実行環境を作る
 
@@ -82,14 +73,6 @@ sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
 ```
 cd library-checker-judge/judge
 ./make_secret.sh
-```
-
-`executor_rust` をビルドして PATH の通ったところに置く。
-
-```
-cd library-checker-judge/judge/executor_rust
-cargo build --release
-cp target/release/executor_rust path/to/...
 ```
 
 ユーザの提出を実行するための処理系をインストールする。
