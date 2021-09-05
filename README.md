@@ -42,6 +42,8 @@ evans --host localhost --port 58080 api/proto/library_checker.proto --web
 
 ## Judge Server
 
+ジャッジサーバーはgoで書かれたAPIサーバーと通信するクライアント(`/judge`)と、このクライアントが呼び出す軽量コンテナ(`/executor`)からなる。
+
 ### 準備
 
 ```sh
@@ -52,6 +54,10 @@ pip3 -r ../library-checker-problems/requirements.txt
 ```
 
 など
+
+#### executorをinstallする
+
+executorの[README](./executor/README.md)を参照。Ubuntu以外で動作確認をしていない、かつ色々準備が必要なので注意。
 
 #### cgroupでmemory swapを管理する
 
