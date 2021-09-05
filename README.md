@@ -58,28 +58,13 @@ pip3 -r ../library-checker-problems/requirements.txt
 #### executorをinstallする
 
 executorの[README](./executor/README.md)を参照。Ubuntu以外で動作確認をしていない、かつ色々準備が必要なので注意。
-
-#### cgroupでmemory swapを管理する
-
-/etc/default/grubに以下を書き、reboot
+`executor` をビルドして PATH の通ったところに置く。
 
 ```sh
-GRUB_CMDLINE_LINUX="swapaccount=1"
+cd library-checker-judge/executor
+cargo install --path . --features sandbox
+# or: cargo build --release --features sandbox && cp target/release/executor_rust path/to/...
 ```
-
-- References: https://unix.stackexchange.com/questions/147158/how-to-enable-swap-accounting-for-memory-cgroup-in-archlinux
-
-
-#### ジャッジ用のシステムユーザーを作成する
-
-```sh
-sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
-```
-
-ジャッジはpkill -u library-checker-user(このユーザーのプロセスを全部消す)を使用するため、UIDが他のユーザーと被ってはいけない。
-特にpostgreコンテナはデフォルトで999をUIDとして使うため注意。
-
-どちらかを変更すること
 
 #### 実行環境を作る
 
@@ -88,14 +73,6 @@ sudo useradd library-checker-user -u 990 -r -s /sbin/nologin -M
 ```
 cd library-checker-judge/judge
 ./make_secret.sh
-```
-
-`executor` をビルドして PATH の通ったところに置く。
-
-```sh
-cd library-checker-judge/executor
-cargo install --path . --features sandbox
-# or: cargo build --release --features sandbox && cp target/release/executor_rust path/to/...
 ```
 
 ユーザの提出を実行するための処理系をインストールする。
