@@ -12,7 +12,7 @@ gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
 --boot-disk-size=25GB \
 --boot-disk-type=pd-ssd \
---image-family=judge-image-test-family ${@:3}
+--image-family=judge-image-family ${@:3}
 
 function gcpexec() {
     echo "Start: ${1}"
