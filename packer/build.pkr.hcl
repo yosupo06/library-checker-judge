@@ -115,6 +115,11 @@ build {
     script = "c_sharp_setup.sh"
   }
 
+  # install go
+  provisioner "shell" {
+    script = "go_setup.sh"
+  }
+
   # install python (numpy, scipy)
   provisioner "shell" {
     inline = [
@@ -125,7 +130,7 @@ build {
   # install compilers
   provisioner "shell" {
     inline = [
-      "sudo apt-get install -y g++ golang-go default-jdk default-jre pypy3 ldc rustc cargo sbcl",
+      "sudo apt-get install -y g++ default-jdk default-jre pypy3 ldc rustc cargo sbcl",
     ]
   }
 
