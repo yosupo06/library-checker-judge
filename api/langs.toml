@@ -75,7 +75,7 @@
 [[langs]]
     id = "go"
     name = "Go"
-    version = "Go(ppa:longsleep/golang-backports)"
+    version = "Go(1.17)"
     source = "main.go"
     compile = "go build main.go"
     exec = "./main"
