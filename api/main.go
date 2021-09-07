@@ -8,11 +8,11 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
+	"github.com/golang-jwt/jwt"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
 
-	"github.com/dgrijalva/jwt-go"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
 	"gorm.io/gorm"

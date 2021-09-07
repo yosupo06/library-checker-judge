@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/golang/protobuf/ptypes"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -451,8 +450,8 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		}
 		id := task.Submission
 
-		expectedTime, err := ptypes.Duration(in.ExpectedTime)
-		if err != nil {
+		expectedTime := in.ExpectedTime.AsDuration()
+		if !in.ExpectedTime.IsValid() {
 			expectedTime = time.Minute
 		}
 		log.Println("Pop Submission:", id, expectedTime)
@@ -495,8 +494,8 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 	}
 	id := in.SubmissionId
 
-	expectedTime, err := ptypes.Duration(in.ExpectedTime)
-	if err != nil {
+	expectedTime := in.ExpectedTime.AsDuration()
+	if !in.ExpectedTime.IsValid() {
 		expectedTime = time.Minute
 	}
 
