@@ -4,6 +4,8 @@ import "google/protobuf/duration.proto";
 
 package librarychecker;
 
+option go_package = "github.com/yosupo06/library-checker-judge/api/proto";
+
 service LibraryCheckerService {
     rpc Register (RegisterRequest) returns (RegisterResponse) {}
     rpc Login (LoginRequest) returns (LoginResponse) {}
