@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/google/uuid"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"gorm.io/gorm"
 )
 
@@ -244,7 +244,7 @@ func TestRejudgeTwice(t *testing.T) {
 
 	task, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName:    "judge-test",
-		ExpectedTime: ptypes.DurationProto(2 * time.Second),
+		ExpectedTime: durationpb.New(2 * time.Second),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -861,7 +861,7 @@ func TestSimulateJudgeDown(t *testing.T) {
 		log.Printf("Start %v/3", i+1)
 		resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 			JudgeName:    "judge-test",
-			ExpectedTime: ptypes.DurationProto(2 * time.Second),
+			ExpectedTime: durationpb.New(2 * time.Second),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -898,7 +898,7 @@ func TestParallelJudge(t *testing.T) {
 		g.Go(func() error {
 			resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 				JudgeName:    "judge-test",
-				ExpectedTime: ptypes.DurationProto(time.Minute),
+				ExpectedTime: durationpb.New(time.Minute),
 			})
 			if err != nil {
 				return err
@@ -975,7 +975,7 @@ func TestSimulateParallelRejudge(t *testing.T) {
 			g.Go(func() error {
 				resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 					JudgeName:    "judge-test",
-					ExpectedTime: ptypes.DurationProto(2 * time.Second),
+					ExpectedTime: durationpb.New(2 * time.Second),
 				})
 				if err != nil {
 					return err
@@ -1022,7 +1022,7 @@ func TestSimulateParallelRejudge(t *testing.T) {
 			g.Go(func() error {
 				resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 					JudgeName:    "judge-test",
-					ExpectedTime: ptypes.DurationProto(2 * time.Second),
+					ExpectedTime: durationpb.New(2 * time.Second),
 				})
 				if err != nil {
 					return err
