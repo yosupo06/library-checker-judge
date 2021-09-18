@@ -94,8 +94,8 @@ if __name__ == "__main__":
     bucket_name = args.minio_bucket
 
     if not minio_client.bucket_exists(bucket_name):
-        logger.error('No bucket {}'.format(bucket_name))
-        raise ValueError('No bucket {}'.format(bucket_name))
+        logger.info('No bucket {}'.format(bucket_name))
+        minio_client.make_bucket(bucket_name)
 
     tomls_new: List[Path] = []
     tomls_old: List[Path] = []
