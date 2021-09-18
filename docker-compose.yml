@@ -5,6 +5,8 @@ services:
     image: postgres:11.3
     ports:
       - 5432:5432
+    volumes:
+      - ./tools/db_init:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_DB=librarychecker
       - POSTGRES_PASSWORD=passwd
