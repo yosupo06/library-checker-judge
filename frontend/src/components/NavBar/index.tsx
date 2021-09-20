@@ -141,7 +141,7 @@ const NavBar = (props: RouteComponentProps) => {
             <ListItemText>
               <Button color="inherit" className={classes.navbarTop}>
                 <Link to="/" className={classes.navbarTopLink}>
-                  Library-Checker
+                  Library Checker
                 </Link>
               </Button>
             </ListItemText>
