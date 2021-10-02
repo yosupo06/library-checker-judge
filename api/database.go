@@ -96,7 +96,7 @@ func updateUser(db *gorm.DB, user User) error {
 		})
 	if err := result.Error; err != nil {
 		log.Print(err)
-		return errors.New("Failed to update user")
+		return errors.New("failed to update user")
 	}
 	if result.RowsAffected == 0 {
 		return errors.New("User not found")
@@ -150,7 +150,7 @@ func pushTask(task Task) error {
 	log.Print("Insert task:", task)
 	if err := db.Create(&task).Error; err != nil {
 		log.Print(err)
-		return errors.New("Cannot insert into queue")
+		return errors.New("cannot insert into queue")
 	}
 	return nil
 }
