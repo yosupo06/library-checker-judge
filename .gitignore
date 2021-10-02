@@ -1,20 +1,13 @@
-judge/sand
-judge/work
-judge/executor/executor_core
 *.log
-/compiler/*
-!/compiler/install.sh
-!/compiler/PATH.txt
-!/compiler/langs.toml
-/deploy/cloudinit_buf.yml
 secret.*
+
+api/api
+api/proto/library_checker.pb.go
+
 judge/judge
 judge.tar.gz
-judge/executor_rust/target
 
 executor/target/
-
-api/proto/library_checker.pb.go
 
 deploy/__init__.py
 deploy/library_checker_pb2.py
