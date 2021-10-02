@@ -67,7 +67,7 @@ func changeRegistrationStatus(id int32, judgeName string, updateJudgeName string
 
 		if status != expect {
 			log.Printf("Expect(%v) != Actual(%v)", expect, status)
-			return errors.New("Actual status does not matched to expected status")
+			return errors.New("actual status does not matched to expected status")
 		}
 
 		if err := tx.Model(&sub).Updates(map[string]interface{}{
@@ -101,13 +101,13 @@ func toWaitingJudge(id int32, priority int32, after time.Duration) error {
 	sub := &Submission{}
 	if err := db.Take(sub, id).Error; err != nil {
 		log.Print(err)
-		return errors.New("Failed to fetch submission")
+		return errors.New("failed to fetch submission")
 	}
 	sub.PrevStatus = sub.Status
 	sub.Status = "WJ"
 	if err := db.Save(sub).Error; err != nil {
 		log.Print(err)
-		return errors.New("Failed to update status")
+		return errors.New("failed to update status")
 	}
 
 	if err := pushTask(Task{
@@ -116,7 +116,7 @@ func toWaitingJudge(id int32, priority int32, after time.Duration) error {
 		Priority:   priority,
 	}); err != nil {
 		log.Print(err)
-		return errors.New("Cannot insert into queue")
+		return errors.New("cannot insert into queue")
 	}
 
 	return nil
