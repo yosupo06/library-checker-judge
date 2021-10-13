@@ -1,8 +1,8 @@
-import { Problem } from "../api/library_checker_pb";
-import categories from "./categories.json";
+import { Problem, ProblemCategory } from "../api/library_checker_pb";
 
 export const getCategories = (
-  problems: Problem[]
+  problems: Problem[],
+  categories: ProblemCategory[]
 ): {
   name: string;
   problems: {
@@ -10,7 +10,9 @@ export const getCategories = (
     title: string;
   }[];
 }[] => {
-  const classifiedSet = new Set(categories.map((e) => e.problems).flat());
+  const classifiedSet = new Set(
+    categories.map((e) => e.getProblemsList()).flat()
+  );
   const problemNames = problems.map((e) => e.getName());
   const nameToTitle = problems.reduce<{ [name: string]: string }>(
     (dict, problem) => {
@@ -22,8 +24,9 @@ export const getCategories = (
 
   const problemNameSet = new Set(problemNames);
   const classified = categories.map((e) => ({
-    name: e.name,
-    problems: e.problems
+    name: e.getTitle(),
+    problems: e
+      .getProblemsList()
       .filter((e) => problemNameSet.has(e))
       .map((e) => ({
         name: e,

@@ -21,6 +21,8 @@ import library_checker_client from "../api/library_checker_client";
 import {
   LangListRequest,
   LangListResponse,
+  ProblemCategoriesRequest,
+  ProblemCategoriesResponse,
   ProblemListRequest,
   ProblemListResponse,
   SubmissionListRequest,
@@ -45,6 +47,7 @@ interface BridgeProps {
 interface InnerProps extends BridgeProps {
   langListFetch: PromiseState<LangListResponse>;
   problemListFetch: PromiseState<ProblemListResponse>;
+  problemCategoriesFetch: PromiseState<ProblemCategoriesResponse>;
   submissionListFetch: PromiseState<SubmissionListResponse>;
 }
 
@@ -61,7 +64,12 @@ const useStyles = makeStyles((theme: Theme) => ({
 }));
 
 const InnerSubmissions: React.FC<InnerProps> = (props) => {
-  const { langListFetch, problemListFetch, submissionListFetch } = props;
+  const {
+    langListFetch,
+    problemListFetch,
+    problemCategoriesFetch,
+    submissionListFetch,
+  } = props;
   const classes = useStyles();
   const [problemName, setProblemName] = React.useState(props.problem);
   const [userName, setUserName] = React.useState(props.user);
@@ -81,7 +89,11 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
     pageSize: rowsPerPage.toString(),
   });
 
-  if (langListFetch.pending || problemListFetch.pending) {
+  if (
+    langListFetch.pending ||
+    problemListFetch.pending ||
+    problemCategoriesFetch.pending
+  ) {
     return (
       <Box>
         <Typography variant="h2" paragraph={true}>
@@ -91,7 +103,11 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
       </Box>
     );
   }
-  if (langListFetch.rejected || problemListFetch.rejected) {
+  if (
+    langListFetch.rejected ||
+    problemListFetch.rejected ||
+    problemCategoriesFetch.rejected
+  ) {
     return (
       <Box>
         <Typography variant="h2" paragraph={true}>
@@ -145,7 +161,10 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
     );
   })();
 
-  const categories = getCategories(problemListFetch.value.getProblemsList());
+  const categories = getCategories(
+    problemListFetch.value.getProblemsList(),
+    problemCategoriesFetch.value.getCategoriesList()
+  );
 
   return (
     <Box>
@@ -238,6 +257,14 @@ const BridgeSubmissions = connect<BridgeProps, InnerProps>((props) => ({
     comparison: null,
     value: () =>
       library_checker_client.problemList(new ProblemListRequest(), {}),
+  },
+  problemCategoriesFetch: {
+    comparison: null,
+    value: () =>
+      library_checker_client.problemCategories(
+        new ProblemCategoriesRequest(),
+        {}
+      ),
   },
   submissionListFetch: {
     comparison: `${props.problem}/${props.user}/${props.status}/${props.lang}/${props.order}/${props.page}/${props.pageSize}`,
