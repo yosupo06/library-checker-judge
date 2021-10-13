@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"log"
 	"sort"
@@ -573,4 +574,54 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 		return nil, errors.New("failed to release Submission")
 	}
 	return &pb.FinishJudgeTaskResponse{}, nil
+}
+
+type Category struct {
+	Title    string   `json:"title"`
+	Problems []string `json:"problems"`
+}
+
+func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategoriesRequest) (*pb.ProblemCategoriesResponse, error) {
+	data, err := fetchMetadata(db, "problem_categories")
+	if err != nil {
+		return nil, err
+	}
+	var categories []Category
+	if json.Unmarshal([]byte(data), &categories); err != nil {
+		return nil, err
+	}
+
+	var result []*pb.ProblemCategory
+
+	for _, c := range categories {
+		result = append(result, &pb.ProblemCategory{
+			Title:    c.Title,
+			Problems: c.Problems,
+		})
+	}
+	return &pb.ProblemCategoriesResponse{
+		Categories: result,
+	}, nil
+}
+
+func (s *server) ChangeProblemCategories(ctx context.Context, in *pb.ChangeProblemCategoriesRequest) (*pb.ChangeProblemCategoriesResponse, error) {
+	currentUser := getCurrentUser(ctx)
+	if !currentUser.Admin {
+		return nil, errors.New("permission denied")
+	}
+	var categories []Category
+	for _, c := range in.Categories {
+		categories = append(categories, Category{
+			Title:    c.Title,
+			Problems: c.Problems,
+		})
+	}
+	data, err := json.Marshal(categories)
+	if err != nil {
+		return nil, err
+	}
+	if err := setMetadata(db, "problem_categories", string(data)); err != nil {
+		return nil, err
+	}
+	return &pb.ChangeProblemCategoriesResponse{}, nil
 }

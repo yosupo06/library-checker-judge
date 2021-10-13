@@ -8,6 +8,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -1175,5 +1176,52 @@ func TestCreateProblem(t *testing.T) {
 	}
 	if problem.CaseVersion != "dummy-version-x" {
 		t.Fatal("CaseVersion is invalid")
+	}
+}
+
+func TestProblemCategories(t *testing.T) {
+	ctx := loginAsAdmin(t)
+	testData := []*pb.ProblemCategory{
+		{
+			Title:    "a",
+			Problems: []string{"x", "y"},
+		},
+		{
+			Title:    "b",
+			Problems: []string{"z"},
+		},
+	}
+
+	for phase := 0; phase <= 1; phase++ {
+
+		if _, err := client.ChangeProblemCategories(ctx, &pb.ChangeProblemCategoriesRequest{
+			Categories: testData,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		res, err := client.ProblemCategories(ctx, &pb.ProblemCategoriesRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		expect := testData
+		actual := res.Categories
+
+		if len(expect) != len(actual) {
+			t.Fatal("len is differ")
+		}
+
+		for i := 0; i < len(expect); i++ {
+			if expect[i].Title != actual[i].Title {
+				t.Fatal("title is differ")
+			}
+			if !reflect.DeepEqual(expect[i].Problems, actual[i].Problems) {
+				t.Fatal("problems is differ")
+			}
+		}
+
+		testData = append(testData, &pb.ProblemCategory{
+			Title:    "c",
+			Problems: []string{"w"},
+		})
 	}
 }

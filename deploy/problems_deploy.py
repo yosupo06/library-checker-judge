@@ -21,6 +21,16 @@ from typing import List
 
 logger: Logger = getLogger(__name__)
 
+
+def deploy_categories(stub: library_checker_pb2_grpc.LibraryCheckerServiceStub, cred_token: grpc.CallCredentials, rootdir: Path):
+    categories = toml.load(open(rootdir / 'categories.toml'))
+    stub.ChangeProblemCategories(libpb.ChangeProblemCategoriesRequest(
+        categories=map(lambda x: libpb.ProblemCategory(
+            title=x['name'],
+            problems=x['problems']
+        ), categories['categories'])
+    ), credentials=cred_token)
+
 if __name__ == "__main__":
     handler = colorlog.StreamHandler()
     formatter = colorlog.ColoredFormatter(
@@ -97,6 +107,7 @@ if __name__ == "__main__":
         logger.info('No bucket {}'.format(bucket_name))
         minio_client.make_bucket(bucket_name)
 
+    deploy_categories(stub, cred_token, rootdir)
     tomls_new: List[Path] = []
     tomls_old: List[Path] = []
 
