@@ -1182,7 +1182,7 @@ func TestCreateProblem(t *testing.T) {
 func TestProblemCategories(t *testing.T) {
 	ctx := loginAsAdmin(t)
 
-	testData := []*pb.ProblemCategories{
+	testData := []*pb.ProblemCategory{
 		{
 			Title:    "a",
 			Problems: []string{"x", "y"},
