@@ -10,6 +10,8 @@ import React, { useContext } from "react";
 import { connect, PromiseState } from "react-refetch";
 import library_checker_client from "../api/library_checker_client";
 import {
+  ProblemCategoriesRequest,
+  ProblemCategoriesResponse,
   ProblemInfoRequest,
   ProblemListResponse,
   SolvedStatus,
@@ -27,6 +29,7 @@ interface BridgeProps {
 
 interface InnerProps {
   problemListFetch: PromiseState<ProblemListResponse>;
+  problemCategoriesFetch: PromiseState<ProblemCategoriesResponse>;
   userInfoFetch: PromiseState<UserInfoResponse | null>;
 }
 
@@ -38,17 +41,25 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const InnerProblems: React.FC<InnerProps> = (props) => {
-  const { problemListFetch, userInfoFetch } = props;
+  const { problemListFetch, problemCategoriesFetch, userInfoFetch } = props;
   const classes = useStyles();
 
-  if (problemListFetch.pending || userInfoFetch.pending) {
+  if (
+    problemListFetch.pending ||
+    userInfoFetch.pending ||
+    problemCategoriesFetch.pending
+  ) {
     return (
       <Box>
         <CircularProgress />
       </Box>
     );
   }
-  if (problemListFetch.rejected || userInfoFetch.rejected) {
+  if (
+    problemListFetch.rejected ||
+    userInfoFetch.rejected ||
+    problemCategoriesFetch.rejected
+  ) {
     console.error(problemListFetch.reason);
     console.error(userInfoFetch.reason);
     return (
@@ -71,7 +82,10 @@ const InnerProblems: React.FC<InnerProps> = (props) => {
     });
   }
 
-  const categories = getCategories(problemList);
+  const categories = getCategories(
+    problemList,
+    problemCategoriesFetch.value.getCategoriesList()
+  );
 
   return (
     <Box>
@@ -96,6 +110,14 @@ const BridgeProblem = connect<BridgeProps, InnerProps>((props) => ({
     comparison: null,
     value: () =>
       library_checker_client.problemList(new ProblemInfoRequest(), {}),
+  },
+  problemCategoriesFetch: {
+    comparison: null,
+    value: () =>
+      library_checker_client.problemCategories(
+        new ProblemCategoriesRequest(),
+        {}
+      ),
   },
   userInfoFetch: {
     comparison: null,
