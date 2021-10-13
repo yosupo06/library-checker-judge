@@ -1181,7 +1181,6 @@ func TestCreateProblem(t *testing.T) {
 
 func TestProblemCategories(t *testing.T) {
 	ctx := loginAsAdmin(t)
-
 	testData := []*pb.ProblemCategory{
 		{
 			Title:    "a",
@@ -1193,28 +1192,36 @@ func TestProblemCategories(t *testing.T) {
 		},
 	}
 
-	if _, err := client.ChangeProblemCategories(ctx, &pb.ChangeProblemCategoriesRequest{
-		Categories: testData,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	res, err := client.ProblemCategories(ctx, &pb.ProblemCategoriesRequest{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	expect := testData
-	actual := res.Categories
+	for phase := 0; phase <= 1; phase++ {
 
-	if len(expect) != len(actual) {
-		t.Fatal("len is differ")
-	}
+		if _, err := client.ChangeProblemCategories(ctx, &pb.ChangeProblemCategoriesRequest{
+			Categories: testData,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		res, err := client.ProblemCategories(ctx, &pb.ProblemCategoriesRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		expect := testData
+		actual := res.Categories
 
-	for i := 0; i < len(expect); i++ {
-		if expect[i].Title != actual[i].Title {
-			t.Fatal("title is differ")
+		if len(expect) != len(actual) {
+			t.Fatal("len is differ")
 		}
-		if !reflect.DeepEqual(expect[i].Problems, actual[i].Problems) {
-			t.Fatal("problems is differ")
+
+		for i := 0; i < len(expect); i++ {
+			if expect[i].Title != actual[i].Title {
+				t.Fatal("title is differ")
+			}
+			if !reflect.DeepEqual(expect[i].Problems, actual[i].Problems) {
+				t.Fatal("problems is differ")
+			}
 		}
+
+		testData = append(testData, &pb.ProblemCategory{
+			Title:    "c",
+			Problems: []string{"w"},
+		})
 	}
 }

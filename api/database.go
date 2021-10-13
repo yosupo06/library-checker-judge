@@ -125,7 +125,7 @@ func setMetadata(db *gorm.DB, key string, value string) error {
 	if key == "" {
 		return errors.New("key is empty")
 	}
-	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&Metadata{
+	if err := db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&Metadata{
 		Key:   key,
 		Value: value,
 	}).Error; err != nil {
