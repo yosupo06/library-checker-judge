@@ -21,6 +21,8 @@ service LibraryCheckerService {
     rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
     rpc LangList (LangListRequest) returns (LangListResponse) {}
     rpc Ranking (RankingRequest) returns (RankingResponse) {} // used by another product
+    rpc ProblemCategories (ProblemCategoriesRequest) returns (ProblemCategoriesResponse) {}
+    rpc ChangeProblemCategories (ChangeProblemCategoriesRequest) returns (ChangeProblemCategoriesResponse) {}
 
     // --- Judge ---
     rpc PopJudgeTask (PopJudgeTaskRequest) returns (PopJudgeTaskResponse) {}
@@ -114,6 +116,25 @@ message ChangeProblemInfoRequest {
 }
 message ChangeProblemInfoResponse {
 }
+
+// --- Category ---
+message ProblemCategory {
+    string title = 1; // "Data Structure"
+    repeated string problems = 2; // "[associative_array, unionfind, ...]"
+}
+
+message ProblemCategoriesRequest {
+}
+message ProblemCategoriesResponse {
+    repeated ProblemCategory categories = 1;
+}
+
+message ChangeProblemCategoriesRequest {
+    repeated ProblemCategory categories = 1;
+}
+message ChangeProblemCategoriesResponse {
+}
+
 
 // --- Submission ---
 

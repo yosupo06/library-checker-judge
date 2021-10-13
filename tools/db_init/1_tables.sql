@@ -48,3 +48,8 @@ create table submission_testcase_results (
   memory bigint,
   primary key(submission, testcase)
 );
+
+create table metadata (
+  key varchar(255) primary key,
+  value text
+);
