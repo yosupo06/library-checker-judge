@@ -4,6 +4,7 @@ steps:
     dir: deploy
     args: [./deploy.sh]
     env:
+      - 'ZONE=$_ZONE'
       - 'API_PASS=$_API_PASS'
       - 'MINIO_HOST=$_MINIO_HOST'
       - 'MINIO_ACCESS=$_MINIO_ACCESS'
