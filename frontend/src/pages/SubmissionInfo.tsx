@@ -3,6 +3,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
+  Button,
   makeStyles,
   Paper,
   Table,
@@ -14,18 +15,29 @@ import {
   Typography,
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
-import React from "react";
+import React, { useContext } from "react";
 import { connect, PromiseState } from "react-refetch";
 import { RouteComponentProps } from "react-router-dom";
-import library_checker_client from "../api/library_checker_client";
 import {
+  RejudgeRequest,
   SubmissionInfoRequest,
   SubmissionInfoResponse,
 } from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
 import Editor from "../components/Editor";
+import { AuthContext, AuthState } from "../contexts/AuthContext";
+import library_checker_client, {
+  authMetadata,
+} from "../api/library_checker_client";
 
-interface Props {
+interface OuterProps extends RouteComponentProps<{ submissionId: string }> {}
+
+interface BridgeProps {
+  submissionId: number;
+  authState: AuthState | null;
+}
+
+interface InnerProps extends BridgeProps {
   submissionInfoFetch: PromiseState<SubmissionInfoResponse>;
   fixSubmissionInfo: (value: SubmissionInfoResponse) => void;
 }
@@ -41,8 +53,8 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const SubmissionInfo: React.FC<Props> = (props) => {
-  const { submissionInfoFetch } = props;
+const InnerSubmissionInfo: React.FC<InnerProps> = (props) => {
+  const { submissionInfoFetch, submissionId, authState } = props;
   const classes = useStyles();
 
   if (submissionInfoFetch.pending) {
@@ -51,6 +63,19 @@ const SubmissionInfo: React.FC<Props> = (props) => {
   if (submissionInfoFetch.rejected) {
     return <h1>Error</h1>;
   }
+
+  const handleRejudge = (e: React.FormEvent) => {
+    e.preventDefault();
+    library_checker_client
+      .rejudge(
+        new RejudgeRequest().setId(submissionId),
+        (authState && authMetadata(authState)) ?? null
+      )
+      .then(() => {
+        console.log("Rejudge requested");
+      });
+  };
+
   const info = submissionInfoFetch.value;
   const compileError = new TextDecoder().decode(info.getCompileError_asU8());
   const overview = info.getOverview();
@@ -70,6 +95,13 @@ const SubmissionInfo: React.FC<Props> = (props) => {
         <Typography variant="h2" paragraph={true}>
           Submission Info #{overview?.getId()}
         </Typography>
+        {info.getCanRejudge() && (
+          <form onSubmit={(e) => handleRejudge(e)}>
+            <Button color="primary" type="submit">
+              Rejudge
+            </Button>
+          </form>
+        )}
         {overview && (
           <Paper>
             <SubmissionTable overviews={[overview]} />
@@ -140,24 +172,32 @@ const SubmissionInfo: React.FC<Props> = (props) => {
   );
 };
 
-export default connect<RouteComponentProps<{ submissionId: string }>, Props>(
-  (props) => ({
+const BridgeSubmissionInfo = connect<BridgeProps, InnerProps>((props) => ({
+  submissionInfoFetch: {
+    comparison: null,
+    refreshInterval: 2000,
+    value: () =>
+      library_checker_client.submissionInfo(
+        new SubmissionInfoRequest().setId(props.submissionId),
+        (props.authState && authMetadata(props.authState)) ?? null
+      ),
+  },
+  fixSubmissionInfo: (value: SubmissionInfoResponse) => ({
     submissionInfoFetch: {
-      comparison: null,
-      refreshInterval: 2000,
-      value: () =>
-        library_checker_client.submissionInfo(
-          new SubmissionInfoRequest().setId(
-            parseInt(props.match.params.submissionId)
-          ),
-          {}
-        ),
+      refreshing: true,
+      value: value,
     },
-    fixSubmissionInfo: (value: SubmissionInfoResponse) => ({
-      submissionInfoFetch: {
-        refreshing: true,
-        value: value,
-      },
-    }),
-  })
-)(SubmissionInfo);
+  }),
+}))(InnerSubmissionInfo);
+
+const OuterSubmissionInfo: React.FC<OuterProps> = (props: OuterProps) => {
+  const auth = useContext(AuthContext);
+
+  return (
+    <BridgeSubmissionInfo
+      submissionId={parseInt(props.match.params.submissionId)}
+      authState={auth ? auth.state : null}
+    />
+  );
+};
+export default OuterSubmissionInfo;
