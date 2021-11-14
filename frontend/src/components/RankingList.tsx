@@ -6,7 +6,7 @@ import library_checker_client from "../api/library_checker_client";
 import { RankingRequest } from "../api/library_checker_pb";
 
 const RankingList: React.FC = () => {
-  const rankingQuery = useQuery("langList", () =>
+  const rankingQuery = useQuery("ranking", () =>
     library_checker_client.ranking(new RankingRequest(), {})
   );
 

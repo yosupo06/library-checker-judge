@@ -33,6 +33,7 @@ const LangList: React.FC = () => {
       </Container>
     );
   }
+  const langList = langListQuery.data;
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -43,7 +44,7 @@ const LangList: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {langListQuery.data.getLangsList().map((row) => (
+          {langList.getLangsList().map((row) => (
             <TableRow key={row.getName()}>
               <TableCell>{row.getName()}</TableCell>
               <TableCell>{row.getVersion()}</TableCell>
