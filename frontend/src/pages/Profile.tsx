@@ -16,16 +16,13 @@ import {
 import React, { useContext, useState } from "react";
 import library_checker_client, {
   authMetadata,
+  useUserInfo,
 } from "../api/library_checker_client";
-import {
-  ChangeUserInfoRequest,
-  UserInfoRequest,
-} from "../api/library_checker_pb";
+import { ChangeUserInfoRequest } from "../api/library_checker_pb";
 import { RouteComponentProps } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
 import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
-import { useQuery } from "react-query";
 
 const useStyles = makeStyles((theme) => ({
   divider: {
@@ -40,17 +37,9 @@ const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
   const [libraryURL, setLibraryURL] = useState("");
 
   const userName = match.params.userId;
-  const userInfoQuery = useQuery(
-    ["userInfo", userName],
-    () =>
-      library_checker_client.userInfo(
-        new UserInfoRequest().setName(userName),
-        {}
-      ),
-    {
-      onSuccess: (data) => setLibraryURL(data.getUser()?.getLibraryUrl() ?? ""),
-    }
-  );
+  const userInfoQuery = useUserInfo(userName, {
+    onSuccess: (data) => setLibraryURL(data.getUser()?.getLibraryUrl() ?? ""),
+  });
 
   if (userInfoQuery.isLoading || userInfoQuery.isIdle) {
     return (

@@ -14,16 +14,14 @@ import {
   Typography,
 } from "@material-ui/core";
 import React from "react";
-import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-use";
-import library_checker_client from "../api/library_checker_client";
 import {
-  LangListRequest,
-  ProblemCategoriesRequest,
-  ProblemListRequest,
-  SubmissionListRequest,
-} from "../api/library_checker_pb";
+  useLangList,
+  useProblemCategories,
+  useProblemList,
+  useSubmissionList,
+} from "../api/library_checker_client";
 import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
@@ -70,38 +68,19 @@ const Submissions: React.FC = () => {
     pagesize: rowsPerPage.toString(),
   });
 
-  const langListQuery = useQuery("langList", () =>
-    library_checker_client.langList(new LangListRequest(), {})
-  );
-  const problemListQuery = useQuery("problemList", () =>
-    library_checker_client.problemList(new ProblemListRequest(), {})
-  );
-  const problemCategoriesQuery = useQuery("problemCategories", () =>
-    library_checker_client.problemCategories(new ProblemCategoriesRequest(), {})
-  );
-  const submissionListQuery = useQuery(
-    [
-      "submissionList",
-      initialProblemName,
-      initialUserName,
-      initialStatusFilter,
-      initialLangFilter,
-      initialSortOrder,
-      page,
-      rowsPerPage,
-    ],
-    () =>
-      library_checker_client.submissionList(
-        new SubmissionListRequest()
-          .setProblem(initialProblemName)
-          .setUser(initialUserName)
-          .setStatus(initialStatusFilter)
-          .setLang(initialLangFilter)
-          .setOrder(initialSortOrder)
-          .setSkip(page * rowsPerPage)
-          .setLimit(rowsPerPage),
-        {}
-      )
+  const langListQuery = useLangList();
+
+  const problemListQuery = useProblemList();
+  const problemCategoriesQuery = useProblemCategories();
+
+  const submissionListQuery = useSubmissionList(
+    initialProblemName,
+    initialUserName,
+    initialStatusFilter,
+    initialLangFilter,
+    initialSortOrder,
+    page * rowsPerPage,
+    rowsPerPage
   );
 
   if (

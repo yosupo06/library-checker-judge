@@ -1,14 +1,10 @@
 import { Box, Typography } from "@material-ui/core";
 import { GridColDef, DataGrid } from "@material-ui/data-grid";
 import React from "react";
-import { useQuery } from "react-query";
-import library_checker_client from "../api/library_checker_client";
-import { RankingRequest } from "../api/library_checker_pb";
+import { useRanking } from "../api/library_checker_client";
 
 const RankingList: React.FC = () => {
-  const rankingQuery = useQuery("ranking", () =>
-    library_checker_client.ranking(new RankingRequest(), {})
-  );
+  const rankingQuery = useRanking();
 
   if (rankingQuery.isLoading || rankingQuery.isIdle) {
     return (
