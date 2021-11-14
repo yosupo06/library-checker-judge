@@ -15,32 +15,19 @@ import {
   Typography,
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
-import React, { useContext } from "react";
-import { connect, PromiseState } from "react-refetch";
+import React, { useContext, useState } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import {
   RejudgeRequest,
   SubmissionInfoRequest,
-  SubmissionInfoResponse,
 } from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
 import Editor from "../components/Editor";
-import { AuthContext, AuthState } from "../contexts/AuthContext";
+import { AuthContext } from "../contexts/AuthContext";
 import library_checker_client, {
   authMetadata,
 } from "../api/library_checker_client";
-
-interface OuterProps extends RouteComponentProps<{ submissionId: string }> {}
-
-interface BridgeProps {
-  submissionId: number;
-  authState: AuthState | null;
-}
-
-interface InnerProps extends BridgeProps {
-  submissionInfoFetch: PromiseState<SubmissionInfoResponse>;
-  fixSubmissionInfo: (value: SubmissionInfoResponse) => void;
-}
+import { useQuery } from "react-query";
 
 const useStyles = makeStyles((theme) => ({
   overviewBox: {
@@ -53,14 +40,42 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const InnerSubmissionInfo: React.FC<InnerProps> = (props) => {
-  const { submissionInfoFetch, submissionId, authState } = props;
+const OuterSubmissionInfo: React.FC<
+  RouteComponentProps<{ submissionId: string }>
+> = (props) => {
   const classes = useStyles();
+  const auth = useContext(AuthContext);
 
-  if (submissionInfoFetch.pending) {
+  const submissionId = parseInt(props.match.params.submissionId);
+
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const submissionInfoQuery = useQuery(
+    ["submissionInfo", submissionId],
+    () =>
+      library_checker_client.submissionInfo(
+        new SubmissionInfoRequest().setId(submissionId),
+        (auth ? authMetadata(auth.state) : null) ?? null
+      ),
+    {
+      refetchInterval: autoRefresh ? 1000 : false,
+      onSuccess: () => {
+        const status = submissionInfoQuery.data?.getOverview()?.getStatus();
+        if (
+          status &&
+          new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(
+            status
+          )
+        ) {
+          setAutoRefresh(false);
+        }
+      },
+    }
+  );
+
+  if (submissionInfoQuery.isLoading || submissionInfoQuery.isIdle) {
     return <h1>Loading</h1>;
   }
-  if (submissionInfoFetch.rejected) {
+  if (submissionInfoQuery.isError) {
     return <h1>Error</h1>;
   }
 
@@ -69,25 +84,17 @@ const InnerSubmissionInfo: React.FC<InnerProps> = (props) => {
     library_checker_client
       .rejudge(
         new RejudgeRequest().setId(submissionId),
-        (authState && authMetadata(authState)) ?? null
+        (auth ? authMetadata(auth.state) : null) ?? null
       )
       .then(() => {
         console.log("Rejudge requested");
       });
   };
 
-  const info = submissionInfoFetch.value;
+  const info = submissionInfoQuery.data;
   const compileError = new TextDecoder().decode(info.getCompileError_asU8());
   const overview = info.getOverview();
-  const status = overview ? overview.getStatus() : undefined;
   const lang = overview ? overview.getLang() : undefined;
-
-  if (
-    status &&
-    new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(status)
-  ) {
-    props.fixSubmissionInfo(info);
-  }
 
   return (
     <Box>
@@ -172,32 +179,4 @@ const InnerSubmissionInfo: React.FC<InnerProps> = (props) => {
   );
 };
 
-const BridgeSubmissionInfo = connect<BridgeProps, InnerProps>((props) => ({
-  submissionInfoFetch: {
-    comparison: null,
-    refreshInterval: 2000,
-    value: () =>
-      library_checker_client.submissionInfo(
-        new SubmissionInfoRequest().setId(props.submissionId),
-        (props.authState && authMetadata(props.authState)) ?? null
-      ),
-  },
-  fixSubmissionInfo: (value: SubmissionInfoResponse) => ({
-    submissionInfoFetch: {
-      refreshing: true,
-      value: value,
-    },
-  }),
-}))(InnerSubmissionInfo);
-
-const OuterSubmissionInfo: React.FC<OuterProps> = (props: OuterProps) => {
-  const auth = useContext(AuthContext);
-
-  return (
-    <BridgeSubmissionInfo
-      submissionId={parseInt(props.match.params.submissionId)}
-      authState={auth ? auth.state : null}
-    />
-  );
-};
 export default OuterSubmissionInfo;

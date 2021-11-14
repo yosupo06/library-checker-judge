@@ -10,7 +10,6 @@ import {
   Typography,
 } from "@material-ui/core";
 import React, { useContext, useState } from "react";
-import { connect, PromiseState } from "react-refetch";
 import { Link, RouteComponentProps } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
@@ -18,9 +17,7 @@ import library_checker_client, {
 } from "../api/library_checker_client";
 import {
   LangListRequest,
-  LangListResponse,
   ProblemInfoRequest,
-  ProblemInfoResponse,
   SubmitRequest,
 } from "../api/library_checker_pb";
 import Editor from "../components/Editor";
@@ -28,11 +25,7 @@ import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import GitHubIcon from "@material-ui/icons/GitHub";
 import FlashOnIcon from "@material-ui/icons/FlashOn";
-
-interface Props extends RouteComponentProps<{ problemId: string }> {
-  problemInfoFetch: PromiseState<ProblemInfoResponse>;
-  langListFetch: PromiseState<LangListResponse>;
-}
+import { useQuery } from "react-query";
 
 const useStyles = makeStyles((theme) => ({
   divider: {
@@ -52,24 +45,41 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const ProblemInfo: React.FC<Props> = (props) => {
+const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
+  props
+) => {
   const classes = useStyles();
-  const { problemInfoFetch, history } = props;
+  const { history } = props;
   const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
   const [lang, setLang] = useLocalStorage("programming-lang", "");
 
-  if (problemInfoFetch.pending) {
+  const problemInfoQuery = useQuery(
+    ["problemInfo", props.match.params.problemId],
+    () =>
+      library_checker_client.problemInfo(
+        new ProblemInfoRequest().setName(props.match.params.problemId),
+        {}
+      )
+  );
+  const langListQuery = useQuery("langList", () =>
+    library_checker_client.langList(new LangListRequest(), {})
+  );
+
+  if (problemInfoQuery.isLoading || problemInfoQuery.isIdle) {
     return (
       <Box>
         <CircularProgress />
       </Box>
     );
   }
-  if (problemInfoFetch.rejected) {
+
+  if (problemInfoQuery.isError || langListQuery.isError) {
     return (
       <Box>
-        <Typography variant="body1">Error</Typography>
+        <Typography variant="body1">
+          Error : {problemInfoQuery.error} {langListQuery.error}
+        </Typography>
       </Box>
     );
   }
@@ -100,10 +110,10 @@ const ProblemInfo: React.FC<Props> = (props) => {
   return (
     <Box>
       <Typography variant="h2" paragraph={true}>
-        <KatexRender text={problemInfoFetch.value.getTitle()} />
+        <KatexRender text={problemInfoQuery.data.getTitle()} />
       </Typography>
       <Typography variant="body1" paragraph={true}>
-        Time Limit: {problemInfoFetch.value.getTimeLimit()} sec
+        Time Limit: {problemInfoQuery.data.getTimeLimit()} sec
       </Typography>
       <Button
         variant="contained"
@@ -123,13 +133,13 @@ const ProblemInfo: React.FC<Props> = (props) => {
         color="default"
         className={classes.button}
         startIcon={<GitHubIcon />}
-        href={problemInfoFetch.value.getSourceUrl()}
+        href={problemInfoQuery.data.getSourceUrl()}
       >
         Github
       </Button>
       <Divider className={classes.divider} />
 
-      <KatexRender text={problemInfoFetch.value.getStatement()} html={true} />
+      <KatexRender text={problemInfoQuery.data.getStatement()} html={true} />
 
       <form onSubmit={(e) => handleSubmit(e)}>
         <FormControl className={classes.editor}>
@@ -151,8 +161,8 @@ const ProblemInfo: React.FC<Props> = (props) => {
             onChange={(e) => setLang(e.target.value as string)}
           >
             <MenuItem value="">Lang</MenuItem>
-            {props.langListFetch.fulfilled &&
-              props.langListFetch.value.getLangsList().map((e) => (
+            {langListQuery.isSuccess &&
+              langListQuery.data.getLangsList().map((e) => (
                 <MenuItem key={e.getId()} value={e.getId()}>
                   {e.getName()}
                 </MenuItem>
@@ -166,20 +176,4 @@ const ProblemInfo: React.FC<Props> = (props) => {
     </Box>
   );
 };
-
-export default connect<RouteComponentProps<{ problemId: string }>, Props>(
-  (props) => ({
-    problemInfoFetch: {
-      comparison: null,
-      value: () =>
-        library_checker_client.problemInfo(
-          new ProblemInfoRequest().setName(props.match.params.problemId),
-          {}
-        ),
-    },
-    langListFetch: {
-      comparison: null,
-      value: () => library_checker_client.langList(new LangListRequest(), {}),
-    },
-  })
-)(ProblemInfo);
+export default ProblemInfo;

@@ -11,28 +11,28 @@ import { green } from "@material-ui/core/colors";
 import { DoneOutline } from "@material-ui/icons";
 import "katex/dist/katex.min.css";
 import React from "react";
-import { connect, PromiseState } from "react-refetch";
+import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
 import library_checker_client from "../api/library_checker_client";
-import {
-  LangListRequest,
-  LangListResponse,
-  SubmissionOverview,
-} from "../api/library_checker_pb";
+import { LangListRequest, SubmissionOverview } from "../api/library_checker_pb";
 import KatexRender from "./KatexRender";
 
-interface OuterProps {
+interface Props {
   overviews: SubmissionOverview[];
 }
-interface InnerProps {
-  overviews: SubmissionOverview[];
-  langListFetch: PromiseState<LangListResponse>;
-}
 
-const SubmissionTable: React.FC<InnerProps> = (props) => {
-  const { overviews, langListFetch } = props;
+const SubmissionTable: React.FC<Props> = (props) => {
+  const { overviews } = props;
 
-  if (!langListFetch.fulfilled) {
+  const langListQuery = useQuery("langList", () =>
+    library_checker_client.langList(new LangListRequest(), {})
+  );
+
+  if (
+    langListQuery.isLoading ||
+    langListQuery.isIdle ||
+    langListQuery.isError
+  ) {
     return (
       <TableContainer>
         <Table>
@@ -54,7 +54,7 @@ const SubmissionTable: React.FC<InnerProps> = (props) => {
       </TableContainer>
     );
   }
-  const idToName = langListFetch.value
+  const idToName = langListQuery.data
     .getLangsList()
     .reduce<{ [name: string]: string }>((dict, problem) => {
       dict[problem.getId()] = problem.getName();
@@ -117,9 +117,4 @@ const SubmissionTable: React.FC<InnerProps> = (props) => {
   );
 };
 
-export default connect<OuterProps, InnerProps>((props) => ({
-  langListFetch: {
-    comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest(), {}),
-  },
-}))(SubmissionTable);
+export default SubmissionTable;

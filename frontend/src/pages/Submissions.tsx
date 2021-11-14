@@ -14,42 +14,19 @@ import {
   Typography,
 } from "@material-ui/core";
 import React from "react";
-import { connect, PromiseState } from "react-refetch";
+import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-use";
 import library_checker_client from "../api/library_checker_client";
 import {
   LangListRequest,
-  LangListResponse,
   ProblemCategoriesRequest,
-  ProblemCategoriesResponse,
   ProblemListRequest,
-  ProblemListResponse,
   SubmissionListRequest,
-  SubmissionListResponse,
 } from "../api/library_checker_pb";
 import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
-
-interface OuterProps {}
-
-interface BridgeProps {
-  problem: string;
-  user: string;
-  status: string;
-  lang: string;
-  order: string;
-  page: number;
-  pageSize: number;
-}
-
-interface InnerProps extends BridgeProps {
-  langListFetch: PromiseState<LangListResponse>;
-  problemListFetch: PromiseState<ProblemListResponse>;
-  problemCategoriesFetch: PromiseState<ProblemCategoriesResponse>;
-  submissionListFetch: PromiseState<SubmissionListResponse>;
-}
 
 const useStyles = makeStyles((theme: Theme) => ({
   formControl: {
@@ -63,21 +40,25 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-const InnerSubmissions: React.FC<InnerProps> = (props) => {
-  const {
-    langListFetch,
-    problemListFetch,
-    problemCategoriesFetch,
-    submissionListFetch,
-  } = props;
+const Submissions: React.FC = () => {
+  const params = new URLSearchParams(useLocation().search);
   const classes = useStyles();
-  const [problemName, setProblemName] = React.useState(props.problem);
-  const [userName, setUserName] = React.useState(props.user);
-  const [statusFilter, setStatusFilter] = React.useState(props.status);
-  const [langFilter, setLangFilter] = React.useState(props.lang);
-  const [sortOrder, setSortOrder] = React.useState(props.order);
-  const [page, setPage] = React.useState(props.page);
-  const [rowsPerPage, setRowsPerPage] = React.useState(props.pageSize);
+
+  const initialProblemName = params.get("problem") ?? "";
+  const [problemName, setProblemName] = React.useState(initialProblemName);
+  const initialUserName = params.get("user") ?? "";
+  const [userName, setUserName] = React.useState(initialUserName);
+  const initialStatusFilter = params.get("status") ?? "";
+  const [statusFilter, setStatusFilter] = React.useState(initialStatusFilter);
+  const initialLangFilter = params.get("lang") ?? "";
+  const [langFilter, setLangFilter] = React.useState(initialLangFilter);
+  const initialSortOrder = params.get("order") ?? "-id";
+  const [sortOrder, setSortOrder] = React.useState(initialSortOrder);
+
+  const [page, setPage] = React.useState(parseInt(params.get("page") ?? "0"));
+  const [rowsPerPage, setRowsPerPage] = React.useState(
+    parseInt(params.get("pagesize") ?? "100")
+  );
 
   const searchParams = new URLSearchParams({
     problem: problemName,
@@ -86,13 +67,50 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
     lang: langFilter,
     order: sortOrder,
     page: page.toString(),
-    pageSize: rowsPerPage.toString(),
+    pagesize: rowsPerPage.toString(),
   });
 
+  const langListQuery = useQuery("langList", () =>
+    library_checker_client.langList(new LangListRequest(), {})
+  );
+  const problemListQuery = useQuery("problemList", () =>
+    library_checker_client.problemList(new ProblemListRequest(), {})
+  );
+  const problemCategoriesQuery = useQuery("problemCategories", () =>
+    library_checker_client.problemCategories(new ProblemCategoriesRequest(), {})
+  );
+  const submissionListQuery = useQuery(
+    [
+      "submissionList",
+      initialProblemName,
+      initialUserName,
+      initialStatusFilter,
+      initialLangFilter,
+      initialSortOrder,
+      page,
+      rowsPerPage,
+    ],
+    () =>
+      library_checker_client.submissionList(
+        new SubmissionListRequest()
+          .setProblem(initialProblemName)
+          .setUser(initialUserName)
+          .setStatus(initialStatusFilter)
+          .setLang(initialLangFilter)
+          .setOrder(initialSortOrder)
+          .setSkip(page * rowsPerPage)
+          .setLimit(rowsPerPage),
+        {}
+      )
+  );
+
   if (
-    langListFetch.pending ||
-    problemListFetch.pending ||
-    problemCategoriesFetch.pending
+    langListQuery.isLoading ||
+    langListQuery.isIdle ||
+    problemListQuery.isLoading ||
+    problemListQuery.isIdle ||
+    problemCategoriesQuery.isLoading ||
+    problemCategoriesQuery.isIdle
   ) {
     return (
       <Box>
@@ -104,9 +122,9 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
     );
   }
   if (
-    langListFetch.rejected ||
-    problemListFetch.rejected ||
-    problemCategoriesFetch.rejected
+    langListQuery.isError ||
+    problemListQuery.isError ||
+    problemCategoriesQuery.isError
   ) {
     return (
       <Box>
@@ -134,7 +152,7 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
   };
 
   const submissionList = (() => {
-    if (submissionListFetch.pending) {
+    if (submissionListQuery.isLoading || submissionListQuery.isIdle) {
       return (
         <Paper>
           <SubmissionTable overviews={[]} />
@@ -142,10 +160,10 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
         </Paper>
       );
     }
-    if (submissionListFetch.rejected) {
-      return <p>{submissionListFetch.reason}</p>;
+    if (submissionListQuery.isError) {
+      return <p>Error: {submissionListQuery.error}</p>;
     }
-    const value = submissionListFetch.value;
+    const value = submissionListQuery.data;
     return (
       <Paper>
         <SubmissionTable overviews={value.getSubmissionsList()} />
@@ -154,16 +172,16 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
           component="div"
           count={value.getCount()}
           page={page}
-          onChangePage={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
     );
   })();
 
   const categories = getCategories(
-    problemListFetch.value.getProblemsList(),
-    problemCategoriesFetch.value.getCategoriesList()
+    problemListQuery.data.getProblemsList(),
+    problemCategoriesQuery.data.getCategoriesList()
   );
 
   return (
@@ -215,8 +233,8 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
             onChange={(e) => setLangFilter(e.target.value as string)}
           >
             <MenuItem value="">Lang</MenuItem>
-            {langListFetch.fulfilled &&
-              langListFetch.value.getLangsList().map((e) => (
+            {langListQuery.isSuccess &&
+              langListQuery.data.getLangsList().map((e) => (
                 <MenuItem key={e.getId()} value={e.getId()}>
                   {e.getName()}
                 </MenuItem>
@@ -235,7 +253,10 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
         </FormControl>
         <Button variant="outlined" type="submit">
           <Link
-            to={`/submissions?${searchParams.toString()}`}
+            to={{
+              search: searchParams.toString(),
+            }}
+            onClick={() => submissionListQuery.remove()}
             className={classes.searchLink}
           >
             search
@@ -245,57 +266,6 @@ const InnerSubmissions: React.FC<InnerProps> = (props) => {
 
       {submissionList}
     </Box>
-  );
-};
-
-const BridgeSubmissions = connect<BridgeProps, InnerProps>((props) => ({
-  langListFetch: {
-    comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest(), {}),
-  },
-  problemListFetch: {
-    comparison: null,
-    value: () =>
-      library_checker_client.problemList(new ProblemListRequest(), {}),
-  },
-  problemCategoriesFetch: {
-    comparison: null,
-    value: () =>
-      library_checker_client.problemCategories(
-        new ProblemCategoriesRequest(),
-        {}
-      ),
-  },
-  submissionListFetch: {
-    comparison: `${props.problem}/${props.user}/${props.status}/${props.lang}/${props.order}/${props.page}/${props.pageSize}`,
-    value: () =>
-      library_checker_client.submissionList(
-        new SubmissionListRequest()
-          .setProblem(props.problem)
-          .setUser(props.user)
-          .setStatus(props.status)
-          .setLang(props.lang)
-          .setOrder(props.order)
-          .setSkip(props.page * props.pageSize)
-          .setLimit(props.pageSize),
-        {}
-      ),
-  },
-}))(InnerSubmissions);
-
-const Submissions: React.FC<OuterProps> = (props: OuterProps) => {
-  const params = new URLSearchParams(useLocation().search);
-  console.log("Yosupo");
-  return (
-    <BridgeSubmissions
-      user={params.get("user") ?? ""}
-      problem={params.get("problem") ?? ""}
-      status={params.get("status") ?? ""}
-      lang={params.get("lang") ?? ""}
-      order={params.get("order") ?? "-id"}
-      page={parseInt(params.get("page") ?? "0")}
-      pageSize={parseInt(params.get("page_size") ?? "100")}
-    />
   );
 };
 
