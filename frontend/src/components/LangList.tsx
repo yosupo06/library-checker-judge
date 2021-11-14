@@ -10,30 +10,26 @@ import {
   Typography,
 } from "@material-ui/core";
 import React from "react";
-import { connect, PromiseState } from "react-refetch";
+import { useQuery } from "react-query";
 import library_checker_client from "../api/library_checker_client";
-import { LangListRequest, LangListResponse } from "../api/library_checker_pb";
+import { LangListRequest } from "../api/library_checker_pb";
 
-interface OuterProps {}
+const LangList: React.FC = () => {
+  const langListQuery = useQuery("langList", () =>
+    library_checker_client.langList(new LangListRequest(), {})
+  );
 
-interface InnerProps {
-  langListFetch: PromiseState<LangListResponse>;
-}
-
-const LangList: React.FC<InnerProps> = (props) => {
-  const { langListFetch } = props;
-
-  if (langListFetch.pending) {
+  if (langListQuery.isLoading || langListQuery.isIdle) {
     return (
       <Container>
         <Typography>Loading...</Typography>
       </Container>
     );
   }
-  if (langListFetch.rejected) {
+  if (langListQuery.isError) {
     return (
       <Container>
-        <Typography>Error: {langListFetch.reason}</Typography>
+        <Typography>Error: {langListQuery.error}</Typography>
       </Container>
     );
   }
@@ -47,7 +43,7 @@ const LangList: React.FC<InnerProps> = (props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {langListFetch.value.getLangsList().map((row) => (
+          {langListQuery.data.getLangsList().map((row) => (
             <TableRow key={row.getName()}>
               <TableCell>{row.getName()}</TableCell>
               <TableCell>{row.getVersion()}</TableCell>
@@ -59,9 +55,4 @@ const LangList: React.FC<InnerProps> = (props) => {
   );
 };
 
-export default connect<OuterProps, InnerProps>(() => ({
-  langListFetch: {
-    comparison: null,
-    value: () => library_checker_client.langList(new LangListRequest(), {}),
-  },
-}))(LangList);
+export default LangList;

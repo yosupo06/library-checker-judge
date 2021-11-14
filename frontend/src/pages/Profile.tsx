@@ -14,32 +14,18 @@ import {
   Typography,
 } from "@material-ui/core";
 import React, { useContext, useState } from "react";
-import { connect, PromiseState } from "react-refetch";
 import library_checker_client, {
   authMetadata,
 } from "../api/library_checker_client";
 import {
   ChangeUserInfoRequest,
   UserInfoRequest,
-  UserInfoResponse,
-  User,
 } from "../api/library_checker_pb";
 import { RouteComponentProps } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
 import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
-import * as H from "history";
-
-interface OuterProps extends RouteComponentProps<{ userId: string }> {}
-
-interface InnerProps extends OuterProps {
-  userInfoFetch: PromiseState<UserInfoResponse>;
-}
-
-interface InnerProfileProps {
-  user: User;
-  history: H.History;
-}
+import { useQuery } from "react-query";
 
 const useStyles = makeStyles((theme) => ({
   divider: {
@@ -47,11 +33,42 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const InnerProfile: React.FC<InnerProfileProps> = (props) => {
-  const { user, history } = props;
+const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
   const classes = useStyles();
-  const [libraryURL, setLibraryURL] = useState(user.getLibraryUrl());
+  const { history, match } = props;
   const auth = useContext(AuthContext);
+  const [libraryURL, setLibraryURL] = useState("");
+
+  const userName = match.params.userId;
+  const userInfoQuery = useQuery(
+    ["userInfo", userName],
+    () =>
+      library_checker_client.userInfo(
+        new UserInfoRequest().setName(userName),
+        {}
+      ),
+    {
+      onSuccess: (data) => setLibraryURL(data.getUser()?.getLibraryUrl() ?? ""),
+    }
+  );
+
+  if (userInfoQuery.isLoading || userInfoQuery.isIdle) {
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (userInfoQuery.isError) {
+    return <NotFound />;
+  }
+
+  const userInfo = userInfoQuery.data;
+  const user = userInfo.getUser();
+
+  if (!user) {
+    return <NotFound />;
+  }
 
   const showUser = user.getName();
 
@@ -134,37 +151,4 @@ const InnerProfile: React.FC<InnerProfileProps> = (props) => {
   );
 };
 
-const Profile: React.FC<InnerProps> = (props) => {
-  const { userInfoFetch, history } = props;
-
-  if (userInfoFetch.pending) {
-    return (
-      <Box>
-        <CircularProgress />
-      </Box>
-    );
-  }
-  if (userInfoFetch.rejected) {
-    return <NotFound />;
-  }
-
-  const userInfo = userInfoFetch.value;
-  const user = userInfo.getUser();
-
-  if (!user) {
-    return <NotFound />;
-  }
-
-  return <InnerProfile user={user} history={history} />;
-};
-
-export default connect<OuterProps, InnerProps>((props) => ({
-  userInfoFetch: {
-    comparison: null,
-    value: () =>
-      library_checker_client.userInfo(
-        new UserInfoRequest().setName(props.match.params.userId),
-        {}
-      ),
-  },
-}))(Profile);
+export default Profile;

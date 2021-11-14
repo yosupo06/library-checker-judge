@@ -1,10 +1,10 @@
 import {
   Container,
-  createMuiTheme,
   makeStyles,
   ThemeProvider,
   Toolbar,
 } from "@material-ui/core";
+import { createTheme } from "@material-ui/core/styles";
 import React, { useEffect, useReducer } from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./App.css";
@@ -23,8 +23,8 @@ import { CssBaseline } from "@material-ui/core";
 import { grey } from "@material-ui/core/colors";
 import NotFound from "./pages/NotFound";
 import Register from "./pages/Register";
-
-const theme = createMuiTheme({
+import { QueryClient, QueryClientProvider } from "react-query";
+const theme = createTheme({
   typography: {
     button: {
       textTransform: "none",
@@ -48,6 +48,8 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(4),
   },
 }));
+
+const queryClient = new QueryClient();
 
 function App(): JSX.Element {
   const classes = useStyles();
@@ -88,36 +90,38 @@ function App(): JSX.Element {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthContext.Provider
-        value={{ state: authState, dispatch: authDispatch }}
-      >
-        <LangContext.Provider
-          value={{ state: langState, dispatch: langDispatch }}
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider
+          value={{ state: authState, dispatch: authDispatch }}
         >
-          <Router>
-            <NavBar />
-            <Toolbar />
+          <LangContext.Provider
+            value={{ state: langState, dispatch: langDispatch }}
+          >
+            <Router>
+              <NavBar />
+              <Toolbar />
 
-            <Container className={classes.root}>
-              <Switch>
-                <Route exact path="/" component={Problems} />
-                <Route path="/problem/:problemId" component={ProblemInfo} />
-                <Route exact path="/submissions" component={Submissions} />
-                <Route
-                  path="/submission/:submissionId"
-                  component={SubmissionInfo}
-                />
-                <Route exact path="/ranking" component={Ranking} />
-                <Route exact path="/help" component={Help} />
-                <Route exact path="/login" component={Login} />
-                <Route exact path="/register" component={Register} />
-                <Route path="/user/:userId" component={Profile} />
-                <Route component={NotFound} />
-              </Switch>
-            </Container>
-          </Router>
-        </LangContext.Provider>
-      </AuthContext.Provider>
+              <Container className={classes.root}>
+                <Switch>
+                  <Route exact path="/" component={Problems} />
+                  <Route path="/problem/:problemId" component={ProblemInfo} />
+                  <Route exact path="/submissions" component={Submissions} />
+                  <Route
+                    path="/submission/:submissionId"
+                    component={SubmissionInfo}
+                  />
+                  <Route exact path="/ranking" component={Ranking} />
+                  <Route exact path="/help" component={Help} />
+                  <Route exact path="/login" component={Login} />
+                  <Route exact path="/register" component={Register} />
+                  <Route path="/user/:userId" component={Profile} />
+                  <Route component={NotFound} />
+                </Switch>
+              </Container>
+            </Router>
+          </LangContext.Provider>
+        </AuthContext.Provider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

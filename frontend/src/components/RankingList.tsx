@@ -1,29 +1,26 @@
 import { Box, Typography } from "@material-ui/core";
 import { GridColDef, DataGrid } from "@material-ui/data-grid";
 import React from "react";
-import { connect, PromiseState } from "react-refetch";
+import { useQuery } from "react-query";
 import library_checker_client from "../api/library_checker_client";
-import { RankingRequest, RankingResponse } from "../api/library_checker_pb";
+import { RankingRequest } from "../api/library_checker_pb";
 
-interface OuterProps {}
-interface InnerProps {
-  rankingFetch: PromiseState<RankingResponse>;
-}
+const RankingList: React.FC = () => {
+  const rankingQuery = useQuery("langList", () =>
+    library_checker_client.ranking(new RankingRequest(), {})
+  );
 
-const RankingList: React.FC<InnerProps> = (props) => {
-  const { rankingFetch } = props;
-
-  if (rankingFetch.pending) {
+  if (rankingQuery.isLoading || rankingQuery.isIdle) {
     return (
       <Box>
         <Typography>Loading...</Typography>
       </Box>
     );
   }
-  if (rankingFetch.rejected) {
+  if (rankingQuery.isError) {
     return (
       <Box>
-        <Typography>Error: {rankingFetch.reason.message}</Typography>
+        <Typography>Error: {rankingQuery.error}</Typography>
       </Box>
     );
   }
@@ -32,7 +29,7 @@ const RankingList: React.FC<InnerProps> = (props) => {
     { field: "name", headerName: "ID", width: 130 },
     { field: "count", headerName: "AC Count" },
   ];
-  const rows = rankingFetch.value.getStatisticsList().map((e, index) => {
+  const rows = rankingQuery.data.getStatisticsList().map((e, index) => {
     return {
       id: index,
       name: e.getName(),
@@ -46,9 +43,4 @@ const RankingList: React.FC<InnerProps> = (props) => {
   );
 };
 
-export default connect<OuterProps, InnerProps>(() => ({
-  rankingFetch: {
-    comparison: null,
-    value: () => library_checker_client.ranking(new RankingRequest(), {}),
-  },
-}))(RankingList);
+export default RankingList;
