@@ -34,16 +34,21 @@
     "eject": "react-scripts eject",
     "prettier": "prettier --write \"src/**/*.{ts,js,tsx,jsx}\"",
     "prettier:check": "prettier --check \"src/**/*.{ts,js,tsx,jsx}\"",
-    "lint": "eslint --max-warnings 0 \"src/**/*.{ts,js,tsx,jsx}\"",
-    "lint:fix": "eslint --fix \"src/**/*.{ts,js,tsx,jsx}\""
+    "lint": "eslint --max-warnings 0 src --ext .ts,.js,.tsx,.jsx",
+    "lint:fix": "eslint --fix src --ext .ts,.js,.tsx,.jsx"
   },
   "eslintConfig": {
     "env": {
       "browser": true
     },
+    "plugins": [
+      "@typescript-eslint",
+      "unused-imports"
+    ],
     "extends": [
       "react-app",
       "react-app/jest",
+      "eslint:recommended",
       "plugin:@typescript-eslint/recommended"
     ],
     "ignorePatterns": [
@@ -59,7 +64,8 @@
       ]
     },
     "rules": {
-      "@typescript-eslint/no-empty-interface": "off"
+      "@typescript-eslint/no-empty-interface": "off",
+      "unused-imports/no-unused-imports": "error"
     }
   },
   "browserslist": {
@@ -80,6 +86,7 @@
     "@typescript-eslint/eslint-plugin": "^4.3.1",
     "grpc-tools": "^1.11.2",
     "grpc_tools_node_protoc_ts": "^5.3.2",
-    "prettier": "^2.4.1"
+    "prettier": "^2.4.1",
+    "eslint-plugin-unused-imports": "^2.0.0"
   }
 }
