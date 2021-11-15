@@ -10,14 +10,10 @@ import {
   Typography,
 } from "@material-ui/core";
 import React from "react";
-import { useQuery } from "react-query";
-import library_checker_client from "../api/library_checker_client";
-import { LangListRequest } from "../api/library_checker_pb";
+import { useLangList } from "../api/library_checker_client";
 
 const LangList: React.FC = () => {
-  const langListQuery = useQuery("langList", () =>
-    library_checker_client.langList(new LangListRequest(), {})
-  );
+  const langListQuery = useLangList();
 
   if (langListQuery.isLoading || langListQuery.isIdle) {
     return (

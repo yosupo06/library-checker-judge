@@ -11,10 +11,9 @@ import { green } from "@material-ui/core/colors";
 import { DoneOutline } from "@material-ui/icons";
 import "katex/dist/katex.min.css";
 import React from "react";
-import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
-import library_checker_client from "../api/library_checker_client";
-import { LangListRequest, SubmissionOverview } from "../api/library_checker_pb";
+import { useLangList } from "../api/library_checker_client";
+import { SubmissionOverview } from "../api/library_checker_pb";
 import KatexRender from "./KatexRender";
 
 interface Props {
@@ -24,9 +23,7 @@ interface Props {
 const SubmissionTable: React.FC<Props> = (props) => {
   const { overviews } = props;
 
-  const langListQuery = useQuery("langList", () =>
-    library_checker_client.langList(new LangListRequest(), {})
-  );
+  const langListQuery = useLangList();
 
   if (
     langListQuery.isLoading ||

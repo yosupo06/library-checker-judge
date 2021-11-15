@@ -7,14 +7,12 @@ import {
 } from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
 import React, { useContext } from "react";
-import { useQuery } from "react-query";
-import library_checker_client from "../api/library_checker_client";
 import {
-  ProblemCategoriesRequest,
-  ProblemListRequest,
-  SolvedStatus,
-  UserInfoRequest,
-} from "../api/library_checker_pb";
+  useProblemCategories,
+  useProblemList,
+  useUserInfo,
+} from "../api/library_checker_client";
+import { SolvedStatus } from "../api/library_checker_pb";
 import ProblemList from "../components/ProblemList";
 import { AuthContext } from "../contexts/AuthContext";
 import { getCategories } from "../utils/ProblemCategory";
@@ -29,28 +27,17 @@ const useStyles = makeStyles((theme) => ({
 const Problems: React.FC = () => {
   const classes = useStyles();
   const auth = useContext(AuthContext);
-  const userName = auth?.state.user ?? "";
-  const problemListQuery = useQuery("problemList", () =>
-    library_checker_client.problemList(new ProblemListRequest(), {})
-  );
-  const problemCategoriesQuery = useQuery("problemCategories", () =>
-    library_checker_client.problemCategories(new ProblemCategoriesRequest(), {})
-  );
 
-  const userInfoQuery = useQuery(["userInfo", userName], () =>
-    userName
-      ? library_checker_client.userInfo(
-          new UserInfoRequest().setName(userName),
-          {}
-        )
-      : null
-  );
+  const problemListQuery = useProblemList();
+  const problemCategoriesQuery = useProblemCategories();
+  const userName = auth?.state.user ?? "";
+  const userInfoQuery = useUserInfo(userName, {
+    enabled: userName !== "",
+  });
 
   if (
     problemListQuery.isLoading ||
     problemListQuery.isIdle ||
-    userInfoQuery.isLoading ||
-    userInfoQuery.isIdle ||
     problemCategoriesQuery.isLoading ||
     problemCategoriesQuery.isIdle
   ) {

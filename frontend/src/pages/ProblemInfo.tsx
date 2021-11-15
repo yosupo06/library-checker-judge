@@ -14,18 +14,15 @@ import { Link, RouteComponentProps } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata,
+  useLangList,
+  useProblemInfo,
 } from "../api/library_checker_client";
-import {
-  LangListRequest,
-  ProblemInfoRequest,
-  SubmitRequest,
-} from "../api/library_checker_pb";
+import { SubmitRequest } from "../api/library_checker_pb";
 import Editor from "../components/Editor";
 import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import GitHubIcon from "@material-ui/icons/GitHub";
 import FlashOnIcon from "@material-ui/icons/FlashOn";
-import { useQuery } from "react-query";
 
 const useStyles = makeStyles((theme) => ({
   divider: {
@@ -54,17 +51,8 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
   const [source, setSource] = useState("");
   const [lang, setLang] = useLocalStorage("programming-lang", "");
 
-  const problemInfoQuery = useQuery(
-    ["problemInfo", props.match.params.problemId],
-    () =>
-      library_checker_client.problemInfo(
-        new ProblemInfoRequest().setName(props.match.params.problemId),
-        {}
-      )
-  );
-  const langListQuery = useQuery("langList", () =>
-    library_checker_client.langList(new LangListRequest(), {})
-  );
+  const problemInfoQuery = useProblemInfo(props.match.params.problemId);
+  const langListQuery = useLangList();
 
   if (problemInfoQuery.isLoading || problemInfoQuery.isIdle) {
     return (
