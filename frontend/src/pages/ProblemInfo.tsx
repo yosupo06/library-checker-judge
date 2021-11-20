@@ -1,14 +1,12 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  FormControl,
-  makeStyles,
-  MenuItem,
-  Select,
-  Typography,
-} from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import { makeStyles } from "@material-ui/core";
 import React, { useContext, useState } from "react";
 import { Link, RouteComponentProps } from "react-router-dom";
 import { useLocalStorage } from "react-use";
@@ -105,7 +103,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
       </Typography>
       <Button
         variant="contained"
-        color="default"
+        color="info"
         className={classes.button}
         startIcon={<FlashOnIcon />}
       >
@@ -118,7 +116,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
       </Button>
       <Button
         variant="contained"
-        color="default"
+        color="info"
         className={classes.button}
         startIcon={<GitHubIcon />}
         href={problemInfoQuery.data.getSourceUrl()}

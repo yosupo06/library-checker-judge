@@ -1,11 +1,9 @@
-import {
-  Box,
-  CircularProgress,
-  Link,
-  makeStyles,
-  Typography,
-} from "@material-ui/core";
-import { Alert } from "@material-ui/lab";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
+import Link from "@mui/material/Link";
+import { makeStyles } from "@material-ui/core";
 import React, { useContext } from "react";
 import {
   useProblemCategories,

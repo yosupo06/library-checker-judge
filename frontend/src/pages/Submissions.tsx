@@ -1,18 +1,15 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  ListSubheader,
-  makeStyles,
-  MenuItem,
-  Paper,
-  Select,
-  TablePagination,
-  TextField,
-  Theme,
-  Typography,
-} from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Paper from "@mui/material/Paper";
+import TablePagination from "@mui/material/TablePagination";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import ListSubheader from "@mui/material/ListSubheader";
+import { makeStyles, Theme } from "@material-ui/core";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-use";

@@ -1,4 +1,6 @@
-import { Box, makeStyles, Typography } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import React from "react";
 import JudgeStatusList from "../components/JudgeStatusList";
 import LangList from "../components/LangList";
@@ -10,7 +12,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Help: React.FC = (props) => {
+const Help: React.FC = () => {
   const classes = useStyles();
 
   return (

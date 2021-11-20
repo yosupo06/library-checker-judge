@@ -1,7 +1,8 @@
-import { Box, Typography } from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import React from "react";
 
-const NotFound: React.FC = (props) => {
+const NotFound: React.FC = () => {
   return (
     <Box>
       <Typography variant="h2">404 Not Found</Typography>

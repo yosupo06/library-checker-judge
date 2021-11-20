@@ -1,5 +1,6 @@
-import { Box, Typography } from "@material-ui/core";
-import { GridColDef, DataGrid } from "@material-ui/data-grid";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import React from "react";
 import { useRanking } from "../api/library_checker_client";
 

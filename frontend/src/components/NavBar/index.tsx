@@ -1,16 +1,14 @@
-import {
-  AppBar,
-  Box,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  makeStyles,
-  MenuItem,
-  Popover,
-  Select,
-  Toolbar,
-} from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Popover from "@mui/material/Popover";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import { makeStyles } from "@material-ui/core";
 import { GitHub } from "@material-ui/icons";
 import React, { useContext } from "react";
 import { Link, RouteComponentProps, withRouter } from "react-router-dom";
@@ -62,7 +60,10 @@ const NavBar = (props: RouteComponentProps) => {
           payload: (e.target.value as string) === "ja" ? "ja" : "en",
         })
       }
-      className={classes.langSelect}
+      sx={{
+        ml: "auto",
+        mr: 0.2
+      }}
     >
       <MenuItem value="en">
         <img src={flagUS} alt="us" height="20px"></img>
@@ -135,12 +136,22 @@ const NavBar = (props: RouteComponentProps) => {
 
   return (
     <AppBar position="static">
-      <Toolbar>
+      <Toolbar sx={{
+        "a": {
+          textDecoration: "none"
+        }
+      }}>
         <List>
           <ListItem>
             <ListItemText>
-              <Button color="inherit" className={classes.navbarTop}>
-                <Link to="/" className={classes.navbarTopLink}>
+              <Button color="inherit" sx={{
+                color: "inherit",
+                textDecoration: "none",
+                textTransform: "none",
+                fontSize: "16px",
+                fontWeight: "bolder",
+              }}>
+                <Link to="/">
                   Library Checker
                 </Link>
               </Button>
