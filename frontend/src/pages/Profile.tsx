@@ -10,7 +10,6 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
-import { makeStyles } from "@material-ui/core";
 import React, { useContext, useState } from "react";
 import library_checker_client, {
   authMetadata,
@@ -20,16 +19,9 @@ import { ChangeUserInfoRequest } from "../api/library_checker_pb";
 import { RouteComponentProps } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
-import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
-
-const useStyles = makeStyles((theme) => ({
-  divider: {
-    margin: theme.spacing(1),
-  },
-}));
+import { LibraryBooks } from "@mui/icons-material";
 
 const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
-  const classes = useStyles();
   const { history, match } = props;
   const auth = useContext(AuthContext);
   const [libraryURL, setLibraryURL] = useState("");
@@ -82,14 +74,14 @@ const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
 
   const form = (
     <Box>
-      <Divider className={classes.divider} />
+      <Divider />
       <Typography variant="h4">Setting</Typography>
       <form onSubmit={(e) => handleSubmit(e)}>
         <List>
           <ListItem>
             <ListItemAvatar>
               <Avatar>
-                <LibraryBooksIcon />
+                <LibraryBooks />
               </Avatar>
             </ListItemAvatar>
             <ListItemText
@@ -118,7 +110,7 @@ const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
         <ListItem>
           <ListItemAvatar>
             <Avatar>
-              <LibraryBooksIcon />
+              <LibraryBooks />
             </Avatar>
           </ListItemAvatar>
           <ListItemText

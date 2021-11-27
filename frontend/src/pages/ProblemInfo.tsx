@@ -19,8 +19,7 @@ import { SubmitRequest } from "../api/library_checker_pb";
 import Editor from "../components/Editor";
 import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
-import GitHubIcon from "@material-ui/icons/GitHub";
-import FlashOnIcon from "@material-ui/icons/FlashOn";
+import { GitHub, FlashOn } from "@mui/icons-material";
 
 const useStyles = makeStyles((theme) => ({
   divider: {
@@ -105,7 +104,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
         variant="contained"
         color="info"
         className={classes.button}
-        startIcon={<FlashOnIcon />}
+        startIcon={<FlashOn />}
       >
         <Link
           to={`/submissions/?${fastestParams.toString()}`}
@@ -118,7 +117,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
         variant="contained"
         color="info"
         className={classes.button}
-        startIcon={<GitHubIcon />}
+        startIcon={<GitHub />}
         href={problemInfoQuery.data.getSourceUrl()}
       >
         Github
