@@ -1,18 +1,15 @@
-import {
-  Avatar,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  Link,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  makeStyles,
-  TextField,
-  Typography,
-} from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Avatar from "@mui/material/Avatar";
+import Divider from "@mui/material/Divider";
+import Link from "@mui/material/Link";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemText from "@mui/material/ListItemText";
 import React, { useContext, useState } from "react";
 import library_checker_client, {
   authMetadata,
@@ -22,16 +19,9 @@ import { ChangeUserInfoRequest } from "../api/library_checker_pb";
 import { RouteComponentProps } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
-import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
-
-const useStyles = makeStyles((theme) => ({
-  divider: {
-    margin: theme.spacing(1),
-  },
-}));
+import { LibraryBooks } from "@mui/icons-material";
 
 const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
-  const classes = useStyles();
   const { history, match } = props;
   const auth = useContext(AuthContext);
   const [libraryURL, setLibraryURL] = useState("");
@@ -84,14 +74,14 @@ const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
 
   const form = (
     <Box>
-      <Divider className={classes.divider} />
+      <Divider />
       <Typography variant="h4">Setting</Typography>
       <form onSubmit={(e) => handleSubmit(e)}>
         <List>
           <ListItem>
             <ListItemAvatar>
               <Avatar>
-                <LibraryBooksIcon />
+                <LibraryBooks />
               </Avatar>
             </ListItemAvatar>
             <ListItemText
@@ -120,7 +110,7 @@ const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
         <ListItem>
           <ListItemAvatar>
             <Avatar>
-              <LibraryBooksIcon />
+              <LibraryBooks />
             </Avatar>
           </ListItemAvatar>
           <ListItemText

@@ -1,14 +1,12 @@
-import {
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from "@material-ui/core";
-import { green } from "@material-ui/core/colors";
-import { DoneOutline } from "@material-ui/icons";
+import CircularProgress from "@mui/material/CircularProgress";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import { green } from "@mui/material/colors";
+import { DoneOutline } from "@mui/icons-material";
 import "katex/dist/katex.min.css";
 import React from "react";
 import { Link } from "react-router-dom";

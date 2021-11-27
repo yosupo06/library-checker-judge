@@ -1,18 +1,14 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  ListSubheader,
-  makeStyles,
-  MenuItem,
-  Paper,
-  Select,
-  TablePagination,
-  TextField,
-  Theme,
-  Typography,
-} from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Paper from "@mui/material/Paper";
+import TablePagination from "@mui/material/TablePagination";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import ListSubheader from "@mui/material/ListSubheader";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-use";
@@ -25,22 +21,23 @@ import {
 import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
+import { styled } from "@mui/system";
 
-const useStyles = makeStyles((theme: Theme) => ({
-  formControl: {
-    margin: theme.spacing(1),
-    verticalAlign: "bottom",
-    minWidth: 120,
-  },
-  searchLink: {
-    color: "inherit",
-    textDecoration: "none",
-  },
-}));
+const FilterFormControl = styled(FormControl)({
+  margin: 1,
+  verticalAlign: "bottom",
+  minWidth: "120px",
+});
+
+const PlainLink = styled(Link)({
+  color: "inherit",
+  textDecoration: "none",
+  textTransform: "none",
+});
 
 const Submissions: React.FC = () => {
-  const params = new URLSearchParams(useLocation().search);
-  const classes = useStyles();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
 
   const initialProblemName = params.get("problem") ?? "";
   const [problemName, setProblemName] = React.useState(initialProblemName);
@@ -169,7 +166,7 @@ const Submissions: React.FC = () => {
         Submission List
       </Typography>
       <Box>
-        <FormControl className={classes.formControl}>
+        <FilterFormControl variant="standard">
           <Select
             value={problemName}
             displayEmpty
@@ -186,16 +183,17 @@ const Submissions: React.FC = () => {
               )
             )}
           </Select>
-        </FormControl>
-        <FormControl className={classes.formControl}>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <TextField
+            variant="standard"
             label="User Name"
             value={userName}
             autoComplete="off"
             onChange={(e) => setUserName(e.target.value)}
           />
-        </FormControl>
-        <FormControl className={classes.formControl}>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <Select
             value={statusFilter}
             displayEmpty
@@ -204,8 +202,8 @@ const Submissions: React.FC = () => {
             <MenuItem value="">Status</MenuItem>
             <MenuItem value="AC">AC</MenuItem>
           </Select>
-        </FormControl>
-        <FormControl className={classes.formControl}>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <Select
             value={langFilter}
             displayEmpty
@@ -219,8 +217,8 @@ const Submissions: React.FC = () => {
                 </MenuItem>
               ))}
           </Select>
-        </FormControl>
-        <FormControl className={classes.formControl}>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <Select
             value={sortOrder}
             displayEmpty
@@ -229,17 +227,16 @@ const Submissions: React.FC = () => {
             <MenuItem value="-id">Sort</MenuItem>
             <MenuItem value="+time">Time</MenuItem>
           </Select>
-        </FormControl>
+        </FilterFormControl>
         <Button variant="outlined" type="submit">
-          <Link
+          <PlainLink
             to={{
               search: searchParams.toString(),
             }}
             onClick={() => submissionListQuery.remove()}
-            className={classes.searchLink}
           >
             search
-          </Link>
+          </PlainLink>
         </Button>
       </Box>
 

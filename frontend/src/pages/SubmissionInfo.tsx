@@ -1,20 +1,17 @@
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  Button,
-  makeStyles,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@material-ui/core";
-import { ExpandMore } from "@material-ui/icons";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import { ExpandMore } from "@mui/icons-material";
 import React, { useContext, useState } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import {
@@ -29,21 +26,9 @@ import library_checker_client, {
 } from "../api/library_checker_client";
 import { useQuery } from "react-query";
 
-const useStyles = makeStyles((theme) => ({
-  overviewBox: {
-    marginBottom: theme.spacing(0.2),
-  },
-  compileErrorText: {
-    whiteSpace: "pre",
-    fontSize: "11px",
-    width: "100%",
-  },
-}));
-
 const OuterSubmissionInfo: React.FC<
   RouteComponentProps<{ submissionId: string }>
 > = (props) => {
-  const classes = useStyles();
   const auth = useContext(AuthContext);
 
   const submissionId = parseInt(props.match.params.submissionId);
@@ -98,7 +83,7 @@ const OuterSubmissionInfo: React.FC<
 
   return (
     <Box>
-      <Box className={classes.overviewBox}>
+      <Box>
         <Typography variant="h2" paragraph={true}>
           Submission Info #{overview?.getId()}
         </Typography>
@@ -121,7 +106,7 @@ const OuterSubmissionInfo: React.FC<
                 <Typography>Compile Error</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <pre className={classes.compileErrorText}>{compileError}</pre>
+                <pre>{compileError}</pre>
               </AccordionDetails>
             </Accordion>
           </Paper>

@@ -1,9 +1,6 @@
-import {
-  Container,
-  makeStyles,
-  ThemeProvider,
-  Toolbar,
-} from "@material-ui/core";
+import Container from "@mui/material/Container";
+import Toolbar from "@mui/material/Toolbar";
+import { makeStyles, ThemeProvider } from "@material-ui/core";
 import { createTheme } from "@material-ui/core/styles";
 import React, { useEffect, useReducer } from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";

@@ -1,23 +1,15 @@
-import { Box, makeStyles, Typography } from "@material-ui/core";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import React from "react";
 import JudgeStatusList from "../components/JudgeStatusList";
 import LangList from "../components/LangList";
 
-const useStyles = makeStyles((theme) => ({
-  paragraph: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-  },
-}));
-
-const Help: React.FC = (props) => {
-  const classes = useStyles();
-
+const Help: React.FC = () => {
   return (
     <Box>
       <Typography variant="h2">Help</Typography>
 
-      <Box className={classes.paragraph}>
+      <Box>
         <Typography variant="h3" paragraph={true}>
           Terms and conditions
         </Typography>
@@ -39,7 +31,7 @@ const Help: React.FC = (props) => {
         </Typography>
       </Box>
 
-      <Box className={classes.paragraph}>
+      <Box>
         <Typography variant="h3">Lang List</Typography>
         <LangList />
         <Typography variant="body1" paragraph={true}>
@@ -55,12 +47,12 @@ const Help: React.FC = (props) => {
         </Typography>
       </Box>
 
-      <Box className={classes.paragraph}>
+      <Box>
         <Typography variant="h3">Judge Status</Typography>
         <JudgeStatusList />
       </Box>
 
-      <Box className={classes.paragraph}>
+      <Box>
         <Typography variant="h3">Tips</Typography>
         <Typography variant="body1" paragraph={true}>
           Memory Limit is an 1G for all problems. Stack Size Limit is unlimited.

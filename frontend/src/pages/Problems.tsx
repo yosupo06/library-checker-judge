@@ -1,11 +1,8 @@
-import {
-  Box,
-  CircularProgress,
-  Link,
-  makeStyles,
-  Typography,
-} from "@material-ui/core";
-import { Alert } from "@material-ui/lab";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import Alert from "@mui/material/Alert";
+import Link from "@mui/material/Link";
 import React, { useContext } from "react";
 import {
   useProblemCategories,
@@ -17,15 +14,7 @@ import ProblemList from "../components/ProblemList";
 import { AuthContext } from "../contexts/AuthContext";
 import { getCategories } from "../utils/ProblemCategory";
 
-const useStyles = makeStyles((theme) => ({
-  category: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-  },
-}));
-
 const Problems: React.FC = () => {
-  const classes = useStyles();
   const auth = useContext(AuthContext);
 
   const problemListQuery = useProblemList();
@@ -89,7 +78,7 @@ const Problems: React.FC = () => {
       </Alert>
       <Box>
         {categories.map((category) => (
-          <Box className={classes.category}>
+          <Box>
             <Typography variant="h3">{category.name}</Typography>
             <ProblemList
               problems={category.problems.map((problem) => ({
