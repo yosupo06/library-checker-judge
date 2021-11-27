@@ -6,9 +6,8 @@ import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import { makeStyles } from "@material-ui/core";
 import React, { useContext, useState } from "react";
-import { Link, RouteComponentProps } from "react-router-dom";
+import { Link, RouteComponentProps, useHistory } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata,
@@ -20,30 +19,18 @@ import Editor from "../components/Editor";
 import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn } from "@mui/icons-material";
+import { styled } from "@mui/system";
 
-const useStyles = makeStyles((theme) => ({
-  divider: {
-    margin: theme.spacing(1),
-  },
-  editor: {
-    height: "400px",
-    width: "100%",
-  },
-  button: {
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-  },
-  fastestLink: {
-    color: "inherit",
-    textDecoration: "none",
-  },
-}));
+const PlainLink = styled(Link)({
+  color: "inherit",
+  textDecoration: "none",
+  textTransform: "none",
+});
 
 const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
   props
 ) => {
-  const classes = useStyles();
-  const { history } = props;
+  const history = useHistory();
   const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
   const [lang, setLang] = useLocalStorage("programming-lang", "");
@@ -100,34 +87,35 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
       <Typography variant="body1" paragraph={true}>
         Time Limit: {problemInfoQuery.data.getTimeLimit()} sec
       </Typography>
-      <Button
-        variant="contained"
-        color="info"
-        className={classes.button}
-        startIcon={<FlashOn />}
-      >
-        <Link
-          to={`/submissions/?${fastestParams.toString()}`}
-          className={classes.fastestLink}
-        >
+      <Button variant="outlined" startIcon={<FlashOn />}>
+        <PlainLink to={`/submissions/?${fastestParams.toString()}`}>
           Fastest
-        </Link>
+        </PlainLink>
       </Button>
-      <Button
-        variant="contained"
-        color="info"
-        className={classes.button}
-        startIcon={<GitHub />}
-        href={problemInfoQuery.data.getSourceUrl()}
-      >
-        Github
+      <Button variant="outlined" startIcon={<GitHub />}>
+        <PlainLink to={problemInfoQuery.data.getSourceUrl()}>Github</PlainLink>
       </Button>
-      <Divider className={classes.divider} />
+      <Divider />
 
       <KatexRender text={problemInfoQuery.data.getStatement()} html={true} />
 
+      <Divider
+        sx={{
+          margin: 1,
+        }}
+      />
+
+      <Typography variant="h4" paragraph={true}>
+        Submit
+      </Typography>
+
       <form onSubmit={(e) => handleSubmit(e)}>
-        <FormControl className={classes.editor}>
+        <FormControl
+          sx={{
+            height: "400px",
+            width: "100%",
+          }}
+        >
           <Editor
             value={source}
             language={lang}

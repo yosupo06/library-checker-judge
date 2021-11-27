@@ -21,9 +21,23 @@ import {
 import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
+import { styled } from "@mui/system";
+
+const FilterFormControl = styled(FormControl)({
+  margin: 1,
+  verticalAlign: "bottom",
+  minWidth: "120px",
+});
+
+const PlainLink = styled(Link)({
+  color: "inherit",
+  textDecoration: "none",
+  textTransform: "none",
+});
 
 const Submissions: React.FC = () => {
-  const params = new URLSearchParams(useLocation().search);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
 
   const initialProblemName = params.get("problem") ?? "";
   const [problemName, setProblemName] = React.useState(initialProblemName);
@@ -152,7 +166,7 @@ const Submissions: React.FC = () => {
         Submission List
       </Typography>
       <Box>
-        <FormControl>
+        <FilterFormControl variant="standard">
           <Select
             value={problemName}
             displayEmpty
@@ -169,16 +183,17 @@ const Submissions: React.FC = () => {
               )
             )}
           </Select>
-        </FormControl>
-        <FormControl>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <TextField
+            variant="standard"
             label="User Name"
             value={userName}
             autoComplete="off"
             onChange={(e) => setUserName(e.target.value)}
           />
-        </FormControl>
-        <FormControl>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <Select
             value={statusFilter}
             displayEmpty
@@ -187,8 +202,8 @@ const Submissions: React.FC = () => {
             <MenuItem value="">Status</MenuItem>
             <MenuItem value="AC">AC</MenuItem>
           </Select>
-        </FormControl>
-        <FormControl>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <Select
             value={langFilter}
             displayEmpty
@@ -202,8 +217,8 @@ const Submissions: React.FC = () => {
                 </MenuItem>
               ))}
           </Select>
-        </FormControl>
-        <FormControl>
+        </FilterFormControl>
+        <FilterFormControl variant="standard">
           <Select
             value={sortOrder}
             displayEmpty
@@ -212,16 +227,16 @@ const Submissions: React.FC = () => {
             <MenuItem value="-id">Sort</MenuItem>
             <MenuItem value="+time">Time</MenuItem>
           </Select>
-        </FormControl>
+        </FilterFormControl>
         <Button variant="outlined" type="submit">
-          <Link
+          <PlainLink
             to={{
               search: searchParams.toString(),
             }}
             onClick={() => submissionListQuery.remove()}
           >
             search
-          </Link>
+          </PlainLink>
         </Button>
       </Box>
 
