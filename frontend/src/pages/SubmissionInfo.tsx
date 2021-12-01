@@ -19,7 +19,7 @@ import {
   SubmissionInfoRequest,
 } from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
-import Editor from "../components/Editor";
+import SourceEditor from "../components/SourceEditor";
 import { AuthContext } from "../contexts/AuthContext";
 import library_checker_client, {
   authMetadata,
@@ -153,7 +153,7 @@ const OuterSubmissionInfo: React.FC<
         )}
       </Box>
       <Paper>
-        <Editor
+        <SourceEditor
           value={info.getSource()}
           language={lang}
           readOnly={true}
