@@ -1,8 +1,13 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import React from "react";
 import { useRanking } from "../api/library_checker_client";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 
 const RankingList: React.FC = () => {
   const rankingQuery = useRanking();
@@ -22,10 +27,6 @@ const RankingList: React.FC = () => {
     );
   }
 
-  const columns: GridColDef[] = [
-    { field: "name", headerName: "ID", width: 130 },
-    { field: "count", headerName: "AC Count" },
-  ];
   const rows = rankingQuery.data.getStatisticsList().map((e, index) => {
     return {
       id: index,
@@ -35,7 +36,26 @@ const RankingList: React.FC = () => {
   });
   return (
     <Box style={{ height: 2000 }}>
-      <DataGrid rows={rows} columns={columns} />
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Ranking</TableCell>
+              <TableCell>ID</TableCell>
+              <TableCell>AC Count</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell>{row.id + 1}</TableCell>
+                <TableCell>{row.name}</TableCell>
+                <TableCell>{row.count}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Box>
   );
 };
