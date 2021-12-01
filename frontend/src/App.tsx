@@ -1,8 +1,7 @@
 import Container from "@mui/material/Container";
 import Toolbar from "@mui/material/Toolbar";
-import { makeStyles, ThemeProvider } from "@material-ui/core";
-import { createTheme } from "@material-ui/core/styles";
-import React, { useEffect, useReducer } from "react";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { useEffect, useReducer } from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./App.css";
 import NavBar from "./components/NavBar";
@@ -16,8 +15,8 @@ import SubmissionInfo from "./pages/SubmissionInfo";
 import Submissions from "./pages/Submissions";
 import { AuthReducer, AuthContext } from "./contexts/AuthContext";
 import { LangReducer, LangContext, LangState } from "./contexts/LangContext";
-import { CssBaseline } from "@material-ui/core";
-import { grey } from "@material-ui/core/colors";
+import CssBaseline from "@mui/material/CssBaseline";
+import { grey } from "@mui/material/colors";
 import NotFound from "./pages/NotFound";
 import Register from "./pages/Register";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -27,9 +26,9 @@ const theme = createTheme({
       textTransform: "none",
     },
   },
-  overrides: {
+  components: {
     MuiCssBaseline: {
-      "@global": {
+      styleOverrides: {
         pre: {
           fontFamily: '"Courier New", Consolas, monospace',
           fontSize: "13px",
@@ -40,17 +39,9 @@ const theme = createTheme({
   },
 });
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    marginBottom: theme.spacing(4),
-  },
-}));
-
 const queryClient = new QueryClient();
 
 function App(): JSX.Element {
-  const classes = useStyles();
-
   const savedLangState = localStorage.getItem("lang");
   let initialLangState: LangState = {
     lang: "en",
@@ -97,8 +88,7 @@ function App(): JSX.Element {
             <Router>
               <NavBar />
               <Toolbar />
-
-              <Container className={classes.root}>
+              <Container>
                 <Switch>
                   <Route exact path="/" component={Problems} />
                   <Route path="/problem/:problemId" component={ProblemInfo} />
