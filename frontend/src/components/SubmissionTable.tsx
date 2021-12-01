@@ -12,7 +12,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useLangList } from "../api/library_checker_client";
 import { SubmissionOverview } from "../api/library_checker_pb";
-import KatexRender from "./KatexRender";
+import KatexTypography from "./katex/KatexTypography";
 
 interface Props {
   overviews: SubmissionOverview[];
@@ -78,7 +78,7 @@ const SubmissionTable: React.FC<Props> = (props) => {
               </TableCell>
               <TableCell>
                 <Link to={`/problem/${row.getProblemName()}`}>
-                  <KatexRender text={row.getProblemTitle()} />
+                  <KatexTypography>{row.getProblemTitle()}</KatexTypography>
                 </Link>
               </TableCell>
               <TableCell>{idToName[row.getLang()]}</TableCell>

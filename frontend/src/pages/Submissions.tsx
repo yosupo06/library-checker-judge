@@ -18,10 +18,10 @@ import {
   useProblemList,
   useSubmissionList,
 } from "../api/library_checker_client";
-import KatexRender from "../components/KatexRender";
 import SubmissionTable from "../components/SubmissionTable";
 import { getCategories } from "../utils/ProblemCategory";
 import { styled } from "@mui/system";
+import KatexTypography from "../components/katex/KatexTypography";
 
 const FilterFormControl = styled(FormControl)({
   margin: 1,
@@ -177,7 +177,7 @@ const Submissions: React.FC = () => {
               [<ListSubheader>{category.name}</ListSubheader>].concat(
                 category.problems.map((e) => (
                   <MenuItem key={e.name} value={e.name}>
-                    <KatexRender text={e.title} />
+                    <KatexTypography>{e.title}</KatexTypography>
                   </MenuItem>
                 ))
               )

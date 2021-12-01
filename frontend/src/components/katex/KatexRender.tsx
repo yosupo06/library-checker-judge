@@ -1,18 +1,16 @@
 import renderMathInElement from "katex/dist/contrib/auto-render";
-import "katex/dist/katex.min.css";
-import React, { useContext } from "react";
-import { LangContext } from "../contexts/LangContext";
+import React, { useContext, useEffect, useRef } from "react";
+import { LangContext } from "../../contexts/LangContext";
 
 interface Props {
   text: string;
-  html?: boolean;
 }
 
 const KatexRender: React.FC<Props> = (props) => {
   const lang = useContext(LangContext);
-  const ref = React.useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (ref.current != null) {
       renderMathInElement(ref.current, {
         delimiters: [
@@ -36,15 +34,7 @@ const KatexRender: React.FC<Props> = (props) => {
     }
   });
 
-  if (props.html) {
-    return <div ref={ref} dangerouslySetInnerHTML={{ __html: props.text }} />;
-  } else {
-    return <div ref={ref}>{props.text}</div>;
-  }
-};
-
-KatexRender.defaultProps = {
-  html: false,
+  return <div ref={ref} dangerouslySetInnerHTML={{ __html: props.text }} />;
 };
 
 export default KatexRender;
