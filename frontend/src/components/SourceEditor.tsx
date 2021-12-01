@@ -62,9 +62,9 @@ const SourceEditor: React.FC<Props> = (props) => {
       onMount={(editor) => {
         editor.onDidContentSizeChange(() => {
           if (autoHeight) {
-            setEditorHeight(Math.max(minHeight, editor.getContentHeight()))
+            setEditorHeight(Math.max(minHeight, editor.getContentHeight()));
           }
-        })
+        });
       }}
       options={{
         readOnly: readOnly,
