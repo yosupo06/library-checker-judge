@@ -16,10 +16,11 @@ import library_checker_client, {
 } from "../api/library_checker_client";
 import { SubmitRequest } from "../api/library_checker_pb";
 import SourceEditor from "../components/SourceEditor";
-import KatexRender from "../components/KatexRender";
+import KatexRender from "../components/katex/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn } from "@mui/icons-material";
 import { styled } from "@mui/system";
+import KatexTypography from "../components/katex/KatexTypography";
 
 const PlainLink = styled(Link)({
   color: "inherit",
@@ -81,9 +82,9 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
   });
   return (
     <Box>
-      <Typography variant="h2" paragraph={true}>
-        <KatexRender text={problemInfoQuery.data.getTitle()} />
-      </Typography>
+      <KatexTypography variant="h2" paragraph={true}>
+        {problemInfoQuery.data.getTitle()}
+      </KatexTypography>
       <Typography variant="body1" paragraph={true}>
         Time Limit: {problemInfoQuery.data.getTimeLimit()} sec
       </Typography>
@@ -97,7 +98,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
       </Button>
       <Divider />
 
-      <KatexRender text={problemInfoQuery.data.getStatement()} html={true} />
+      <KatexRender text={problemInfoQuery.data.getStatement()} />
 
       <Divider
         sx={{

@@ -6,8 +6,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
 import { Link } from "react-router-dom";
-import KatexRender from "./KatexRender";
 import { lightGreen, cyan } from "@mui/material/colors";
+import KatexTypography from "./katex/KatexTypography";
 interface Props {
   problems: {
     name: string;
@@ -40,7 +40,7 @@ const ProblemList: React.FC<Props> = (props) => {
                 }}
               >
                 <Link to={`/problem/${problem.name}`}>
-                  <KatexRender text={problem.title} />
+                  <KatexTypography>{problem.title}</KatexTypography>
                 </Link>
               </TableCell>
             </TableRow>
