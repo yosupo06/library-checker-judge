@@ -1,6 +1,6 @@
 import "katex/dist/katex.min.css";
 import React, { useState } from "react";
-import { ControlledEditor } from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
 
 interface Props {
   value: string;
@@ -44,22 +44,27 @@ const editorMode = (lang?: string) => {
   return "plaintext";
 };
 
-const Editor: React.FC<Props> = (props) => {
+const SourceEditor: React.FC<Props> = (props) => {
+  const minHeight = 100;
   const { value, language, onChange, readOnly, autoHeight } = props;
-  const [editorHeight, setEditorHeight] = useState(100);
+  const [editorHeight, setEditorHeight] = useState(minHeight);
 
   const mode = editorMode(language);
 
   return (
-    <ControlledEditor
+    <Editor
       value={value}
       language={mode}
       height={autoHeight ? editorHeight : undefined}
-      onChange={(_, e) => {
-        if (e !== undefined && onChange) onChange(e);
+      onChange={(src, _) => {
+        if (src !== undefined && onChange) onChange(src);
       }}
-      editorDidMount={(_, editor) => {
-        if (autoHeight) setEditorHeight(editor.getContentHeight() + 18);
+      onMount={(editor) => {
+        editor.onDidContentSizeChange(() => {
+          if (autoHeight) {
+            setEditorHeight(Math.max(minHeight, editor.getContentHeight()))
+          }
+        })
       }}
       options={{
         readOnly: readOnly,
@@ -76,4 +81,4 @@ const Editor: React.FC<Props> = (props) => {
   );
 };
 
-export default Editor;
+export default SourceEditor;

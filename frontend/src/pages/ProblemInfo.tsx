@@ -15,7 +15,7 @@ import library_checker_client, {
   useProblemInfo,
 } from "../api/library_checker_client";
 import { SubmitRequest } from "../api/library_checker_pb";
-import Editor from "../components/Editor";
+import SourceEditor from "../components/SourceEditor";
 import KatexRender from "../components/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn } from "@mui/icons-material";
@@ -116,7 +116,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
             width: "100%",
           }}
         >
-          <Editor
+          <SourceEditor
             value={source}
             language={lang}
             onChange={(e) => {
