@@ -187,7 +187,7 @@ const Submissions: React.FC = () => {
         <FilterFormControl variant="standard">
           <TextField
             variant="standard"
-            label="User Name"
+            label="User"
             value={userName}
             autoComplete="off"
             onChange={(e) => setUserName(e.target.value)}
