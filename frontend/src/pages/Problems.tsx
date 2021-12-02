@@ -12,7 +12,7 @@ import {
 import { SolvedStatus } from "../api/library_checker_pb";
 import ProblemList from "../components/ProblemList";
 import { AuthContext } from "../contexts/AuthContext";
-import { getCategories } from "../utils/ProblemCategory";
+import { categoriseProblems } from "../utils/ProblemCategorizer";
 
 const Problems: React.FC = () => {
   const auth = useContext(AuthContext);
@@ -65,7 +65,7 @@ const Problems: React.FC = () => {
     });
   }
 
-  const categories = getCategories(
+  const categories = categoriseProblems(
     problemList,
     problemCategoriesQuery.data.getCategoriesList()
   );
@@ -82,8 +82,8 @@ const Problems: React.FC = () => {
             <Typography variant="h3">{category.name}</Typography>
             <ProblemList
               problems={category.problems.map((problem) => ({
-                name: problem.name,
-                title: problem.title,
+                name: problem.getName(),
+                title: problem.getTitle(),
               }))}
               solvedStatus={solvedStatus}
             />
