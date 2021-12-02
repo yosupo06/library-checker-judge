@@ -3,7 +3,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   useProblemCategories,
   useProblemList,
@@ -12,7 +12,59 @@ import {
 import { SolvedStatus } from "../api/library_checker_pb";
 import ProblemList from "../components/ProblemList";
 import { AuthContext } from "../contexts/AuthContext";
-import { categoriseProblems } from "../utils/ProblemCategorizer";
+import {
+  CategorisedProblems,
+  categoriseProblems,
+} from "../utils/ProblemCategorizer";
+import { Tab, Tabs } from "@mui/material";
+
+const ProblemsTabs: React.FC<{
+  categories: CategorisedProblems;
+  solvedStatus: { [problem: string]: "latest_ac" | "ac" };
+}> = (props) => {
+  const { categories, solvedStatus } = props;
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  const categoriesTab = (
+    <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+      <Tabs
+        value={selectedIdx}
+        onChange={(_, newValue: number) => {
+          setSelectedIdx(newValue);
+        }}
+        variant="scrollable"
+        scrollButtons="auto"
+      >
+        <Tab id="All" label="All" />
+        {categories.map((category) => (
+          <Tab id={category.name} label={category.name} />
+        ))}
+      </Tabs>
+    </Box>
+  );
+
+  const targetCategories =
+    selectedIdx === 0 ? categories : [categories[selectedIdx - 1]];
+  return (
+    <Box>
+      {categoriesTab}
+      {targetCategories.map((category) => (
+        <Box
+          sx={{
+            marginTop: 3,
+            marginBottom: 3,
+          }}
+        >
+          <Typography variant="h4">{category.name}</Typography>
+          <ProblemList
+            problems={category.problems}
+            solvedStatus={solvedStatus}
+          />
+        </Box>
+      ))}
+    </Box>
+  );
+};
 
 const Problems: React.FC = () => {
   const auth = useContext(AuthContext);
@@ -72,23 +124,15 @@ const Problems: React.FC = () => {
 
   return (
     <Box>
-      <Alert severity="info">
-        If you have some trouble, please use{" "}
-        <Link href="https://old.yosupo.jp">old.yosupo.jp</Link>
-      </Alert>
       <Box>
-        {categories.map((category) => (
-          <Box>
-            <Typography variant="h3">{category.name}</Typography>
-            <ProblemList
-              problems={category.problems.map((problem) => ({
-                name: problem.getName(),
-                title: problem.getTitle(),
-              }))}
-              solvedStatus={solvedStatus}
-            />
-          </Box>
-        ))}
+        <Typography variant="h2" paragraph={true}>
+          Problem List
+        </Typography>
+        <Alert severity="info">
+          If you have some trouble, please use{" "}
+          <Link href="https://old.yosupo.jp">old.yosupo.jp</Link>
+        </Alert>
+        <ProblemsTabs categories={categories} solvedStatus={solvedStatus} />
       </Box>
     </Box>
   );
