@@ -19,7 +19,7 @@ import {
   useSubmissionList,
 } from "../api/library_checker_client";
 import SubmissionTable from "../components/SubmissionTable";
-import { getCategories } from "../utils/ProblemCategory";
+import { categoriseProblems } from "../utils/ProblemCategorizer";
 import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
 
@@ -155,7 +155,7 @@ const Submissions: React.FC = () => {
     );
   })();
 
-  const categories = getCategories(
+  const categories = categoriseProblems(
     problemListQuery.data.getProblemsList(),
     problemCategoriesQuery.data.getCategoriesList()
   );
@@ -175,9 +175,9 @@ const Submissions: React.FC = () => {
             <MenuItem value="">Problem Name</MenuItem>
             {categories.map((category) =>
               [<ListSubheader>{category.name}</ListSubheader>].concat(
-                category.problems.map((e) => (
-                  <MenuItem key={e.name} value={e.name}>
-                    <KatexTypography>{e.title}</KatexTypography>
+                category.problems.map((problem) => (
+                  <MenuItem key={problem.getName()} value={problem.getName()}>
+                    <KatexTypography>{problem.getTitle()}</KatexTypography>
                   </MenuItem>
                 ))
               )
