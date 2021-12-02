@@ -13,10 +13,17 @@ import { Link } from "react-router-dom";
 import { useLangList } from "../api/library_checker_client";
 import { SubmissionOverview } from "../api/library_checker_pb";
 import KatexTypography from "./katex/KatexTypography";
+import { styled } from "@mui/system";
 
 interface Props {
   overviews: SubmissionOverview[];
 }
+
+const CustomLink = styled(Link)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  textDecoration: "none",
+  textTransform: "none",
+}));
 
 const SubmissionTable: React.FC<Props> = (props) => {
   const { overviews } = props;
@@ -74,21 +81,23 @@ const SubmissionTable: React.FC<Props> = (props) => {
           {overviews.map((row) => (
             <TableRow key={row.getId()}>
               <TableCell>
-                <Link to={`/submission/${row.getId()}`}>{row.getId()}</Link>
+                <CustomLink to={`/submission/${row.getId()}`}>
+                  {row.getId()}
+                </CustomLink>
               </TableCell>
               <TableCell>
-                <Link to={`/problem/${row.getProblemName()}`}>
+                <CustomLink to={`/problem/${row.getProblemName()}`}>
                   <KatexTypography>{row.getProblemTitle()}</KatexTypography>
-                </Link>
+                </CustomLink>
               </TableCell>
               <TableCell>{idToName[row.getLang()]}</TableCell>
               <TableCell>
                 {row.getUserName() === "" ? (
                   "(Anonymous)"
                 ) : (
-                  <Link to={`/user/${row.getUserName()}`}>
+                  <CustomLink to={`/user/${row.getUserName()}`}>
                     {row.getUserName()}
-                  </Link>
+                  </CustomLink>
                 )}
               </TableCell>
               <TableCell>
