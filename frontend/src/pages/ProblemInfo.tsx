@@ -93,7 +93,11 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
           Fastest
         </PlainLink>
       </Button>
-      <Button variant="outlined" startIcon={<GitHub />} href={problemInfoQuery.data.getSourceUrl()}>
+      <Button
+        variant="outlined"
+        startIcon={<GitHub />}
+        href={problemInfoQuery.data.getSourceUrl()}
+      >
         Github
       </Button>
       <Divider />
