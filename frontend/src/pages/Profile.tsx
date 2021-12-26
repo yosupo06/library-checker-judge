@@ -16,17 +16,20 @@ import library_checker_client, {
   useUserInfo,
 } from "../api/library_checker_client";
 import { ChangeUserInfoRequest } from "../api/library_checker_pb";
-import { RouteComponentProps } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
 import { LibraryBooks } from "@mui/icons-material";
 
-const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
-  const { history, match } = props;
+const Profile: React.FC = () => {
+  const { userId } = useParams<"userId">();
+  if (!userId) {
+    throw new Error(`userId is not defined`);
+  }
   const auth = useContext(AuthContext);
   const [libraryURL, setLibraryURL] = useState("");
 
-  const userName = match.params.userId;
+  const userName = userId;
   const userInfoQuery = useUserInfo(userName, {
     onSuccess: (data) => setLibraryURL(data.getUser()?.getLibraryUrl() ?? ""),
   });

@@ -7,12 +7,7 @@ import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import React, { useContext, useState } from "react";
-import {
-  Link,
-  RouteComponentProps,
-  useHistory,
-  useParams,
-} from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata,
@@ -76,16 +71,17 @@ const UsefulLinks: React.FC<{
   );
 };
 
-const ProblemInfo: React.FC<
-  RouteComponentProps<{ problemId: string }>
-> = () => {
-  const history = useHistory();
+const ProblemInfo: React.FC = () => {
+  const navigate = useNavigate();
   const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
   const [lang, setLang] = useLocalStorage("programming-lang", "");
 
-  const params = useParams<{ problemId: string }>();
-  const problemInfoQuery = useProblemInfo(params.problemId);
+  const { problemId } = useParams<"problemId">();
+  if (problemId === undefined) {
+    throw new Error(`problemId is not defined`);
+  }
+  const problemInfoQuery = useProblemInfo(problemId);
   const langListQuery = useLangList();
 
   if (problemInfoQuery.isLoading || problemInfoQuery.isIdle) {
@@ -116,12 +112,12 @@ const ProblemInfo: React.FC<
       .submit(
         new SubmitRequest()
           .setLang(lang)
-          .setProblem(params.problemId)
+          .setProblem(problemId)
           .setSource(source),
         (auth && authMetadata(auth.state)) ?? null
       )
       .then((resp) => {
-        history.push(`/submission/${resp.getId()}`);
+        navigate(`/submission/${resp.getId()}`);
       });
   };
 
@@ -135,7 +131,7 @@ const ProblemInfo: React.FC<
       </Typography>
 
       <UsefulLinks
-        problemId={params.problemId}
+        problemId={problemId}
         problemInfo={problemInfoQuery.data}
         userId={auth?.state.user}
       />

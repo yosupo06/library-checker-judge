@@ -2,7 +2,7 @@ import Container from "@mui/material/Container";
 import Toolbar from "@mui/material/Toolbar";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useEffect, useReducer } from "react";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./App.css";
 import NavBar from "./components/NavBar";
 import Help from "./pages/Help";
@@ -89,21 +89,21 @@ function App(): JSX.Element {
               <NavBar />
               <Toolbar />
               <Container>
-                <Switch>
-                  <Route exact path="/" component={Problems} />
-                  <Route path="/problem/:problemId" component={ProblemInfo} />
-                  <Route exact path="/submissions" component={Submissions} />
+                <Routes>
+                  <Route path="/" element={<Problems />} />
+                  <Route path="/problem/:problemId" element={<ProblemInfo />} />
+                  <Route path="/submissions" element={<Submissions />} />
                   <Route
                     path="/submission/:submissionId"
-                    component={SubmissionInfo}
+                    element={<SubmissionInfo />}
                   />
-                  <Route exact path="/ranking" component={Ranking} />
-                  <Route exact path="/help" component={Help} />
-                  <Route exact path="/login" component={Login} />
-                  <Route exact path="/register" component={Register} />
-                  <Route path="/user/:userId" component={Profile} />
-                  <Route component={NotFound} />
-                </Switch>
+                  <Route path="/ranking" element={<Ranking />} />
+                  <Route path="/help" element={<Help />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/user/:userId" element={<Profile />} />
+                  <Route element={NotFound} />
+                </Routes>
               </Container>
             </Router>
           </LangContext.Provider>

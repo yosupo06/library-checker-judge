@@ -7,15 +7,13 @@ import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import React, { useContext } from "react";
-import { RouteComponentProps } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import library_checker_client from "../api/library_checker_client";
 import { RegisterRequest } from "../api/library_checker_pb";
 import { AuthContext } from "../contexts/AuthContext";
 
-interface Props extends RouteComponentProps<Record<string, never>> {}
-
-const Register: React.FC<Props> = (props) => {
-  const { history } = props;
+const Register: React.FC = () => {
+  const navigate = useNavigate();
   const auth = useContext(AuthContext);
   const [userName, setUserName] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -35,7 +33,7 @@ const Register: React.FC<Props> = (props) => {
           type: "login",
           payload: { token: resp.getToken(), user: userName },
         });
-        history.push(`/`);
+        navigate(`/`);
       })
       .catch((reason) =>
         setRegisterStatus(
