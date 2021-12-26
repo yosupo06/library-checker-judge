@@ -7,18 +7,23 @@ import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import React, { useContext, useState } from "react";
-import { Link, RouteComponentProps, useHistory } from "react-router-dom";
+import {
+  Link,
+  RouteComponentProps,
+  useHistory,
+  useParams,
+} from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata,
   useLangList,
   useProblemInfo,
 } from "../api/library_checker_client";
-import { SubmitRequest } from "../api/library_checker_pb";
+import { ProblemInfoResponse, SubmitRequest } from "../api/library_checker_pb";
 import SourceEditor from "../components/SourceEditor";
 import KatexRender from "../components/katex/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
-import { GitHub, FlashOn } from "@mui/icons-material";
+import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
 
@@ -28,6 +33,49 @@ const PlainLink = styled(Link)({
   textTransform: "none",
 });
 
+const UsefulLinks: React.FC<{
+  problemInfo: ProblemInfoResponse;
+  problemId: string;
+  userId: string | undefined;
+}> = (props) => {
+  const { problemInfo, problemId, userId } = props;
+  const fastestParams = new URLSearchParams({
+    problem: problemId,
+    order: "+time",
+    status: "AC",
+  });
+
+  return (
+    <Box>
+      {userId && (
+        <Button variant="outlined" startIcon={<Person />}>
+          <PlainLink
+            to={`/submissions/?${new URLSearchParams({
+              problem: problemId,
+              user: userId,
+              status: "AC",
+            }).toString()}`}
+          >
+            My Submissions
+          </PlainLink>
+        </Button>
+      )}
+      <Button variant="outlined" startIcon={<FlashOn />}>
+        <PlainLink to={`/submissions/?${fastestParams.toString()}`}>
+          Fastest
+        </PlainLink>
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<GitHub />}
+        href={problemInfo.getSourceUrl()}
+      >
+        Github
+      </Button>
+    </Box>
+  );
+};
+
 const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
   props
 ) => {
@@ -36,7 +84,8 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
   const [source, setSource] = useState("");
   const [lang, setLang] = useLocalStorage("programming-lang", "");
 
-  const problemInfoQuery = useProblemInfo(props.match.params.problemId);
+  const params = useParams<{ problemId: string }>();
+  const problemInfoQuery = useProblemInfo(params.problemId);
   const langListQuery = useLangList();
 
   if (problemInfoQuery.isLoading || problemInfoQuery.isIdle) {
@@ -67,7 +116,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
       .submit(
         new SubmitRequest()
           .setLang(lang)
-          .setProblem(props.match.params.problemId)
+          .setProblem(params.problemId)
           .setSource(source),
         (auth && authMetadata(auth.state)) ?? null
       )
@@ -75,11 +124,7 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
         history.push(`/submission/${resp.getId()}`);
       });
   };
-  const fastestParams = new URLSearchParams({
-    problem: props.match.params.problemId,
-    order: "+time",
-    status: "AC",
-  });
+
   return (
     <Box>
       <KatexTypography variant="h2" paragraph={true}>
@@ -88,18 +133,12 @@ const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
       <Typography variant="body1" paragraph={true}>
         Time Limit: {problemInfoQuery.data.getTimeLimit()} sec
       </Typography>
-      <Button variant="outlined" startIcon={<FlashOn />}>
-        <PlainLink to={`/submissions/?${fastestParams.toString()}`}>
-          Fastest
-        </PlainLink>
-      </Button>
-      <Button
-        variant="outlined"
-        startIcon={<GitHub />}
-        href={problemInfoQuery.data.getSourceUrl()}
-      >
-        Github
-      </Button>
+
+      <UsefulLinks
+        problemId={params.problemId}
+        problemInfo={problemInfoQuery.data}
+        userId={auth?.state.user}
+      />
       <Divider />
 
       <KatexRender text={problemInfoQuery.data.getStatement()} />
