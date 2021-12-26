@@ -56,7 +56,7 @@ const SourceEditor: React.FC<Props> = (props) => {
       value={value}
       language={mode}
       height={autoHeight ? editorHeight : undefined}
-      onChange={(src, _) => {
+      onChange={(src) => {
         if (src !== undefined && onChange) onChange(src);
       }}
       onMount={(editor) => {

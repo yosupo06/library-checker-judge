@@ -76,9 +76,7 @@ const UsefulLinks: React.FC<{
   );
 };
 
-const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = (
-  props
-) => {
+const ProblemInfo: React.FC<RouteComponentProps<{ problemId: string }>> = () => {
   const history = useHistory();
   const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
