@@ -67,7 +67,7 @@ const Profile: React.FC<RouteComponentProps<{ userId: string }>> = (props) => {
         ),
         (auth && authMetadata(auth.state)) ?? null
       )
-      .then((resp) => {
+      .then(() => {
         history.go(0);
       });
   };
