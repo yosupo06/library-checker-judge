@@ -4,7 +4,7 @@ set -e
 
 NAME=lib-judge-executor-$(cat /dev/urandom | LC_CTYPE=C tr -d -c '[:lower:]' | fold -w 10 | head -n 1)
 
-./create_instance.sh $NAME $ZONE $CREATE_OPTION
+./create_instance.sh $NAME $ZONE prod $CREATE_OPTION
 
 function gcpexec() {
     echo "Start: ${1}"
