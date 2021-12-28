@@ -8,5 +8,5 @@ steps:
         apt-get install git -y && \
         git clone https://github.com/yosupo06/library-checker-problems/ ../library-checker-problems && \
         cd test && \
-        ./gce_test.sh
+        ./gce_test.sh prod
 timeout: 1800s

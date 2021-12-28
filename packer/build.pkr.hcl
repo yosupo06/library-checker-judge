@@ -1,3 +1,7 @@
+variable "env" {
+  type = string
+}
+
 source "googlecompute" "judge" {
   project_id = "library-checker-project"
   source_image = "ubuntu-2004-focal-v20210315"
@@ -5,8 +9,8 @@ source "googlecompute" "judge" {
   disk_size = 25
   machine_type = "n1-standard-2"
   ssh_username = "ubuntu"
-  image_name = "judge-image-{{timestamp}}"
-  image_family = "judge-image-family"
+  image_name = "${var.env}-judge-image-{{timestamp}}"
+  image_family = "${var.env}-judge-image-family"
 }
 
 build {

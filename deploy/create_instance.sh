@@ -6,13 +6,14 @@ set -e
 
 NAME=$1
 ZONE=$2
+ENV=$3
 
-echo "Create Instance Name = $NAME, Zone = $ZONE, Extra Opt = ${@:3}"
+echo "Create Instance Name = $NAME, Zone = $ZONE, Env = $ENV, Extra Opt = ${@:4}"
 gcloud compute instances create $NAME --zone=$ZONE \
 --machine-type=c2-standard-4 \
 --boot-disk-size=25GB \
 --boot-disk-type=pd-ssd \
---image-family=judge-image-family ${@:3}
+--image-family=${ENV}-judge-image-family ${@:4}
 
 function gcpexec() {
     echo "Start: ${1}"
