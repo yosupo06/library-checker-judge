@@ -40,7 +40,7 @@
 [[langs]]
     id = "java"
     name = "Java"
-    version = "default-jdk(ubuntu20.04 apt)"
+    version = "openjdk-17-jdk(ubuntu20.04 apt)"
     source = "Main.java"
     compile = "javac Main.java"
     exec = "java -Xss1G Main"

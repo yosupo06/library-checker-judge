@@ -1,5 +1,9 @@
 variable "env" {
   type = string
+  validation {
+    condition = var.env == "prod" || var.env == "qa"
+    error_message = "The env value must be prod or qa."
+  }
 }
 
 source "googlecompute" "judge" {
@@ -74,16 +78,28 @@ build {
     ]
   }
 
-  # mount setting
+  # copy per-boot scripts 
   provisioner "file" {
-    source = "judge-launch.sh"
-    destination = "/tmp/judge-launch.sh"
+    source = "per-boot"
+    destination = "/tmp"
   }
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/judge-launch.sh /var/lib/cloud/scripts/per-boot/judge-launch.sh",
-      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/judge-launch.sh",
+      "sudo rsync -a /tmp/per-boot/ /var/lib/cloud/scripts/per-boot/",
+      "sudo chmod 755 -R /var/lib/cloud/scripts/per-boot/",
     ]
+  }
+
+  # create ramdisk
+  provisioner "shell" {
+    inline = [
+      "sudo /var/lib/cloud/scripts/per-boot/00_ramdisk_setup.sh"
+    ]
+  }
+
+  # install java
+  provisioner "shell" {
+    script = "java_install.sh"
   }
 
   # install python, pip, pip-packages
@@ -134,7 +150,7 @@ build {
   # install compilers
   provisioner "shell" {
     inline = [
-      "sudo apt-get install -y g++ default-jdk default-jre pypy3 ldc rustc cargo sbcl",
+      "sudo apt-get install -y g++ pypy3 ldc rustc cargo sbcl",
     ]
   }
 

@@ -9,7 +9,7 @@ echo "Start Test env=${ENV}"
 NAME=lib-judge-test-$(date +%d-%s)-$RANDOM
 ZONE=asia-east1-c
 
-if [ $# -ge 1 ] && [ $1 = "remain" ]; then
+if [ $# -ge 2 ] && [ $2 = "remain" ]; then
     echo "[WARN!] Remain Instance"
 else
     echo "Auto Release"
