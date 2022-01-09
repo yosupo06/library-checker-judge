@@ -25,15 +25,11 @@ import (
 )
 
 var client pb.LibraryCheckerServiceClient
+var db *gorm.DB
 
 func TestMain(m *testing.M) {
 	// connect db
-	db = dbConnect(getEnv("API_DB_LOG", "") != "")
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer sqlDB.Close()
+	db = dbConnect("127.0.0.1", "5432", "librarychecker", "postgres", "passwd", getEnv("API_DB_LOG", "") != "")
 
 	// launch gRPC server
 	port := getEnv("PORT", "50052")
@@ -43,7 +39,9 @@ func TestMain(m *testing.M) {
 	}
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
-	pb.RegisterLibraryCheckerServiceServer(s, &server{})
+	pb.RegisterLibraryCheckerServiceServer(s, &server{
+		db: db,
+	})
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			log.Fatal("Server exited: ", err)

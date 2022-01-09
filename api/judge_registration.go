@@ -55,7 +55,7 @@ func currentRegistrationStatus(sub *Submission, judgeName string) RegistrationSt
 	return Finished
 }
 
-func changeRegistrationStatus(id int32, judgeName string, updateJudgeName string, expiration time.Duration, expect RegistrationStatus) error {
+func changeRegistrationStatus(db *gorm.DB, id int32, judgeName string, updateJudgeName string, expiration time.Duration, expect RegistrationStatus) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		sub := &Submission{}
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(sub, id).Error; err != nil {
@@ -81,20 +81,20 @@ func changeRegistrationStatus(id int32, judgeName string, updateJudgeName string
 	})
 }
 
-func registerSubmission(id int32, judgeName string, expiration time.Duration, expect RegistrationStatus) error {
-	return changeRegistrationStatus(id, judgeName, judgeName, expiration, expect)
+func registerSubmission(db *gorm.DB, id int32, judgeName string, expiration time.Duration, expect RegistrationStatus) error {
+	return changeRegistrationStatus(db, id, judgeName, judgeName, expiration, expect)
 }
 
-func updateSubmissionRegistration(id int32, judgeName string, expiration time.Duration) error {
-	return changeRegistrationStatus(id, judgeName, judgeName, expiration, JudgingBySelf)
+func updateSubmissionRegistration(db *gorm.DB, id int32, judgeName string, expiration time.Duration) error {
+	return changeRegistrationStatus(db, id, judgeName, judgeName, expiration, JudgingBySelf)
 }
 
-func releaseSubmissionRegistration(id int32, judgeName string) error {
-	return changeRegistrationStatus(id, judgeName, "", -time.Second, JudgingBySelf)
+func releaseSubmissionRegistration(db *gorm.DB, id int32, judgeName string) error {
+	return changeRegistrationStatus(db, id, judgeName, "", -time.Second, JudgingBySelf)
 }
 
-func toWaitingJudge(id int32, priority int32, after time.Duration) error {
-	if err := registerSubmission(id, "#WaitingJudge", -time.Second, Finished); err != nil {
+func toWaitingJudge(db *gorm.DB, id int32, priority int32, after time.Duration) error {
+	if err := registerSubmission(db, id, "#WaitingJudge", -time.Second, Finished); err != nil {
 		return err
 	}
 
@@ -110,7 +110,7 @@ func toWaitingJudge(id int32, priority int32, after time.Duration) error {
 		return errors.New("failed to update status")
 	}
 
-	if err := pushTask(Task{
+	if err := pushTask(db, Task{
 		Submission: id,
 		Available:  time.Now().Add(after),
 		Priority:   priority,

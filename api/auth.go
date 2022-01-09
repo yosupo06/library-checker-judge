@@ -22,15 +22,26 @@ func init() {
 	hmacSecret = []byte(s)
 }
 
-// UserKey is context key of User
-type UserKey struct{}
+// UserNameKey is context key of UserName
+type UserNameKey struct{}
 
-func getCurrentUser(ctx context.Context) User {
-	u := ctx.Value(UserKey{})
-	if user, ok := u.(User); ok {
-		return user
+func issueToken(user User) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": user.Name,
+	})
+	tokenString, err := token.SignedString(hmacSecret)
+	if err != nil {
+		return "", err
 	}
-	return User{}
+	return tokenString, nil
+}
+
+func getCurrentUserName(ctx context.Context) string {
+	u := ctx.Value(UserNameKey{})
+	if userName, ok := u.(string); ok {
+		return userName
+	}
+	return ""
 }
 
 func authnFunc(ctx context.Context) (context.Context, error) {
@@ -57,12 +68,7 @@ func authnFunc(ctx context.Context) (context.Context, error) {
 
 	if val, ok := claims["user"]; ok {
 		if name, ok := val.(string); ok {
-			user, err := fetchUser(db, name)
-			if err != nil {
-				log.Println("Failed to fetch user")
-				return ctx, nil
-			}
-			ctx = context.WithValue(ctx, UserKey{}, user)
+			ctx = context.WithValue(ctx, UserNameKey{}, name)
 		}
 	}
 	return ctx, nil
