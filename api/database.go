@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	_ "github.com/lib/pq"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"gorm.io/driver/postgres"
@@ -77,6 +79,22 @@ type Metadata struct {
 	Value string
 }
 
+func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error {
+	passHash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return errors.New("bcrypt broken")
+	}
+	user := User{
+		Name:     name,
+		Passhash: string(passHash),
+		Admin:    isAdmin,
+	}
+	if err := db.Create(&user).Error; err != nil {
+		return errors.New("this username are already registered")
+	}
+	return nil
+}
+
 func fetchUser(db *gorm.DB, name string) (User, error) {
 	user := User{}
 	if name == "" {
@@ -135,7 +153,7 @@ func setMetadata(db *gorm.DB, key string, value string) error {
 	return nil
 }
 
-func fetchSubmission(id int32) (Submission, error) {
+func fetchSubmission(db *gorm.DB, id int32) (Submission, error) {
 	sub := Submission{}
 	if err := db.
 		Preload("User", func(db *gorm.DB) *gorm.DB {
@@ -150,7 +168,7 @@ func fetchSubmission(id int32) (Submission, error) {
 	return sub, nil
 }
 
-func fetchUserStatistics(userName string) (map[string]pb.SolvedStatus, error) {
+func fetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStatus, error) {
 	type Result struct {
 		ProblemName string
 		LatestAC    bool
@@ -177,7 +195,7 @@ func fetchUserStatistics(userName string) (map[string]pb.SolvedStatus, error) {
 	return stats, nil
 }
 
-func pushTask(task Task) error {
+func pushTask(db *gorm.DB, task Task) error {
 	log.Print("Insert task:", task)
 	if err := db.Create(&task).Error; err != nil {
 		log.Print(err)
@@ -186,7 +204,7 @@ func pushTask(task Task) error {
 	return nil
 }
 
-func popTask() (Task, error) {
+func popTask(db *gorm.DB) (Task, error) {
 	task := Task{}
 	task.Submission = -1
 
@@ -208,19 +226,14 @@ func popTask() (Task, error) {
 	return task, err
 }
 
-func dbConnect(logMode bool) *gorm.DB {
-	host := getEnv("POSTGRE_HOST", "127.0.0.1")
-	port := getEnv("POSTGRE_PORT", "5432")
-	user := getEnv("POSTGRE_USER", "postgres")
-	pass := getEnv("POSTGRE_PASS", "passwd")
-
+func dbConnect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB {
 	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=librarychecker password=%s sslmode=disable",
-		host, port, user, pass)
+		"host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
+		host, port, dbname, user, pass)
 	log.Printf("Try connect %s", connStr)
 	for i := 0; i < 3; i++ {
 		config := gorm.Config{}
-		if logMode {
+		if enableLogger {
 			config.Logger = logger.Default.LogMode(logger.Info)
 		}
 		db, err := gorm.Open(postgres.Open(connStr), &config)

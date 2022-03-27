@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net"
 	"net/http"
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/golang-jwt/jwt"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
@@ -24,24 +22,6 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
-}
-
-func canRejudge(ctx context.Context, submission *pb.SubmissionOverview) bool {
-	currentUser := getCurrentUser(ctx)
-	name := currentUser.Name
-	if name == "" {
-		return false
-	}
-	if name == submission.UserName {
-		return true
-	}
-	if !submission.IsLatest && submission.Status == "AC" {
-		return true
-	}
-	if currentUser.Admin {
-		return true
-	}
-	return false
 }
 
 func toProtoSubmission(submission *Submission) (*pb.SubmissionOverview, error) {
@@ -62,19 +42,7 @@ func toProtoSubmission(submission *Submission) (*pb.SubmissionOverview, error) {
 
 type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
-}
-
-var db *gorm.DB
-
-func issueToken(name string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": name,
-	})
-	tokenString, err := token.SignedString(hmacSecret)
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
+	db *gorm.DB
 }
 
 var langs = []*pb.Lang{}
@@ -104,18 +72,21 @@ func init() {
 
 func main() {
 	// connect db
-	db = dbConnect(getEnv("API_DB_LOG", "") != "")
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatal("db.DB() failed", err)
-	}
-	defer sqlDB.Close()
+	db := dbConnect(
+		getEnv("POSTGRE_HOST", "127.0.0.1"),
+		getEnv("POSTGRE_PORT", "5432"),
+		"librarychecker",
+		getEnv("POSTGRE_USER", "postgres"),
+		getEnv("POSTGRE_PASS", "passwd"),
+		getEnv("API_DB_LOG", "") != "")
 
 	// launch gRPC server
 	port := getEnv("PORT", "50051")
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
-	pb.RegisterLibraryCheckerServiceServer(s, &server{})
+	pb.RegisterLibraryCheckerServiceServer(s, &server{
+		db: db,
+	})
 
 	if getEnv("MODE", "") == "gRPCWeb" {
 		log.Print("gRPC-Web Mode port=", port)

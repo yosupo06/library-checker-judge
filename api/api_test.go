@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"os/exec"
 	"reflect"
 	"sort"
 	"strings"
@@ -24,26 +26,78 @@ import (
 	"gorm.io/gorm"
 )
 
-var client pb.LibraryCheckerServiceClient
+func createTestDB(t *testing.T) *gorm.DB {
+	dbName := uuid.New().String()
+	t.Log("create DB: ", dbName)
 
-func TestMain(m *testing.M) {
-	// connect db
-	db = dbConnect(getEnv("API_DB_LOG", "") != "")
-	sqlDB, err := db.DB()
+	dumpCmd := exec.Command("pg_dump",
+		"-h", "localhost",
+		"-U", "postgres",
+		"-d", "librarychecker",
+		"-p", "5432",
+		"-s")
+	dumpCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+
+	sql, err := dumpCmd.Output()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-	defer sqlDB.Close()
 
+	createCmd := exec.Command("createdb",
+		"-h", "localhost",
+		"-U", "postgres",
+		"-p", "5432",
+		dbName)
+	createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+	if err := createCmd.Run(); err != nil {
+		t.Fatal("exec failed: ", err.Error())
+	}
+
+	tableCmd := exec.Command("psql",
+		"-h", "localhost",
+		"-U", "postgres",
+		"-d", dbName,
+		"-p", "5432")
+	tableCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+	tableCmd.Stdin = bytes.NewReader(sql)
+	if err := tableCmd.Run(); err != nil {
+		t.Fatal("exec failed: ", err.Error())
+	}
+
+	db := dbConnect("localhost", "5432", dbName, "postgres", "passwd", getEnv("API_DB_LOG", "") != "")
+
+	registerUser(db, "admin", "password", true)
+	registerUser(db, "tester", "password", false)
+
+	client, close := createAPIClient(t, db)
+	defer close()
+
+	ctx := loginAsAdmin(t, client)
+	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
+		Name:        "aplusb",
+		Title:       "A + B",
+		Statement:   "Please calculate A + B",
+		TimeLimit:   2.0,
+		CaseVersion: "dummy-initial-version",
+		SourceUrl:   "https://github.com/yosupo06/library-checker-problems/tree/master/sample/aplusb",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	return db
+}
+
+func createAPIClient(t *testing.T, db *gorm.DB) (pb.LibraryCheckerServiceClient, func()) {
 	// launch gRPC server
-	port := getEnv("PORT", "50052")
-	listen, err := net.Listen("tcp", ":"+port)
+	listen, err := net.Listen("tcp", ":50053")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
-	pb.RegisterLibraryCheckerServiceServer(s, &server{})
+	pb.RegisterLibraryCheckerServiceServer(s, &server{
+		db: db,
+	})
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			log.Fatal("Server exited: ", err)
@@ -51,36 +105,24 @@ func TestMain(m *testing.M) {
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure()}
 	conn, err := grpc.DialContext(
 		ctx,
-		"localhost:50052",
+		"localhost:50053",
 		options...,
 	)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-	defer conn.Close()
-	client = pb.NewLibraryCheckerServiceClient(conn)
 
-	os.Exit(m.Run())
+	return pb.NewLibraryCheckerServiceClient(conn), func() {
+		cancel()
+		conn.Close()
+		s.Stop()
+	}
 }
 
-func clearJudgeQueue(t *testing.T) {
-	for {
-		task := Task{}
-		if err := db.Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-			break
-		}
-		if err := db.Delete(task).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	t.Log("Cleared all judge tasks")
-}
-
-func loginContext(t *testing.T, name string) context.Context {
+func loginContext(t *testing.T, name string, client pb.LibraryCheckerServiceClient) context.Context {
 	ctx := context.Background()
 	loginResp, err := client.Login(ctx, &pb.LoginRequest{
 		Name:     name,
@@ -92,15 +134,15 @@ func loginContext(t *testing.T, name string) context.Context {
 	return clientutil.ContextWithToken(ctx, loginResp.Token)
 }
 
-func loginAsAdmin(t *testing.T) context.Context {
-	return loginContext(t, "admin")
+func loginAsAdmin(t *testing.T, client pb.LibraryCheckerServiceClient) context.Context {
+	return loginContext(t, "admin", client)
 }
 
-func loginAsTester(t *testing.T) context.Context {
-	return loginContext(t, "tester")
+func loginAsTester(t *testing.T, client pb.LibraryCheckerServiceClient) context.Context {
+	return loginContext(t, "tester", client)
 }
 
-func submitSomething(t *testing.T) int32 {
+func submitSomething(t *testing.T, client pb.LibraryCheckerServiceClient) int32 {
 	ctx := context.Background()
 	src := "this is a test source"
 	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
@@ -116,7 +158,7 @@ func submitSomething(t *testing.T) int32 {
 	return id
 }
 
-func testFetchSubmission(t *testing.T, id int32) *pb.SubmissionInfoResponse {
+func testFetchSubmission(t *testing.T, id int32, client pb.LibraryCheckerServiceClient) *pb.SubmissionInfoResponse {
 	ctx := context.Background()
 	resp, err := client.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{
 		Id: id,
@@ -141,6 +183,9 @@ func assertEqualCases(t *testing.T, expectCases []*pb.SubmissionCaseResult, actu
 }
 
 func TestProblemInfo(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	ctx := context.Background()
 	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
 		Name: "aplusb",
@@ -163,6 +208,9 @@ func TestProblemInfo(t *testing.T) {
 }
 
 func TestSubmissionSortOrderList(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	ctx := context.Background()
 	for _, order := range []string{"", "-id", "+time"} {
 		_, err := client.SubmissionList(ctx, &pb.SubmissionListRequest{
@@ -186,6 +234,9 @@ func TestSubmissionSortOrderList(t *testing.T) {
 }
 
 func TestLangList(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	ctx := context.Background()
 	list, err := client.LangList(ctx, &pb.LangListRequest{})
 	if err != nil {
@@ -197,6 +248,9 @@ func TestLangList(t *testing.T) {
 }
 
 func TestSubmitBig(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	ctx := context.Background()
 	bigSrc := strings.Repeat("a", 3*1000*1000) // 3 MB
 	_, err := client.Submit(ctx, &pb.SubmitRequest{
@@ -211,6 +265,9 @@ func TestSubmitBig(t *testing.T) {
 }
 
 func TestAnonymousRejudge(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	ctx := context.Background()
 	src := strings.Repeat("a", 1000)
 	resp, err := client.Submit(ctx, &pb.SubmitRequest{
@@ -230,9 +287,10 @@ func TestAnonymousRejudge(t *testing.T) {
 }
 
 func TestRejudgeTwice(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
+	judgeCtx := loginAsAdmin(t, client)
 	src := strings.Repeat("a", 1000)
 	resp, err := client.Submit(judgeCtx, &pb.SubmitRequest{
 		Problem: "aplusb",
@@ -300,7 +358,10 @@ func TestRejudgeTwice(t *testing.T) {
 }
 
 func TestAdmin(t *testing.T) {
-	ctx := loginAsAdmin(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsAdmin(t, client)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
 		t.Fatal("Failed UserInfo")
@@ -311,7 +372,10 @@ func TestAdmin(t *testing.T) {
 }
 
 func TestNotAdmin(t *testing.T) {
-	ctx := loginAsTester(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsTester(t, client)
 	resp, err := client.UserInfo(ctx, &pb.UserInfoRequest{})
 	if err != nil {
 		t.Fatal("Failed UserInfo")
@@ -322,7 +386,10 @@ func TestNotAdmin(t *testing.T) {
 }
 
 func TestUserList(t *testing.T) {
-	ctx := loginAsAdmin(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsAdmin(t, client)
 	_, err := client.UserList(ctx, &pb.UserListRequest{})
 	if err != nil {
 		t.Fatal("Failed UserList")
@@ -330,7 +397,10 @@ func TestUserList(t *testing.T) {
 }
 
 func TestNotAdminUserList(t *testing.T) {
-	ctx := loginAsTester(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsTester(t, client)
 	_, err := client.UserList(ctx, &pb.UserListRequest{})
 	if err == nil {
 		t.Fatal("Success UserList with tester")
@@ -339,6 +409,9 @@ func TestNotAdminUserList(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	ctx := context.Background()
 	resp, err := client.Register(ctx, &pb.RegisterRequest{
 		Name:     uuid.New().String(),
@@ -355,9 +428,12 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestChangeUserInfo(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	// admin add bob
 	ctx := context.Background()
-	aliceCtx := loginAsAdmin(t)
+	aliceCtx := loginAsAdmin(t, client)
 	bobName := uuid.New().String()
 	regResp, err := client.Register(ctx, &pb.RegisterRequest{
 		Name:     bobName,
@@ -415,8 +491,11 @@ func TestChangeUserInfo(t *testing.T) {
 }
 
 func TestChangeDummyUserInfo(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	// admin add bob
-	ctx := loginAsAdmin(t)
+	ctx := loginAsAdmin(t, client)
 
 	_, err := client.ChangeUserInfo(ctx, &pb.ChangeUserInfoRequest{
 		User: &pb.User{
@@ -431,10 +510,13 @@ func TestChangeDummyUserInfo(t *testing.T) {
 }
 
 func TestAddAdminByNotAdmin(t *testing.T) {
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
 	// admin add bob
 	ctx := context.Background()
 
-	aliceCtx := loginAsTester(t)
+	aliceCtx := loginAsTester(t, client)
 
 	bobName := uuid.New().String()
 	regResp, err := client.Register(ctx, &pb.RegisterRequest{
@@ -466,10 +548,11 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 }
 
 func TestOtherJudge(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
-	id := submitSomething(t)
+	judgeCtx := loginAsAdmin(t, client)
+	id := submitSomething(t, client)
 	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName: "judge-test",
 	})
@@ -493,10 +576,11 @@ func TestOtherJudge(t *testing.T) {
 }
 
 func TestJudgeSyncAfterFinished(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
-	id := submitSomething(t)
+	judgeCtx := loginAsAdmin(t, client)
+	id := submitSomething(t, client)
 
 	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName: "judge-test",
@@ -540,10 +624,11 @@ func TestJudgeSyncAfterFinished(t *testing.T) {
 }
 
 func TestSimulateJudge(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
-	id := submitSomething(t)
+	judgeCtx := loginAsAdmin(t, client)
+	id := submitSomething(t, client)
 
 	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName: "judge-test",
@@ -585,7 +670,7 @@ func TestSimulateJudge(t *testing.T) {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
 
-	sub := testFetchSubmission(t, id)
+	sub := testFetchSubmission(t, id, client)
 	if sub.Overview.Status != "Judging" {
 		t.Fatal("Status is not changed: ", sub.Overview.Status)
 	}
@@ -606,7 +691,7 @@ func TestSimulateJudge(t *testing.T) {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
 
-	sub = testFetchSubmission(t, id)
+	sub = testFetchSubmission(t, id, client)
 	if sub.Overview.Status != "TLE" {
 		t.Fatal("Status is not changed")
 	}
@@ -629,7 +714,7 @@ func TestSimulateJudge(t *testing.T) {
 		t.Fatal("Failed to SyncJudgeTaskStatus:", err)
 	}
 
-	sub = testFetchSubmission(t, id)
+	sub = testFetchSubmission(t, id, client)
 	if sub.Overview.Status != "TLE" {
 		t.Fatal("Status is not changed")
 	}
@@ -642,10 +727,11 @@ func TestSimulateJudge(t *testing.T) {
 }
 
 func TestSimulateRejudge(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
-	id := submitSomething(t)
+	judgeCtx := loginAsAdmin(t, client)
+	id := submitSomething(t, client)
 
 	for i := 0; i < 3; i++ {
 		log.Printf("Start %v/3", i+1)
@@ -694,10 +780,11 @@ func TestSimulateRejudge(t *testing.T) {
 }
 
 func TestSimulateHack(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
-	id := submitSomething(t)
+	judgeCtx := loginAsAdmin(t, client)
+	id := submitSomething(t, client)
 
 	resp, err := client.PopJudgeTask(judgeCtx, &pb.PopJudgeTaskRequest{
 		JudgeName: "judge-test",
@@ -752,7 +839,7 @@ func TestSimulateHack(t *testing.T) {
 		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
 	}
 
-	if testFetchSubmission(t, id).Overview.Hacked {
+	if testFetchSubmission(t, id, client).Overview.Hacked {
 		t.Fatal("Hacked should not be true")
 	}
 
@@ -780,7 +867,7 @@ func TestSimulateHack(t *testing.T) {
 		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
 	}
 
-	if !testFetchSubmission(t, id).Overview.Hacked {
+	if !testFetchSubmission(t, id, client).Overview.Hacked {
 		t.Fatal("Hacked should be true")
 	}
 
@@ -802,7 +889,7 @@ func TestSimulateHack(t *testing.T) {
 		t.Fatalf("ID is differ, %v vs %v", id, resp.SubmissionId)
 	}
 
-	if !testFetchSubmission(t, id).Overview.Hacked {
+	if !testFetchSubmission(t, id, client).Overview.Hacked {
 		t.Fatal("Hacked should be true")
 	}
 
@@ -830,7 +917,7 @@ func TestSimulateHack(t *testing.T) {
 		t.Fatal("Failed to FinishJudgeTaskStatus:", err)
 	}
 
-	if !testFetchSubmission(t, id).Overview.Hacked {
+	if !testFetchSubmission(t, id, client).Overview.Hacked {
 		t.Fatal("Hacked should be true")
 	}
 
@@ -853,10 +940,11 @@ func TestSimulateHack(t *testing.T) {
 }
 
 func TestSimulateJudgeDown(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
-	id := submitSomething(t)
+	judgeCtx := loginAsAdmin(t, client)
+	id := submitSomething(t, client)
 
 	for i := 0; i < 3; i++ {
 		log.Printf("Start %v/3", i+1)
@@ -875,8 +963,10 @@ func TestSimulateJudgeDown(t *testing.T) {
 }
 
 func TestParallelJudge(t *testing.T) {
-	clearJudgeQueue(t)
-	judgeCtx := loginAsAdmin(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	judgeCtx := loginAsAdmin(t, client)
 	ids := make([]int, 100)
 	tasks := make([]int, 100)
 	for i := 0; i < 100; i++ {
@@ -887,7 +977,7 @@ func TestParallelJudge(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		i := i
 		g.Go(func() error {
-			ids[i] = int(submitSomething(t))
+			ids[i] = int(submitSomething(t, client))
 			return nil
 		})
 	}
@@ -927,9 +1017,10 @@ func TestParallelJudge(t *testing.T) {
 }
 
 func TestSimulateParallelRejudge(t *testing.T) {
-	clearJudgeQueue(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
 
-	judgeCtx := loginAsAdmin(t)
+	judgeCtx := loginAsAdmin(t, client)
 
 	ids := make([]int, 50)
 	for i := 0; i < 50; i++ {
@@ -939,7 +1030,7 @@ func TestSimulateParallelRejudge(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		i := i
 		g.Go(func() error {
-			ids[i] = int(submitSomething(t))
+			ids[i] = int(submitSomething(t, client))
 			return nil
 		})
 	}
@@ -1051,7 +1142,10 @@ func TestSimulateParallelRejudge(t *testing.T) {
 }
 
 func TestChangeProblemInfo(t *testing.T) {
-	ctx := loginAsAdmin(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsAdmin(t, client)
 
 	oldProblem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
 		Name: "aplusb",
@@ -1087,7 +1181,7 @@ func TestChangeProblemInfo(t *testing.T) {
 		t.Fatal("statement is not changed")
 	}
 	if problem.CaseVersion != "dummy-version" {
-		t.Fatal("CaseVersion is not changed")
+		t.Fatal("CaseVersion is not changed: ", problem.CaseVersion)
 	}
 
 	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
@@ -1122,7 +1216,10 @@ func TestChangeProblemInfo(t *testing.T) {
 }
 
 func TestChangeProblemInfoByTester(t *testing.T) {
-	ctx := loginAsTester(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsTester(t, client)
 
 	_, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
 		Name: "aplusb",
@@ -1145,7 +1242,10 @@ func TestChangeProblemInfoByTester(t *testing.T) {
 }
 
 func TestCreateProblem(t *testing.T) {
-	ctx := loginAsAdmin(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsAdmin(t, client)
 
 	name := uuid.New().String()
 	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
@@ -1180,7 +1280,10 @@ func TestCreateProblem(t *testing.T) {
 }
 
 func TestProblemCategories(t *testing.T) {
-	ctx := loginAsAdmin(t)
+	client, close := createAPIClient(t, createTestDB(t))
+	defer close()
+
+	ctx := loginAsAdmin(t, client)
 	testData := []*pb.ProblemCategory{
 		{
 			Title:    "a",
