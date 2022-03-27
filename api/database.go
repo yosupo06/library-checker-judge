@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	_ "github.com/lib/pq"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"gorm.io/driver/postgres"
@@ -75,6 +77,22 @@ type Task struct {
 type Metadata struct {
 	Key   string `gorm:"primaryKey"`
 	Value string
+}
+
+func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error {
+	passHash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return errors.New("bcrypt broken")
+	}
+	user := User{
+		Name:     name,
+		Passhash: string(passHash),
+		Admin:    isAdmin,
+	}
+	if err := db.Create(&user).Error; err != nil {
+		return errors.New("this username are already registered")
+	}
+	return nil
 }
 
 func fetchUser(db *gorm.DB, name string) (User, error) {
