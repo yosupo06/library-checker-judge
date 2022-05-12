@@ -49,8 +49,8 @@ evans --host localhost --port 58080 api/proto/library_checker.proto --web
 ```sh
 sudo apt install postgresql-client libpq-dev python3 python3-dev python3-pip g++ cgroup-tools libcap2-bin
 pip3 install termcolor toml psycopg2 psutil
-pip3 -r install deploy/requirements.txt
-pip3 -r ../library-checker-problems/requirements.txt
+pip3 install -r deploy/requirements.txt
+pip3 install -r ../library-checker-problems/requirements.txt
 ```
 
 など
