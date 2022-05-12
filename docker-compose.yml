@@ -10,6 +10,11 @@ services:
     environment:
       - POSTGRES_DB=librarychecker
       - POSTGRES_PASSWORD=passwd
+    healthcheck:
+        test: [ "CMD", "pg_isready", "-q", "-d", "librarychecker", "-U", "postgres" ]
+        timeout: 45s
+        interval: 10s
+        retries: 10
 
   minio:
     image: minio/minio
@@ -26,7 +31,8 @@ services:
     ports:
       - 50051:50051
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - POSTGRE_HOST=db
       - HMAC_SECRET=dummy_secret
@@ -38,7 +44,8 @@ services:
     ports:
       - 58080:50051
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - POSTGRE_HOST=db
       - HMAC_SECRET=dummy_secret
