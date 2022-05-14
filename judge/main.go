@@ -4,15 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -21,7 +15,6 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	_ "github.com/lib/pq"
-	"github.com/minio/minio-go/v6"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
@@ -30,54 +23,7 @@ import (
 var client pb.LibraryCheckerServiceClient
 var judgeName string
 var judgeCtx context.Context
-
-// minio
-var minioClient *minio.Client
-
-var casesDir string
-
-func fetchData(caseVersion string, problemName string) (string, string, error) {
-	zipPath := path.Join(casesDir, fmt.Sprintf("cases-%s.zip", caseVersion))
-	data := path.Join(casesDir, fmt.Sprintf("cases-%s", caseVersion))
-	if _, err := os.Stat(zipPath); err != nil {
-		// fetch zip
-		zipFile, err := os.Create(zipPath)
-		if err != nil {
-			return "", "", err
-		}
-		object, err := minioClient.GetObject(secretConfig.MinioBucket, caseVersion+".zip", minio.GetObjectOptions{})
-		if err != nil {
-			return "", "", err
-		}
-		if _, err = io.Copy(zipFile, object); err != nil {
-			return "", "", err
-		}
-		if err = zipFile.Close(); err != nil {
-			return "", "", err
-		}
-		cmd := exec.Command("unzip", zipPath, "-d", data)
-		if err := cmd.Run(); err != nil {
-			return "", "", err
-		}
-	}
-	return data, caseVersion, nil
-}
-
-func getCases(data string) ([]string, error) {
-	// write glob code
-	matches, err := filepath.Glob(path.Join(data, "in", "*.in"))
-	if err != nil {
-		return nil, err
-	}
-	result := []string{}
-	for _, match := range matches {
-		_, name := path.Split(match)
-		name = strings.TrimSuffix(name, ".in")
-		result = append(result, name)
-	}
-	sort.Strings(result)
-	return result, nil
-}
+var testCaseFetcher TestCaseFetcher
 
 func execJudge(submissionID int32) (err error) {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
@@ -99,14 +45,16 @@ func execJudge(submissionID int32) (err error) {
 	}); err != nil {
 		return err
 	}
-	caseDir, caseVersion, err := fetchData(problem.CaseVersion, submission.Overview.ProblemName)
+
+	caseVersion := problem.CaseVersion
+	testCases, err := testCaseFetcher.Fetch(submission.Overview.ProblemName, caseVersion)
 	log.Print("Fetched :", caseVersion)
 	if err != nil {
 		log.Println("Fail to fetchData")
 		return err
 	}
 
-	checker, err := os.Open(path.Join(caseDir, "checker.cpp"))
+	checker, err := os.Open(testCases.CheckerPath())
 	if err != nil {
 		return err
 	}
@@ -184,7 +132,8 @@ func execJudge(submissionID int32) (err error) {
 	}); err != nil {
 		return err
 	}
-	cases, err := getCases(caseDir)
+
+	cases, err := testCases.CaseNames()
 	if err != nil {
 		return err
 	}
@@ -226,11 +175,11 @@ func execJudge(submissionID int32) (err error) {
 		return nil
 	}
 	for _, caseName := range cases {
-		inFile, err := os.Open(path.Join(caseDir, "in", caseName+".in"))
+		inFile, err := os.Open(testCases.InFilePath(caseName))
 		if err != nil {
 			return err
 		}
-		outFile, err := os.Open(path.Join(caseDir, "out", caseName+".out"))
+		outFile, err := os.Open(testCases.OutFilePath(caseName))
 		if err != nil {
 			return err
 		}
@@ -328,34 +277,24 @@ func apiConnect() *grpc.ClientConn {
 	return conn
 }
 
-func minioConnect() *minio.Client {
-	client, err := minio.New(
-		secretConfig.MinioHost,
-		secretConfig.MinioAccess,
-		secretConfig.MinioSecret,
-		secretConfig.Prod,
-	)
-	if err != nil {
-		log.Fatal("Cannot connect to Minio: ", err)
-	}
-	return client
-}
-
 func main() {
-	// init directory
-	myCasesDir, err := ioutil.TempDir(os.Getenv("CASEDIR"), "case")
-	casesDir = myCasesDir
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.RemoveAll(casesDir)
+	var err error
 
 	// init gRPC
 	conn := apiConnect()
 	defer conn.Close()
 	initClient(conn)
 
-	minioClient = minioConnect()
+	testCaseFetcher, err = NewTestCaseFetcher(
+		secretConfig.MinioHost,
+		secretConfig.MinioAccess,
+		secretConfig.MinioSecret,
+		secretConfig.Prod,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer testCaseFetcher.Close()
 
 	log.Println("Start Pooling")
 	for {

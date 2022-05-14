@@ -35,13 +35,18 @@ func Submit(t *testing.T, problem, lang string, srcFile io.Reader) int32 {
 }
 
 func TestMain(m *testing.M) {
-	myCasesDir, err := ioutil.TempDir("", "case")
-	casesDir = myCasesDir
+	var err error
+	testCaseFetcher, err = NewTestCaseFetcher(
+		secretConfig.MinioHost,
+		secretConfig.MinioAccess,
+		secretConfig.MinioSecret,
+		secretConfig.Prod,
+	)
 	if err != nil {
 		panic(err)
 	}
 	defer func() {
-		if err := os.RemoveAll(casesDir); err != nil {
+		if err := testCaseFetcher.Close(); err != nil {
 			panic(err)
 		}
 	}()
@@ -57,8 +62,6 @@ func TestMain(m *testing.M) {
 			panic(err)
 		}
 	}()
-
-	minioClient = minioConnect()
 
 	os.Exit(m.Run())
 }
