@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,42 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/google/shlex"
 	_ "github.com/lib/pq"
 )
-
-// Save stripped output with strip()
-type outputStripper struct {
-	N        int
-	data     []byte
-	overflow bool
-}
-
-func (os *outputStripper) Write(b []byte) (n int, err error) {
-	if os.N <= 20 {
-		return -1, errors.New("N is too small")
-	}
-	blen := len(b)
-	cap := os.N - 20 - len(os.data)
-
-	add := blen
-	if cap < add {
-		add = cap
-		os.overflow = true
-	}
-	os.data = append(os.data, b[:add]...)
-	return blen, nil
-}
-
-func (os *outputStripper) Bytes() []byte {
-	var buf bytes.Buffer
-	buf.Write(os.data)
-	if os.overflow {
-		buf.Write([]byte(" ... stripped"))
-	}
-	return buf.Bytes()
-}
 
 type Result struct {
 	ReturnCode int     `json:"returncode"`
@@ -100,33 +66,6 @@ func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
 	log.Println("execute: ", cmd.Args)
 	log.Printf("stderr: %s\n", string(result.Stderr))
 	return result, nil
-}
-
-type Lang struct {
-	Source  string `toml:"source"`
-	Compile string `toml:"compile"`
-	Exec    string `toml:"exec"`
-}
-
-var langs map[string]Lang
-
-func init() {
-	var tomlData struct {
-		Langs []struct {
-			Lang
-			ID string `toml:"id"`
-		} `toml:"langs"`
-	}
-	if _, err := toml.DecodeFile("../api/langs.toml", &tomlData); err != nil {
-		log.Fatal(err)
-	}
-	langs = make(map[string]Lang)
-	for _, lang := range tomlData.Langs {
-		langs[lang.ID] = lang.Lang
-	}
-	if _, ok := langs["checker"]; !ok {
-		log.Fatal("lang file don't have checker")
-	}
 }
 
 /*
