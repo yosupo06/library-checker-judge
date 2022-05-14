@@ -20,6 +20,7 @@ require (
 	google.golang.org/genproto v0.0.0-20201104152603-2e45c02ce95c // indirect
 	google.golang.org/grpc v1.33.1
 	gopkg.in/ini.v1 v1.62.0 // indirect
+	github.com/google/uuid v1.1.2
 )
 
 //replace github.com/yosupo06/library-checker-judge/api => ../api

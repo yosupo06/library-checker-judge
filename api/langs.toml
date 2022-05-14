@@ -2,6 +2,7 @@
     id = "checker"
     source = "checker.cpp"    
     compile = "g++ -O2 -std=c++14 -DEVAL -march=native -o checker checker.cpp"
+    compile_image = "gcc:11.3.0"
 [[langs]]
     id = "cpp"
     name = "C++17"
