@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -77,25 +76,16 @@ func TestOutputStripperLong(t *testing.T) {
 }
 
 func TestExecutorInfinityCE(t *testing.T) {
-	checker, err := os.Open("./test_src/aplusb/checker.cpp")
-	if err != nil {
-		t.Fatal("Failed: Checker", err)
-	}
 	src, err := os.Open("./test_src/many_ce.d")
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-	tempdir, err := ioutil.TempDir("", "judge")
-	if err != nil {
-		t.Fatal("Failed: tempdir", err)
-	}
-	defer os.RemoveAll(tempdir)
-	judge, err := NewJudge(tempdir, "d", checker, src, 2.0)
+	judge, err := NewJudge("d", 2.0)
 	if err != nil {
 		t.Fatal("Failed: NewJudge", err)
 	}
 
-	result, err := judge.CompileSource()
+	result, err := judge.CompileSource(src)
 
 	if err != nil {
 		t.Fatal("Failed: Failed Compile", err)
@@ -115,20 +105,16 @@ func generateAplusB(t *testing.T, lang, srcName string) *Judge {
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-	tempdir, err := ioutil.TempDir("", "judge")
-	if err != nil {
-		t.Fatal("Failed: tempdir", err)
-	}
-	judge, err := NewJudge(tempdir, lang, checker, src, 2.0)
+	judge, err := NewJudge(lang, 2.0)
 	if err != nil {
 		t.Fatal("Failed: NewJudge", err)
 	}
 
-	result, err := judge.CompileChecker()
+	result, err := judge.CompileChecker(checker)
 	if err != nil || result.ReturnCode != 0 {
 		t.Fatal("error CompileChecker", err, string(result.Stderr))
 	}
-	result, err = judge.CompileSource()
+	result, err = judge.CompileSource(src)
 	if err != nil || result.ReturnCode != 0 {
 		t.Fatal("error CompileSource", err, string(result.Stderr))
 	}

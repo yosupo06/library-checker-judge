@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -58,15 +57,11 @@ func execJudge(submissionID int32) (err error) {
 	if err != nil {
 		return err
 	}
-	tempdir, err := ioutil.TempDir("", "judge")
+	judge, err := NewJudge(submission.Overview.Lang, problem.TimeLimit)
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempdir)
-	judge, err := NewJudge(tempdir, submission.Overview.Lang, checker, strings.NewReader(submission.Source), problem.TimeLimit)
-	if err != nil {
-		return err
-	}
+	defer judge.Close()
 
 	defer func() {
 		if err != nil {
@@ -87,7 +82,7 @@ func execJudge(submissionID int32) (err error) {
 	}); err != nil {
 		return err
 	}
-	result, err := judge.CompileChecker()
+	result, err := judge.CompileChecker(checker)
 	if err != nil {
 		return err
 	}
@@ -102,7 +97,7 @@ func execJudge(submissionID int32) (err error) {
 		}
 		return nil
 	}
-	result, err = judge.CompileSource()
+	result, err = judge.CompileSource(strings.NewReader(submission.Source))
 	if err != nil {
 		return err
 	}
