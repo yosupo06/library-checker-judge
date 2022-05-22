@@ -1,0 +1,102 @@
+[[langs]]
+    id = "checker"
+    source = "checker.cpp"    
+    image_name = "library-checker-images-gcc"
+    compile = ["g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "checker", "checker.cpp"]
+    exec = ["./checker", "input.in", "actual.out", "expect.out"]
+[[langs]]
+    id = "cpp"
+    name = "C++17"
+    version = "g++(12.1)"
+    source = "main.cpp"    
+    image_name = "library-checker-images-gcc"
+    compile = ["g++", "-O2", "-std=c++17", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
+    exec = ["./main"]
+[[langs]]
+    id = "cpp-acl"
+    name = "C++17(ACL)"
+    version = "g++(12.1 + ac-library 1.4)"
+    source = "main.cpp"    
+    image_name = "library-checker-images-gcc"
+    compile = ["g++", "-O2", "-std=c++17", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
+    exec = ["./main"]
+[[langs]]
+    id = "cpp14"
+    name = "C++14"
+    version = "g++(12.1)"
+    source = "main.cpp"
+    image_name = "library-checker-images-gcc"
+    compile = ["g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
+    exec = ["./main"]
+[[langs]]
+    id = "rust"
+    name = "Rust"
+    version = "rustc(1.60 edition 2018)"
+    source = "main.rs"
+    image_name = "rust:1.60-slim"
+    compile = ["rustc", "--edition", "2018", "-O", "main.rs"]
+    exec = ["./main"]
+[[langs]]
+    id = "d"
+    name = "LDC2"
+    version = "ldc2 1.29.0"
+    source = "main.d"
+    image_name = "library-checker-images-ldc"
+    compile = ["ldc2", "-O", "-release", "main.d"]
+    exec = ["./main"]
+[[langs]]
+    id = "java"
+    name = "Java"
+    version = "openjdk 17"
+    source = "Main.java"
+    image_name = "openjdk:17"
+    compile = ["javac", "Main.java"]
+    exec = ["java", "-Xss1G", "Main"]
+[[langs]]
+    id = "python3"
+    name = "Python3"
+    version = "python3.10 + numpy + scipy"
+    source = "main.py"
+    image_name = "library-checker-images-python3"
+    compile = ["sh", "-c", "echo | python3 -c 'import main.py' || :"]
+    exec = ["python3", "main.py"]
+[[langs]]
+    id = "pypy3"
+    name = "PyPy3"
+    version = "pypy3.9-7.3.9"
+    source = "main.py"
+    image_name = "pypy:3.9-7.3.9-slim"
+    compile = ["pypy3", "-c", "'print(1)'"]
+    exec = ["pypy3", "main.py"]
+[[langs]]
+    id = "haskell"
+    name = "GHC"
+    version = "ghc 9.0.2 + stack LTS 19.6"
+    source = "main.hs"
+    image_name = "library-checker-images-haskell"
+    compile = ["stack", "ghc", "--", "main.hs", "-O2"]
+    exec = ["./main"]
+[[langs]]
+    id = "csharp"
+    name = "C#"
+    version = "dotnet 5.0"
+    source = "Program.cs"
+    image_name = "library-checker-images-csharp"
+    compile = ["sh", "-c", "cp -r /opt/C-Sharp C-Sharp && cp Program.cs C-Sharp/Program.cs && dotnet publish C-Sharp -c Release -r linux-x64 -o bin"]
+    exec = ["./bin/C-Sharp"]
+[[langs]]
+    id = "go"
+    name = "Go"
+    version = "go 1.18.2"
+    source = "main.go"
+    image_name = "golang:1.18.2-alpine3.15"
+    compile = ["go", "build", "main.go"]
+    exec = ["./main"]
+[[langs]]
+    id = "lisp"
+    name = "Common Lisp"
+    version = "sbcl 2.1.5"
+    source = "main.lisp"
+    image_name = "clfoundation/sbcl:2.1.5-slim"
+    compile = ["sbcl", "--noinform", "--eval", "(compile-file \"main.lisp\")", "--quit"]
+    exec = ["sbcl", "--control-stack-size", "1GB", "--script", "main.fasl"]

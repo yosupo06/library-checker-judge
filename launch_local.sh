@@ -1,12 +1,11 @@
 set -e
 
 docker --version
-docker-compose --version
 
 ./api/gen_protoc.sh
 
-docker-compose down -v
-docker-compose up -d --build
+docker compose down -v
+docker compose up -d --build
 
 # wait for launch api servers
 # TODO: remove this sleep

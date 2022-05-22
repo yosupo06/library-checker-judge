@@ -1,0 +1,6 @@
+FROM mcr.microsoft.com/dotnet/sdk:5.0
+
+RUN dotnet new console -o /opt/C-Sharp
+COPY C-Sharp.csproj /opt/C-Sharp
+RUN dotnet add /opt/C-Sharp package System.Runtime.CompilerServices.Unsafe -v 6.0.0
+RUN dotnet restore /opt/C-Sharp -r linux-x64

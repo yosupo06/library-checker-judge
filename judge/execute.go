@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -19,32 +21,6 @@ import (
 
 type Volume struct {
 	Name string
-}
-
-type TaskInfo struct {
-	Name                string // container name e.g. ubuntu
-	Argments            []string
-	Timeout             time.Duration
-	Cpuset              []int
-	MemoryLimitMB       int
-	EnableNetwork       bool
-	EnableLoggingDriver bool
-
-	Stdin  io.Reader
-	Stdout io.Writer
-	Stderr io.Writer
-}
-
-type containerInfo struct {
-	containerID string
-	cgroupName  string
-}
-
-type TaskResult struct {
-	ExitCode int
-	Time     time.Duration
-	Memory   int64
-	TLE      bool
 }
 
 func CreateVolume() (Volume, error) {
@@ -69,100 +45,97 @@ func CreateVolume() (Volume, error) {
 	}, nil
 }
 
-func (v *Volume) CopyFile(file *io.Reader, dstPath string) (Volume, error) {
-	volumeName := "volume-" + uuid.New().String()
-
-	args := []string{"volume", "create"}
-	args = append(args, "--name", volumeName)
-
-	cmd := exec.Command("docker", args...)
-
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
+func (v *Volume) CopyFile(srcPath string, dstPath string) error {
+	task := TaskInfo{
+		WorkDir:       "/workdir",
+		WorkDirVolume: v,
+		Name:          "ubuntu",
+	}
+	container, err := task.create()
+	defer container.Remove()
 
 	if err != nil {
-		log.Println("volume create failed:", err.Error())
-		return Volume{}, err
+		return err
 	}
 
-	return Volume{
-		Name: volumeName,
-	}, nil
+	args := []string{"cp", srcPath, fmt.Sprintf("%s:%s", container.containerID, path.Join("/workdir", dstPath))}
+
+	cmd := exec.Command("docker", args...)
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+
+	if err != nil {
+		log.Println("copy file failed:", err.Error())
+		return err
+	}
+
+	return nil
 }
 
-func (t *TaskInfo) Run() (TaskResult, error) {
+func (v *Volume) Remove() error {
+	args := []string{"volume", "rm", v.Name}
+
+	cmd := exec.Command("docker", args...)
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Println("failed to remove volume:", err)
+		return err
+	}
+
+	return nil
+}
+
+type TaskInfo struct {
+	Name                string // container name e.g. ubuntu
+	Argments            []string
+	Timeout             time.Duration
+	Cpuset              []int
+	MemoryLimitMB       int
+	StackLimitKB        int // -1: unlimited
+	PidsLimit           int
+	EnableNetwork       bool
+	EnableLoggingDriver bool
+	WorkDir             string
+	WorkDirVolume       *Volume
+
+	Stdin  io.Reader
+	Stdout io.Writer
+	Stderr io.Writer
+}
+
+type TaskResult struct {
+	ExitCode int
+	Time     time.Duration
+	Memory   int64
+	TLE      bool
+}
+
+func (t *TaskInfo) Run() (result TaskResult, err error) {
 	ci, err := t.create()
 	if err != nil {
 		return TaskResult{}, err
 	}
-	result, err := t.start(ci)
+	defer func() {
+		if err2 := ci.Remove(); err2 != nil {
+			err = err2
+		}
+	}()
+
+	result, err = t.start(ci)
 	if err != nil {
 		return TaskResult{}, err
 	}
 	return result, nil
 }
 
-func readUsedTime(cgroupName string) (time.Duration, error) {
-	fileName := "/sys/fs/cgroup/cpuacct/" + cgroupName + "/cpuacct.usage"
-	bytes, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return 0, err
-	}
-
-	result, err := strconv.ParseInt(strings.TrimSpace(string(bytes)), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return time.Duration(result) * time.Nanosecond, nil
-}
-
-func readUsedMemory(cgroupName string) (int64, error) {
-	fileName := "/sys/fs/cgroup/memory/" + cgroupName + "/memory.max_usage_in_bytes"
-	bytes, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return 0, err
-	}
-
-	result, err := strconv.ParseInt(strings.TrimSpace(string(bytes)), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return result, nil
-}
-
-func inspectExitCode(containerId string) (int, error) {
-	args := []string{"inspect"}
-
-	args = append(args, containerId)
-	args = append(args, "--format={{.State.ExitCode}}")
-
-	cmd := exec.Command("docker", args...)
-
-	output, err := cmd.Output()
-	if err != nil {
-		return 0, err
-	}
-
-	code, err := strconv.ParseInt(strings.TrimSpace(string(output)), 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(code), nil
-}
-
 // docker create ... -> container ID
 func (t *TaskInfo) create() (containerInfo, error) {
-	cgroupName := "container-" + uuid.New().String()
-
 	args := []string{"create"}
 
 	// enable interactive
 	args = append(args, "-i")
-
-	// cgroup
-	args = append(args, "--cgroup-parent="+cgroupName)
 
 	// cpuset
 	if len(t.Cpuset) != 0 {
@@ -189,13 +162,38 @@ func (t *TaskInfo) create() (containerInfo, error) {
 		args = append(args, fmt.Sprintf("--memory-swap=%dm", t.MemoryLimitMB))
 	}
 
+	// pids limit
+	if t.PidsLimit != 0 {
+		args = append(args, "--pids-limit")
+		args = append(args, strconv.Itoa(t.PidsLimit))
+	}
+
+	// stack size
+	if t.StackLimitKB != 0 {
+		args = append(args, "--ulimit")
+		args = append(args, fmt.Sprintf("stack=%d:%d", t.StackLimitKB, t.StackLimitKB))
+	}
+
+	// workdir
+	if t.WorkDir != "" {
+		args = append(args, "-w")
+		args = append(args, t.WorkDir)
+	}
+
+	// volume
+	if t.WorkDirVolume != nil {
+		if t.WorkDir == "" {
+			return containerInfo{}, errors.New("WorkDirVolume is specified though WorkDir is empty")
+		}
+		args = append(args, "-v")
+		args = append(args, fmt.Sprintf("%s:%s", t.WorkDirVolume.Name, t.WorkDir))
+	}
+
 	// container name
 	args = append(args, t.Name)
 
 	// extra arguments
 	args = append(args, t.Argments...)
-
-	log.Printf("create docker args:%s\n", args)
 
 	cmd := exec.Command("docker", args...)
 
@@ -212,7 +210,6 @@ func (t *TaskInfo) create() (containerInfo, error) {
 
 	return containerInfo{
 		containerID: containerId,
-		cgroupName:  cgroupName,
 	}, nil
 }
 
@@ -231,15 +228,37 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 
 	args = append(args, c.containerID)
 
-	log.Printf("execute docker args:%s\n", args)
-
 	cmd := exec.CommandContext(ctx, "docker", args...)
 
 	cmd.Stdin = t.Stdin
 	cmd.Stdout = t.Stdout
 	cmd.Stderr = t.Stderr
 
+	result := TaskResult{
+		Time:   -1,
+		Memory: -1,
+	}
+
+	ticker := time.NewTicker(time.Millisecond)
+	doneForChild := make(chan bool)
+	doneForParent := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-doneForChild:
+				doneForParent <- true
+				return
+			case <-ticker.C:
+				if usedMemory, err := c.readUsedMemory(); err == nil {
+					result.Memory = usedMemory
+				}
+			}
+		}
+	}()
 	err := cmd.Run()
+	ticker.Stop()
+	doneForChild <- true
+	<-doneForParent
 
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
@@ -248,32 +267,117 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 		}
 	}
 
-	result := TaskResult{
-		Time:   -1,
-		Memory: -1,
-	}
-
 	if ctx.Err() == context.DeadlineExceeded {
 		result.Time = t.Timeout
 		result.TLE = true
 		result.ExitCode = 124
+
+		// stop docker
+		cmd := exec.Command("docker", "stop", c.containerID)
+		cmd.Stderr = os.Stderr
+		cmd.Run()
 	} else {
 		if result.ExitCode, err = inspectExitCode(c.containerID); err != nil {
 			log.Println("failed to load exit code: ", err)
 			return TaskResult{}, err
 		}
-		if usedTime, err := readUsedTime(c.cgroupName); err != nil {
+		if usedTime, err := c.readUsedTime(); err != nil {
 			log.Println("failed to load used time: ", err)
 		} else {
 			result.Time = usedTime
 		}
 	}
+	return result, nil
+}
 
-	if usedMemory, err := readUsedMemory(c.cgroupName); err != nil {
-		log.Println("failed to load used memory: ", err)
-	} else {
-		result.Memory = usedMemory
+type containerInfo struct {
+	containerID string
+}
+
+func (c *containerInfo) Remove() error {
+	args := []string{"container", "rm", c.containerID}
+
+	cmd := exec.Command("docker", args...)
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Println("failed to remove container:", err)
+		return err
 	}
 
+	return nil
+}
+
+func (c *containerInfo) readUsedTime() (time.Duration, error) {
+	args := []string{"inspect"}
+
+	args = append(args, c.containerID)
+	args = append(args, "--format={{.State.StartedAt}},{{.State.FinishedAt}}")
+
+	cmd := exec.Command("docker", args...)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, err
+	}
+	arr1 := strings.Split(strings.TrimSpace(string(output)), ",")
+
+	start, err := time.Parse(time.RFC3339Nano, arr1[0])
+	if err != nil {
+		return 0, err
+	}
+	end, err := time.Parse(time.RFC3339Nano, arr1[1])
+	if err != nil {
+		return 0, err
+	}
+
+	return end.Sub(start), nil
+}
+
+func readUsedMemoryFromFile(filePath string) (int64, error) {
+	bytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return 0, err
+	}
+
+	result, err := strconv.ParseInt(strings.TrimSpace(string(bytes)), 10, 64)
+	if err != nil {
+		return 0, err
+	}
 	return result, nil
+}
+
+func (c *containerInfo) readUsedMemory() (int64, error) {
+	filePathV1 := "/sys/fs/cgroup/memory/docker/" + c.containerID + "/memory.max_usage_in_bytes"
+	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/memory.current"
+
+	if result, err := readUsedMemoryFromFile(filePathV1); err == nil {
+		return result, nil
+	}
+	if result, err := readUsedMemoryFromFile(filePathV2); err == nil {
+		return result, nil
+	}
+
+	return 0, errors.New("failed to load memory usage")
+}
+
+func inspectExitCode(containerId string) (int, error) {
+	args := []string{"inspect"}
+
+	args = append(args, containerId)
+	args = append(args, "--format={{.State.ExitCode}}")
+
+	cmd := exec.Command("docker", args...)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, err
+	}
+
+	code, err := strconv.ParseInt(strings.TrimSpace(string(output)), 10, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(code), nil
 }

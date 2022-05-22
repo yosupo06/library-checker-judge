@@ -9,7 +9,7 @@ echo "Start Test env=${ENV}"
 NAME=lib-judge-test-$(date +%d-%s)-$RANDOM
 ZONE=asia-east1-c
 
-if [ $# -ge 1 ] && [ $1 = "remain" ]; then
+if [ $# -ge 2 ] && [ $2 = "remain" ]; then
     echo "[WARN!] Remain Instance"
 else
     echo "Auto Release"
@@ -39,9 +39,6 @@ gcpexec "cd /root/library-checker-problems && python3 -m pip install -r requirem
 
 echo "Make Secret"
 gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
-
-echo 'Start executor_rust test'
-gcpexec "cd /root/library-checker-judge/executor && cargo test -- --test-threads=1"
 
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py -p aplusb unionfind"

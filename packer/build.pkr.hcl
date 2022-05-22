@@ -1,14 +1,16 @@
 variable "env" {
   type = string
+  default = "test"
 }
 
 source "googlecompute" "judge" {
   project_id = "library-checker-project"
-  source_image = "ubuntu-2004-focal-v20211212"
-  zone = "asia-northeast1-c"
-  disk_size = 50
+  source_image = "ubuntu-2204-jammy-v20220506"
+  zone = "asia-northeast1-b"
   machine_type = "n1-standard-2"
+  disk_size = 50
   ssh_username = "ubuntu"
+  temporary_key_pair_type = "ed25519"
   image_name = "${var.env}-judge-image-{{timestamp}}"
   image_family = "${var.env}-judge-image-family"
 }
@@ -27,33 +29,8 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get upgrade -y"
-    ]
-  }
-
-  # add user: library-checker-user
-  provisioner "shell" {
-    inline = [
-      "sudo useradd library-checker-user -u 2000 -m",
-    ]
-  }
-
-  # apt packages
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get install -y cgroup-tools postgresql-client unzip git",
-    ]
-  }
-
-  # grub setting
-  provisioner "file" {
-    source = "99-lib-judge.cfg"
-    destination = "/tmp/99-lib-judge.cfg"
-  }
-  provisioner "shell" {
-    inline = [      
-      "sudo cp /tmp/99-lib-judge.cfg /etc/default/grub.d/99-lib-judge.cfg",
-      "sudo update-grub",
+      "sudo apt-get upgrade -y",
+      "sudo apt-get install -y cgroup-tools postgresql-client unzip git golang-go"
     ]
   }
 
@@ -89,9 +66,9 @@ build {
   # install python, pip, pip-packages
   provisioner "shell" {
     inline = [
-      "sudo apt-get install -y python3-pip python3.8 python3.8-dev",
-      "sudo python3.8 -m pip install --upgrade pip",
-      "sudo python3.8 -m pip install minio grpcio-tools",
+      "sudo apt-get install -y python3-pip python3 python3-dev",
+      "sudo python3 -m pip install --upgrade pip",
+      "sudo python3 -m pip install minio grpcio-tools",
     ]
   }
 
@@ -100,49 +77,17 @@ build {
     inline = [
       "curl -fsSL https://get.docker.com -o /tmp/get-docker.sh",
       "sudo sh /tmp/get-docker.sh",
-      "sudo curl -L \"https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
-      "sudo chmod +x /usr/local/bin/docker-compose",
     ]
   }
 
-  # install haskell
+  # build our images
   provisioner "file" {
-    source = "haskell_load.hs"
-    destination = "/tmp/haskell_load.hs"
+    source = "../langs"
+    destination = "/tmp"
   }
-  provisioner "shell" {
-    script = "haskell_setup.sh"
-  }
-
-  # install C#
-  provisioner "shell" {
-    script = "c_sharp_setup.sh"
-  }
-
-  # install go
-  provisioner "shell" {
-    script = "go_setup.sh"
-  }
-
-  # install python (numpy, scipy)
   provisioner "shell" {
     inline = [
-      "sudo python3.8 -m pip install --upgrade numpy scipy",
-    ]
-  }
-
-  # install compilers
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get install -y g++ default-jdk default-jre pypy3 ldc rustc cargo sbcl",
-    ]
-  }
-
-  # install acl(v1.4)
-  provisioner "shell" {
-    inline = [
-      "git clone https://github.com/atcoder/ac-library -b v1.4 /tmp/ac-library",
-      "sudo cp -r /tmp/ac-library /opt",
+      "sudo /tmp/langs/build.sh",
     ]
   }
 }
