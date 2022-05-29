@@ -1,0 +1,13 @@
+[package]
+name = "library-checker-init"
+version = "0.1.0"
+authors = ["Kohei Morita <yosupo06@gmail.com>"]
+edition = "2021"
+
+[features]
+default = []
+sandbox = []
+
+[dependencies]
+nix = "0.24.1"
+

@@ -33,7 +33,7 @@
     name = "Rust"
     version = "rustc(1.60 edition 2018)"
     source = "main.rs"
-    image_name = "rust:1.60-slim"
+    image_name = "library-checker-images-rust"
     compile = ["rustc", "--edition", "2018", "-O", "main.rs"]
     exec = ["./main"]
 [[langs]]
@@ -49,7 +49,7 @@
     name = "Java"
     version = "openjdk 17"
     source = "Main.java"
-    image_name = "openjdk:17"
+    image_name = "library-checker-images-java"
     compile = ["javac", "Main.java"]
     exec = ["java", "-Xss1G", "Main"]
 [[langs]]
@@ -65,7 +65,7 @@
     name = "PyPy3"
     version = "pypy3.9-7.3.9"
     source = "main.py"
-    image_name = "pypy:3.9-7.3.9-slim"
+    image_name = "library-checker-images-pypy"
     compile = ["pypy3", "-c", "'print(1)'"]
     exec = ["pypy3", "main.py"]
 [[langs]]
@@ -89,7 +89,7 @@
     name = "Go"
     version = "go 1.18.2"
     source = "main.go"
-    image_name = "golang:1.18.2-alpine3.15"
+    image_name = "library-checker-images-golang"
     compile = ["go", "build", "main.go"]
     exec = ["./main"]
 [[langs]]
@@ -97,6 +97,6 @@
     name = "Common Lisp"
     version = "sbcl 2.1.5"
     source = "main.lisp"
-    image_name = "clfoundation/sbcl:2.1.5-slim"
+    image_name = "library-checker-images-lisp"
     compile = ["sbcl", "--noinform", "--eval", "(compile-file \"main.lisp\")", "--quit"]
     exec = ["sbcl", "--control-stack-size", "1GB", "--script", "main.fasl"]

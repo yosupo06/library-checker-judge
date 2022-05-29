@@ -1,3 +1,7 @@
+FROM ekidd/rust-musl-builder:latest as init-builder
+COPY --chown=rust:rust init .
+RUN cargo build --release
+
 FROM ubuntu:22.04 as builder
 
 RUN apt-get update
@@ -13,3 +17,5 @@ RUN apt-get install -y libxml2 gcc
 COPY --from=builder /opt/ldc2-1.29.0-linux-x86_64/ /opt/ldc2-1.29.0-linux-x86_64/
 
 ENV PATH $PATH:/opt/ldc2-1.29.0-linux-x86_64/bin
+
+COPY --from=init-builder /home/rust/src/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin

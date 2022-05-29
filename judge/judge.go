@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -23,13 +24,13 @@ type Judge struct {
 	sourceVolume  *Volume
 }
 
-func NewJudge(lang string, tl float64) (*Judge, error) {
-	tempdir, err := ioutil.TempDir("", "judge")
+func NewJudge(judgedir, lang string, tl float64) (*Judge, error) {
+	tempdir, err := ioutil.TempDir(judgedir, "judge")
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println("New judge:", tempdir)
+	log.Println("create judge dir:", tempdir)
 
 	judge := new(Judge)
 
@@ -125,39 +126,97 @@ func (j *Judge) CompileSource(sourcePath string) (TaskResult, error) {
 	return result, err
 }
 
-func (j *Judge) TestCase(inFilePath string, expectFilePath string) (CaseResult, error) {
-	j.checkerVolume.CopyFile(inFilePath, "input.in")
-	j.checkerVolume.CopyFile(expectFilePath, "expect.out")
+func fileCopy(srcPath, dstPath string) error {
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
 
-	inFile, err := os.Open(inFilePath)
+	dst, err := os.Create(dstPath)
 	if err != nil {
-		return CaseResult{}, err
+		return err
 	}
-	tmpOutFile, err := os.CreateTemp("", "output-")
+	defer dst.Close()
+
+	_, err = io.Copy(dst, src)
 	if err != nil {
-		return CaseResult{}, err
+		return err
 	}
-	defer os.Remove(tmpOutFile.Name())
+	return nil
+}
+
+func (j *Judge) createOutput(inFilePath string, outFilePath string) (TaskResult, error) {
+	casedir, err := ioutil.TempDir(j.dir, "judge")
+	if err != nil {
+		return TaskResult{}, err
+	}
+	defer os.RemoveAll(casedir)
+
+	fileCopy(inFilePath, filepath.Join(casedir, "input.in"))
 
 	// TODO: volume read only
 	taskInfo := TaskInfo{
 		Name:          j.lang.ImageName,
-		Argments:      j.lang.Exec,
+		Argments:      append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...),
 		WorkDir:       "/workdir",
 		WorkDirVolume: j.sourceVolume,
-		Stdin:         inFile,
-		Stdout:        tmpOutFile,
-		Stderr:        nil,
 		Timeout:       time.Duration(j.tl*1000*1000*1000) * time.Nanosecond,
 		PidsLimit:     PIDS_LIMIT,
 		MemoryLimitMB: MEMORY_LIMIT_MB,
+		Binds: []BindInfo{
+			{
+				HostPath:      casedir,
+				ContainerPath: "/casedir",
+			},
+		},
 	}
 
 	result, err := taskInfo.Run()
 	if err != nil {
-		return CaseResult{}, err
+		return TaskResult{}, err
 	}
 
+	outFile, err := os.Create(outFilePath)
+	if err != nil {
+		return TaskResult{}, err
+	}
+	defer outFile.Close()
+
+	genOutputFileTaskInfo := TaskInfo{
+		Name:          "ubuntu",
+		Argments:      []string{"cat", "/casedir/actual.out"},
+		Timeout:       time.Duration(j.tl*1000*1000*1000) * time.Nanosecond,
+		PidsLimit:     PIDS_LIMIT,
+		MemoryLimitMB: MEMORY_LIMIT_MB,
+		Binds: []BindInfo{
+			{
+				HostPath:      casedir,
+				ContainerPath: "/casedir",
+			},
+		},
+		Stdout: outFile,
+	}
+
+	_, err = genOutputFileTaskInfo.Run()
+	if err != nil {
+		return TaskResult{}, err
+	}
+
+	return result, err
+}
+
+func (j *Judge) TestCase(inFilePath string, expectFilePath string) (CaseResult, error) {
+	outFilePath, err := ioutil.TempFile(j.dir, "output-")
+	if err != nil {
+		return CaseResult{}, err
+	}
+	defer os.Remove(outFilePath.Name())
+
+	result, err := j.createOutput(inFilePath, outFilePath.Name())
+	if err != nil {
+		return CaseResult{}, err
+	}
 	if result.TLE {
 		//timeout
 		return CaseResult{Status: "TLE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
@@ -168,7 +227,9 @@ func (j *Judge) TestCase(inFilePath string, expectFilePath string) (CaseResult, 
 		return CaseResult{Status: "RE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
 
-	j.checkerVolume.CopyFile(tmpOutFile.Name(), "actual.out")
+	j.checkerVolume.CopyFile(inFilePath, "input.in")
+	j.checkerVolume.CopyFile(expectFilePath, "expect.out")
+	j.checkerVolume.CopyFile(outFilePath.Name(), "actual.out")
 
 	// run checker
 	checkerTaskInfo := TaskInfo{

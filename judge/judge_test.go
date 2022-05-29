@@ -16,7 +16,7 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 		t.Fatal("Failed: Source", err)
 	}
 
-	judge, err := NewJudge(lang, 2.0)
+	judge, err := NewJudge("", lang, 2.0)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
@@ -172,7 +172,7 @@ func TestAplusbCE(t *testing.T) {
 		t.Fatal("Failed: Source", err)
 	}
 
-	judge, err := NewJudge("cpp", 2.0)
+	judge, err := NewJudge("", "cpp", 2.0)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}

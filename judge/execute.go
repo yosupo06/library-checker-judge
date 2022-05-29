@@ -87,6 +87,11 @@ func (v *Volume) Remove() error {
 	return nil
 }
 
+type BindInfo struct {
+	HostPath      string
+	ContainerPath string
+}
+
 type TaskInfo struct {
 	Name                string // container name e.g. ubuntu
 	Argments            []string
@@ -99,6 +104,7 @@ type TaskInfo struct {
 	EnableLoggingDriver bool
 	WorkDir             string
 	WorkDirVolume       *Volume
+	Binds               []BindInfo
 
 	Stdin  io.Reader
 	Stdout io.Writer
@@ -136,6 +142,8 @@ func (t *TaskInfo) create() (containerInfo, error) {
 
 	// enable interactive
 	args = append(args, "-i")
+
+	args = append(args, "--init")
 
 	// cpuset
 	if len(t.Cpuset) != 0 {
@@ -189,6 +197,12 @@ func (t *TaskInfo) create() (containerInfo, error) {
 		args = append(args, fmt.Sprintf("%s:%s", t.WorkDirVolume.Name, t.WorkDir))
 	}
 
+	// bind
+	for _, bind := range t.Binds {
+		args = append(args, "--mount")
+		args = append(args, fmt.Sprintf("type=bind,source=%s,target=%s", bind.HostPath, bind.ContainerPath))
+	}
+
 	// container name
 	args = append(args, t.Name)
 
@@ -196,6 +210,7 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	args = append(args, t.Argments...)
 
 	cmd := exec.Command("docker", args...)
+	log.Println("arg: ", args)
 
 	cmd.Stderr = os.Stderr
 
@@ -214,6 +229,7 @@ func (t *TaskInfo) create() (containerInfo, error) {
 }
 
 func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
+	log.Println("Start: ", t.Name, t.Argments)
 	ctx := context.Background()
 	if t.Timeout != 0 {
 		ctx2, cancel := context.WithTimeout(context.Background(), t.Timeout+500*time.Millisecond)
@@ -239,6 +255,10 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 		Memory: -1,
 	}
 
+	var start time.Time
+	isFirst := true
+	var end time.Time
+
 	ticker := time.NewTicker(time.Millisecond)
 	doneForChild := make(chan bool)
 	doneForParent := make(chan bool)
@@ -249,8 +269,18 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 				doneForParent <- true
 				return
 			case <-ticker.C:
+				tasks, err := c.readCGroupTasks()
+				if err == nil && len(tasks) >= 2 {
+					if isFirst {
+						isFirst = false
+						start = time.Now()
+					}
+					end = time.Now()
+				}
 				if usedMemory, err := c.readUsedMemory(); err == nil {
-					result.Memory = usedMemory
+					if result.Memory < usedMemory {
+						result.Memory = usedMemory
+					}
 				}
 			}
 		}
@@ -284,8 +314,11 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 		if usedTime, err := c.readUsedTime(); err != nil {
 			log.Println("failed to load used time: ", err)
 		} else {
+			log.Println("Time: ", usedTime)
 			result.Time = usedTime
 		}
+		log.Println("Time2: ", end.Sub(start))
+		result.Time = end.Sub(start)
 	}
 	return result, nil
 }
@@ -334,6 +367,29 @@ func (c *containerInfo) readUsedTime() (time.Duration, error) {
 	return end.Sub(start), nil
 }
 
+func readCGroupTasksFromFile(filePath string) ([]string, error) {
+	bytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return []string{}, err
+	}
+
+	return strings.Split(strings.TrimSpace(string(bytes)), "\n"), nil
+}
+
+func (c *containerInfo) readCGroupTasks() ([]string, error) {
+	filePathV1 := "/sys/fs/cgroup/cpu/docker/" + c.containerID + "/tasks"
+	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/container/cgroup.procs"
+
+	if result, err := readCGroupTasksFromFile(filePathV1); err == nil {
+		return result, nil
+	}
+	if result, err := readCGroupTasksFromFile(filePathV2); err == nil {
+		return result, nil
+	}
+
+	return []string{}, errors.New("failed to load cgroup tasks")
+}
+
 func readUsedMemoryFromFile(filePath string) (int64, error) {
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -349,7 +405,7 @@ func readUsedMemoryFromFile(filePath string) (int64, error) {
 
 func (c *containerInfo) readUsedMemory() (int64, error) {
 	filePathV1 := "/sys/fs/cgroup/memory/docker/" + c.containerID + "/memory.max_usage_in_bytes"
-	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/memory.current"
+	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/container/memory.current"
 
 	if result, err := readUsedMemoryFromFile(filePathV1); err == nil {
 		return result, nil

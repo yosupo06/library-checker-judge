@@ -2,8 +2,5 @@ FROM ekidd/rust-musl-builder:latest as init-builder
 COPY --chown=rust:rust init .
 RUN cargo build --release
 
-FROM python:3.10-slim
-
-RUN pip install --upgrade numpy scipy
-
+FROM clfoundation/sbcl:2.1.5-slim
 COPY --from=init-builder /home/rust/src/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin

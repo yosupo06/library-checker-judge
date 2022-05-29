@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"flag"
 	"log"
 	"os"
 	"time"
@@ -23,7 +24,7 @@ var judgeName string
 var judgeCtx context.Context
 var testCaseFetcher TestCaseFetcher
 
-func execJudge(submissionID int32) (err error) {
+func execJudge(judgedir string, submissionID int32) (err error) {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
 		Id: submissionID,
 	})
@@ -52,7 +53,7 @@ func execJudge(submissionID int32) (err error) {
 		return err
 	}
 
-	judge, err := NewJudge(submission.Overview.Lang, problem.TimeLimit)
+	judge, err := NewJudge(judgedir, submission.Overview.Lang, problem.TimeLimit)
 	if err != nil {
 		return err
 	}
@@ -268,6 +269,9 @@ func apiConnect() *grpc.ClientConn {
 }
 
 func main() {
+	judgedir := flag.String("judgedir", "", "temporary directory of judge")
+	flag.Parse()
+
 	var err error
 
 	// init gRPC
@@ -301,7 +305,7 @@ func main() {
 			continue
 		}
 		log.Println("Start Judge:", task.SubmissionId)
-		err = execJudge(task.SubmissionId)
+		err = execJudge(*judgedir, task.SubmissionId)
 		if err != nil {
 			log.Println(err.Error())
 			continue

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -197,6 +198,44 @@ func TestVolume(t *testing.T) {
 
 	if strings.TrimSpace(output.String()) != "dummy" {
 		t.Errorf("Invalid Stdout: %s", output.String())
+	}
+}
+
+func TestBind(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "tmp-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	task := TaskInfo{
+		Name:     "ubuntu",
+		Argments: []string{"sh", "-c", "echo dummy > /bind/a.txt"},
+		Binds: []BindInfo{
+			{
+				HostPath:      tmpdir,
+				ContainerPath: "/bind",
+			},
+		},
+	}
+
+	result, err := task.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("task result: %v\n", result)
+	if result.ExitCode != 0 {
+		t.Errorf("Invalid exit code (not 0): %v", result.ExitCode)
+	}
+
+	output, err := os.ReadFile(filepath.Join(tmpdir, "a.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if strings.TrimSpace(string(output)) != "dummy" {
+		t.Errorf("Invalid Stdout: %s", string(output))
 	}
 }
 
