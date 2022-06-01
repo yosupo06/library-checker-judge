@@ -44,8 +44,5 @@ gcpexec "cd /root/library-checker-judge && tar -xf judge.tar.gz"
 echo "Generate protoc"
 gcpexec "cd /root/library-checker-judge && ./api/gen_protoc.sh"
 
-echo "Install executor"
-gcpexec "cd /root/library-checker-judge/executor && cargo install --path . --root /usr/ --features sandbox"
-
 echo "Build judge"
 gcpexec "cd /root/library-checker-judge/judge && go build ."

@@ -1,0 +1,8 @@
+{
+    "default-runtime": "crun",
+    "runtimes": {
+        "crun": {
+            "path": "/root/crun/crun"
+        }
+    }
+}

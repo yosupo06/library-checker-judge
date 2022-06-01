@@ -1,89 +1,36 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
-	"path"
-	"strconv"
-	"strings"
+	"path/filepath"
+	"time"
 
-	"github.com/google/shlex"
 	_ "github.com/lib/pq"
 )
 
-type Result struct {
-	ReturnCode int     `json:"returncode"`
-	Time       float64 `json:"time"`
-	Memory     int     `json:"memory"`
-	Tle        bool    `json:"tle"`
-	Stderr     []byte
-}
-
-func SafeRun(cmd *exec.Cmd, tl float64, overlay bool) (Result, error) {
-	newArg := []string{}
-	newArg = append(newArg, "--tl", strconv.FormatFloat(tl, 'f', 4, 64))
-	if overlay {
-		newArg = append(newArg, "--overlay")
-	}
-	tmpfile, err := ioutil.TempFile("", "result")
-	if err != nil {
-		return Result{}, err
-	}
-	newArg = append(newArg, "--result", tmpfile.Name())
-	newArg = append(newArg, "--")
-	newArg = append(newArg, cmd.Args...)
-
-	if cmd.Path, err = exec.LookPath("executor"); err != nil {
-		return Result{}, err
-	}
-	cmd.Args = append([]string{"executor"}, newArg...)
-	// add stderr
-	os := &outputStripper{N: 1 << 11}
-	if cmd.Stderr != nil {
-		cmd.Stderr = io.MultiWriter(cmd.Stderr, os)
-	} else {
-		cmd.Stderr = os
-	}
-
-	err = cmd.Run()
-	if err != nil && cmd.ProcessState.ExitCode() != 124 {
-		return Result{ReturnCode: -1, Time: -1, Memory: -1}, err
-	}
-	raw, err := ioutil.ReadFile(tmpfile.Name())
-	if err != nil {
-		return Result{}, err
-	}
-	result := Result{}
-	if err := json.Unmarshal(raw, &result); err != nil {
-		return Result{}, err
-	}
-	result.Stderr = os.Bytes()
-	log.Println("execute: ", cmd.Args)
-	log.Printf("stderr: %s\n", string(result.Stderr))
-	return result, nil
-}
+const COMPILE_TIMEOUT = 30 * time.Second
+const MEMORY_LIMIT_MB = 1024
+const PIDS_LIMIT = 100
 
 type Judge struct {
 	dir  string
 	tl   float64
 	lang Lang
 
-	checkerCompiled bool
-	sourceCompiled  bool
+	checkerVolume *Volume
+	sourceVolume  *Volume
 }
 
-func NewJudge(lang string, tl float64) (*Judge, error) {
-	tempdir, err := ioutil.TempDir("", "judge")
+func NewJudge(judgedir, lang string, tl float64) (*Judge, error) {
+	tempdir, err := ioutil.TempDir(judgedir, "judge")
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println("New judge:", tempdir)
+	log.Println("create judge dir:", tempdir)
 
 	judge := new(Judge)
 
@@ -95,189 +42,241 @@ func NewJudge(lang string, tl float64) (*Judge, error) {
 }
 
 func (j *Judge) Close() error {
-	return os.RemoveAll(j.dir)
+	if err := os.RemoveAll(j.dir); err != nil {
+		return err
+	}
+	if j.checkerVolume != nil {
+		if err := j.checkerVolume.Remove(); err != nil {
+			return err
+		}
+	}
+	if j.sourceVolume != nil {
+		if err := j.sourceVolume.Remove(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (j *Judge) checkerPath() string {
-	return path.Join(j.dir, "checker")
-}
-func (j *Judge) sourcePath() string {
-	return path.Join(j.dir, "source")
-}
-
-func (j *Judge) CompileChecker(checker io.Reader) (Result, error) {
-	// create dir for checker
-	if err := os.Mkdir(j.checkerPath(), 0755); err != nil {
-		return Result{}, err
+func (j *Judge) CompileChecker(checkerPath string) (TaskResult, error) {
+	volume, err := CreateVolume()
+	if err != nil {
+		return TaskResult{}, err
 	}
-	if err := os.Chmod(j.checkerPath(), 0777); err != nil {
-		return Result{}, err
+	j.checkerVolume = &volume
+
+	if err := volume.CopyFile(checkerPath, ""); err != nil {
+		return TaskResult{}, err
 	}
 
-	tempChecker, err := os.Create(path.Join(j.checkerPath(), "checker.cpp"))
+	testlibPath, err := filepath.Abs("testlib.h")
 	if err != nil {
-		return Result{}, err
+		return TaskResult{}, err
 	}
-	if _, err = io.Copy(tempChecker, checker); err != nil {
-		return Result{}, err
-	}
-	testlib, err := os.Open("testlib.h")
-	if err != nil {
-		return Result{}, err
-	}
-	tempTestlib, err := os.Create(path.Join(j.checkerPath(), "testlib.h"))
-	if err != nil {
-		return Result{}, err
-	}
-	if _, err = io.Copy(tempTestlib, testlib); err != nil {
-		return Result{}, err
+	if err := volume.CopyFile(testlibPath, ""); err != nil {
+		return TaskResult{}, err
 	}
 
-	compile, err := shlex.Split(langs["checker"].Compile)
+	taskInfo := TaskInfo{
+		Name:          langs["checker"].ImageName,
+		Argments:      langs["checker"].Compile,
+		WorkDir:       "/workdir",
+		WorkDirVolume: &volume,
+		Stdout:        os.Stdout,
+		Stderr:        os.Stderr,
+		Timeout:       COMPILE_TIMEOUT,
+		PidsLimit:     PIDS_LIMIT,
+		MemoryLimitMB: MEMORY_LIMIT_MB,
+	}
+	result, err := taskInfo.Run()
 	if err != nil {
-		return Result{}, err
+		return TaskResult{}, err
 	}
 
-	cmd := exec.Command(compile[0], compile[1:]...)
-	cmd.Dir = j.checkerPath()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = nil
-
-	result, err := SafeRun(cmd, 30.0, false)
-	if err != nil {
-		return Result{}, err
-	}
-	j.checkerCompiled = true
 	return result, err
 }
 
-func (j *Judge) CompileSource(source io.Reader) (Result, error) {
+func (j *Judge) CompileSource(sourcePath string) (TaskResult, error) {
 	// create dir for source
-	if err := os.Mkdir(j.sourcePath(), 0755); err != nil {
-		return Result{}, err
-	}
-	if err := os.Chmod(j.sourcePath(), 0777); err != nil {
-		return Result{}, err
-	}
-
-	tempSrc, err := os.Create(path.Join(j.sourcePath(), j.lang.Source))
+	volume, err := CreateVolume()
 	if err != nil {
-		log.Print("error ", path.Join(j.sourcePath(), j.lang.Source))
-		return Result{}, err
+		return TaskResult{}, err
 	}
-	if _, err = io.Copy(tempSrc, source); err != nil {
-		return Result{}, err
+	j.sourceVolume = &volume
+
+	if err := volume.CopyFile(sourcePath, j.lang.Source); err != nil {
+		return TaskResult{}, err
 	}
 
-	compile, err := shlex.Split(j.lang.Compile)
+	taskInfo := TaskInfo{
+		Name:          j.lang.ImageName,
+		Argments:      j.lang.Compile,
+		WorkDir:       "/workdir",
+		WorkDirVolume: &volume,
+		Timeout:       COMPILE_TIMEOUT,
+		Stderr:        os.Stderr,
+		PidsLimit:     PIDS_LIMIT,
+		MemoryLimitMB: MEMORY_LIMIT_MB,
+	}
+	result, err := taskInfo.Run()
 	if err != nil {
-		return Result{}, err
+		return TaskResult{}, err
 	}
 
-	cmd := exec.Command(compile[0], compile[1:]...)
-	cmd.Dir = j.sourcePath()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = nil
-
-	result, err := SafeRun(cmd, 30.0, false)
-	if err != nil {
-		return Result{}, err
-	}
-	j.sourceCompiled = true
 	return result, err
 }
 
-func (j *Judge) TestCase(inFile io.Reader, expectFile io.Reader) (CaseResult, error) {
-	input, err := os.Create(path.Join(j.checkerPath(), "input.in"))
+func fileCopy(srcPath, dstPath string) error {
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (j *Judge) createOutput(inFilePath string, outFilePath string) (TaskResult, error) {
+	casedir, err := ioutil.TempDir(j.dir, "judge")
+	if err != nil {
+		return TaskResult{}, err
+	}
+	defer os.RemoveAll(casedir)
+
+	fileCopy(inFilePath, filepath.Join(casedir, "input.in"))
+
+	// TODO: volume read only
+	taskInfo := TaskInfo{
+		Name:          j.lang.ImageName,
+		Argments:      append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...),
+		WorkDir:       "/workdir",
+		WorkDirVolume: j.sourceVolume,
+		Timeout:       time.Duration(j.tl*1000*1000*1000) * time.Nanosecond,
+		PidsLimit:     PIDS_LIMIT,
+		MemoryLimitMB: MEMORY_LIMIT_MB,
+		Binds: []BindInfo{
+			{
+				HostPath:      casedir,
+				ContainerPath: "/casedir",
+			},
+		},
+	}
+
+	result, err := taskInfo.Run()
+	if err != nil {
+		return TaskResult{}, err
+	}
+
+	outFile, err := os.Create(outFilePath)
+	if err != nil {
+		return TaskResult{}, err
+	}
+	defer outFile.Close()
+
+	genOutputFileTaskInfo := TaskInfo{
+		Name:          "ubuntu",
+		Argments:      []string{"cat", "/casedir/actual.out"},
+		Timeout:       time.Duration(j.tl*1000*1000*1000) * time.Nanosecond,
+		PidsLimit:     PIDS_LIMIT,
+		MemoryLimitMB: MEMORY_LIMIT_MB,
+		Binds: []BindInfo{
+			{
+				HostPath:      casedir,
+				ContainerPath: "/casedir",
+			},
+		},
+		Stdout: outFile,
+	}
+
+	_, err = genOutputFileTaskInfo.Run()
+	if err != nil {
+		return TaskResult{}, err
+	}
+
+	return result, err
+}
+
+func (j *Judge) TestCase(inFilePath string, expectFilePath string) (CaseResult, error) {
+	outFilePath, err := ioutil.TempFile(j.dir, "output-")
 	if err != nil {
 		return CaseResult{}, err
 	}
-	if _, err = io.Copy(input, inFile); err != nil {
-		return CaseResult{}, err
-	}
-	if _, err = input.Seek(0, 0); err != nil {
-		return CaseResult{}, err
-	}
+	defer os.Remove(outFilePath.Name())
 
-	expect, err := os.Create(path.Join(j.checkerPath(), "expect.out"))
+	result, err := j.createOutput(inFilePath, outFilePath.Name())
 	if err != nil {
 		return CaseResult{}, err
 	}
-	if _, err = io.Copy(expect, expectFile); err != nil {
-		return CaseResult{}, err
-	}
-	if err = expect.Close(); err != nil {
-		return CaseResult{}, err
-	}
-
-	actual, err := os.Create(path.Join(j.checkerPath(), "actual.out"))
-	if err != nil {
-		return CaseResult{}, err
-	}
-
-	arg := strings.Fields(j.lang.Exec)
-	cmd := exec.Command(arg[0], arg[1:]...)
-	cmd.Dir = j.sourcePath()
-	cmd.Stdin = input
-	cmd.Stdout = actual
-	result, err := SafeRun(cmd, j.tl, true)
-
-	if err != nil {
-		return CaseResult{}, err
-	}
-
-	if result.Tle {
+	if result.TLE {
 		//timeout
-		return CaseResult{Status: "TLE", Result: result}, nil
+		return CaseResult{Status: "TLE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
 
-	if cmd.ProcessState.ExitCode() != 0 {
-		return CaseResult{Status: "Broken", Result: result}, errors.New("executor return non 0, 124 code")
+	if result.ExitCode != 0 {
+		//runtime error
+		return CaseResult{Status: "RE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
 
-	if result.ReturnCode != 0 {
-		return CaseResult{Status: "RE", Result: result}, nil
-	}
-	actual.Close()
+	j.checkerVolume.CopyFile(inFilePath, "input.in")
+	j.checkerVolume.CopyFile(expectFilePath, "expect.out")
+	j.checkerVolume.CopyFile(outFilePath.Name(), "actual.out")
 
 	// run checker
-	cmd = exec.Command("./checker", "input.in", "actual.out", "expect.out")
-	cmd.Dir = j.checkerPath()
-	checkerResult, err := SafeRun(cmd, j.tl, true)
+	checkerTaskInfo := TaskInfo{
+		Name:          langs["checker"].ImageName,
+		Argments:      langs["checker"].Exec,
+		WorkDir:       "/workdir",
+		WorkDirVolume: j.checkerVolume,
+		Timeout:       COMPILE_TIMEOUT,
+		PidsLimit:     PIDS_LIMIT,
+		MemoryLimitMB: MEMORY_LIMIT_MB,
+	}
+
+	checkerResult, err := checkerTaskInfo.Run()
 	if err != nil {
 		return CaseResult{}, err
 	}
-	if checkerResult.Tle {
-		return CaseResult{Status: "ITLE", Result: result}, nil
+	if checkerResult.TLE {
+		return CaseResult{Status: "ITLE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
-	if cmd.ProcessState.ExitCode() != 0 {
-		return CaseResult{Status: "Broken", Result: result}, errors.New("executor return non 0, 124 code")
+	if checkerResult.ExitCode == 1 {
+		return CaseResult{Status: "WA", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
-	if checkerResult.ReturnCode == 1 {
-		return CaseResult{Status: "WA", Result: result}, nil
+	if checkerResult.ExitCode == 2 {
+		return CaseResult{Status: "PE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
-	if checkerResult.ReturnCode == 2 {
-		return CaseResult{Status: "PE", Result: result}, nil
+	if checkerResult.ExitCode == 3 {
+		return CaseResult{Status: "Fail", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
-	if checkerResult.ReturnCode == 3 {
-		return CaseResult{Status: "Fail", Result: result}, nil
+	if checkerResult.ExitCode != 0 {
+		return CaseResult{Status: "Unknown", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 	}
-	if checkerResult.ReturnCode != 0 {
-		return CaseResult{Status: "Unknown", Result: result}, nil
-	}
-	return CaseResult{Status: "AC", Result: result}, nil
+	return CaseResult{Status: "AC", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
 }
 
 type CaseResult struct {
 	CaseName string
 	Status   string
-	Result
+	Time     time.Duration
+	Memory   int64
+	TLE      bool
 }
 
 func AggregateResults(results []CaseResult) CaseResult {
 	ans := CaseResult{
 		Status: "AC",
-		Result: Result{ReturnCode: -1, Time: -1, Memory: -1},
+		Time:   0,
+		Memory: -1,
 	}
 	for _, res := range results {
 		if res.Status != "AC" {

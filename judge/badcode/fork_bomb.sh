@@ -4,5 +4,5 @@ bomb(){
 };
 while :
 do
-    bomb
+    bomb || true
 done

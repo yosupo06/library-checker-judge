@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"flag"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -24,7 +24,7 @@ var judgeName string
 var judgeCtx context.Context
 var testCaseFetcher TestCaseFetcher
 
-func execJudge(submissionID int32) (err error) {
+func execJudge(judgedir string, submissionID int32) (err error) {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
 		Id: submissionID,
 	})
@@ -53,11 +53,7 @@ func execJudge(submissionID int32) (err error) {
 		return err
 	}
 
-	checker, err := os.Open(testCases.CheckerPath())
-	if err != nil {
-		return err
-	}
-	judge, err := NewJudge(submission.Overview.Lang, problem.TimeLimit)
+	judge, err := NewJudge(judgedir, submission.Overview.Lang, problem.TimeLimit)
 	if err != nil {
 		return err
 	}
@@ -82,11 +78,11 @@ func execJudge(submissionID int32) (err error) {
 	}); err != nil {
 		return err
 	}
-	result, err := judge.CompileChecker(checker)
+	taskResult, err := judge.CompileChecker(testCases.CheckerPath())
 	if err != nil {
 		return err
 	}
-	if result.ReturnCode != 0 {
+	if taskResult.ExitCode != 0 {
 		if _, err = client.FinishJudgeTask(judgeCtx, &pb.FinishJudgeTaskRequest{
 			JudgeName:    judgeName,
 			SubmissionId: submissionID,
@@ -97,16 +93,24 @@ func execJudge(submissionID int32) (err error) {
 		}
 		return nil
 	}
-	result, err = judge.CompileSource(strings.NewReader(submission.Source))
+
+	tmpSourceFile, err := os.CreateTemp("", "output-")
 	if err != nil {
 		return err
 	}
-	if result.ReturnCode != 0 {
+	defer os.Remove(tmpSourceFile.Name())
+	if _, err := tmpSourceFile.WriteString(submission.Source); err != nil {
+		return err
+	}
+	result, err := judge.CompileSource(tmpSourceFile.Name())
+	if err != nil {
+		return err
+	}
+	if result.ExitCode != 0 {
 		if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
 			JudgeName:    judgeName,
 			SubmissionId: submissionID,
 			Status:       "CE",
-			CompileError: result.Stderr,
 		}); err != nil {
 			return err
 		}
@@ -139,7 +143,7 @@ func execJudge(submissionID int32) (err error) {
 			cases = append(cases, &pb.SubmissionCaseResult{
 				Case:   caseResult.CaseName,
 				Status: caseResult.Status,
-				Time:   caseResult.Time,
+				Time:   caseResult.Time.Seconds(),
 				Memory: int64(caseResult.Memory),
 			})
 		}
@@ -170,15 +174,7 @@ func execJudge(submissionID int32) (err error) {
 		return nil
 	}
 	for _, caseName := range cases {
-		inFile, err := os.Open(testCases.InFilePath(caseName))
-		if err != nil {
-			return err
-		}
-		outFile, err := os.Open(testCases.OutFilePath(caseName))
-		if err != nil {
-			return err
-		}
-		caseResult, err := judge.TestCase(inFile, outFile)
+		caseResult, err := judge.TestCase(testCases.InFilePath(caseName), testCases.OutFilePath(caseName))
 		if err != nil {
 			return err
 		}
@@ -195,7 +191,7 @@ func execJudge(submissionID int32) (err error) {
 		JudgeName:    judgeName,
 		SubmissionId: submissionID,
 		Status:       caseResult.Status,
-		Time:         caseResult.Time,
+		Time:         caseResult.Time.Seconds(),
 		Memory:       int64(caseResult.Memory),
 		CaseVersion:  caseVersion,
 	}); err != nil {
@@ -273,6 +269,9 @@ func apiConnect() *grpc.ClientConn {
 }
 
 func main() {
+	judgedir := flag.String("judgedir", "", "temporary directory of judge")
+	flag.Parse()
+
 	var err error
 
 	// init gRPC
@@ -306,7 +305,7 @@ func main() {
 			continue
 		}
 		log.Println("Start Judge:", task.SubmissionId)
-		err = execJudge(task.SubmissionId)
+		err = execJudge(*judgedir, task.SubmissionId)
 		if err != nil {
 			log.Println(err.Error())
 			continue
