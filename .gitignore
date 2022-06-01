@@ -7,7 +7,7 @@ api/proto/library_checker.pb.go
 judge/judge
 judge.tar.gz
 
-executor/target/
+langs/init/target/
 
 deploy/__init__.py
 deploy/library_checker_pb2.py
