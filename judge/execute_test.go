@@ -110,6 +110,22 @@ func TestStderr(t *testing.T) {
 	}
 }
 
+func TestSleepTime(t *testing.T) {
+	task := TaskInfo{}
+	task.Name = "ubuntu"
+	task.Argments = []string{"sleep", "3"}
+
+	result, err := task.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("task result: %v\n", result)
+
+	if !(2*time.Second < result.Time && result.Time < 4*time.Second) {
+		t.Error("invalid consumed\n")
+	}
+}
+
 func TestTimeout(t *testing.T) {
 	task := TaskInfo{}
 	task.Name = "ubuntu"

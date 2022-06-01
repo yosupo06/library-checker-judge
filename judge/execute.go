@@ -311,13 +311,6 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 			log.Println("failed to load exit code: ", err)
 			return TaskResult{}, err
 		}
-		if usedTime, err := c.readUsedTime(); err != nil {
-			log.Println("failed to load used time: ", err)
-		} else {
-			log.Println("Time: ", usedTime)
-			result.Time = usedTime
-		}
-		log.Println("Time2: ", end.Sub(start))
 		result.Time = end.Sub(start)
 	}
 	return result, nil
@@ -339,32 +332,6 @@ func (c *containerInfo) Remove() error {
 	}
 
 	return nil
-}
-
-func (c *containerInfo) readUsedTime() (time.Duration, error) {
-	args := []string{"inspect"}
-
-	args = append(args, c.containerID)
-	args = append(args, "--format={{.State.StartedAt}},{{.State.FinishedAt}}")
-
-	cmd := exec.Command("docker", args...)
-
-	output, err := cmd.Output()
-	if err != nil {
-		return 0, err
-	}
-	arr1 := strings.Split(strings.TrimSpace(string(output)), ",")
-
-	start, err := time.Parse(time.RFC3339Nano, arr1[0])
-	if err != nil {
-		return 0, err
-	}
-	end, err := time.Parse(time.RFC3339Nano, arr1[1])
-	if err != nil {
-		return 0, err
-	}
-
-	return end.Sub(start), nil
 }
 
 func readCGroupTasksFromFile(filePath string) ([]string, error) {
