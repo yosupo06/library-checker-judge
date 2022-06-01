@@ -90,4 +90,24 @@ build {
       "sudo /tmp/langs/build.sh",
     ]
   }
+
+  # install crun
+  provisioner "file" {
+    source = "docker-daemon.json"
+    destination = "/tmp/daemon.json"
+  }
+  provisioner "shell" {
+    inline = [
+      "sudo cp /tmp/daemon.json /etc/docker/daemon.json"
+    ]
+  }
+  provisioner "file" {
+    source = "crun-install.sh"
+    destination = "/tmp/crun-install.sh"
+  }
+  provisioner "shell" {
+    inline = [
+      "sudo sh /tmp/crun-install.sh"
+    ]
+  }
 }
