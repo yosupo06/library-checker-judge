@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"golang.org/x/sync/errgroup"
@@ -93,11 +92,7 @@ func createAPIClient(t *testing.T, db *gorm.DB) (pb.LibraryCheckerServiceClient,
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := grpc.NewServer(
-		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
-	pb.RegisterLibraryCheckerServiceServer(s, &server{
-		db: db,
-	})
+	s := NewGRPCServer(db, "../langs/langs.toml")
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			log.Fatal("Server exited: ", err)
