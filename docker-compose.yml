@@ -41,6 +41,7 @@ services:
   api-grpcweb:
     build:
       dockerfile: Dockerfile.API
+    command: -grpcweb
     ports:
       - 58080:50051
     depends_on:

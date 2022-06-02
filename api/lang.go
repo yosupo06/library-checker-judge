@@ -15,7 +15,7 @@ func ReadLangs(tomlPath string) []*pb.Lang {
 			Version string `toml:"version"`
 		}
 	}
-	if _, err := toml.DecodeFile("./langs.toml", &tomlData); err != nil {
+	if _, err := toml.DecodeFile(tomlPath, &tomlData); err != nil {
 		log.Fatal(err)
 	}
 	var langs []*pb.Lang

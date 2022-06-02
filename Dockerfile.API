@@ -9,5 +9,4 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /go/src/github.com/yosupo06/library-checker-judge/api/api .
 COPY ./langs/langs.toml .
-ENV PORT 50051
-CMD ["./api", "--langs=./langs.toml"]
+ENTRYPOINT ["./api", "--langs=./langs.toml"]

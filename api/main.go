@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -46,8 +47,22 @@ type server struct {
 	langs []*pb.Lang
 }
 
+func NewGRPCServer(db *gorm.DB, langsTomlPath string) *grpc.Server {
+	// launch gRPC server
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
+	pb.RegisterLibraryCheckerServiceServer(s, &server{
+		db:    db,
+		langs: ReadLangs(langsTomlPath),
+	})
+	return s
+}
+
 func main() {
-	langsTomlpath := flag.String("langs", "", "toml path of lang.toml")
+	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
+	isGRPCWeb := flag.Bool("grpcweb", false, "launch gRPCWeb server")
+	port := flag.Int("port", 50051, "port number")
+
 	flag.Parse()
 
 	// connect db
@@ -59,19 +74,12 @@ func main() {
 		getEnv("POSTGRE_PASS", "passwd"),
 		getEnv("API_DB_LOG", "") != "")
 
-	// launch gRPC server
-	port := getEnv("PORT", "50051")
-	s := grpc.NewServer(
-		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
-	pb.RegisterLibraryCheckerServiceServer(s, &server{
-		db:    db,
-		langs: ReadLangs(*langsTomlpath),
-	})
+	s := NewGRPCServer(db, *langsTomlPath)
 
-	if getEnv("MODE", "") == "gRPCWeb" {
-		log.Print("gRPC-Web Mode port=", port)
+	if *isGRPCWeb {
+		log.Print("launch gRPCWeb server port=", port)
 		wrappedGrpc := grpcweb.WrapServer(s)
-		http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+		http.ListenAndServe(fmt.Sprintf(":%d", *port), http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			resp.Header().Set("Access-Control-Allow-Origin", "*")
 			resp.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-user-agent, x-grpc-web, authorization")
 			if wrappedGrpc.IsGrpcWebRequest(req) {
@@ -79,8 +87,8 @@ func main() {
 			}
 		}))
 	} else {
-		log.Print("gRPC Mode port=", port)
-		listen, err := net.Listen("tcp", ":"+port)
+		log.Print("launch gRPC server port=", port)
+		listen, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 		if err != nil {
 			log.Fatal(err)
 		}
