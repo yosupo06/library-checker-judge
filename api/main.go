@@ -1,12 +1,12 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net"
 	"net/http"
 	"os"
 
-	"github.com/BurntSushi/toml"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
@@ -42,35 +42,14 @@ func toProtoSubmission(submission *Submission) (*pb.SubmissionOverview, error) {
 
 type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
-	db *gorm.DB
-}
-
-var langs = []*pb.Lang{}
-
-func init() {
-	var tomlData struct {
-		Langs []struct {
-			ID      string `toml:"id"`
-			Name    string `toml:"name"`
-			Version string `toml:"version"`
-		}
-	}
-	if _, err := toml.DecodeFile("./langs.toml", &tomlData); err != nil {
-		log.Fatal(err)
-	}
-	for _, lang := range tomlData.Langs {
-		if lang.ID == "checker" {
-			continue
-		}
-		langs = append(langs, &pb.Lang{
-			Id:      lang.ID,
-			Name:    lang.Name,
-			Version: lang.Version,
-		})
-	}
+	db    *gorm.DB
+	langs []*pb.Lang
 }
 
 func main() {
+	langsTomlpath := flag.String("langs", "", "toml path of lang.toml")
+	flag.Parse()
+
 	// connect db
 	db := dbConnect(
 		getEnv("POSTGRE_HOST", "127.0.0.1"),
@@ -85,7 +64,8 @@ func main() {
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authnFunc)))
 	pb.RegisterLibraryCheckerServiceServer(s, &server{
-		db: db,
+		db:    db,
+		langs: ReadLangs(*langsTomlpath),
 	})
 
 	if getEnv("MODE", "") == "gRPCWeb" {

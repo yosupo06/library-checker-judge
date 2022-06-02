@@ -27,7 +27,7 @@ services:
 
   api:
     build:
-      context: api
+      dockerfile: Dockerfile.API
     ports:
       - 50051:50051
     depends_on:
@@ -40,7 +40,7 @@ services:
 
   api-grpcweb:
     build:
-      context: api
+      dockerfile: Dockerfile.API
     ports:
       - 58080:50051
     depends_on:

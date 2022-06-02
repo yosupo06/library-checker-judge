@@ -247,7 +247,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 		return nil, errors.New("too large Source")
 	}
 	ok := false
-	for _, lang := range langs {
+	for _, lang := range s.langs {
 		if lang.Id == in.Lang {
 			ok = true
 			break
@@ -417,7 +417,7 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 }
 
 func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.LangListResponse, error) {
-	return &pb.LangListResponse{Langs: langs}, nil
+	return &pb.LangListResponse{Langs: s.langs}, nil
 }
 
 func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.RankingResponse, error) {
