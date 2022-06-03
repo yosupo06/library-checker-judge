@@ -12,9 +12,9 @@ services:
       - POSTGRES_PASSWORD=passwd
     healthcheck:
         test: [ "CMD", "pg_isready", "-q", "-d", "librarychecker", "-U", "postgres" ]
-        timeout: 45s
-        interval: 10s
-        retries: 10
+        timeout: 10s
+        interval: 1s
+        retries: 30
 
   minio:
     image: minio/minio
@@ -37,6 +37,11 @@ services:
       - POSTGRE_HOST=db
       - HMAC_SECRET=dummy_secret
       - API_DB_LOG=true
+    healthcheck:
+        test: grpc_health_probe -addr localhost:50051
+        timeout: 10s
+        interval: 1s
+        retries: 30
 
   api-grpcweb:
     build:
@@ -52,3 +57,8 @@ services:
       - HMAC_SECRET=dummy_secret
       - API_DB_LOG=true
       - MODE=gRPCWeb
+    healthcheck:
+        test: wget -q -O - localhost:50051/health || exit 1
+        timeout: 10s
+        interval: 1s
+        retries: 30

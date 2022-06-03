@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -11,6 +13,9 @@ import (
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	health "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
@@ -23,6 +28,19 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+type healthHandler struct {
+}
+
+func (h *healthHandler) Check(context.Context, *health.HealthCheckRequest) (*health.HealthCheckResponse, error) {
+	return &health.HealthCheckResponse{
+		Status: health.HealthCheckResponse_SERVING,
+	}, nil
+}
+
+func (h *healthHandler) Watch(*health.HealthCheckRequest, health.Health_WatchServer) error {
+	return status.Error(codes.Unimplemented, "watch is not implemented.")
 }
 
 func toProtoSubmission(submission *Submission) (*pb.SubmissionOverview, error) {
@@ -84,15 +102,20 @@ func main() {
 	if *isGRPCWeb {
 		log.Print("launch gRPCWeb server port=", port)
 		wrappedGrpc := grpcweb.WrapServer(s)
+		http.HandleFunc("/health", func(resp http.ResponseWriter, req *http.Request) {
+			io.WriteString(resp, "SERVING")
+		})
 		http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			resp.Header().Set("Access-Control-Allow-Origin", "*")
 			resp.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-user-agent, x-grpc-web, authorization")
 			if wrappedGrpc.IsGrpcWebRequest(req) {
 				wrappedGrpc.ServeHTTP(resp, req)
 			}
+			http.DefaultServeMux.ServeHTTP(resp, req)
 		}))
 	} else {
 		log.Print("launch gRPC server port=", port)
+		health.RegisterHealthServer(s, &healthHandler{})
 		listen, err := net.Listen("tcp", ":"+port)
 		if err != nil {
 			log.Fatal(err)
