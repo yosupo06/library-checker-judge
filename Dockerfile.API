@@ -1,6 +1,12 @@
 FROM golang:1.17.0 as builder
 WORKDIR /go/src/github.com/yosupo06/library-checker-judge/api
+
+COPY api/go.mod .
+COPY api/go.sum .
+RUN go mod download
+
 COPY api/ .
+
 RUN CGO_ENABLED=0 GOOS=linux go build .
 
 FROM alpine as grpc_health_probe_getter
