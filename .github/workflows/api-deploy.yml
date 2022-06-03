@@ -34,7 +34,7 @@ jobs:
 
     - id: build-docker
       name: Build docker image
-      run: docker build -t asia.gcr.io/library-checker-project/judge-api api
+      run: docker build -t asia.gcr.io/library-checker-project/judge-api -f Dockerfile.API .
 
     - id: push-docker
       name: Push docker image
