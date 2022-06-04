@@ -1,0 +1,27 @@
+name: API-Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  api-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - id: gen-protoc
+      name: Generate protoc
+      run: ./api/gen_protoc.sh
+
+    - id: run-docker-compose
+      name: Run docker compose
+      run: docker compose up -d --build --wait
+
+    - id: api-test
+      name: Api test
+      run: go test .
+      working-directory: ./api
