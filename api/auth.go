@@ -4,47 +4,37 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/golang-jwt/jwt"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
 )
 
-var hmacSecret []byte
-
-func init() {
-	s := os.Getenv("HMAC_SECRET")
-	if s == "" {
-		log.Print("Should set HMAC_SECRET")
-		s = "dummy_secret"
-	}
-	hmacSecret = []byte(s)
+type AuthTokenManager struct {
+	hmacKey []byte
 }
 
-// UserNameKey is context key of UserName
-type UserNameKey struct{}
+func NewAuthTokenManager(hmacKey string) AuthTokenManager {
+	if hmacKey == "" {
+		log.Fatal("HMAC key is empty")
+	}
+	return AuthTokenManager{
+		hmacKey: []byte(hmacKey),
+	}
+}
 
-func issueToken(user User) (string, error) {
+func (a *AuthTokenManager) IssueToken(user User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user": user.Name,
 	})
-	tokenString, err := token.SignedString(hmacSecret)
+	tokenString, err := token.SignedString(a.hmacKey)
 	if err != nil {
 		return "", err
 	}
 	return tokenString, nil
 }
 
-func getCurrentUserName(ctx context.Context) string {
-	u := ctx.Value(UserNameKey{})
-	if userName, ok := u.(string); ok {
-		return userName
-	}
-	return ""
-}
-
-func authnFunc(ctx context.Context) (context.Context, error) {
+func (a *AuthTokenManager) authnFunc(ctx context.Context) (context.Context, error) {
 	tokenStr, err := grpc_auth.AuthFromMD(ctx, "bearer")
 	if err != nil {
 		// don't login
@@ -55,7 +45,7 @@ func authnFunc(ctx context.Context) (context.Context, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return hmacSecret, nil
+		return a.hmacKey, nil
 	})
 
 	if err != nil {
@@ -72,4 +62,14 @@ func authnFunc(ctx context.Context) (context.Context, error) {
 		}
 	}
 	return ctx, nil
+}
+
+type UserNameKey struct{}
+
+func getCurrentUserName(ctx context.Context) string {
+	u := ctx.Value(UserNameKey{})
+	if userName, ok := u.(string); ok {
+		return userName
+	}
+	return ""
 }

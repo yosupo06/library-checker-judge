@@ -35,7 +35,7 @@ func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Regi
 	if err := s.db.Create(&user).Error; err != nil {
 		return nil, errors.New("this username are already registered")
 	}
-	token, err := issueToken(user)
+	token, err := s.authTokenManager.IssueToken(user)
 	if err != nil {
 		return nil, errors.New("broken")
 	}
@@ -53,7 +53,7 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 		return nil, errors.New("invalid password")
 	}
 
-	token, err := issueToken(user)
+	token, err := s.authTokenManager.IssueToken(user)
 	if err != nil {
 		return nil, err
 	}
