@@ -69,6 +69,7 @@ jobs:
         --image=asia.gcr.io/library-checker-project/judge-api
         --platform=managed
         --region=asia-northeast1
+        --args=-grpcweb
         --add-cloudsql-instances=library-checker-sql
         --set-env-vars=POSTGRE_HOST="$POSTGRE_HOST",POSTGRE_PASS="$POSTGRE_PASS",HMAC_SECRET="$HMAC_SECRET",MODE=gRPCWeb
         --max-instances=10
