@@ -54,12 +54,9 @@ jobs:
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql
-        --set-env-vars=POSTGRE_HOST="$POSTGRE_HOST",POSTGRE_PASS="$POSTGRE_PASS",HMAC_SECRET="$HMAC_SECRET"
+        --args=-pghost=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql,-pgpass-secret=projects/190778459730/secrets/postgre-pass/versions/latest,-hmackey-secret=projects/190778459730/secrets/hmac-key/versions/latest
+        --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
         --max-instances=10
-      env:
-        POSTGRE_HOST: ${{ secrets.POSTGRE_HOST }}
-        POSTGRE_PASS: ${{ secrets.POSTGRE_PASS }}
-        HMAC_SECRET: ${{ secrets.HMAC_SECRET }}
 
     - id: deploy-grpcweb-api
       name: Deploy API(gRPC) to Cloud Run
@@ -69,11 +66,7 @@ jobs:
         --image=asia.gcr.io/library-checker-project/judge-api
         --platform=managed
         --region=asia-northeast1
-        --args=-grpcweb
         --add-cloudsql-instances=library-checker-sql
-        --set-env-vars=POSTGRE_HOST="$POSTGRE_HOST",POSTGRE_PASS="$POSTGRE_PASS",HMAC_SECRET="$HMAC_SECRET",MODE=gRPCWeb
+        --args=-grpcweb,-pghost=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql,-pgpass-secret=projects/190778459730/secrets/postgre-pass/versions/latest,-hmackey-secret=projects/190778459730/secrets/hmac-key/versions/latest
+        --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
         --max-instances=10
-      env:
-        POSTGRE_HOST: ${{ secrets.POSTGRE_HOST }}
-        POSTGRE_PASS: ${{ secrets.POSTGRE_PASS }}
-        HMAC_SECRET: ${{ secrets.HMAC_SECRET }}
