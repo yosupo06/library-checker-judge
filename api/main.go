@@ -101,7 +101,7 @@ func main() {
 
 	if *isGRPCWeb {
 		log.Print("launch gRPCWeb server port=", port)
-		wrappedGrpc := grpcweb.WrapServer(s, grpcweb.WithOriginFunc(func(origin string) bool { return true }))
+		wrappedGrpc := grpcweb.WrapServer(s, grpcweb.WithOriginFunc(func(origin string) bool { return true }), grpcweb.WithCorsForRegisteredEndpointsOnly(false))
 		http.HandleFunc("/health", func(resp http.ResponseWriter, req *http.Request) {
 			io.WriteString(resp, "SERVING")
 		})
