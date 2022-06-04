@@ -107,6 +107,9 @@ func main() {
 		})
 		http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			if wrappedGrpc.IsAcceptableGrpcCorsRequest(req) || wrappedGrpc.IsGrpcWebRequest(req) {
+				// TODO: remove these headers
+				resp.Header().Set("Access-Control-Allow-Origin", "*")
+				resp.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-user-agent, x-grpc-web, authorization")
 				wrappedGrpc.ServeHTTP(resp, req)
 				return
 			}
