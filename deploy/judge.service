@@ -7,7 +7,6 @@ Environment = TMPDIR=/ramdisk
 
 ExecStart = /root/judge \
 -langs=/root/langs.toml \
--secret=/root/secret.toml \
 -testlib=/root/library-checker-judge/judge/testlib.h \
 -miniohost-secret=projects/190778459730/secrets/minio-host/versions/latest \
 -minioid-secret=projects/190778459730/secrets/minio-id/versions/latest \
