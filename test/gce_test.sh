@@ -37,9 +37,6 @@ gcpexec "cd /root/library-checker-problems && tar -xf problems.tar.gz"
 echo "Install pip"
 gcpexec "cd /root/library-checker-problems && python3 -m pip install -r requirements.txt"
 
-echo "Make Secret"
-gcpexec "cd /root/library-checker-judge/judge && ./make_secret.sh"
-
 echo 'Start generate.py test'
 gcpexec "ulimit -s unlimited && cd /root/library-checker-problems && ./generate.py -p aplusb unionfind"
 
