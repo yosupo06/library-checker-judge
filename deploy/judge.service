@@ -4,7 +4,18 @@ Description = library checker judge
 [Service]
 Environment = CASEDIR=/tmp
 Environment = TMPDIR=/ramdisk
-ExecStart = /root/judge -langs=/root/langs.toml -secret=/root/secret.toml -testlib=/root/library-checker-judge/judge/testlib.h
+
+ExecStart = /root/judge \
+-langs=/root/langs.toml \
+-testlib=/root/library-checker-judge/judge/testlib.h \
+-miniohost-secret=projects/190778459730/secrets/minio-host/versions/latest \
+-minioid-secret=projects/190778459730/secrets/minio-id/versions/latest \
+-miniokey-secret=projects/190778459730/secrets/minio-secret/versions/latest \
+-miniobucket-secret=projects/190778459730/secrets/minio-bucket/versions/latest \
+-apihost=apiv1.yosupo.jp:443 \
+-apipass-secret=projects/190778459730/secrets/api-judge-pass/versions/latest \
+-prod
+
 Restart = always
 Type = simple
 

@@ -9,13 +9,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 // gRPC
@@ -200,31 +202,12 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 	return nil
 }
 
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
-}
-
-var secretConfig struct {
-	APIHost     string `toml:"api_host"`
-	APIUser     string `toml:"api_user"`
-	APIPass     string `toml:"api_pass"`
-	MinioHost   string `toml:"minio_host"`
-	MinioAccess string `toml:"minio_access"`
-	MinioSecret string `toml:"minio_secret"`
-	MinioBucket string `toml:"minio_bucket"`
-	Prod        bool   `toml:"prod"`
-}
-
-func initClient(conn *grpc.ClientConn) {
+func initClient(conn *grpc.ClientConn, apiUser, apiPassword string) {
 	client = pb.NewLibraryCheckerServiceClient(conn)
 	ctx := context.Background()
 	resp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     secretConfig.APIUser,
-		Password: secretConfig.APIPass,
+		Name:     apiUser,
+		Password: apiPassword,
 	})
 
 	if err != nil {
@@ -239,9 +222,9 @@ func initClient(conn *grpc.ClientConn) {
 	log.Print("JudgeName: ", judgeName)
 }
 
-func apiConnect() *grpc.ClientConn {
+func apiConnect(apiHost string, useTLS bool) *grpc.ClientConn {
 	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithTimeout(10 * time.Second)}
-	if !secretConfig.Prod {
+	if !useTLS {
 		log.Print("local mode")
 		options = append(options, grpc.WithInsecure())
 	} else {
@@ -254,39 +237,87 @@ func apiConnect() *grpc.ClientConn {
 		})
 		options = append(options, grpc.WithTransportCredentials(creds))
 	}
-	log.Printf("Connect to API host: %v", secretConfig.APIHost)
-	conn, err := grpc.Dial(secretConfig.APIHost, options...)
+	log.Printf("Connect to API host: %v", apiHost)
+	conn, err := grpc.Dial(apiHost, options...)
 	if err != nil {
 		log.Fatal("Cannot connect to the API server:", err)
 	}
 	return conn
 }
 
+func getSecureString(secureKey, defaultValue string) string {
+	if secureKey == "" {
+		if defaultValue == "" {
+			log.Fatal("both secureKey and defaultValue is empty")
+		}
+		return defaultValue
+	}
+
+	// Create the client.
+	ctx := context.Background()
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		log.Fatalf("failed to create secretmanager client: %v", err)
+	}
+	defer client.Close()
+
+	// Build the request.
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: secureKey,
+	}
+
+	// Call the API.
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		log.Fatalf("failed to access secret version: %v", err)
+	}
+
+	return string(result.Payload.Data)
+}
+
 func main() {
-	secretTomlPath := flag.String("secret", "./secret.toml", "toml path of secret.toml")
 	testlibPath := flag.String("testlib", "testlib.h", "path of testlib.h")
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
 	judgedir := flag.String("judgedir", "", "temporary directory of judge")
-	flag.Parse()
 
-	if _, err := toml.DecodeFile(*secretTomlPath, &secretConfig); err != nil {
-		log.Fatal(err)
-	}
+	prod := flag.Bool("prod", false, "production mode")
+
+	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
+	minioHostSecret := flag.String("miniohost-secret", "", "gcloud secret of minio host")
+
+	minioID := flag.String("minioid", "minio", "minio ID")
+	minioIDSecret := flag.String("minioid-secret", "", "gcloud secret of minio ID")
+
+	minioKey := flag.String("miniokey", "miniopass", "minio access key")
+	minioKeySecret := flag.String("miniokey-secret", "", "gcloud secret of minio access key")
+
+	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
+	minioBucketSecret := flag.String("miniobucket-secret", "", "gcloud secret of minio bucket")
+
+	apiHost := flag.String("apihost", "localhost:50051", "api host")
+
+	apiUser := flag.String("apiuser", "judge", "api user")
+
+	apiPass := flag.String("apipass", "password", "api password")
+	apiPassSecret := flag.String("apipass-secret", "", "gcloud secret of api password")
+
+	flag.Parse()
 
 	ReadLangs(*langsTomlPath)
 
 	var err error
 
 	// init gRPC
-	conn := apiConnect()
+	conn := apiConnect(*apiHost, *prod)
 	defer conn.Close()
-	initClient(conn)
+	initClient(conn, *apiUser, getSecureString(*apiPassSecret, *apiPass))
 
 	testCaseFetcher, err = NewTestCaseFetcher(
-		secretConfig.MinioHost,
-		secretConfig.MinioAccess,
-		secretConfig.MinioSecret,
-		secretConfig.Prod,
+		getSecureString(*minioHostSecret, *minioHost),
+		getSecureString(*minioIDSecret, *minioID),
+		getSecureString(*minioKeySecret, *minioKey),
+		getSecureString(*minioBucketSecret, *minioBucket),
+		*prod,
 	)
 	if err != nil {
 		log.Fatal(err)
