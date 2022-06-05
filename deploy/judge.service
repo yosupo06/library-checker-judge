@@ -1,0 +1,12 @@
+[Unit]
+Description = library checker judge
+
+[Service]
+Environment = CASEDIR=/tmp
+Environment = TMPDIR=/ramdisk
+ExecStart = /root/judge -langs=/root/langs.toml -secret=/root/secret.toml -testlib=/root/library-checker-judge/judge/testlib.h
+Restart = always
+Type = simple
+
+[Install]
+WantedBy = multi-user.target

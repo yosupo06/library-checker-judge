@@ -16,11 +16,11 @@ type Lang struct {
 
 var langs map[string]Lang
 
-func init() {
+func ReadLangs(tomlPath string) map[string]Lang {
 	var tomlData struct {
 		Langs []Lang `toml:"langs"`
 	}
-	if _, err := toml.DecodeFile("../langs/langs.toml", &tomlData); err != nil {
+	if _, err := toml.DecodeFile(tomlPath, &tomlData); err != nil {
 		log.Fatal(err)
 	}
 	langs = make(map[string]Lang)
@@ -30,4 +30,5 @@ func init() {
 	if _, ok := langs["checker"]; !ok {
 		log.Fatal("lang file don't have checker")
 	}
+	return langs
 }
