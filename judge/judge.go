@@ -58,7 +58,7 @@ func (j *Judge) Close() error {
 	return nil
 }
 
-func (j *Judge) CompileChecker(checkerPath string) (TaskResult, error) {
+func (j *Judge) CompileChecker(checkerPath, testlibPathStr string) (TaskResult, error) {
 	volume, err := CreateVolume()
 	if err != nil {
 		return TaskResult{}, err
@@ -69,7 +69,7 @@ func (j *Judge) CompileChecker(checkerPath string) (TaskResult, error) {
 		return TaskResult{}, err
 	}
 
-	testlibPath, err := filepath.Abs("testlib.h")
+	testlibPath, err := filepath.Abs(testlibPathStr)
 	if err != nil {
 		return TaskResult{}, err
 	}

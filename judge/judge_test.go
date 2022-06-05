@@ -21,7 +21,7 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 		t.Fatal("Failed to create Judge", err)
 	}
 
-	checkerResult, err := judge.CompileChecker(checkerPath)
+	checkerResult, err := judge.CompileChecker(checkerPath, "testlib.h")
 	if err != nil || checkerResult.ExitCode != 0 {
 		t.Fatal("error CompileChecker", err)
 	}

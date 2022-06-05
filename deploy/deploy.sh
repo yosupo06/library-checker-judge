@@ -24,5 +24,17 @@ gcpexec "cd /root/library-checker-judge/judge &&
     MINIO_BUCKET=${MINIO_BUCKET}
     PROD=true
     ./make_secret.sh"
-gcpexec "cp /etc/supervisor/conf.d/judge._conf /etc/supervisor/conf.d/judge.conf"
-gcpexec "supervisorctl reload"
+
+#cd ../judge && CGO_ENABLED=0 GOOS=linux go build ../judge
+#cd -
+#gcloud compute scp ../judge/judge root@${NAME}:/root/judge --zone=${ZONE}
+gcpexec "cp /root/library-checker-judge/judge/judge /root/judge"
+
+gcloud compute scp ../langs/langs.toml root@${NAME}:/root/langs.toml --zone=${ZONE}
+gcpexec "cp /root/library-checker-judge/judge/secret.toml /root/secret.toml"
+
+gcpexec "mkdir -p /usr/local/lib/systemd/system/"
+gcloud compute scp judge.service root@${NAME}:/usr/local/lib/systemd/system/judge.service --zone=${ZONE}
+
+gcpexec "systemctl daemon-reload"
+gcpexec "service judge start"
