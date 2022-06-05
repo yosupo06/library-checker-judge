@@ -1,10 +1,16 @@
 package main
 
 import (
+	"os"
 	"path"
 	"path/filepath"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	ReadLangs("../langs/langs.toml")
+	os.Exit(m.Run())
+}
 
 func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 	checkerPath, err := filepath.Abs("./aplusb/checker.cpp")
