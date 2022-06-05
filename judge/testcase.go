@@ -17,6 +17,7 @@ import (
 
 type TestCaseFetcher struct {
 	minioClient *minio.Client
+	minioBucket string
 	casesDir    string
 }
 
@@ -24,7 +25,7 @@ type TestCaseDir struct {
 	dir string
 }
 
-func NewTestCaseFetcher(minioEndpoint string, minioID string, minioKey string, minioSecure bool) (TestCaseFetcher, error) {
+func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket string, minioSecure bool) (TestCaseFetcher, error) {
 	// create case directory
 	dir, err := ioutil.TempDir(os.Getenv("CASEDIR"), "case")
 	if err != nil {
@@ -47,6 +48,7 @@ func NewTestCaseFetcher(minioEndpoint string, minioID string, minioKey string, m
 
 	return TestCaseFetcher{
 		minioClient: client,
+		minioBucket: minioBucket,
 		casesDir:    dir,
 	}, nil
 }
@@ -66,7 +68,7 @@ func (t *TestCaseFetcher) Fetch(problem string, version string) (TestCaseDir, er
 		if err != nil {
 			return TestCaseDir{}, err
 		}
-		object, err := t.minioClient.GetObject(secretConfig.MinioBucket, version+".zip", minio.GetObjectOptions{})
+		object, err := t.minioClient.GetObject(t.minioBucket, version+".zip", minio.GetObjectOptions{})
 		if err != nil {
 			return TestCaseDir{}, err
 		}
