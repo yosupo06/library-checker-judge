@@ -16,6 +16,9 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 // gRPC
@@ -262,11 +265,53 @@ func apiConnect() *grpc.ClientConn {
 	return conn
 }
 
+func getSecureString(secureKey, defaultValue string) string {
+	if secureKey == "" {
+		if defaultValue == "" {
+			log.Fatal("both secureKey and defaultValue is empty")
+		}
+		return defaultValue
+	}
+
+	// Create the client.
+	ctx := context.Background()
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		log.Fatalf("failed to create secretmanager client: %v", err)
+	}
+	defer client.Close()
+
+	// Build the request.
+	req := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: secureKey,
+	}
+
+	// Call the API.
+	result, err := client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		log.Fatalf("failed to access secret version: %v", err)
+	}
+
+	return string(result.Payload.Data)
+}
+
 func main() {
 	secretTomlPath := flag.String("secret", "./secret.toml", "toml path of secret.toml")
 	testlibPath := flag.String("testlib", "testlib.h", "path of testlib.h")
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
 	judgedir := flag.String("judgedir", "", "temporary directory of judge")
+
+	prod := flag.Bool("prod", false, "production mode")
+
+	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
+	minioHostSecret := flag.String("miniohost-secret", "", "gcloud secret of minio host")
+
+	minioID := flag.String("minioid", "minio", "minio ID")
+	minioIDSecret := flag.String("minioid-secret", "", "gcloud secret of minio ID")
+
+	minioKey := flag.String("miniokey", "miniopass", "minio access key")
+	minioKeySecret := flag.String("miniokey-secret", "", "gcloud secret of minio access key")
+
 	flag.Parse()
 
 	if _, err := toml.DecodeFile(*secretTomlPath, &secretConfig); err != nil {
@@ -283,10 +328,10 @@ func main() {
 	initClient(conn)
 
 	testCaseFetcher, err = NewTestCaseFetcher(
-		secretConfig.MinioHost,
-		secretConfig.MinioAccess,
-		secretConfig.MinioSecret,
-		secretConfig.Prod,
+		getSecureString(*minioHostSecret, *minioHost),
+		getSecureString(*minioIDSecret, *minioID),
+		getSecureString(*minioKeySecret, *minioKey),
+		*prod,
 	)
 	if err != nil {
 		log.Fatal(err)

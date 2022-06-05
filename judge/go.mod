@@ -3,9 +3,9 @@ module github.com/yosupo06/library-checker-judge/judge
 go 1.13
 
 require (
+	cloud.google.com/go/secretmanager v1.4.0
 	github.com/BurntSushi/toml v0.3.1
-	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+	github.com/google/uuid v1.1.2
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/lib/pq v1.8.0
@@ -14,13 +14,9 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/yosupo06/library-checker-judge/api v0.0.0-20201104183640-c93ae6dfbe9e
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
-	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102 // indirect
-	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
-	golang.org/x/text v0.3.4 // indirect
-	google.golang.org/genproto v0.0.0-20201104152603-2e45c02ce95c // indirect
-	google.golang.org/grpc v1.33.1
+	google.golang.org/genproto v0.0.0-20220405205423-9d709892a2bf
+	google.golang.org/grpc v1.45.0
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	github.com/google/uuid v1.1.2
 )
 
 //replace github.com/yosupo06/library-checker-judge/api => ../api
