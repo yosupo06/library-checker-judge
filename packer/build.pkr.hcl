@@ -34,23 +34,6 @@ build {
     ]
   }
 
-  # supervisor setting
-  provisioner "shell" {
-    inline = [
-      "sudo apt-get install -y supervisor",
-    ]
-  }
-  provisioner "file" {
-    source = "judge.conf"
-    destination = "/tmp/judge.conf"
-  }
-  provisioner "shell" {
-    inline = [
-      "sudo cp /tmp/judge.conf /etc/supervisor/conf.d/judge._conf",
-      "sudo chmod 600 /etc/supervisor/conf.d/judge._conf",
-    ]
-  }
-
   # mount setting
   provisioner "file" {
     source = "judge-launch.sh"
