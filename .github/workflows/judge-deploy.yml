@@ -1,14 +1,13 @@
 name: Judge-Deploy
 
 on:
-  push:
-    workflow_dispatch:
-      inputs:
-        zone:
-          description: 'Instance zone'
-          required: true
-          default: asia-northeast1-a
-          type: string
+  workflow_dispatch:
+    inputs:
+      zone:
+        description: 'Instance zone'
+        required: true
+        default: asia-northeast1-a
+        type: string
 
 
 jobs:
