@@ -30,25 +30,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    name: str = 'lib-judge-executor-' + ''.join(
+    name: str = 'library-checker-judge-' + ''.join(
         random.choices(string.ascii_lowercase, k=10))
     zone: str = args.zone
     env: str = args.env
     preemptible: bool = args.preemptible
 
-    logger.info('create instance, name = %s, zone = %s, env = %s, preemptible = %s',
-                name, zone, env, preemptible)
     create_instance(name, zone, env, preemptible)
-
-    while True:
-        try:
-            run_in_instance(name, zone, ['echo', 'connected'])
-        except CalledProcessError:
-            logger.info('failed to connect...')
-        else:
-            break
-        sleep(10)
-
     build_judge()
     send_file(Path('../judge/judge'), name, zone, Path('/root/judge'))
     send_file(Path('../langs/langs.toml'), name, zone, Path('/root/langs.toml'))
@@ -57,4 +45,5 @@ if __name__ == '__main__':
     send_file(Path('./judge.service'), name,
               zone, Path('/usr/local/lib/systemd/system/judge.service'))
     run_in_instance(name, zone, ['systemctl', 'daemon-reload'])
+    run_in_instance(name, zone, ['systemctl', 'judge', 'enable'])
     run_in_instance(name, zone, ['service', 'judge', 'start'])

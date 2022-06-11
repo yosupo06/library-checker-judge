@@ -6,11 +6,17 @@ from logging import Logger, getLogger, basicConfig
 from subprocess import run
 from typing import List
 from os import getenv
+from subprocess import CalledProcessError, run
+from pathlib import Path
+from os import getenv
+from time import sleep
 
 logger: Logger = getLogger(__name__)
 
 
 def create_instance(name: str, zone: str, env: str, preemptible: bool):
+    logger.info('create instance, name = %s, zone = %s, env = %s, preemptible = %s',
+                name, zone, env, preemptible)
     args = ['gcloud', 'compute', 'instances', 'create']
     args += [name]
     args += ['--zone', zone]
@@ -22,6 +28,25 @@ def create_instance(name: str, zone: str, env: str, preemptible: bool):
     args += ['--scopes', 'default,cloud-platform']
     if preemptible:
         args += ['--preemptible']
+
+    run(args, check=True)
+
+    while True:
+        try:
+            run_in_instance(name, zone, ['echo', 'connected'])
+        except CalledProcessError:
+            logger.info('failed to connect...')
+        else:
+            break
+        sleep(10)
+
+
+def delete_instance(name: str, zone: str):
+    logger.info('delete instance, name = %s, zone = %s', name, zone)
+    args = ['gcloud', 'compute', 'instances', 'delete']
+    args += [name]
+    args += ['--zone', zone]
+    args += ['--quiet']
 
     run(args, check=True)
 
