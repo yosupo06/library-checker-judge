@@ -45,5 +45,5 @@ if __name__ == '__main__':
     send_file(Path('./judge.service'), name,
               zone, Path('/usr/local/lib/systemd/system/judge.service'))
     run_in_instance(name, zone, ['systemctl', 'daemon-reload'])
-    run_in_instance(name, zone, ['systemctl', 'judge', 'enable'])
+    run_in_instance(name, zone, ['systemctl', 'enable', 'judge'])
     run_in_instance(name, zone, ['service', 'judge', 'start'])
