@@ -55,7 +55,7 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 		return err
 	}
 
-	judge, err := NewJudge(judgedir, submission.Overview.Lang, problem.TimeLimit)
+	judge, err := NewJudge(judgedir, langs[submission.Overview.Lang], problem.TimeLimit)
 	if err != nil {
 		return err
 	}

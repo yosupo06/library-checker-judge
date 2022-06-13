@@ -25,21 +25,18 @@ type Judge struct {
 	sourceVolume  *Volume
 }
 
-func NewJudge(judgedir, lang string, tl float64) (*Judge, error) {
+func NewJudge(judgedir string, lang Lang, tl float64) (*Judge, error) {
 	tempdir, err := ioutil.TempDir(judgedir, "judge")
 	if err != nil {
 		return nil, err
 	}
-
 	log.Println("create judge dir:", tempdir)
 
-	judge := new(Judge)
-
-	judge.lang = langs[lang]
-	judge.tl = tl
-	judge.dir = tempdir
-
-	return judge, nil
+	return &Judge{
+		dir:  tempdir,
+		tl:   tl,
+		lang: lang,
+	}, nil
 }
 
 func (j *Judge) Close() error {
