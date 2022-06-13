@@ -1,4 +1,4 @@
-name: GCE Test
+name: Judge-TEST-GCE
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  judge-deploy:
+  judge-test:
     runs-on: ubuntu-latest
     permissions:
       contents: read
