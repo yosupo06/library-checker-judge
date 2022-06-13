@@ -1,6 +1,6 @@
 module github.com/yosupo06/library-checker-judge/judge
 
-go 1.13
+go 1.16
 
 require (
 	cloud.google.com/go/secretmanager v1.4.0

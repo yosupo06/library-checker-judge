@@ -45,31 +45,24 @@ func CreateVolume() (Volume, error) {
 	}, nil
 }
 
-func (v *Volume) CopyFile(srcPath string, dstPath string) error {
+func (v *Volume) CopyFile(src io.Reader, dstPath string) error {
+	log.Printf("Copy file to %v:%v", v.Name, dstPath)
 	task := TaskInfo{
-		WorkDir:       "/workdir",
-		WorkDirVolume: v,
-		Name:          "ubuntu",
+		WorkDir: "/workdir",
+		VolumeMountInfo: []VolumeMountInfo{
+			{
+				Path:   "/workdir",
+				Volume: v,
+			},
+		},
+		Name:     "ubuntu",
+		Argments: []string{"sh", "-c", fmt.Sprintf("cat > %s", path.Join("/workdir", dstPath))},
+		Stdin:    src,
 	}
-	container, err := task.create()
-	defer container.Remove()
-
-	if err != nil {
-		return err
-	}
-
-	args := []string{"cp", srcPath, fmt.Sprintf("%s:%s", container.containerID, path.Join("/workdir", dstPath))}
-
-	cmd := exec.Command("docker", args...)
-	cmd.Stderr = os.Stderr
-
-	err = cmd.Run()
-
-	if err != nil {
+	if _, err := task.Run(); err != nil {
 		log.Println("copy file failed:", err.Error())
 		return err
 	}
-
 	return nil
 }
 
@@ -92,6 +85,11 @@ type BindInfo struct {
 	ContainerPath string
 }
 
+type VolumeMountInfo struct {
+	Path   string
+	Volume *Volume
+}
+
 type TaskInfo struct {
 	Name                string // container name e.g. ubuntu
 	Argments            []string
@@ -103,8 +101,8 @@ type TaskInfo struct {
 	EnableNetwork       bool
 	EnableLoggingDriver bool
 	WorkDir             string
-	WorkDirVolume       *Volume
 	Binds               []BindInfo
+	VolumeMountInfo     []VolumeMountInfo
 
 	Stdin  io.Reader
 	Stdout io.Writer
@@ -188,19 +186,16 @@ func (t *TaskInfo) create() (containerInfo, error) {
 		args = append(args, t.WorkDir)
 	}
 
-	// volume
-	if t.WorkDirVolume != nil {
-		if t.WorkDir == "" {
-			return containerInfo{}, errors.New("WorkDirVolume is specified though WorkDir is empty")
-		}
-		args = append(args, "-v")
-		args = append(args, fmt.Sprintf("%s:%s", t.WorkDirVolume.Name, t.WorkDir))
-	}
-
 	// bind
 	for _, bind := range t.Binds {
 		args = append(args, "--mount")
 		args = append(args, fmt.Sprintf("type=bind,source=%s,target=%s", bind.HostPath, bind.ContainerPath))
+	}
+
+	// mount volume
+	for _, volumeMount := range t.VolumeMountInfo {
+		args = append(args, "-v")
+		args = append(args, fmt.Sprintf("%s:%s", volumeMount.Volume.Name, volumeMount.Path))
 	}
 
 	// container name

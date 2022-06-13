@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -170,34 +169,27 @@ func TestMemoryLimit(t *testing.T) {
 }
 
 func TestVolume(t *testing.T) {
-	tmpfile, err := os.CreateTemp("", "tmp-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name())
-
-	_, err = tmpfile.Write([]byte("dummy\n"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(tmpfile.Name())
-
 	volume, err := CreateVolume()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := volume.CopyFile(tmpfile.Name(), ""); err != nil {
+	if err := volume.CopyFile(bytes.NewBufferString("dummy"), "test.txt"); err != nil {
 		t.Fatal(err)
 	}
-
 	output := new(bytes.Buffer)
+
 	task := TaskInfo{
-		Name:          "ubuntu",
-		Argments:      []string{"cat", fmt.Sprintf("/workdir/%s", filepath.Base(tmpfile.Name()))},
-		WorkDir:       "/workdir",
-		WorkDirVolume: &volume,
-		Stdout:        output,
+		Name:     "ubuntu",
+		Argments: []string{"cat", "/workdir/test.txt"},
+		WorkDir:  "/workdir",
+		VolumeMountInfo: []VolumeMountInfo{
+			{
+				Path:   "/workdir",
+				Volume: &volume,
+			},
+		},
+		Stdout: output,
 	}
 
 	result, err := task.Run()
@@ -299,16 +291,25 @@ func TestForkBomb(t *testing.T) {
 	}
 	defer volume.Remove()
 
-	if err := volume.CopyFile("./badcode/fork_bomb.sh", ""); err != nil {
+	src, err := sources.Open("sources/badcode/fork_bomb.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := volume.CopyFile(src, "fork_bomb.sh"); err != nil {
 		t.Fatal(err)
 	}
 
 	task := TaskInfo{
-		Name:          "ubuntu",
-		PidsLimit:     100,
-		WorkDir:       "/workdir",
-		WorkDirVolume: &volume,
-		Timeout:       3 * time.Second,
+		Name:      "ubuntu",
+		PidsLimit: 100,
+		WorkDir:   "/workdir",
+		VolumeMountInfo: []VolumeMountInfo{
+			{
+				Path:   "/workdir",
+				Volume: &volume,
+			},
+		},
+		Timeout: 3 * time.Second,
 	}
 	task.Argments = []string{"./fork_bomb.sh"}
 
@@ -326,26 +327,40 @@ func TestUseManyStack(t *testing.T) {
 	}
 	defer volume.Remove()
 
-	if err := volume.CopyFile("./badcode/use_many_stack.cpp", ""); err != nil {
+	src, err := sources.Open("sources/badcode/use_many_stack.cpp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := volume.CopyFile(src, "use_many_stack.cpp"); err != nil {
 		t.Fatal(err)
 	}
 
 	compileTask := TaskInfo{
-		Name:          "gcc:12.1",
-		Argments:      []string{"g++", "use_many_stack.cpp"},
-		WorkDir:       "/workdir",
-		WorkDirVolume: &volume,
+		Name:     "gcc:12.1",
+		Argments: []string{"g++", "use_many_stack.cpp"},
+		WorkDir:  "/workdir",
+		VolumeMountInfo: []VolumeMountInfo{
+			{
+				Path:   "/workdir",
+				Volume: &volume,
+			},
+		},
 	}
 	if _, err := compileTask.Run(); err != nil {
 		t.Fatal(err)
 	}
 
 	task := TaskInfo{
-		Name:          "gcc:12.1",
-		Argments:      []string{"./a.out"},
-		WorkDir:       "/workdir",
-		WorkDirVolume: &volume,
-		StackLimitKB:  -1,
+		Name:     "gcc:12.1",
+		Argments: []string{"./a.out"},
+		WorkDir:  "/workdir",
+		VolumeMountInfo: []VolumeMountInfo{
+			{
+				Path:   "/workdir",
+				Volume: &volume,
+			},
+		},
+		StackLimitKB: -1,
 	}
 
 	result, err := task.Run()

@@ -90,12 +90,24 @@ func (t *TestCaseDir) CheckerPath() string {
 	return path.Join(t.dir, "checker.cpp")
 }
 
+func (t *TestCaseDir) CheckerFile() (*os.File, error) {
+	return os.Open(path.Join(t.dir, "checker.cpp"))
+}
+
 func (t *TestCaseDir) InFilePath(name string) string {
 	return path.Join(t.dir, "in", name+".in")
 }
 
+func (t *TestCaseDir) InFile(name string) (*os.File, error) {
+	return os.Open(path.Join(t.dir, "in", name+".in"))
+}
+
 func (t *TestCaseDir) OutFilePath(name string) string {
 	return path.Join(t.dir, "out", name+".out")
+}
+
+func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
+	return os.Open(path.Join(t.dir, "out", name+".out"))
 }
 
 func (t *TestCaseDir) CaseNames() ([]string, error) {

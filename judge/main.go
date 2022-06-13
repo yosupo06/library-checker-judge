@@ -80,7 +80,17 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 	}); err != nil {
 		return err
 	}
-	taskResult, err := judge.CompileChecker(testCases.CheckerPath(), testlibPath)
+	checkerFile, err := testCases.CheckerFile()
+	if err != nil {
+		return err
+	}
+	defer checkerFile.Close()
+
+	testlib, err := os.Open(testlibPath)
+	if err != nil {
+		return err
+	}
+	taskResult, err := judge.CompileChecker(checkerFile, testlib)
 	if err != nil {
 		return err
 	}
@@ -104,7 +114,7 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 	if _, err := tmpSourceFile.WriteString(submission.Source); err != nil {
 		return err
 	}
-	result, err := judge.CompileSource(tmpSourceFile.Name())
+	result, err := judge.CompileSource(tmpSourceFile)
 	if err != nil {
 		return err
 	}
@@ -176,7 +186,15 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 		return nil
 	}
 	for _, caseName := range cases {
-		caseResult, err := judge.TestCase(testCases.InFilePath(caseName), testCases.OutFilePath(caseName))
+		inFile, err := testCases.InFile(caseName)
+		if err != nil {
+			return err
+		}
+		outFile, err := testCases.OutFile(caseName)
+		if err != nil {
+			return err
+		}
+		caseResult, err := judge.TestCase(inFile, outFile)
 		if err != nil {
 			return err
 		}
