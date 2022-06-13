@@ -1,37 +1,63 @@
 package main
 
 import (
+	"embed"
+	"flag"
 	"os"
 	"path"
-	"path/filepath"
 	"testing"
 )
 
+var (
+	TESTLIB_PATH       = path.Join("sources", "testlib.h")
+	APLUSB_DIR         = path.Join("sources", "aplusb")
+	CHECKER_PATH       = path.Join(APLUSB_DIR, "checker.cpp")
+	SAMPLE_IN_PATH     = path.Join(APLUSB_DIR, "sample.in")
+	SAMPLE_OUT_PATH    = path.Join(APLUSB_DIR, "sample.out")
+	SAMPLE_WA_OUT_PATH = path.Join(APLUSB_DIR, "sample_wa.out")
+)
+
+//go:embed sources/*
+var sources embed.FS
+
 func TestMain(m *testing.M) {
-	ReadLangs("../langs/langs.toml")
+	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
+
+	flag.Parse()
+
+	ReadLangs(*langsTomlPath)
 	os.Exit(m.Run())
 }
 
 func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
-	checkerPath, err := filepath.Abs("./aplusb/checker.cpp")
+	checker, err := sources.Open(CHECKER_PATH)
 	if err != nil {
 		t.Fatal(err)
 	}
-	srcPath, err := filepath.Abs(path.Join("aplusb", srcName))
+	defer checker.Close()
+
+	testlib, err := sources.Open(TESTLIB_PATH)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testlib.Close()
+
+	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
+	defer src.Close()
 
 	judge, err := NewJudge("", lang, 2.0)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
 
-	checkerResult, err := judge.CompileChecker(checkerPath, "testlib.h")
+	checkerResult, err := judge.CompileChecker(checker, testlib)
 	if err != nil || checkerResult.ExitCode != 0 {
 		t.Fatal("error CompileChecker", err)
 	}
-	sourceResult, err := judge.CompileSource(srcPath)
+	sourceResult, err := judge.CompileSource(src)
 	if err != nil || sourceResult.ExitCode != 0 {
 		t.Fatal("error CompileSource", err)
 	}
@@ -44,7 +70,19 @@ func testAplusBAC(t *testing.T, lang, srcName string) {
 	judge := generateAplusBJudge(t, lang, srcName)
 	defer judge.Close()
 
-	result, err := judge.TestCase("./aplusb/sample.in", "./aplusb/sample.out")
+	in, err := sources.Open(SAMPLE_IN_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer in.Close()
+
+	expect, err := sources.Open(SAMPLE_OUT_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer expect.Close()
+
+	result, err := judge.TestCase(in, expect)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -101,7 +139,20 @@ func TestAplusBWA(t *testing.T) {
 	judge := generateAplusBJudge(t, "cpp", "wa.cpp")
 	defer judge.Close()
 
-	result, err := judge.TestCase("./aplusb/sample.in", "./aplusb/sample.out")
+	in, err := sources.Open(SAMPLE_IN_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer in.Close()
+
+	expect, err := sources.Open(SAMPLE_OUT_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer expect.Close()
+
+	result, err := judge.TestCase(in, expect)
+
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -116,7 +167,20 @@ func TestAplusbPE(t *testing.T) {
 	judge := generateAplusBJudge(t, "cpp", "pe.cpp")
 	defer judge.Close()
 
-	result, err := judge.TestCase("./aplusb/sample.in", "./aplusb/sample.out")
+	in, err := sources.Open(SAMPLE_IN_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer in.Close()
+
+	expect, err := sources.Open(SAMPLE_OUT_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer expect.Close()
+
+	result, err := judge.TestCase(in, expect)
+
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -131,7 +195,20 @@ func TestAplusbFail(t *testing.T) {
 	judge := generateAplusBJudge(t, "cpp", "ac.cpp")
 	defer judge.Close()
 
-	result, err := judge.TestCase("./aplusb/sample.in", "./aplusb/sample_wa.out")
+	in, err := sources.Open(SAMPLE_IN_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer in.Close()
+
+	expect, err := sources.Open(SAMPLE_WA_OUT_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer expect.Close()
+
+	result, err := judge.TestCase(in, expect)
+
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -146,7 +223,19 @@ func TestAplusbTLE(t *testing.T) {
 	judge := generateAplusBJudge(t, "cpp", "tle.cpp")
 	defer judge.Close()
 
-	result, err := judge.TestCase("./aplusb/sample.in", "./aplusb/sample.out")
+	in, err := sources.Open(SAMPLE_IN_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer in.Close()
+
+	expect, err := sources.Open(SAMPLE_OUT_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer expect.Close()
+
+	result, err := judge.TestCase(in, expect)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -161,7 +250,19 @@ func TestAplusbRE(t *testing.T) {
 	judge := generateAplusBJudge(t, "cpp", "re.cpp")
 	defer judge.Close()
 
-	result, err := judge.TestCase("./aplusb/sample.in", "./aplusb/sample.out")
+	in, err := sources.Open(SAMPLE_IN_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer in.Close()
+
+	expect, err := sources.Open(SAMPLE_OUT_PATH)
+	if err != nil {
+		t.Fatal("Failed: Source", err)
+	}
+	defer in.Close()
+
+	result, err := judge.TestCase(in, expect)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -173,7 +274,7 @@ func TestAplusbRE(t *testing.T) {
 }
 
 func TestAplusbCE(t *testing.T) {
-	srcPath, err := filepath.Abs(path.Join("aplusb", "ce.cpp"))
+	src, err := sources.Open(path.Join(APLUSB_DIR, "ce.cpp"))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
@@ -184,7 +285,7 @@ func TestAplusbCE(t *testing.T) {
 	}
 	defer judge.Close()
 
-	sourceResult, err := judge.CompileSource(srcPath)
+	sourceResult, err := judge.CompileSource(src)
 	if err != nil {
 		t.Fatal("error CompileSource", err)
 	}
