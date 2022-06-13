@@ -1,4 +1,4 @@
-name: Judge-TEST-GCE
+name: Judge-Test-GCE
 
 on:
   push:
