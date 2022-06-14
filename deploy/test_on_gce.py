@@ -52,6 +52,7 @@ if __name__ == '__main__':
         run_test(name, zone, env, remain)
     except Exception as e:
         logger.error('error {}'.format(e))
+        raise e
     finally:
         if not remain:
             delete_instance(name, zone)
