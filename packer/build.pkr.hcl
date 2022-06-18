@@ -36,13 +36,13 @@ build {
 
   # mount setting
   provisioner "file" {
-    source = "judge-launch.sh"
-    destination = "/tmp/judge-launch.sh"
+    source = "create-ramdisk.sh"
+    destination = "/tmp/create-ramdisk.sh"
   }
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/judge-launch.sh /var/lib/cloud/scripts/per-boot/judge-launch.sh",
-      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/judge-launch.sh",
+      "sudo cp /tmp/create-ramdisk.sh /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
+      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
     ]
   }
 
@@ -56,12 +56,27 @@ build {
   }
 
   # install docker
+  provisioner "file" {
+    source = "docker-install.sh"
+    destination = "/tmp/docker-install.sh"
+  }
   provisioner "shell" {
     inline = [
-      "curl -fsSL https://get.docker.com -o /tmp/get-docker.sh",
-      "sudo sh /tmp/get-docker.sh",
+      "sudo sh /tmp/docker-install.sh"
     ]
   }
+  # docker mount setting
+  provisioner "file" {
+    source = "prepare-docker.sh"
+    destination = "/tmp/prepare-docker.sh"
+  }
+  provisioner "shell" {
+    inline = [
+      "sudo cp /tmp/prepare-docker.sh /var/lib/cloud/scripts/per-boot/prepare-docker.sh",
+      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/prepare-docker.sh",
+    ]
+  }
+  
 
   # build our images
   provisioner "file" {

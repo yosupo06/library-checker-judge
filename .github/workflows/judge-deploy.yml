@@ -8,7 +8,10 @@ on:
         required: true
         default: asia-northeast1-a
         type: string
-
+    build_image:
+      required: true
+      default: false
+      type: boolean
 
 jobs:
   judge-deploy:
@@ -27,6 +30,12 @@ jobs:
         service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
     
+    - id: build-image
+      name: Build judge image
+      if : ${{ inputs.build_image }}
+      run: packer build -var 'env=prod' .
+      working-directory: ./packer
+
     - id: setup-cloud-sdk
       name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
@@ -36,4 +45,4 @@ jobs:
       run: ./judge_deploy.py --zone $ZONE --env prod --preemptible
       working-directory: ./deploy
       env:
-        ZONE: ${{ github.event.inputs.zone }}
+        ZONE: ${{ inputs.zone }}
