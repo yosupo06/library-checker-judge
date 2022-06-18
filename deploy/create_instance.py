@@ -33,7 +33,7 @@ def create_instance(name: str, zone: str, env: str, preemptible: bool):
 
     while True:
         try:
-            run_in_instance(name, zone, ['echo', 'connected'])
+            run_in_instance(name, zone, ['cloud-init', 'status', '--wait'])
         except CalledProcessError:
             logger.info('failed to connect...')
         else:
@@ -82,5 +82,4 @@ if __name__ == '__main__':
     env: str = args.env
     preemptible: bool = args.preemptible
 
-    logger.info('create instance, name = %s, zone = %s, env = %s, preemptible = %d', name, zone, env, preemptible)
     create_instance(name, zone, env, preemptible)
