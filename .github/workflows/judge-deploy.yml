@@ -8,10 +8,11 @@ on:
         required: true
         default: asia-northeast1-a
         type: string
-    build_image:
-      required: true
-      default: false
-      type: boolean
+      build_image:
+        description: 'Build new judge image'
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   judge-deploy:
