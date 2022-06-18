@@ -111,10 +111,19 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 		return err
 	}
 	defer os.Remove(tmpSourceFile.Name())
+
 	if _, err := tmpSourceFile.WriteString(submission.Source); err != nil {
 		return err
 	}
-	result, err := judge.CompileSource(tmpSourceFile)
+	tmpSourceFile.Close()
+
+	tmpSourceFile2, err := os.Open(tmpSourceFile.Name())
+	if err != nil {
+		return err
+	}
+	defer tmpSourceFile2.Close()
+
+	result, err := judge.CompileSource(tmpSourceFile2)
 	if err != nil {
 		return err
 	}
