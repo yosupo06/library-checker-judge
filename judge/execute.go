@@ -109,6 +109,108 @@ type TaskInfo struct {
 	Stderr io.Writer
 }
 
+type TaskInfoOption func(*TaskInfo) error
+
+func WithArguments(args ...string) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.Argments = args
+		return nil
+	}
+}
+
+func WithTimeout(t time.Duration) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.Timeout = t
+		return nil
+	}
+}
+
+func WithCpuset(cpus ...int) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.Cpuset = cpus
+		return nil
+	}
+}
+
+func WithMemoryLimitMB(limitMB int) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.MemoryLimitMB = limitMB
+		return nil
+	}
+}
+
+func WithStackLimitMB(limitMB int) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.StackLimitKB = limitMB
+		return nil
+	}
+}
+
+func WithPidsLimit(n int) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.PidsLimit = n
+		return nil
+	}
+}
+
+func WithWorkDir(path string) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.WorkDir = path
+		return nil
+	}
+}
+
+func WithStdin(stdin io.Reader) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.Stdin = stdin
+		return nil
+	}
+}
+
+func WithStdout(stdout io.Writer) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.Stdout = stdout
+		return nil
+	}
+}
+
+func WithStderr(stderr io.Writer) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.Stderr = stderr
+		return nil
+	}
+}
+
+func WithBind(hostPath, containerPath string) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.Binds = append(ti.Binds, BindInfo{
+			HostPath:      hostPath,
+			ContainerPath: containerPath,
+		})
+		return nil
+	}
+}
+
+func WithVolume(volume *Volume, containerPath string) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.VolumeMountInfo = append(ti.VolumeMountInfo, VolumeMountInfo{
+			Path:   containerPath,
+			Volume: volume,
+		})
+		return nil
+	}
+}
+
+func NewTaskInfo(name string, ops ...TaskInfoOption) (*TaskInfo, error) {
+	ti := &TaskInfo{Name: name}
+	for _, option := range ops {
+		if err := option(ti); err != nil {
+			return nil, err
+		}
+	}
+	return ti, nil
+}
+
 type TaskResult struct {
 	ExitCode int
 	Time     time.Duration
