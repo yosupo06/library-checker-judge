@@ -11,9 +11,10 @@ import (
 )
 
 func TestRunHelloWorld(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
-	task.Argments = []string{"echo", "hello-world"}
+	task, err := NewTaskInfo("ubuntu", WithArguments("echo", "hello-world"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 	if err != nil {
@@ -27,9 +28,10 @@ func TestRunHelloWorld(t *testing.T) {
 }
 
 func TestExitCode(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
-	task.Argments = []string{"sh", "-c", "exit 123"}
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "exit 123"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 	if err != nil {
@@ -43,10 +45,10 @@ func TestExitCode(t *testing.T) {
 }
 
 func TestStdin(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
-	task.Argments = []string{"sh", "-c", "read input; test $input = dummy"}
-	task.Stdin = strings.NewReader("dummy")
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "read input; test $input = dummy"), WithStdin(strings.NewReader("dummy")))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 
@@ -62,11 +64,11 @@ func TestStdin(t *testing.T) {
 }
 
 func TestStdout(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
-	task.Argments = []string{"echo", "dummy"}
 	output := new(bytes.Buffer)
-	task.Stdout = output
+	task, err := NewTaskInfo("ubuntu", WithArguments("echo", "dummy"), WithStdout(output))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 
@@ -86,11 +88,11 @@ func TestStdout(t *testing.T) {
 }
 
 func TestStderr(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
-	task.Argments = []string{"sh", "-c", "echo dummy >&2"}
 	output := new(bytes.Buffer)
-	task.Stderr = output
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "echo dummy >&2"), WithStderr(output))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 
@@ -110,9 +112,10 @@ func TestStderr(t *testing.T) {
 }
 
 func TestSleepTime(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
-	task.Argments = []string{"sleep", "3"}
+	task, err := NewTaskInfo("ubuntu", WithArguments("sleep", "3"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 	if err != nil {
@@ -126,10 +129,10 @@ func TestSleepTime(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
-	task.Argments = []string{"sleep", "5"}
-	task.Timeout = 3 * time.Second
+	task, err := NewTaskInfo("ubuntu", WithArguments("sleep", "5"), WithTimeout(3*time.Second))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 	if err != nil {
@@ -147,12 +150,11 @@ func TestTimeout(t *testing.T) {
 }
 
 func TestMemoryLimit(t *testing.T) {
-	task := TaskInfo{}
-	task.Name = "ubuntu"
 	// this command consumes 800M memory
-	task.Argments = []string{"dd", "if=/dev/zero", "of=/dev/null", "bs=800M"}
-	task.MemoryLimitMB = 500
-	task.Timeout = 3 * time.Second
+	task, err := NewTaskInfo("ubuntu", WithArguments("dd", "if=/dev/zero", "of=/dev/null", "bs=800M"), WithTimeout(3*time.Second), WithMemoryLimitMB(500))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := task.Run()
 	if err != nil {
@@ -179,17 +181,9 @@ func TestVolume(t *testing.T) {
 	}
 	output := new(bytes.Buffer)
 
-	task := TaskInfo{
-		Name:     "ubuntu",
-		Argments: []string{"cat", "/workdir/test.txt"},
-		WorkDir:  "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: &volume,
-			},
-		},
-		Stdout: output,
+	task, err := NewTaskInfo("ubuntu", WithArguments("cat", "/workdir/test.txt"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithStdout(output))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	result, err := task.Run()
@@ -216,15 +210,9 @@ func TestBind(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	task := TaskInfo{
-		Name:     "ubuntu",
-		Argments: []string{"sh", "-c", "echo dummy > /bind/a.txt"},
-		Binds: []BindInfo{
-			{
-				HostPath:      tmpdir,
-				ContainerPath: "/bind",
-			},
-		},
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "echo dummy > /bind/a.txt"), WithBind(tmpdir, "/bind"))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	result, err := task.Run()
@@ -247,31 +235,11 @@ func TestBind(t *testing.T) {
 	}
 }
 
-func TestNetworkEnable(t *testing.T) {
-	task := TaskInfo{
-		Name:          "ibmcom/ping",
-		EnableNetwork: true,
-		Stderr:        os.Stderr,
-	}
-	task.Argments = []string{"ping", "-c", "5", "google.com"}
-
-	result, err := task.Run()
+func TestNetworkDisable(t *testing.T) {
+	task, err := NewTaskInfo("ibmcom/ping", WithArguments("ping", "-c", "5", "google.com"), WithStderr(os.Stderr))
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("task result: %v\n", result)
-
-	if result.ExitCode != 0 {
-		t.Errorf("ping failed")
-	}
-}
-func TestNetworkDisable(t *testing.T) {
-	task := TaskInfo{
-		Name:          "ibmcom/ping",
-		EnableNetwork: false,
-		Stderr:        os.Stderr,
-	}
-	task.Argments = []string{"ping", "-c", "5", "google.com"}
 
 	result, err := task.Run()
 	if err != nil {
@@ -299,19 +267,10 @@ func TestForkBomb(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	task := TaskInfo{
-		Name:      "ubuntu",
-		PidsLimit: 100,
-		WorkDir:   "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: &volume,
-			},
-		},
-		Timeout: 3 * time.Second,
+	task, err := NewTaskInfo("ubuntu", WithArguments("./fork_bomb.sh"), WithPidsLimit(100), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithTimeout(3*time.Second))
+	if err != nil {
+		t.Fatal(err)
 	}
-	task.Argments = []string{"./fork_bomb.sh"}
 
 	result, err := task.Run()
 	if err != nil {
@@ -335,32 +294,18 @@ func TestUseManyStack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	compileTask := TaskInfo{
-		Name:     "gcc:12.1",
-		Argments: []string{"g++", "use_many_stack.cpp"},
-		WorkDir:  "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: &volume,
-			},
-		},
+	compileTask, err := NewTaskInfo("gcc:12.1", WithArguments("g++", "use_many_stack.cpp"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"))
+	if err != nil {
+		t.Fatal(err)
 	}
+
 	if _, err := compileTask.Run(); err != nil {
 		t.Fatal(err)
 	}
 
-	task := TaskInfo{
-		Name:     "gcc:12.1",
-		Argments: []string{"./a.out"},
-		WorkDir:  "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: &volume,
-			},
-		},
-		StackLimitKB: -1,
+	task, err := NewTaskInfo("gcc:12.1", WithArguments("./a.out"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithStackLimitMB(-1))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	result, err := task.Run()

@@ -13,8 +13,6 @@ import (
 )
 
 const COMPILE_TIMEOUT = 30 * time.Second
-const MEMORY_LIMIT_MB = 1024
-const PIDS_LIMIT = 100
 
 type Judge struct {
 	dir  string
@@ -23,6 +21,13 @@ type Judge struct {
 
 	checkerVolume *Volume
 	sourceVolume  *Volume
+}
+
+var defaultOptions = []TaskInfoOption{
+	WithCpuset(0, 1),
+	WithPidsLimit(100),
+	WithStackLimitMB(-1),
+	WithMemoryLimitMB(1024),
 }
 
 func NewJudge(judgedir string, lang Lang, tl float64) (*Judge, error) {
@@ -69,22 +74,17 @@ func (j *Judge) CompileChecker(checkerFile, testlibFile io.Reader) (TaskResult, 
 	if err := volume.CopyFile(testlibFile, "testlib.h"); err != nil {
 		return TaskResult{}, err
 	}
-
-	taskInfo := TaskInfo{
-		Name:     langs["checker"].ImageName,
-		Argments: langs["checker"].Compile,
-		WorkDir:  "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: &volume,
-			},
-		},
-		Stdout:        os.Stdout,
-		Stderr:        os.Stderr,
-		Timeout:       COMPILE_TIMEOUT,
-		PidsLimit:     PIDS_LIMIT,
-		MemoryLimitMB: MEMORY_LIMIT_MB,
+	taskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
+		defaultOptions,
+		WithArguments(langs["checker"].Compile...),
+		WithWorkDir("/workdir"),
+		WithVolume(&volume, "/workdir"),
+		WithTimeout(COMPILE_TIMEOUT),
+		WithStdin(os.Stdout),
+		WithStderr(os.Stderr),
+	)...)
+	if err != nil {
+		return TaskResult{}, err
 	}
 	result, err := taskInfo.Run()
 	if err != nil {
@@ -106,20 +106,16 @@ func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, error) {
 		return TaskResult{}, err
 	}
 
-	taskInfo := TaskInfo{
-		Name:     j.lang.ImageName,
-		Argments: j.lang.Compile,
-		WorkDir:  "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: &volume,
-			},
-		},
-		Timeout:       COMPILE_TIMEOUT,
-		Stderr:        os.Stderr,
-		PidsLimit:     PIDS_LIMIT,
-		MemoryLimitMB: MEMORY_LIMIT_MB,
+	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
+		defaultOptions,
+		WithArguments(j.lang.Compile...),
+		WithWorkDir("/workdir"),
+		WithVolume(&volume, "/workdir"),
+		WithTimeout(COMPILE_TIMEOUT),
+		WithStderr(os.Stderr),
+	)...)
+	if err != nil {
+		return TaskResult{}, err
 	}
 	result, err := taskInfo.Run()
 	if err != nil {
@@ -153,25 +149,16 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 	fileCopy(inFile, filepath.Join(casedir, "input.in"))
 
 	// TODO: volume read only
-	taskInfo := TaskInfo{
-		Name:     j.lang.ImageName,
-		Argments: append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...),
-		WorkDir:  "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: j.sourceVolume,
-			},
-		},
-		Timeout:       time.Duration(j.tl*1000*1000*1000) * time.Nanosecond,
-		PidsLimit:     PIDS_LIMIT,
-		MemoryLimitMB: MEMORY_LIMIT_MB,
-		Binds: []BindInfo{
-			{
-				HostPath:      casedir,
-				ContainerPath: "/casedir",
-			},
-		},
+	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
+		defaultOptions,
+		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...)...),
+		WithWorkDir("/workdir"),
+		WithVolume(j.sourceVolume, "/workdir"),
+		WithTimeout(time.Duration(j.tl*1000*1000*1000)*time.Nanosecond),
+		WithBind(casedir, "/casedir"),
+	)...)
+	if err != nil {
+		return TaskResult{}, err
 	}
 
 	result, err := taskInfo.Run()
@@ -185,19 +172,15 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 	}
 	defer outFile.Close()
 
-	genOutputFileTaskInfo := TaskInfo{
-		Name:          "ubuntu",
-		Argments:      []string{"cat", "/casedir/actual.out"},
-		Timeout:       time.Duration(j.tl*1000*1000*1000) * time.Nanosecond,
-		PidsLimit:     PIDS_LIMIT,
-		MemoryLimitMB: MEMORY_LIMIT_MB,
-		Binds: []BindInfo{
-			{
-				HostPath:      casedir,
-				ContainerPath: "/casedir",
-			},
-		},
-		Stdout: outFile,
+	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
+		defaultOptions,
+		WithArguments("cat", "/casedir/actual.out"),
+		WithTimeout(COMPILE_TIMEOUT),
+		WithBind(casedir, "/casedir"),
+		WithStdout(outFile),
+	)...)
+	if err != nil {
+		return TaskResult{}, err
 	}
 
 	_, err = genOutputFileTaskInfo.Run()
@@ -237,19 +220,15 @@ func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
 	j.checkerVolume.CopyFile(outFile, "actual.out")
 
 	// run checker
-	checkerTaskInfo := TaskInfo{
-		Name:     langs["checker"].ImageName,
-		Argments: langs["checker"].Exec,
-		WorkDir:  "/workdir",
-		VolumeMountInfo: []VolumeMountInfo{
-			{
-				Path:   "/workdir",
-				Volume: j.checkerVolume,
-			},
-		},
-		Timeout:       COMPILE_TIMEOUT,
-		PidsLimit:     PIDS_LIMIT,
-		MemoryLimitMB: MEMORY_LIMIT_MB,
+	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
+		defaultOptions,
+		WithArguments(langs["checker"].Exec...),
+		WithWorkDir("/workdir"),
+		WithTimeout(COMPILE_TIMEOUT),
+		WithVolume(j.checkerVolume, "/workdir"),
+	)...)
+	if err != nil {
+		return CaseResult{}, err
 	}
 
 	checkerResult, err := checkerTaskInfo.Run()
