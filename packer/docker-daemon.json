@@ -2,7 +2,7 @@
     "default-runtime": "crun",
     "runtimes": {
         "crun": {
-            "path": "/root/crun/crun"
+            "path": "/root/crun"
         }
     }
 }

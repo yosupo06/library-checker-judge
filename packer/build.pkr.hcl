@@ -5,7 +5,7 @@ variable "env" {
 
 source "googlecompute" "judge" {
   project_id = "library-checker-project"
-  source_image = "ubuntu-2204-jammy-v20220506"
+  source_image = "ubuntu-2204-jammy-v20220622"
   zone = "asia-northeast1-b"
   machine_type = "n1-standard-2"
   disk_size = 50
@@ -89,7 +89,13 @@ build {
     ]
   }
 
-  # install crun
+  # prepare docker
+  provisioner "shell" {
+    inline = [
+      "sudo service docker stop",
+      "sudo mv /var/lib/docker /var/lib/docker-base",
+    ]
+  }
   provisioner "file" {
     source = "docker-daemon.json"
     destination = "/tmp/daemon.json"
@@ -99,6 +105,8 @@ build {
       "sudo cp /tmp/daemon.json /etc/docker/daemon.json"
     ]
   }
+
+  # install crun
   provisioner "file" {
     source = "crun-install.sh"
     destination = "/tmp/crun-install.sh"
