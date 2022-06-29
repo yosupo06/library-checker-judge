@@ -34,7 +34,7 @@
     version = "rustc(1.60 edition 2018)"
     source = "main.rs"
     image_name = "library-checker-images-rust"
-    compile = ["rustc", "--edition", "2018", "-O", "main.rs"]
+    compile = ["rustc", "--edition", "2018", "-C opt-level=3", "main.rs"]
     exec = ["./main"]
 [[langs]]
     id = "d"
