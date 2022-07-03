@@ -1,0 +1,37 @@
+name: Judge-Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  judge-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - id: install-crun
+      name: Install crun
+      run: sudo ./packer/crun-install.sh
+
+    - id: prepare-docker-config
+      name: Prepare docker config
+      run: sudo cp ./packer/docker-daemon.json /etc/docker/daemon.json
+
+    - id: restart-docker
+      name: Restart docker
+      run: sudo service docker restart
+
+    - id: build-lang-images
+      name: Build lang images
+      run: ./build.sh
+      working-directory: ./langs
+
+    - id: test-judge
+      name: Test judge
+      run: go test -v .
+      working-directory: ./judge
+
