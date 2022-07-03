@@ -3,7 +3,8 @@ name: Judge-Test
 on:
   push:
     branches:
-      - patch/ci
+      - master
+  pull_request:
 
 jobs:
   judge-test:
