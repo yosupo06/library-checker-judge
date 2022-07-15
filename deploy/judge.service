@@ -1,5 +1,6 @@
 [Unit]
 Description = library checker judge
+BindsTo = docker.service
 
 [Service]
 Environment = CASEDIR=/tmp
