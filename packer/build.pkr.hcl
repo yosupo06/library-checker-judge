@@ -105,6 +105,16 @@ build {
       "sudo cp /tmp/daemon.json /etc/docker/daemon.json"
     ]
   }
+  provisioner "file" {
+    source = "docker.service"
+    destination = "/tmp/docker.service"
+  }
+  provisioner "shell" {
+    inline = [
+      "sudo cp /tmp/docker.service /lib/systemd/system/docker.service",
+      "sudo systemctl daemon-reload",
+    ]
+  }
 
   # install crun
   provisioner "file" {
