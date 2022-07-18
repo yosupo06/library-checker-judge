@@ -34,24 +34,23 @@ build {
     ]
   }
 
-  # mount setting
-  provisioner "file" {
-    source = "create-ramdisk.sh"
-    destination = "/tmp/create-ramdisk.sh"
-  }
-  provisioner "shell" {
-    inline = [
-      "sudo cp /tmp/create-ramdisk.sh /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
-      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
-    ]
-  }
-
   # install python, pip, pip-packages
   provisioner "shell" {
     inline = [
       "sudo apt-get install -y python3-pip python3 python3-dev",
       "sudo python3 -m pip install --upgrade pip",
       "sudo python3 -m pip install minio grpcio-tools",
+    ]
+  }
+
+  # install crun
+  provisioner "file" {
+    source = "crun-install.sh"
+    destination = "/tmp/crun-install.sh"
+  }
+  provisioner "shell" {
+    inline = [
+      "sudo sh /tmp/crun-install.sh"
     ]
   }
 
@@ -65,19 +64,19 @@ build {
       "sudo sh /tmp/docker-install.sh"
     ]
   }
-  # docker mount setting
+
+  # ramdisk setting
   provisioner "file" {
-    source = "prepare-docker.sh"
-    destination = "/tmp/prepare-docker.sh"
+    source = "create-ramdisk.sh"
+    destination = "/tmp/create-ramdisk.sh"
   }
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/prepare-docker.sh /var/lib/cloud/scripts/per-boot/prepare-docker.sh",
-      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/prepare-docker.sh",
+      "sudo cp /tmp/create-ramdisk.sh /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
+      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
     ]
   }
   
-
   # build our images
   provisioner "file" {
     source = "../langs"
@@ -89,7 +88,7 @@ build {
     ]
   }
 
-  # prepare docker
+  # prepare docker-base
   provisioner "shell" {
     inline = [
       "sudo service docker stop",
@@ -105,25 +104,38 @@ build {
       "sudo cp /tmp/daemon.json /etc/docker/daemon.json"
     ]
   }
+
+  # prepare systemctl files
   provisioner "file" {
-    source = "docker.service"
-    destination = "/tmp/docker.service"
+    source = "prepare-docker.service"
+    destination = "/tmp/prepare-docker.service"
+  }
+  provisioner "file" {
+    source = "prepare-docker.sh"
+    destination = "/tmp/prepare-docker.sh"
   }
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/docker.service /lib/systemd/system/docker.service",
-      "sudo systemctl daemon-reload",
+      "sudo mkdir -p /usr/local/lib/systemd/system/",
+      "sudo cp /tmp/prepare-docker.service /usr/local/lib/systemd/system/prepare-docker.service",
+      "sudo cp /tmp/prepare-docker.sh /root/prepare-docker.sh",
     ]
   }
 
-  # install crun
   provisioner "file" {
-    source = "crun-install.sh"
-    destination = "/tmp/crun-install.sh"
+    source = "docker-drop-in.conf"
+    destination = "/tmp/docker-drop-in.conf"
   }
   provisioner "shell" {
     inline = [
-      "sudo sh /tmp/crun-install.sh"
+      "sudo mkdir /etc/systemd/system/docker.service.d/",
+      "sudo cp /tmp/docker-drop-in.conf /etc/systemd/system/docker.service.d/docker-drop-in.conf"
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo systemctl daemon-reload"
     ]
   }
 }

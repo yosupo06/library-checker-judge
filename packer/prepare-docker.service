@@ -1,0 +1,10 @@
+[Unit]
+Description = Prepare docker directoly
+
+[Service]
+Type = oneshot
+ExecStart = /root/prepare-docker.sh
+RemainAfterExit = yes
+
+[Install]
+WantedBy = multi-user.target
