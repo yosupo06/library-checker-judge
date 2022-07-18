@@ -41,7 +41,6 @@ if __name__ == '__main__':
     send_file(Path('../judge/judge'), name, zone, Path('/root/judge'))
     send_file(Path('../langs/langs.toml'), name, zone, Path('/root/langs.toml'))
     send_file(Path('../judge/sources/testlib.h'), name, zone, Path('/root/testlib.h'))
-    run_in_instance(name, zone, ['mkdir', '-p', '/usr/local/lib/systemd/system'])
     send_file(Path('./judge.service'), name,
               zone, Path('/usr/local/lib/systemd/system/judge.service'))
     run_in_instance(name, zone, ['systemctl', 'daemon-reload'])
