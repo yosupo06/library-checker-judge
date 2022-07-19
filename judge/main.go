@@ -123,7 +123,7 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 	}
 	defer tmpSourceFile2.Close()
 
-	result, err := judge.CompileSource(tmpSourceFile2)
+	result, compileError, err := judge.CompileSource(tmpSourceFile2)
 	if err != nil {
 		return err
 	}
@@ -131,6 +131,7 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 		if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
 			JudgeName:    judgeName,
 			SubmissionId: submissionID,
+			CompileError: compileError,
 			Status:       "CE",
 		}); err != nil {
 			return err
@@ -303,7 +304,7 @@ func getSecureString(secureKey, defaultValue string) string {
 }
 
 func main() {
-	testlibPath := flag.String("testlib", "testlib.h", "path of testlib.h")
+	testlibPath := flag.String("testlib", "sources/testlib.h", "path of testlib.h")
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
 	judgedir := flag.String("judgedir", "", "temporary directory of judge")
 
