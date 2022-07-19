@@ -36,12 +36,12 @@ const Help: React.FC = () => {
         <LangList />
         <Typography variant="body1" paragraph={true}>
           より詳しくは
-          <a href="https://github.com/yosupo06/library-checker-judge/blob/master/api/langs.toml">
+          <a href="https://github.com/yosupo06/library-checker-judge/blob/master/langs/langs.toml">
             langs.toml
           </a>
           ,
-          <a href="https://github.com/yosupo06/library-checker-judge/blob/master/deploy/install.sh">
-            install.sh
+          <a href="https://github.com/yosupo06/library-checker-judge/blob/master/langs/">
+            Dockerfile
           </a>
           を参照してください
         </Typography>
