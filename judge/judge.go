@@ -94,35 +94,39 @@ func (j *Judge) CompileChecker(checkerFile, testlibFile io.Reader) (TaskResult, 
 	return result, err
 }
 
-func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, error) {
+func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) {
 	// create dir for source
 	volume, err := CreateVolume()
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 	j.sourceVolume = &volume
 
 	if err := volume.CopyFile(sourceFile, j.lang.Source); err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 
+	ceWriter, err := NewLimitedWriter(1 << 10)
+	if err != nil {
+		return TaskResult{}, nil, err
+	}
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
 		defaultOptions,
 		WithArguments(j.lang.Compile...),
 		WithWorkDir("/workdir"),
 		WithVolume(&volume, "/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),
-		WithStderr(os.Stderr),
+		WithStderr(ceWriter),
 	)...)
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 	result, err := taskInfo.Run()
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 
-	return result, err
+	return result, ceWriter.Bytes(), nil
 }
 
 func fileCopy(src io.Reader, dstPath string) error {

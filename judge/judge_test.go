@@ -57,7 +57,7 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 	if err != nil || checkerResult.ExitCode != 0 {
 		t.Fatal("error CompileChecker", err)
 	}
-	sourceResult, err := judge.CompileSource(src)
+	sourceResult, _, err := judge.CompileSource(src)
 	if err != nil || sourceResult.ExitCode != 0 {
 		t.Fatal("error CompileSource", err)
 	}
@@ -285,11 +285,15 @@ func TestAplusbCE(t *testing.T) {
 	}
 	defer judge.Close()
 
-	sourceResult, err := judge.CompileSource(src)
+	sourceResult, compileError, err := judge.CompileSource(src)
 	if err != nil {
 		t.Fatal("error CompileSource", err)
 	}
 	if sourceResult.ExitCode == 0 {
 		t.Fatal("compile succeeded")
 	}
+	if len(compileError) == 0 {
+		t.Fatal("compile error is empty")
+	}
+	t.Log("Compile error:", compileError)
 }
