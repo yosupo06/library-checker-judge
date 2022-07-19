@@ -216,15 +216,18 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
 const SubmissionInfo: React.FC = () => {
   const auth = useContext(AuthContext);
 
-  const params = useParams<{ submissionId: string }>();
-  const submissionId = parseInt(params.submissionId);
+  const { submissionId } = useParams<"submissionId">();
+  if (!submissionId) {
+    throw new Error(`submissionId is not defined`);
+  }
+  const submissionIdInt = parseInt(submissionId);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
   const submissionInfoQuery = useQuery(
     ["submissionInfo", submissionId],
     () =>
       library_checker_client.submissionInfo(
-        new SubmissionInfoRequest().setId(submissionId),
+        new SubmissionInfoRequest().setId(submissionIdInt),
         (auth ? authMetadata(auth.state) : null) ?? null
       ),
     {
@@ -260,7 +263,7 @@ const SubmissionInfo: React.FC = () => {
       <Typography variant="h2" paragraph={true}>
         Submission Info #{submissionId}
       </Typography>
-      <Overview submissionId={submissionId} />
+      <Overview submissionId={submissionIdInt} />
       <Divider
         sx={{
           marginTop: 3,
@@ -279,7 +282,7 @@ const SubmissionInfo: React.FC = () => {
           </Accordion>
         </Paper>
       )}
-      <CaseResults submissionId={submissionId} />
+      <CaseResults submissionId={submissionIdInt} />
       <Divider
         sx={{
           marginTop: 3,

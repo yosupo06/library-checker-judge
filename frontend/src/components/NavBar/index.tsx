@@ -6,7 +6,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Menu from "@mui/material/Menu";
 import { GitHub } from "@mui/icons-material";
 import React, { ReactElement, useContext } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
 import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
@@ -53,7 +53,7 @@ const LangSelect = () => {
 };
 
 const UserMenu = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const auth = useContext(AuthContext);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -73,10 +73,10 @@ const UserMenu = () => {
 
   if (!auth || !auth.state.user) {
     return [
-      <NavbarButton color="inherit" onClick={() => history.push("/register")}>
+      <NavbarButton color="inherit" onClick={() => navigate("/register")}>
         Register
       </NavbarButton>,
-      <NavbarButton color="inherit" onClick={() => history.push("/login")}>
+      <NavbarButton color="inherit" onClick={() => navigate("/login")}>
         Login
       </NavbarButton>,
     ];
