@@ -134,6 +134,12 @@ func TestJavaAplusBAC(t *testing.T) {
 func TestGoAplusBAC(t *testing.T) {
 	testAplusBAC(t, "go", "ac.go")
 }
+func TestCrystalAplusBAC(t *testing.T) {
+	testAplusBAC(t, "crystal", "ac.cr")
+}
+func TestRubyAplusBAC(t *testing.T) {
+	testAplusBAC(t, "ruby", "ac.rb")
+}
 
 func TestAplusBWA(t *testing.T) {
 	judge := generateAplusBJudge(t, "cpp", "wa.cpp")

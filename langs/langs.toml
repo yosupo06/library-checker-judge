@@ -108,3 +108,19 @@
     image_name = "library-checker-images-lisp"
     compile = ["sbcl", "--noinform", "--eval", "(compile-file \"main.lisp\")", "--quit"]
     exec = ["sbcl", "--control-stack-size", "1GB", "--script", "main.fasl"]
+[[langs]]
+    id = "crystal"
+    name = "Crystal"
+    version = "crystal 0.33.0"
+    source = "main.cr"
+    image_name = "library-checker-images-crystal"
+    compile = ["crystal", "build", "--release", "--no-debug", "--no-color", "-o", "./a.out", "./main.cr"]
+    exec = ["./a.out"]
+[[langs]]
+    id = "ruby"
+    name = "Ruby"
+    version = "ruby 2.7.1"
+    source = "main.rb"
+    image_name = "library-checker-images-ruby"
+    compile = ["ruby", "-w", "-c", "main.rb"]
+    exec = ["ruby", "main.rb"]
