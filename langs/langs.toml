@@ -123,5 +123,4 @@
     source = "main.rb"
     image_name = "library-checker-images-ruby"
     compile = ["ruby", "-w", "-c", "main.rb"]
-    exec = ["bash", "-c", "'RUBY_THREAD_VM_STACK_SIZE={stack_size:b} ruby main.rb"]
-
+    exec = ["ruby", "main.rb"]
