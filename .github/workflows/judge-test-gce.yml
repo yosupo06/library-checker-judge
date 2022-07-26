@@ -22,11 +22,16 @@ jobs:
         service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
     
+    - id: build-image
+      name: Build judge image
+      run: packer build -var 'env=test' .
+      working-directory: ./packer
+
     - id: setup-cloud-sdk
       name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
     - id: test-on-gce
       name:	Run test_on_gce.py
-      run: ./test_on_gce.py --zone asia-northeast1-a --env prod
+      run: ./test_on_gce.py --zone asia-northeast1-a --env test
       working-directory: ./deploy
