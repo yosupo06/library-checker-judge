@@ -10,3 +10,5 @@ RUN dotnet add /opt/C-Sharp package System.Runtime.CompilerServices.Unsafe -v 6.
 RUN dotnet restore /opt/C-Sharp -r linux-x64
 
 COPY --from=init-builder /home/rust/src/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
+
+LABEL library-checker-image=true
