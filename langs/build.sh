@@ -16,5 +16,3 @@ docker build -t library-checker-images-golang -f $SCRIPT_DIR/Dockerfile.GOLANG $
 docker build -t library-checker-images-lisp -f $SCRIPT_DIR/Dockerfile.LISP $SCRIPT_DIR
 docker build -t library-checker-images-crystal -f $SCRIPT_DIR/Dockerfile.CRYSTAL $SCRIPT_DIR
 docker build -t library-checker-images-ruby -f $SCRIPT_DIR/Dockerfile.RUBY $SCRIPT_DIR
-
-docker image prune -f
