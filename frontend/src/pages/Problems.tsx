@@ -38,7 +38,7 @@ const ProblemsTabs: React.FC<{
   useEffect(() => {
     const state = location.state as ProblemsTabState;
     if (state?.selectedIdx !== selectedIdx) {
-      navigate(".", { state: { selectedIdx } });
+      navigate(".", { state: { selectedIdx }, replace: true });
     }
   }, [selectedIdx]);
   useEffect(() => {
