@@ -3,7 +3,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   useProblemCategories,
   useProblemList,
@@ -17,13 +17,36 @@ import {
   categoriseProblems,
 } from "../utils/ProblemCategorizer";
 import { Tab, Tabs } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
+
+type ProblemsTabState = {
+  selectedIdx?: number;
+} | null;
 
 const ProblemsTabs: React.FC<{
   categories: CategorisedProblems;
   solvedStatus: { [problem: string]: "latest_ac" | "ac" };
 }> = (props) => {
   const { categories, solvedStatus } = props;
-  const [selectedIdx, setSelectedIdx] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedIdx, setSelectedIdx] = useState(() => {
+    const state = location.state as ProblemsTabState;
+    return state?.selectedIdx ?? 0;
+  });
+
+  useEffect(() => {
+    const state = location.state as ProblemsTabState;
+    if (state?.selectedIdx !== selectedIdx) {
+      navigate(".", { state: { selectedIdx }, replace: true });
+    }
+  }, [selectedIdx]);
+  useEffect(() => {
+    const state = location.state as ProblemsTabState;
+    if (state?.selectedIdx) {
+      setSelectedIdx(state.selectedIdx);
+    }
+  }, [location.state]);
 
   const categoriesTab = (
     <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
