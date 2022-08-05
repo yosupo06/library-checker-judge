@@ -303,6 +303,70 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	}, nil
 }
 
+type containerMonitor struct {
+	c *containerInfo
+
+	ticker        *time.Ticker
+	doneForChild  chan bool
+	doneForParent chan bool
+
+	isStarted bool
+	start     time.Time
+	end       time.Time
+
+	maxMemory int64
+}
+
+func createAndStartMonitor(c *containerInfo) (*containerMonitor, error) {
+	cm := containerMonitor{
+		c:             c,
+		isStarted:     false,
+		ticker:        time.NewTicker(time.Millisecond),
+		doneForChild:  make(chan bool),
+		doneForParent: make(chan bool),
+	}
+
+	go func() {
+		for {
+			select {
+			case <-cm.doneForChild:
+				cm.doneForParent <- true
+				return
+			case <-cm.ticker.C:
+				tasks, err := c.readCGroupTasks()
+				if err == nil && len(tasks) >= 2 {
+					if !cm.isStarted {
+						cm.isStarted = true
+						cm.start = time.Now()
+					}
+					cm.end = time.Now()
+				}
+				if usedMemory, err := c.readUsedMemory(); err == nil {
+					if cm.maxMemory < usedMemory {
+						cm.maxMemory = usedMemory
+					}
+				}
+			}
+		}
+	}()
+	return &cm, nil
+}
+
+func (cm *containerMonitor) stop() error {
+	cm.ticker.Stop()
+	cm.doneForChild <- true
+	<-cm.doneForParent
+	return nil
+}
+
+func (cm *containerMonitor) usedTime() time.Duration {
+	return cm.end.Sub(cm.start)
+}
+
+func (cm *containerMonitor) maxUsedMemory() int64 {
+	return cm.maxMemory
+}
+
 func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 	log.Println("Start: ", t.Name, t.Argments)
 	ctx := context.Background()
@@ -325,70 +389,56 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 	cmd.Stdout = t.Stdout
 	cmd.Stderr = t.Stderr
 
-	result := TaskResult{
-		Time:   -1,
-		Memory: -1,
-	}
-
-	var start time.Time
-	isFirst := true
-	var end time.Time
-
-	ticker := time.NewTicker(time.Millisecond)
-	doneForChild := make(chan bool)
-	doneForParent := make(chan bool)
-	go func() {
-		for {
-			select {
-			case <-doneForChild:
-				doneForParent <- true
-				return
-			case <-ticker.C:
-				tasks, err := c.readCGroupTasks()
-				if err == nil && len(tasks) >= 2 {
-					if isFirst {
-						isFirst = false
-						start = time.Now()
-					}
-					end = time.Now()
-				}
-				if usedMemory, err := c.readUsedMemory(); err == nil {
-					if result.Memory < usedMemory {
-						result.Memory = usedMemory
-					}
-				}
-			}
+	cm, err := createAndStartMonitor(&c)
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); !ok {
+			log.Println("create monitor failed:", err.Error())
+			return TaskResult{}, err
 		}
-	}()
-	err := cmd.Run()
-	ticker.Stop()
-	doneForChild <- true
-	<-doneForParent
-
+	}
+	err = cmd.Run()
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
 			log.Println("execute failed:", err.Error())
 			return TaskResult{}, err
 		}
 	}
+	cm.stop()
 
 	if ctx.Err() == context.DeadlineExceeded {
-		result.Time = t.Timeout
-		result.TLE = true
-		result.ExitCode = 124
-
 		// stop docker
 		cmd := exec.Command("docker", "stop", c.containerID)
 		cmd.Stderr = os.Stderr
 		cmd.Run()
-	} else {
-		if result.ExitCode, err = inspectExitCode(c.containerID); err != nil {
-			log.Println("failed to load exit code: ", err)
-			return TaskResult{}, err
-		}
-		result.Time = end.Sub(start)
+
+		return TaskResult{
+			Time:     t.Timeout,
+			Memory:   cm.maxUsedMemory(),
+			TLE:      true,
+			ExitCode: 124,
+		}, nil
 	}
-	return result, nil
+
+	usedTime := cm.usedTime()
+	tle := false
+
+	if t.Timeout != 0 && t.Timeout < usedTime {
+		usedTime = t.Timeout
+		tle = true
+	}
+
+	exitCode, err := inspectExitCode(c.containerID)
+	if err != nil {
+		log.Println("failed to load exit code: ", err)
+		return TaskResult{}, err
+	}
+
+	return TaskResult{
+		Time:     usedTime,
+		Memory:   cm.maxUsedMemory(),
+		TLE:      tle,
+		ExitCode: exitCode,
+	}, nil
 }
 
 type containerInfo struct {
