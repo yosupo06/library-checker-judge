@@ -80,11 +80,6 @@ func (v *Volume) Remove() error {
 	return nil
 }
 
-type BindInfo struct {
-	HostPath      string
-	ContainerPath string
-}
-
 type VolumeMountInfo struct {
 	Path   string
 	Volume *Volume
@@ -101,7 +96,6 @@ type TaskInfo struct {
 	EnableNetwork       bool
 	EnableLoggingDriver bool
 	WorkDir             string
-	Binds               []BindInfo
 	VolumeMountInfo     []VolumeMountInfo
 
 	Stdin  io.Reader
@@ -177,16 +171,6 @@ func WithStdout(stdout io.Writer) TaskInfoOption {
 func WithStderr(stderr io.Writer) TaskInfoOption {
 	return func(ti *TaskInfo) error {
 		ti.Stderr = stderr
-		return nil
-	}
-}
-
-func WithBind(hostPath, containerPath string) TaskInfoOption {
-	return func(ti *TaskInfo) error {
-		ti.Binds = append(ti.Binds, BindInfo{
-			HostPath:      hostPath,
-			ContainerPath: containerPath,
-		})
 		return nil
 	}
 }
@@ -286,12 +270,6 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	if t.WorkDir != "" {
 		args = append(args, "-w")
 		args = append(args, t.WorkDir)
-	}
-
-	// bind
-	for _, bind := range t.Binds {
-		args = append(args, "--mount")
-		args = append(args, fmt.Sprintf("type=bind,source=%s,target=%s", bind.HostPath, bind.ContainerPath))
 	}
 
 	// mount volume

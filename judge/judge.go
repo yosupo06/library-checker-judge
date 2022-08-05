@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -144,13 +143,13 @@ func fileCopy(src io.Reader, dstPath string) error {
 }
 
 func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, error) {
-	casedir, err := ioutil.TempDir(j.dir, "judge")
+	caseVolume, err := CreateVolume()
 	if err != nil {
 		return TaskResult{}, err
 	}
-	defer os.RemoveAll(casedir)
+	defer caseVolume.Remove()
 
-	fileCopy(inFile, filepath.Join(casedir, "input.in"))
+	caseVolume.CopyFile(inFile, "input.in")
 
 	// TODO: volume read only
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
@@ -158,8 +157,8 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...)...),
 		WithWorkDir("/workdir"),
 		WithVolume(j.sourceVolume, "/workdir"),
+		WithVolume(&caseVolume, "/casedir"),
 		WithTimeout(time.Duration(j.tl*1000*1000*1000)*time.Nanosecond),
-		WithBind(casedir, "/casedir"),
 	)...)
 	if err != nil {
 		return TaskResult{}, err
@@ -180,7 +179,7 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 		defaultOptions,
 		WithArguments("cat", "/casedir/actual.out"),
 		WithTimeout(COMPILE_TIMEOUT),
-		WithBind(casedir, "/casedir"),
+		WithVolume(&caseVolume, "/casedir"),
 		WithStdout(outFile),
 	)...)
 	if err != nil {
