@@ -73,7 +73,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo /tmp/langs/build.sh",
-      "sudo docker image prune --all --filter=\"label!=library-checker-image=true\""
+      "sudo docker image prune -f --all --filter=\"label!=library-checker-image=true\""
     ]
   }
 
