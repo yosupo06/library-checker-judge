@@ -128,20 +128,6 @@ func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) 
 	return result, ceWriter.Bytes(), nil
 }
 
-func fileCopy(src io.Reader, dstPath string) error {
-	dst, err := os.Create(dstPath)
-	if err != nil {
-		return err
-	}
-	defer dst.Close()
-
-	_, err = io.Copy(dst, src)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, error) {
 	caseVolume, err := CreateVolume()
 	if err != nil {

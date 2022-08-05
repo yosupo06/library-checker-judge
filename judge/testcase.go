@@ -27,7 +27,7 @@ type TestCaseDir struct {
 
 func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket string, minioSecure bool) (TestCaseFetcher, error) {
 	// create case directory
-	dir, err := ioutil.TempDir(os.Getenv("CASEDIR"), "case")
+	dir, err := ioutil.TempDir("", "case")
 	if err != nil {
 		log.Print("Failed to create tempdir: ", err)
 		return TestCaseFetcher{}, nil

@@ -64,18 +64,6 @@ build {
       "sudo sh /tmp/docker-install.sh"
     ]
   }
-
-  # ramdisk setting
-  provisioner "file" {
-    source = "create-ramdisk.sh"
-    destination = "/tmp/create-ramdisk.sh"
-  }
-  provisioner "shell" {
-    inline = [
-      "sudo cp /tmp/create-ramdisk.sh /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
-      "sudo chmod 755 /var/lib/cloud/scripts/per-boot/create-ramdisk.sh",
-    ]
-  }
   
   # build our images
   provisioner "file" {

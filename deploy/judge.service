@@ -4,9 +4,6 @@ Requires = docker.service
 After = docker.service
 
 [Service]
-Environment = CASEDIR=/tmp
-Environment = TMPDIR=/ramdisk
-
 ExecStart = /root/judge \
 -langs=/root/langs.toml \
 -testlib=/root/testlib.h \
