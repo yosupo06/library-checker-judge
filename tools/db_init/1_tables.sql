@@ -3,7 +3,8 @@ create table users (
   passhash varchar(255),
   admin boolean,
   email varchar(255),
-  library_url varchar(255)
+  library_url varchar(255),
+  is_developer boolean
 );
 
 create table problems (

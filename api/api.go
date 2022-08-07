@@ -84,10 +84,11 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 		return nil, errors.New("failed to fetch statistics")
 	}
 	respUser := &pb.User{
-		Name:       name,
-		IsAdmin:    user.Admin,
-		Email:      user.Email,
-		LibraryUrl: user.LibraryURL,
+		Name:        name,
+		IsAdmin:     user.Admin,
+		Email:       user.Email,
+		LibraryUrl:  user.LibraryURL,
+		IsDeveloper: user.IsDeveloper,
 	}
 
 	if in.Name != myName && !currentUser.Admin {
@@ -159,10 +160,11 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 	}
 
 	if err := updateUser(s.db, User{
-		Name:       in.User.Name,
-		Admin:      in.User.IsAdmin,
-		Email:      userInfo.Email,
-		LibraryURL: userInfo.LibraryURL,
+		Name:        in.User.Name,
+		Admin:       in.User.IsAdmin,
+		Email:       userInfo.Email,
+		LibraryURL:  userInfo.LibraryURL,
+		IsDeveloper: in.User.IsDeveloper,
 	}); err != nil {
 		return nil, err
 	}
