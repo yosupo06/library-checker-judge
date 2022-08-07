@@ -70,7 +70,10 @@ const StatementViewer: React.FC = () => {
 
   const [taskMd, setTaskMd] = useState(""); // task.md
   const [infoToml, setInfoToml] = useState(""); // info.toml
-  const [infoValue, setInfoValue] = useState<unknown>({}); // parsed info.toml
+  const [infoValue, setInfoValue] = useState<{
+    title: string;
+    params: { [key: string]: object };
+  }>({ title: "", params: {} }); // parsed info.toml
 
   const [examples, setExamples] = useState<{ [key: string]: string }>({}); // example.in / example.out
 
@@ -125,18 +128,12 @@ const StatementViewer: React.FC = () => {
   }, [files]);
 
   useEffect(() => {
-    parseStatement(
-      taskMd,
-      "en",
-      (infoValue as { params: { [key: string]: object } }).params,
-      examples
-    ).then(setParsedEnMarkdown);
-    parseStatement(
-      taskMd,
-      "ja",
-      (infoValue as { params: { [key: string]: object } }).params,
-      examples
-    ).then(setParsedJaMarkdown);
+    parseStatement(taskMd, "en", infoValue.params, examples).then(
+      setParsedEnMarkdown
+    );
+    parseStatement(taskMd, "ja", infoValue.params, examples).then(
+      setParsedJaMarkdown
+    );
   }, [lang, taskMd, infoValue, examples]);
 
   useEffect(() => {
