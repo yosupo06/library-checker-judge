@@ -125,12 +125,18 @@ const StatementViewer: React.FC = () => {
   }, [files]);
 
   useEffect(() => {
-    parseStatement(taskMd, "en", infoValue.params, examples).then(
-      setParsedEnMarkdown
-    );
-    parseStatement(taskMd, "ja", infoValue.params, examples).then(
-      setParsedJaMarkdown
-    );
+    parseStatement(
+      taskMd,
+      "en",
+      (infoValue as { params: { [key: string]: object } }).params,
+      examples
+    ).then(setParsedEnMarkdown);
+    parseStatement(
+      taskMd,
+      "ja",
+      (infoValue as { params: { [key: string]: object } }).params,
+      examples
+    ).then(setParsedJaMarkdown);
   }, [lang, taskMd, infoValue, examples]);
 
   useEffect(() => {
