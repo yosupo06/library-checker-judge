@@ -22,6 +22,7 @@ import SubmissionTable from "../components/SubmissionTable";
 import { categoriseProblems } from "../utils/ProblemCategorizer";
 import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
+import { Container } from "@mui/material";
 
 const FilterFormControl = styled(FormControl)({
   margin: 1,
@@ -161,7 +162,7 @@ const Submissions: React.FC = () => {
   );
 
   return (
-    <Box>
+    <Container>
       <Typography variant="h2" paragraph={true}>
         Submission List
       </Typography>
@@ -241,7 +242,7 @@ const Submissions: React.FC = () => {
       </Box>
 
       {submissionList}
-    </Box>
+    </Container>
   );
 };
 

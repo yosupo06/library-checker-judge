@@ -20,18 +20,25 @@ import { useParams } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
 import { LibraryBooks } from "@mui/icons-material";
+import { Container, FormLabel, Switch } from "@mui/material";
+import BuildIcon from "@mui/icons-material/Build";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<"userId">();
   if (!userId) {
-    throw new Error(`userId is not defined`);
+    throw new Error(`userId is not passed`);
   }
   const auth = useContext(AuthContext);
-  const [libraryURL, setLibraryURL] = useState("");
+  const currentUser = auth?.state.user;
 
-  const userName = userId;
-  const userInfoQuery = useUserInfo(userName, {
-    onSuccess: (data) => setLibraryURL(data.getUser()?.getLibraryUrl() ?? ""),
+  const [libraryURL, setLibraryURL] = useState("");
+  const [isDeveloper, setIsDeveloper] = useState(false);
+  const userInfoQuery = useUserInfo(userId, {
+    onSuccess: (data) => {
+      console.log(data.getUser());
+      setLibraryURL(data.getUser()?.getLibraryUrl() ?? "");
+      setIsDeveloper(data.getUser()?.getIsDeveloper() ?? false);
+    },
   });
 
   if (userInfoQuery.isLoading || userInfoQuery.isIdle) {
@@ -45,29 +52,24 @@ const Profile: React.FC = () => {
     return <NotFound />;
   }
 
-  const userInfo = userInfoQuery.data;
-  const user = userInfo.getUser();
-
-  if (!user) {
-    return <NotFound />;
-  }
-
-  const showUser = user.getName();
-
+  const showUser = userInfoQuery.data.getUser();
   if (!showUser) {
     return <NotFound />;
   }
-
-  const fetchedURL = user.getLibraryUrl();
-  const currentUser = auth?.state.user;
+  const showUserName = showUser.getName();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const newUser = showUser
+      .setLibraryUrl(libraryURL)
+      .setIsDeveloper(isDeveloper);
+
+    console.log(newUser);
+
     library_checker_client
       .changeUserInfo(
-        new ChangeUserInfoRequest().setUser(
-          user.setName(showUser).setLibraryUrl(libraryURL)
-        ),
+        new ChangeUserInfoRequest().setUser(newUser),
         (auth && authMetadata(auth.state)) ?? null
       )
       .then(() => {
@@ -98,6 +100,22 @@ const Profile: React.FC = () => {
               }
             />
           </ListItem>
+          <ListItem>
+            <ListItemAvatar>
+              <Avatar>
+                <BuildIcon />
+              </Avatar>
+            </ListItemAvatar>
+            <FormLabel id="is-developer-mode-switch">Developer Mode</FormLabel>
+            <Switch
+              aria-labelledby="is-developer-mode-switch"
+              checked={isDeveloper}
+              onChange={(e) => {
+                console.log(e.target.value, e.target.checked);
+                setIsDeveloper(e.target.checked);
+              }}
+            />
+          </ListItem>
         </List>
         <Button color="primary" type="submit">
           Change
@@ -107,8 +125,8 @@ const Profile: React.FC = () => {
   );
 
   return (
-    <Box>
-      <Typography variant="h2">{showUser ?? "???"}</Typography>
+    <Container>
+      <Typography variant="h2">{showUserName}</Typography>
       <List>
         <ListItem>
           <ListItemAvatar>
@@ -119,8 +137,8 @@ const Profile: React.FC = () => {
           <ListItemText
             primary="Library"
             secondary={
-              fetchedURL ? (
-                <Link href={fetchedURL}> {fetchedURL}</Link>
+              libraryURL ? (
+                <Link href={libraryURL}> {libraryURL}</Link>
               ) : (
                 "Unregistered"
               )
@@ -128,8 +146,8 @@ const Profile: React.FC = () => {
           />
         </ListItem>
       </List>
-      {showUser && currentUser && showUser === currentUser && form}
-    </Box>
+      {currentUser && showUserName === currentUser && form}
+    </Container>
   );
 };
 

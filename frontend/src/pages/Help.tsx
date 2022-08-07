@@ -1,3 +1,4 @@
+import { Container } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import React from "react";
@@ -6,7 +7,7 @@ import LangList from "../components/LangList";
 
 const Help: React.FC = () => {
   return (
-    <Box>
+    <Container>
       <Typography variant="h2">Help</Typography>
 
       <Box>
@@ -63,7 +64,7 @@ const Help: React.FC = () => {
           usual.
         </Typography>
       </Box>
-    </Box>
+    </Container>
   );
 };
 

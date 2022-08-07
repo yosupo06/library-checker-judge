@@ -29,7 +29,7 @@ import { useQuery } from "react-query";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import { LibraryBooks } from "@mui/icons-material";
-import { Divider } from "@mui/material";
+import { Container, Divider } from "@mui/material";
 
 const LibraryButton: React.FC<{ name: string }> = (props) => {
   const userInfoQuery = useUserInfo(props.name, {});
@@ -259,7 +259,7 @@ const SubmissionInfo: React.FC = () => {
   const lang = overview ? overview.getLang() : undefined;
 
   return (
-    <Box>
+    <Container>
       <Typography variant="h2" paragraph={true}>
         Submission Info #{submissionId}
       </Typography>
@@ -297,7 +297,7 @@ const SubmissionInfo: React.FC = () => {
           autoHeight={true}
         />
       </Paper>
-    </Box>
+    </Container>
   );
 };
 

@@ -12,6 +12,8 @@ import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
 import { styled } from "@mui/system";
+import { useUserInfo } from "../../api/library_checker_client";
+import { Box } from "@mui/material";
 
 const NavbarLink = styled(Link)({
   color: "inherit",
@@ -49,6 +51,43 @@ const LangSelect = () => {
         <img src={flagJA} alt="ja" height="15px"></img>
       </MenuItem>
     </Select>
+  );
+};
+
+const ToolsMenu: React.FC = () => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  return (
+    <Box>
+      <NavbarButton color="inherit" onClick={handleClick}>
+        Tools
+      </NavbarButton>
+      <Menu
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+      >
+        <MenuItem>
+          <NavbarLink to={`/tool/statementviewer`}>Statement Viewer</NavbarLink>
+        </MenuItem>
+      </Menu>
+    </Box>
   );
 };
 
@@ -107,6 +146,16 @@ const UserMenu = () => {
 };
 
 const NavBar: React.FC = () => {
+  const auth = useContext(AuthContext);
+
+  const userName = auth?.state.user ?? "";
+  const userInfoQuery = useUserInfo(userName, {
+    enabled: userName !== "",
+  });
+
+  const isDeveloper =
+    userInfoQuery.isFetched && userInfoQuery.data?.getUser()?.getIsDeveloper();
+
   let elements: ReactElement[] = [];
 
   elements.push(
@@ -140,6 +189,10 @@ const NavBar: React.FC = () => {
       <NavbarLink to="/help">Help</NavbarLink>
     </Button>
   );
+
+  if (isDeveloper) {
+    elements.push(<ToolsMenu />);
+  }
 
   elements.push(LangSelect());
 
