@@ -6,6 +6,7 @@
     "@emotion/react": "^11.6.0",
     "@emotion/styled": "^11.6.0",
     "@fontsource/roboto": "^4.0.0",
+    "@iarna/toml": "^3.0.0",
     "@monaco-editor/react": "^4.3.1",
     "@mui/icons-material": "^5.2.0",
     "@mui/material": "^5.1.0",
@@ -15,16 +16,25 @@
     "@types/react": "^17.0.2",
     "@types/react-dom": "^17.0.11",
     "@types/react-router-dom": "^5.3.2",
+    "@uiw/react-md-editor": "^3.17.0",
     "customize-cra": "^1.0.0",
     "google-protobuf": "^3.19.1",
     "grpc-web": "~1.2.1",
     "katex": "^0.15.1",
+    "liquidjs": "^9.39.2",
     "monaco-editor": "^0.31.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-markdown": "^8.0.3",
     "react-query": "^3.32.3",
     "react-router-dom": "^6.2.1",
     "react-use": "^17.3.1",
+    "readable-stream": "^4.1.0",
+    "rehype-katex": "^6.0.2",
+    "rehype-sanitize": "^5.0.1",
+    "remark-math": "^5.1.1",
+    "stream-browserify": "^3.0.0",
+    "toml": "^3.0.0",
     "typescript": "^4.5.4"
   },
   "scripts": {
@@ -85,7 +95,7 @@
     "eslint-plugin-unused-imports": "^2.0.0",
     "grpc_tools_node_protoc_ts": "^5.3.2",
     "grpc-tools": "^1.11.2",
-    "react-scripts": "^5.0.1",
-    "prettier": "^2.4.1"
+    "prettier": "^2.4.1",
+    "react-scripts": "^5.0.1"
   }
 }

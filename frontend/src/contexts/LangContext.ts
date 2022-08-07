@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useContext } from "react";
 
-type Lang = "en" | "ja";
+export type Lang = "en" | "ja";
 
 export interface LangState {
   lang: Lang;
@@ -28,3 +28,8 @@ export const LangContext = React.createContext<{
   state: LangState;
   dispatch: React.Dispatch<LangAction>;
 } | null>(null);
+
+export const useLang = (): Lang => {
+  const lang = useContext(LangContext);
+  return lang?.state.lang || "en";
+};

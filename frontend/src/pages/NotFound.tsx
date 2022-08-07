@@ -1,12 +1,12 @@
-import Box from "@mui/material/Box";
+import { Container } from "@mui/material";
 import Typography from "@mui/material/Typography";
 import React from "react";
 
 const NotFound: React.FC = () => {
   return (
-    <Box>
+    <Container>
       <Typography variant="h2">404 Not Found</Typography>
-    </Box>
+    </Container>
   );
 };
 

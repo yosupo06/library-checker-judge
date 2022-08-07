@@ -16,7 +16,7 @@ import {
   CategorisedProblems,
   categoriseProblems,
 } from "../utils/ProblemCategorizer";
-import { Tab, Tabs } from "@mui/material";
+import { Container, Tab, Tabs } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type ProblemsTabState = {
@@ -146,7 +146,7 @@ const Problems: React.FC = () => {
   );
 
   return (
-    <Box>
+    <Container>
       <Box>
         <Typography variant="h2" paragraph={true}>
           Problem List
@@ -157,7 +157,7 @@ const Problems: React.FC = () => {
         </Alert>
         <ProblemsTabs categories={categories} solvedStatus={solvedStatus} />
       </Box>
-    </Box>
+    </Container>
   );
 };
 

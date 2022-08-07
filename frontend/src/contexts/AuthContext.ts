@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 
 export interface AuthState {
   user: string;
@@ -36,3 +36,8 @@ export const AuthContext = React.createContext<{
   state: AuthState;
   dispatch: React.Dispatch<AuthAction>;
 } | null>(null);
+
+export const useUser = (): string | undefined => {
+  const auth = useContext(AuthContext);
+  return auth?.state.user;
+};

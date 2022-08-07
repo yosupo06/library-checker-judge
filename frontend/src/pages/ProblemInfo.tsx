@@ -21,6 +21,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
+import { Container } from "@mui/material";
 
 const PlainLink = styled(Link)({
   color: "inherit",
@@ -122,7 +123,7 @@ const ProblemInfo: React.FC = () => {
   };
 
   return (
-    <Box>
+    <Container>
       <KatexTypography variant="h2" paragraph={true}>
         {problemInfoQuery.data.getTitle()}
       </KatexTypography>
@@ -186,7 +187,7 @@ const ProblemInfo: React.FC = () => {
           Submit
         </Button>
       </form>
-    </Box>
+    </Container>
   );
 };
 export default ProblemInfo;

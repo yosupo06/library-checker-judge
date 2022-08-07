@@ -1,4 +1,3 @@
-import Container from "@mui/material/Container";
 import Toolbar from "@mui/material/Toolbar";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useEffect, useReducer } from "react";
@@ -20,6 +19,8 @@ import { grey } from "@mui/material/colors";
 import NotFound from "./pages/NotFound";
 import Register from "./pages/Register";
 import { QueryClient, QueryClientProvider } from "react-query";
+import StatementViewer from "./pages/StatementViewer";
+import { Box } from "@mui/system";
 const theme = createTheme({
   typography: {
     button: {
@@ -88,7 +89,7 @@ function App(): JSX.Element {
             <Router>
               <NavBar />
               <Toolbar />
-              <Container>
+              <Box>
                 <Routes>
                   <Route path="/" element={<Problems />} />
                   <Route path="/problem/:problemId" element={<ProblemInfo />} />
@@ -102,9 +103,13 @@ function App(): JSX.Element {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/user/:userId" element={<Profile />} />
+                  <Route
+                    path="/tool/statementviewer"
+                    element={<StatementViewer />}
+                  />
                   <Route element={NotFound} />
                 </Routes>
-              </Container>
+              </Box>
             </Router>
           </LangContext.Provider>
         </AuthContext.Provider>
