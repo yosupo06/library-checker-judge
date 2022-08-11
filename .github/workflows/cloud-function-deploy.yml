@@ -1,4 +1,4 @@
-name: Judge-Test
+name: Cloud-Function-Deploy
 
 on:
   push:
