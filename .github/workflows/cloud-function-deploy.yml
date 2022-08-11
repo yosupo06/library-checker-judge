@@ -28,9 +28,9 @@ jobs:
       run: |
         gcloud functions deploy instances-notice
         --runtime=python310
-        --source=tools/bot/instances-notify
+        --source=.
         --entry-point=main_handler
         --trigger-topic=gce_instance_status_visor
         --set-secrets "HOOK_URL=instances-notice-hook-url:latest"
         --service-account=instances-notify-executor@library-checker-project.iam.gserviceaccount.com
-
+      working-directory: ./tools/bot/instances-notify
