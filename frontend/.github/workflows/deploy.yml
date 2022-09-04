@@ -3,11 +3,11 @@ name: Deploy
 on:
   push:
     branches: 
-      - test/deploy
+      - master
 
 
 jobs:
-  judge-deploy:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
