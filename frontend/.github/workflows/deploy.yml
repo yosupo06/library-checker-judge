@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: 
+      - master
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+      with:
+        repository: yosupo06/library-checker-judge
+        path: library-checker-judge
+    
+    - id: auth
+      uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+        service_account: app-engine-deployer@library-checker-project.iam.gserviceaccount.com
+        token_format: access_token
+    
+
+    - name: gen protoc
+      run: ./gen_protoc.sh library-checker-judge/api/proto/library_checker.proto
+
+    - id: ci
+      name: Run npm ci
+      run: npm ci
+
+    - id: build
+      name: Run npm build
+      run: npm run build
+
+    - id: deploy
+      name: App engine deploy
+      run: gcloud app deploy app.yaml
