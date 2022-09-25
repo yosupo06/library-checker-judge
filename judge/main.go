@@ -49,11 +49,11 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 
 	caseVersion := problem.CaseVersion
 	testCases, err := testCaseFetcher.Fetch(submission.Overview.ProblemName, caseVersion)
-	log.Print("Fetched :", caseVersion)
 	if err != nil {
 		log.Println("Fail to fetchData")
 		return err
 	}
+	log.Print("Fetched :", caseVersion)
 
 	judge, err := NewJudge(judgedir, langs[submission.Overview.Lang], problem.TimeLimit)
 	if err != nil {
@@ -86,11 +86,12 @@ func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
 	}
 	defer checkerFile.Close()
 
-	testlib, err := os.Open(testlibPath)
+	includeFilePaths, err := testCases.IncludeFilePaths()
 	if err != nil {
 		return err
 	}
-	taskResult, err := judge.CompileChecker(checkerFile, testlib)
+
+	taskResult, err := judge.CompileChecker(checkerFile, includeFilePaths)
 	if err != nil {
 		return err
 	}

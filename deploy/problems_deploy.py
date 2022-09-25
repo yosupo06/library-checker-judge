@@ -107,7 +107,7 @@ def deploy_probelms(stub: library_checker_pb2_grpc.LibraryCheckerServiceStub, cr
         new_version = problem.testcase_version()
         old_version = get_server_problem_version(stub, cred_token, name)
 
-        logger.info('generate : {} (version {} -> {})'.format(name,
+        logger.info('deploy : {} (version {} -> {})'.format(name,
                                                               old_version, new_version))
 
         problem.generate(problem.Mode.DEFAULT, None)
@@ -119,6 +119,7 @@ def deploy_probelms(stub: library_checker_pb2_grpc.LibraryCheckerServiceStub, cr
         )
         timelimit = problem.config['timelimit']
 
+        # deploy version 0
         if new_version != old_version:
             with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp:
                 with zipfile.ZipFile(tmp.name, 'w', zipfile.ZIP_DEFLATED) as newzip:
@@ -137,6 +138,25 @@ def deploy_probelms(stub: library_checker_pb2_grpc.LibraryCheckerServiceStub, cr
                 if old_version is not None:
                     minio_client.remove_object(
                         bucket_name, old_version + '.zip')
+
+        # deploy version 1
+        # deploy test cases
+        for f in sorted(probdir.glob('in/*.in')):
+            path = 'v1/{}/{}/testcases/in/{}'.format(name, new_version, f.name)
+            minio_client.fput_object(bucket_name, path, f)
+        for f in sorted(probdir.glob('out/*.out')):
+            path = 'v1/{}/{}/testcases/out/{}'.format(
+                name, new_version, f.name)
+            minio_client.fput_object(bucket_name, path, f)
+        # deploy checker
+        minio_client.fput_object(bucket_name, 'v1/{}/{}/checker.cpp'.format(name, new_version), probdir / 'checker.cpp')
+        # deploy params.h
+        minio_client.fput_object(
+            bucket_name, 'v1/{}/{}/include/params.h'.format(name, new_version), probdir / 'params.h')
+        # deploy common headers
+        for f in sorted(rootdir.glob('common/*')):
+            path = 'v1/{}/{}/include/{}'.format(name, new_version, f.name)
+            minio_client.fput_object(bucket_name, path, f)
 
         html = problem.gen_html()
         statement = html.statement
