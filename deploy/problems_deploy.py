@@ -97,6 +97,8 @@ def sort_by_deploy_order(info_tomls: List[Path], stub: library_checker_pb2_grpc.
 
 
 def deploy_probelms(stub: library_checker_pb2_grpc.LibraryCheckerServiceStub, cred_token: grpc.CallCredentials, rootdir: Path, info_tomls: List[Path]):
+    DEFAULT_PART_SIZE = 1 * 1000 * 1000 * 1000
+
     info_tomls = sort_by_deploy_order(info_tomls, stub, cred_token)
 
     for toml_path in info_tomls:
@@ -143,20 +145,20 @@ def deploy_probelms(stub: library_checker_pb2_grpc.LibraryCheckerServiceStub, cr
         # deploy test cases
         for f in sorted(probdir.glob('in/*.in')):
             path = 'v1/{}/{}/testcases/in/{}'.format(name, new_version, f.name)
-            minio_client.fput_object(bucket_name, path, f)
+            minio_client.fput_object(bucket_name, path, f, part_size=DEFAULT_PART_SIZE)
         for f in sorted(probdir.glob('out/*.out')):
             path = 'v1/{}/{}/testcases/out/{}'.format(
                 name, new_version, f.name)
-            minio_client.fput_object(bucket_name, path, f)
+            minio_client.fput_object(bucket_name, path, f, part_size=DEFAULT_PART_SIZE)
         # deploy checker
-        minio_client.fput_object(bucket_name, 'v1/{}/{}/checker.cpp'.format(name, new_version), probdir / 'checker.cpp')
+        minio_client.fput_object(bucket_name, 'v1/{}/{}/checker.cpp'.format(name, new_version), probdir / 'checker.cpp', part_size=DEFAULT_PART_SIZE)
         # deploy params.h
         minio_client.fput_object(
-            bucket_name, 'v1/{}/{}/include/params.h'.format(name, new_version), probdir / 'params.h')
+            bucket_name, 'v1/{}/{}/include/params.h'.format(name, new_version), probdir / 'params.h', part_size=DEFAULT_PART_SIZE)
         # deploy common headers
         for f in sorted(rootdir.glob('common/*')):
             path = 'v1/{}/{}/include/{}'.format(name, new_version, f.name)
-            minio_client.fput_object(bucket_name, path, f)
+            minio_client.fput_object(bucket_name, path, f, part_size=DEFAULT_PART_SIZE)
 
         html = problem.gen_html()
         statement = html.statement
