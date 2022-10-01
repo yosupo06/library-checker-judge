@@ -36,12 +36,6 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 	}
 	defer checker.Close()
 
-	testlib, err := sources.Open(TESTLIB_PATH)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testlib.Close()
-
 	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
@@ -53,7 +47,7 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 		t.Fatal("Failed to create Judge", err)
 	}
 
-	checkerResult, err := judge.CompileChecker(checker, testlib)
+	checkerResult, err := judge.CompileChecker(checker, []string{TESTLIB_PATH})
 	if err != nil || checkerResult.ExitCode != 0 {
 		t.Fatal("error CompileChecker", err)
 	}

@@ -60,7 +60,7 @@ func (j *Judge) Close() error {
 	return nil
 }
 
-func (j *Judge) CompileChecker(checkerFile, testlibFile io.Reader) (TaskResult, error) {
+func (j *Judge) CompileChecker(checkerFile io.Reader, includeFilePaths []string) (TaskResult, error) {
 	volume, err := CreateVolume()
 	if err != nil {
 		return TaskResult{}, err
@@ -70,9 +70,19 @@ func (j *Judge) CompileChecker(checkerFile, testlibFile io.Reader) (TaskResult, 
 	if err := volume.CopyFile(checkerFile, "checker.cpp"); err != nil {
 		return TaskResult{}, err
 	}
-	if err := volume.CopyFile(testlibFile, "testlib.h"); err != nil {
-		return TaskResult{}, err
+
+	for _, filePath := range includeFilePaths {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return TaskResult{}, err
+		}
+		defer file.Close()
+
+		if err := volume.CopyFile(file, "testlib.h"); err != nil {
+			return TaskResult{}, err
+		}
 	}
+
 	taskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
 		defaultOptions,
 		WithArguments(langs["checker"].Compile...),
