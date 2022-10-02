@@ -133,7 +133,7 @@ func WithMemoryLimitMB(limitMB int) TaskInfoOption {
 	}
 }
 
-func WithStackLimitMB(limitMB int) TaskInfoOption {
+func WithStackLimitKB(limitMB int) TaskInfoOption {
 	return func(ti *TaskInfo) error {
 		ti.StackLimitKB = limitMB
 		return nil
