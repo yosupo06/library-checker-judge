@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -78,7 +79,7 @@ func (j *Judge) CompileChecker(checkerFile io.Reader, includeFilePaths []string)
 		}
 		defer file.Close()
 
-		if err := volume.CopyFile(file, "testlib.h"); err != nil {
+		if err := volume.CopyFile(file, path.Base(filePath)); err != nil {
 			return TaskResult{}, err
 		}
 	}

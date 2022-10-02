@@ -3,8 +3,10 @@ package main
 import (
 	"embed"
 	"flag"
+	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 )
 
@@ -47,7 +49,25 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 		t.Fatal("Failed to create Judge", err)
 	}
 
-	checkerResult, err := judge.CompileChecker(checker, []string{TESTLIB_PATH})
+	tempDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatal("Failed to create tempDir: ", tempDir)
+	}
+	defer os.RemoveAll(tempDir)
+	testlibFilePath := filepath.Join(tempDir, "testlib.h")
+
+	testlibFile, err := os.Create(testlibFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testLibRaw, err := sources.Open(TESTLIB_PATH)
+	if err != nil {
+		t.Fatal("Failed to open: testlib.h", err)
+	}
+	io.Copy(testlibFile, testLibRaw)
+
+	checkerResult, err := judge.CompileChecker(checker, []string{testlibFilePath})
 	if err != nil || checkerResult.ExitCode != 0 {
 		t.Fatal("error CompileChecker", err)
 	}
