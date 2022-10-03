@@ -6,7 +6,6 @@ After = docker.service
 [Service]
 ExecStart = /root/judge \
 -langs=/root/langs.toml \
--testlib=/root/testlib.h \
 -miniohost-secret=projects/190778459730/secrets/minio-host/versions/latest \
 -minioid-secret=projects/190778459730/secrets/minio-id/versions/latest \
 -miniokey-secret=projects/190778459730/secrets/minio-secret/versions/latest \
