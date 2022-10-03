@@ -111,7 +111,7 @@ func (t *TestCaseDir) InFile(name string) (*os.File, error) {
 }
 
 func (t *TestCaseDir) OutFilePath(name string) string {
-	return path.Join(t.dir, "out", name+".out")
+	return path.Join(t.dir, "testcases", "out", name+".out")
 }
 
 func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
