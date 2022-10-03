@@ -26,7 +26,7 @@ type Judge struct {
 var defaultOptions = []TaskInfoOption{
 	WithCpuset(0, 1),
 	WithPidsLimit(100),
-	WithStackLimitMB(-1),
+	WithStackLimitKB(-1),
 	WithMemoryLimitMB(1024),
 }
 
