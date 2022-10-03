@@ -83,7 +83,7 @@ func (t *TestCaseDir) CheckerPath() string {
 }
 
 func (t *TestCaseDir) CheckerFile() (*os.File, error) {
-	return os.Open(path.Join(t.dir, "checker.cpp"))
+	return os.Open(t.CheckerPath())
 }
 
 func (t *TestCaseDir) IncludeDir() string {
@@ -103,11 +103,11 @@ func (t *TestCaseDir) IncludeFilePaths() ([]string, error) {
 }
 
 func (t *TestCaseDir) InFilePath(name string) string {
-	return path.Join(t.dir, "in", name+".in")
+	return path.Join(t.dir, "testcases", "in", name+".in")
 }
 
 func (t *TestCaseDir) InFile(name string) (*os.File, error) {
-	return os.Open(path.Join(t.dir, "in", name+".in"))
+	return os.Open(t.InFilePath(name))
 }
 
 func (t *TestCaseDir) OutFilePath(name string) string {
@@ -115,12 +115,12 @@ func (t *TestCaseDir) OutFilePath(name string) string {
 }
 
 func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
-	return os.Open(path.Join(t.dir, "out", name+".out"))
+	return os.Open(t.OutFilePath(name))
 }
 
 func (t *TestCaseDir) CaseNames() ([]string, error) {
 	// write glob code
-	matches, err := filepath.Glob(path.Join(t.dir, "in", "*.in"))
+	matches, err := filepath.Glob(path.Join(t.dir, "testcases", "in", "*.in"))
 	if err != nil {
 		return nil, err
 	}
