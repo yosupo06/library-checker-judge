@@ -26,7 +26,7 @@ var judgeName string
 var judgeCtx context.Context
 var testCaseFetcher TestCaseFetcher
 
-func execJudge(judgedir, testlibPath string, submissionID int32) (err error) {
+func execJudge(judgedir string, submissionID int32) (err error) {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
 		Id: submissionID,
 	})
@@ -305,7 +305,6 @@ func getSecureString(secureKey, defaultValue string) string {
 }
 
 func main() {
-	testlibPath := flag.String("testlib", "sources/testlib.h", "path of testlib.h")
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
 	judgedir := flag.String("judgedir", "", "temporary directory of judge")
 
@@ -368,7 +367,7 @@ func main() {
 			continue
 		}
 		log.Println("Start Judge:", task.SubmissionId)
-		err = execJudge(*judgedir, *testlibPath, task.SubmissionId)
+		err = execJudge(*judgedir, task.SubmissionId)
 		if err != nil {
 			log.Println(err.Error())
 			continue
