@@ -22,7 +22,6 @@ def run_test(name: str, zone: str, env: str, remain: bool):
     send_file(Path('../judge/judge.test'), name, zone, Path('/root/judge.test'))
     send_file(Path('../langs/langs.toml'), name,
               zone, Path('/root/langs.toml'))
-    send_file(Path('../judge/sources/testlib.h'), name, zone, Path('/root/testlib.h'))
 
     args = ['/root/judge.test']
     args += ['-langs', '/root/langs.toml']

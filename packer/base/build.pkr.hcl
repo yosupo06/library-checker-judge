@@ -5,14 +5,14 @@ variable "env" {
 
 source "googlecompute" "judge" {
   project_id = "library-checker-project"
-  source_image = "ubuntu-2204-jammy-v20220622"
+  source_image_family = "ubuntu-2204-lts"
   zone = "asia-northeast1-b"
   machine_type = "n1-standard-2"
   disk_size = 50
   ssh_username = "ubuntu"
   temporary_key_pair_type = "ed25519"
-  image_name = "${var.env}-judge-image-{{timestamp}}"
-  image_family = "${var.env}-judge-image-family"
+  image_name = "v1-${var.env}-base-image-{{timestamp}}"
+  image_family = "v1-${var.env}-base-image"
 }
 
 build {
@@ -67,7 +67,7 @@ build {
   
   # build our images
   provisioner "file" {
-    source = "../langs"
+    source = "../../langs"
     destination = "/tmp"
   }
   provisioner "shell" {
