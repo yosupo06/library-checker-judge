@@ -7,10 +7,10 @@ on:
 
 jobs:
   build-base-image:
-    uses: ./.github/workflows/workflows/build-base-image.yml
+    uses: ./build-base-image.yml
 
   build-judge-image:
-    uses: ./.github/workflows/workflows/build-judge-image.yml
+    uses: ./build-judge-image.yml
     needs: [build-base-image]
 
   judge-deploy:
