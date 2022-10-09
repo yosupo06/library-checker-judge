@@ -55,4 +55,5 @@ jobs:
       run: >
         gcloud compute instance-groups managed rolling-action
         start-update prod-judge-instance-group
+        --region asia-northeast1
         --version=template=${{ steps.instance-name.outputs.name }}
