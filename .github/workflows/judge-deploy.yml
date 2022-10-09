@@ -11,8 +11,10 @@ jobs:
 
   build-judge-image:
     uses: yosupo06/library-checker-judge/.github/workflows/build-judge-image.yml@citest
+    needs: [build-base-image]
 
   judge-deploy:
+    needs: [build-base-image, build-judge-image]
     runs-on: ubuntu-latest
     permissions:
       contents: read
