@@ -1,0 +1,27 @@
+name: Build Base Image
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build-base-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - id: auth
+      uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+        service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
+        token_format: access_token
+    
+    - id: build-base-image
+      name: Build base image
+      run: packer build -var 'env=prod' .
+      working-directory: ./packer/base

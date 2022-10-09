@@ -1,18 +1,9 @@
 name: Judge-Deploy
 
 on:
-  workflow_dispatch:
-    inputs:
-      zone:
-        description: 'Instance zone'
-        required: true
-        default: asia-northeast1-a
-        type: string
-      build_image:
-        description: 'Build new judge image'
-        required: true
-        default: false
-        type: boolean
+  push:
+    branches: 
+      - citest
 
 jobs:
   judge-deploy:
@@ -30,20 +21,26 @@ jobs:
         workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
         service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
-    
-    - id: build-image
-      name: Build judge image
-      if : ${{ inputs.build_image }}
-      run: packer build -var 'env=prod' .
-      working-directory: ./packer
+
+    - uses: yosupo06/library-checker-judge/.github/workflows/build-base-image.yml@citest
+
+    - uses: yosupo06/library-checker-judge/.github/workflows/build-judge-image.yml@citest
 
     - id: setup-cloud-sdk
       name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
-    - id: judge-deploy
-      name:	Run judge-deploy.py
-      run: ./judge_deploy.py --zone $ZONE --env prod --preemptible
-      working-directory: ./deploy
-      env:
-        ZONE: ${{ inputs.zone }}
+    - id: instance-name
+      name: Get instance template name
+      run: echo "::set-output name=name::prod-judge-template-$(date +'%Y-%m-%d')"
+
+    - id: create-judge-template
+      name:	Create judge template
+      run: >
+        gcloud compute instance-templates create ${{ steps.instance-name.outputs.name }}
+        --preemptible
+        --machine-type c2-standard-4
+        --image-family v1-prod-judge-image
+        --service-account gce-judge@library-checker-project.iam.gserviceaccount.com
+        --boot-disk-size 50GB
+
