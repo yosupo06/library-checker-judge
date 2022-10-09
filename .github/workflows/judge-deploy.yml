@@ -7,10 +7,10 @@ on:
 
 jobs:
   build-base-image:
-    - uses: yosupo06/library-checker-judge/.github/workflows/build-base-image.yml@citest
+    uses: yosupo06/library-checker-judge/.github/workflows/build-base-image.yml@citest
 
   build-judge-image:
-    - uses: yosupo06/library-checker-judge/.github/workflows/build-judge-image.yml@citest
+    uses: yosupo06/library-checker-judge/.github/workflows/build-judge-image.yml@citest
 
   judge-deploy:
     runs-on: ubuntu-latest
