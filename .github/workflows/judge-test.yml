@@ -15,11 +15,11 @@ jobs:
     
     - id: install-crun
       name: Install crun
-      run: sudo ./packer/crun-install.sh
+      run: sudo ./packer/base/crun-install.sh
 
     - id: prepare-docker-config
       name: Prepare docker config
-      run: sudo cp ./packer/docker-daemon.json /etc/docker/daemon.json
+      run: sudo cp ./packer/base/docker-daemon.json /etc/docker/daemon.json
 
     - id: restart-docker
       name: Restart docker
