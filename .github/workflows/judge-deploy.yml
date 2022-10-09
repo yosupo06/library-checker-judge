@@ -37,7 +37,7 @@ jobs:
 
     - id: instance-name
       name: Get instance template name
-      run: echo "::set-output name=name::prod-judge-template-$(date +'%Y-%m-%d')"
+      run: echo "::set-output name=name::prod-judge-template-$(date +'%Y-%m-%d-%H-%M-%S')"
 
     - id: create-judge-template
       name:	Create judge template
