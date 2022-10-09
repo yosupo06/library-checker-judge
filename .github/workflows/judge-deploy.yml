@@ -7,10 +7,10 @@ on:
 
 jobs:
   build-base-image:
-    uses: yosupo06/library-checker-judge/.github/workflows/build-base-image.yml@citest
+    uses: ./.github/workflows/workflows/build-base-image.yml
 
   build-judge-image:
-    uses: yosupo06/library-checker-judge/.github/workflows/build-judge-image.yml@citest
+    uses: ./.github/workflows/workflows/build-judge-image.yml
     needs: [build-base-image]
 
   judge-deploy:
@@ -49,3 +49,9 @@ jobs:
         --service-account gce-judge@library-checker-project.iam.gserviceaccount.com
         --boot-disk-size 50GB
 
+    - id: update-instance-group
+      name:	Update instance group
+      run: >
+        gcloud compute instance-groups managed rolling-action
+        start-update prod-judge-instance-group
+        --version=template=${{ steps.instance-name.outputs.name }}
