@@ -333,7 +333,7 @@ func createAndStartMonitor(c *containerInfo) (*containerMonitor, error) {
 				cm.doneForParent <- true
 				return
 			case <-cm.ticker.C:
-				tasks, err := c.readCGroupTasks()
+				tasks, err := c.getRunningProcesses()
 				if err == nil && len(tasks) >= 2 {
 					if !cm.isStarted {
 						cm.isStarted = true
@@ -459,27 +459,17 @@ func (c *containerInfo) Remove() error {
 	return nil
 }
 
-func readCGroupTasksFromFile(filePath string) ([]string, error) {
-	bytes, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return []string{}, err
+func (c *containerInfo) getRunningProcesses() ([]string, error) {
+	args := []string{
+		"top",
+		c.containerID,
+	}
+	result, err := exec.Command("docker", args...).Output()
+	if err == nil {
+		return strings.Split(strings.TrimSpace(string(result)), "\n")[1:], nil
 	}
 
-	return strings.Split(strings.TrimSpace(string(bytes)), "\n"), nil
-}
-
-func (c *containerInfo) readCGroupTasks() ([]string, error) {
-	filePathV1 := "/sys/fs/cgroup/cpu/docker/" + c.containerID + "/tasks"
-	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/container/cgroup.procs"
-
-	if result, err := readCGroupTasksFromFile(filePathV1); err == nil {
-		return result, nil
-	}
-	if result, err := readCGroupTasksFromFile(filePathV2); err == nil {
-		return result, nil
-	}
-
-	return []string{}, errors.New("failed to load cgroup tasks")
+	return []string{}, err
 }
 
 func readUsedMemoryFromFile(filePath string) (int64, error) {
