@@ -25,11 +25,13 @@ type TestCaseDir struct {
 }
 
 func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket string, minioSecure bool) (TestCaseFetcher, error) {
+	log.Print("Init TestCaseFetcher bucket: ", minioBucket)
+
 	// create case directory
 	dir, err := ioutil.TempDir("", "case")
 	if err != nil {
 		log.Print("Failed to create tempdir: ", err)
-		return TestCaseFetcher{}, nil
+		return TestCaseFetcher{}, err
 	}
 
 	// connect minio
@@ -42,7 +44,7 @@ func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket string, mi
 
 	if err != nil {
 		log.Fatal("Cannot connect to Minio: ", err)
-		return TestCaseFetcher{}, nil
+		return TestCaseFetcher{}, err
 	}
 
 	return TestCaseFetcher{
