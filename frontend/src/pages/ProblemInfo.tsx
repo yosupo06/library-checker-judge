@@ -44,22 +44,24 @@ const UsefulLinks: React.FC<{
   return (
     <Box>
       {userId && (
-        <Button variant="outlined" startIcon={<Person />}>
-          <PlainLink
-            to={`/submissions/?${new URLSearchParams({
+        <Button
+          variant="outlined"
+          startIcon={<Person />}
+          href={`/submissions/?${new URLSearchParams({
               problem: problemId,
               user: userId,
               status: "AC",
             }).toString()}`}
           >
             My Submissions
-          </PlainLink>
         </Button>
       )}
-      <Button variant="outlined" startIcon={<FlashOn />}>
-        <PlainLink to={`/submissions/?${fastestParams.toString()}`}>
-          Fastest
-        </PlainLink>
+      <Button
+        variant="outlined"
+        startIcon={<FlashOn />}
+        href={`/submissions/?${fastestParams.toString()}`}
+      >
+        Fastest
       </Button>
       <Button
         variant="outlined"

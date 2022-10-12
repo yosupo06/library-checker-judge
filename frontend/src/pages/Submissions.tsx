@@ -229,15 +229,13 @@ const Submissions: React.FC = () => {
             <MenuItem value="+time">Time</MenuItem>
           </Select>
         </FilterFormControl>
-        <Button variant="outlined" type="submit">
-          <PlainLink
-            to={{
-              search: searchParams.toString(),
-            }}
-            onClick={() => submissionListQuery.remove()}
-          >
-            search
-          </PlainLink>
+        <Button
+          variant="outlined"
+          type="submit"
+          href={`?${searchParams.toString()}`}
+          onClick={() => submissionListQuery.remove()}
+        >
+          search
         </Button>
       </Box>
 
