@@ -333,7 +333,7 @@ func createAndStartMonitor(c *containerInfo) (*containerMonitor, error) {
 				cm.doneForParent <- true
 				return
 			case <-cm.ticker.C:
-				tasks, err := c.getRunningProcesses()
+				tasks, err := c.readCGroupTasks()
 				if err == nil && len(tasks) >= 2 {
 					if !cm.isStarted {
 						cm.isStarted = true
@@ -360,6 +360,18 @@ func (cm *containerMonitor) stop() error {
 }
 
 func (cm *containerMonitor) usedTime() time.Duration {
+	if os.Getenv("READ_INSPECT_INSTEAD") == "1" {
+		if startedAt, err := inspectStartedAt(cm.c.containerID); err == nil {
+			cm.start = startedAt
+		} else {
+			log.Println("failed to read inspect StartedAt:", err.Error())
+		}
+		if finishedAt, err := inspectFinishedAt(cm.c.containerID); err == nil {
+			cm.end = finishedAt
+		} else {
+			log.Println("failed to read inspect FinishedAt:", err.Error())
+		}
+	}
 	return cm.end.Sub(cm.start)
 }
 
@@ -459,17 +471,27 @@ func (c *containerInfo) Remove() error {
 	return nil
 }
 
-func (c *containerInfo) getRunningProcesses() ([]string, error) {
-	args := []string{
-		"top",
-		c.containerID,
-	}
-	result, err := exec.Command("docker", args...).Output()
-	if err == nil {
-		return strings.Split(strings.TrimSpace(string(result)), "\n")[1:], nil
+func readCGroupTasksFromFile(filePath string) ([]string, error) {
+	bytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return []string{}, err
 	}
 
-	return []string{}, err
+	return strings.Split(strings.TrimSpace(string(bytes)), "\n"), nil
+}
+
+func (c *containerInfo) readCGroupTasks() ([]string, error) {
+	filePathV1 := "/sys/fs/cgroup/cpu/docker/" + c.containerID + "/tasks"
+	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/container/cgroup.procs"
+
+	if result, err := readCGroupTasksFromFile(filePathV1); err == nil {
+		return result, nil
+	}
+	if result, err := readCGroupTasksFromFile(filePathV2); err == nil {
+		return result, nil
+	}
+
+	return []string{}, errors.New("failed to load cgroup tasks")
 }
 
 func readUsedMemoryFromFile(filePath string) (int64, error) {
@@ -518,4 +540,39 @@ func inspectExitCode(containerId string) (int, error) {
 	}
 
 	return int(code), nil
+}
+
+func inspect(containerId string, args ...string) ([]byte, error) {
+	args = append([]string{
+		"inspect",
+		containerId,
+	}, args...)
+	cmd := exec.Command("docker", args...)
+	return cmd.Output()
+}
+
+func inspectStartedAt(containerId string) (time.Time, error) {
+	args := []string{"--format={{.State.StartedAt}}"}
+	output, err := inspect(containerId, args...)
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	startedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	return startedAt, err
+}
+
+func inspectFinishedAt(containerId string) (time.Time, error) {
+	args := []string{"--format={{.State.FinishedAt}}"}
+	output, err := inspect(containerId, args...)
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	finishedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	return finishedAt, err
 }
