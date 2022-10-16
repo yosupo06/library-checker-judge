@@ -4,6 +4,7 @@ Requires = docker.service
 After = docker.service
 
 [Service]
+Environment=LIBRARY_CHECKER_JUDGE=true
 ExecStart = /root/judge \
 -langs=/root/langs.toml \
 -miniohost-secret=projects/190778459730/secrets/minio-host/versions/latest \
