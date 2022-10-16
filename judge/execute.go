@@ -94,6 +94,7 @@ func init() {
 		log.Println("Started in judge server, use HighPrecisionContainerMonitor")
 		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
 	} else {
+		// TODO: use docker inspect for measuring time
 		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
 	}
 }
