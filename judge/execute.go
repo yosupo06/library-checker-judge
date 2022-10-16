@@ -360,18 +360,6 @@ func (cm *containerMonitor) stop() error {
 }
 
 func (cm *containerMonitor) usedTime() time.Duration {
-	if os.Getenv("READ_INSPECT_INSTEAD") == "1" {
-		if startedAt, err := inspectStartedAt(cm.c.containerID); err == nil {
-			cm.start = startedAt
-		} else {
-			log.Println("failed to read inspect StartedAt:", err.Error())
-		}
-		if finishedAt, err := inspectFinishedAt(cm.c.containerID); err == nil {
-			cm.end = finishedAt
-		} else {
-			log.Println("failed to read inspect FinishedAt:", err.Error())
-		}
-	}
 	return cm.end.Sub(cm.start)
 }
 
@@ -540,39 +528,4 @@ func inspectExitCode(containerId string) (int, error) {
 	}
 
 	return int(code), nil
-}
-
-func inspect(containerId string, args ...string) ([]byte, error) {
-	args = append([]string{
-		"inspect",
-		containerId,
-	}, args...)
-	cmd := exec.Command("docker", args...)
-	return cmd.Output()
-}
-
-func inspectStartedAt(containerId string) (time.Time, error) {
-	args := []string{"--format={{.State.StartedAt}}"}
-	output, err := inspect(containerId, args...)
-	if err != nil {
-		return time.Unix(0, 0), err
-	}
-	startedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
-	if err != nil {
-		return time.Unix(0, 0), err
-	}
-	return startedAt, err
-}
-
-func inspectFinishedAt(containerId string) (time.Time, error) {
-	args := []string{"--format={{.State.FinishedAt}}"}
-	output, err := inspect(containerId, args...)
-	if err != nil {
-		return time.Unix(0, 0), err
-	}
-	finishedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
-	if err != nil {
-		return time.Unix(0, 0), err
-	}
-	return finishedAt, err
 }
