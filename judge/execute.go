@@ -85,6 +85,20 @@ type VolumeMountInfo struct {
 	Volume *Volume
 }
 
+type ContainerMonitorBuilder func(c *containerInfo) (containerMonitor, error)
+
+var DEFAULT_MONITOR_BUILDER ContainerMonitorBuilder
+
+func init() {
+	if _, ok := os.LookupEnv("LIBRARY_CHECKER_JUDGE"); ok {
+		log.Println("Started in judge server, use HighPrecisionContainerMonitor")
+		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
+	} else {
+		// TODO: use docker inspect for measuring time
+		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
+	}
+}
+
 type TaskInfo struct {
 	Name                string // container name e.g. ubuntu
 	Argments            []string
@@ -97,6 +111,7 @@ type TaskInfo struct {
 	EnableLoggingDriver bool
 	WorkDir             string
 	VolumeMountInfo     []VolumeMountInfo
+	monitorBuilder      ContainerMonitorBuilder
 
 	Stdin  io.Reader
 	Stdout io.Writer
@@ -181,6 +196,13 @@ func WithVolume(volume *Volume, containerPath string) TaskInfoOption {
 			Path:   containerPath,
 			Volume: volume,
 		})
+		return nil
+	}
+}
+
+func WithMonitorBuilder(builder ContainerMonitorBuilder) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.monitorBuilder = builder
 		return nil
 	}
 }
@@ -303,70 +325,6 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	}, nil
 }
 
-type containerMonitor struct {
-	c *containerInfo
-
-	ticker        *time.Ticker
-	doneForChild  chan bool
-	doneForParent chan bool
-
-	isStarted bool
-	start     time.Time
-	end       time.Time
-
-	maxMemory int64
-}
-
-func createAndStartMonitor(c *containerInfo) (*containerMonitor, error) {
-	cm := containerMonitor{
-		c:             c,
-		isStarted:     false,
-		ticker:        time.NewTicker(time.Millisecond),
-		doneForChild:  make(chan bool),
-		doneForParent: make(chan bool),
-	}
-
-	go func() {
-		for {
-			select {
-			case <-cm.doneForChild:
-				cm.doneForParent <- true
-				return
-			case <-cm.ticker.C:
-				tasks, err := c.readCGroupTasks()
-				if err == nil && len(tasks) >= 2 {
-					if !cm.isStarted {
-						cm.isStarted = true
-						cm.start = time.Now()
-					}
-					cm.end = time.Now()
-				}
-				if usedMemory, err := c.readUsedMemory(); err == nil {
-					if cm.maxMemory < usedMemory {
-						cm.maxMemory = usedMemory
-					}
-				}
-			}
-		}
-	}()
-	return &cm, nil
-}
-
-func (cm *containerMonitor) stop() error {
-	cm.ticker.Stop()
-	cm.doneForChild <- true
-	<-cm.doneForParent
-	return nil
-}
-
-func (cm *containerMonitor) usedTime() time.Duration {
-	return cm.end.Sub(cm.start)
-}
-
-func (cm *containerMonitor) maxUsedMemory() int64 {
-	return cm.maxMemory
-}
-
 func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 	log.Println("Start: ", t.Name, t.Argments)
 	ctx := context.Background()
@@ -389,13 +347,18 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 	cmd.Stdout = t.Stdout
 	cmd.Stderr = t.Stderr
 
-	cm, err := createAndStartMonitor(&c)
+	monitorBuilder := t.monitorBuilder
+	if monitorBuilder == nil {
+		monitorBuilder = DEFAULT_MONITOR_BUILDER
+	}
+	cm, err := monitorBuilder(&c)
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
 			log.Println("create monitor failed:", err.Error())
 			return TaskResult{}, err
 		}
 	}
+	cm.start()
 	err = cmd.Run()
 	if err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
@@ -439,6 +402,94 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 		TLE:      tle,
 		ExitCode: exitCode,
 	}, nil
+}
+
+type containerMonitor interface {
+	start()
+	stop()
+
+	usedTime() time.Duration
+	maxUsedMemory() int64
+}
+
+// A highPrecisionContainerMonitor measures used time in high precision.
+// Because this monitor uses hacky trick it won't work in all environments.
+type highPrecisionContainerMonitor struct {
+	c *containerInfo
+
+	ticker        *time.Ticker
+	doneForChild  chan bool
+	doneForParent chan bool
+
+	isStarted bool
+	startTime time.Time
+	endTime   time.Time
+
+	maxMemory int64
+}
+
+func NewHighPrecisionContainerMonitor(c *containerInfo) (containerMonitor, error) {
+	cm := highPrecisionContainerMonitor{
+		c:             c,
+		isStarted:     false,
+		ticker:        time.NewTicker(time.Millisecond),
+		doneForChild:  make(chan bool),
+		doneForParent: make(chan bool),
+	}
+
+	return &cm, nil
+}
+
+func (cm *highPrecisionContainerMonitor) start() {
+	go func() {
+		for {
+			select {
+			case <-cm.doneForChild:
+				cm.doneForParent <- true
+				return
+			case <-cm.ticker.C:
+				tasks, err := cm.c.readCGroupTasks()
+				if err == nil && len(tasks) >= 2 {
+					if !cm.isStarted {
+						cm.isStarted = true
+						cm.startTime = time.Now()
+					}
+					cm.endTime = time.Now()
+				}
+				if usedMemory, err := cm.c.readUsedMemory(); err == nil {
+					if cm.maxMemory < usedMemory {
+						cm.maxMemory = usedMemory
+					}
+				}
+			}
+		}
+	}()
+}
+
+func (cm *highPrecisionContainerMonitor) stop() {
+	cm.ticker.Stop()
+	cm.doneForChild <- true
+	<-cm.doneForParent
+}
+
+func (cm *highPrecisionContainerMonitor) usedTime() time.Duration {
+	if os.Getenv("READ_INSPECT_INSTEAD") == "1" {
+		if startedAt, err := inspectStartedAt(cm.c.containerID); err == nil {
+			cm.startTime = startedAt
+		} else {
+			log.Println("failed to read inspect StartedAt:", err.Error())
+		}
+		if finishedAt, err := inspectFinishedAt(cm.c.containerID); err == nil {
+			cm.endTime = finishedAt
+		} else {
+			log.Println("failed to read inspect FinishedAt:", err.Error())
+		}
+	}
+	return cm.endTime.Sub(cm.startTime)
+}
+
+func (cm *highPrecisionContainerMonitor) maxUsedMemory() int64 {
+	return cm.maxMemory
 }
 
 type containerInfo struct {
@@ -528,4 +579,39 @@ func inspectExitCode(containerId string) (int, error) {
 	}
 
 	return int(code), nil
+}
+
+func inspect(containerId string, args ...string) ([]byte, error) {
+	args = append([]string{
+		"inspect",
+		containerId,
+	}, args...)
+	cmd := exec.Command("docker", args...)
+	return cmd.Output()
+}
+
+func inspectStartedAt(containerId string) (time.Time, error) {
+	args := []string{"--format={{.State.StartedAt}}"}
+	output, err := inspect(containerId, args...)
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	startedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	return startedAt, err
+}
+
+func inspectFinishedAt(containerId string) (time.Time, error) {
+	args := []string{"--format={{.State.FinishedAt}}"}
+	output, err := inspect(containerId, args...)
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	finishedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	return finishedAt, err
 }
