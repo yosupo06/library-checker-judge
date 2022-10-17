@@ -121,26 +121,6 @@ def deploy_probelms(stub: library_checker_pb2_grpc.LibraryCheckerServiceStub, cr
         )
         timelimit = problem.config['timelimit']
 
-        # deploy version 0
-        if new_version != old_version:
-            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as tmp:
-                with zipfile.ZipFile(tmp.name, 'w', zipfile.ZIP_DEFLATED) as newzip:
-                    def zip_write(filename, arcname):
-                        newzip.write(filename, arcname)
-                    zip_write(probdir / 'checker.cpp', arcname='checker.cpp')
-                    for f in sorted(probdir.glob('in/*.in')):
-                        zip_write(f, arcname=f.relative_to(probdir))
-                    for f in sorted(probdir.glob('out/*.out')):
-                        zip_write(f, arcname=f.relative_to(probdir))
-
-                minio_client.fput_object(
-                    bucket_name, new_version + '.zip', tmp.name, part_size=5 * 1000 * 1000 * 1000)
-
-                # TODO: stop to remove old file manually, use auto delete
-                if old_version is not None:
-                    minio_client.remove_object(
-                        bucket_name, old_version + '.zip')
-
         # deploy version 1
         # deploy test cases
         for f in sorted(probdir.glob('in/*.in')):
