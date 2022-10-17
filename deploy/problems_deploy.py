@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Testcase Deploy')
     parser.add_argument('root', type=Path,
-                        help='the directory of librar-checker-problem')
+                        help='The directory of librar-checker-problem')
     parser.add_argument('-p', '--problem', nargs='*',
                         help='Generate problem', default=[])
     parser.add_argument('--host', default='localhost:50051', help='Host URL')
@@ -199,10 +199,6 @@ if __name__ == "__main__":
                          secret_key=args.minio_secret,
                          secure=args.prod)
     bucket_name = args.minio_bucket
-
-    if not minio_client.bucket_exists(bucket_name):
-        logger.info('No bucket {}'.format(bucket_name))
-        minio_client.make_bucket(bucket_name)
 
     deploy_categories(stub, cred_token, rootdir)
     deploy_probelms(stub, cred_token, rootdir, tomls)
