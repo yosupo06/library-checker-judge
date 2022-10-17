@@ -25,8 +25,19 @@ services:
     environment:
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=miniopass
-    # TODO: healthcheck
-    
+  create-minio-bucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 minio miniopass;
+      /usr/bin/mc rm --recursive --force myminio/testcase;
+      /usr/bin/mc mb myminio/testcase;
+      /usr/bin/mc policy download myminio/testcase;
+      exit 0;
+      "
+
   api:
     build:
       dockerfile: Dockerfile.API
@@ -36,6 +47,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      create-minio-bucket:
+        condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
     healthcheck:
@@ -53,6 +66,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      create-minio-bucket:
+        condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
     healthcheck:
