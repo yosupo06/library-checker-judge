@@ -94,6 +94,7 @@ func init() {
 		log.Println("Started in judge server, use HighPrecisionContainerMonitor")
 		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
 	} else {
+		log.Println("Started in judge server, use LowPrecisionContainerMonitor")
 		DEFAULT_MONITOR_BUILDER = NewLowPrecisionContainerMonitor
 	}
 }
