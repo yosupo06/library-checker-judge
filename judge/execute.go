@@ -94,8 +94,7 @@ func init() {
 		log.Println("Started in judge server, use HighPrecisionContainerMonitor")
 		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
 	} else {
-		// TODO: use docker inspect for measuring time
-		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
+		DEFAULT_MONITOR_BUILDER = NewLowPrecisionContainerMonitor
 	}
 }
 
@@ -473,23 +472,66 @@ func (cm *highPrecisionContainerMonitor) stop() {
 }
 
 func (cm *highPrecisionContainerMonitor) usedTime() time.Duration {
-	if os.Getenv("READ_INSPECT_INSTEAD") == "1" {
-		if startedAt, err := inspectStartedAt(cm.c.containerID); err == nil {
-			cm.startTime = startedAt
-		} else {
-			log.Println("failed to read inspect StartedAt:", err.Error())
-		}
-		if finishedAt, err := inspectFinishedAt(cm.c.containerID); err == nil {
-			cm.endTime = finishedAt
-		} else {
-			log.Println("failed to read inspect FinishedAt:", err.Error())
-		}
-	}
 	return cm.endTime.Sub(cm.startTime)
 }
 
 func (cm *highPrecisionContainerMonitor) maxUsedMemory() int64 {
 	return cm.maxMemory
+}
+
+type lowPrecisionContainerMonitor struct {
+	c   *containerInfo
+	hcm containerMonitor
+}
+
+func NewLowPrecisionContainerMonitor(c *containerInfo) (containerMonitor, error) {
+	hcm, _ := NewHighPrecisionContainerMonitor(c)
+	cm := lowPrecisionContainerMonitor{
+		c:   c,
+		hcm: hcm,
+	}
+
+	return &cm, nil
+}
+func (cm *lowPrecisionContainerMonitor) start() {
+	cm.hcm.start()
+}
+func (cm *lowPrecisionContainerMonitor) stop() {
+	cm.hcm.stop()
+}
+func (cm *lowPrecisionContainerMonitor) usedTime() time.Duration {
+	var startedAt, finishedAt time.Time
+
+	output, err := readInspect(cm.c.containerID, "--format={{.State.StartedAt}}")
+	if err != nil {
+		return 0
+	}
+	startedAt, err = cm.parseDate(output)
+	if err != nil {
+		return 0
+	}
+	output, err = readInspect(cm.c.containerID, "--format={{.State.FinishedAt}}")
+	if err != nil {
+		return 0
+	}
+	finishedAt, err = cm.parseDate(output)
+	if err != nil {
+		return 0
+	}
+	return finishedAt.Sub(startedAt)
+}
+
+func (cm *lowPrecisionContainerMonitor) maxUsedMemory() int64 {
+	return cm.hcm.maxUsedMemory()
+}
+
+func (cm *lowPrecisionContainerMonitor) parseDate(output []byte) (time.Time, error) {
+	date, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
+	if err != nil {
+		log.Println("failed to parse date: ", err.Error())
+		return time.Unix(0, 0), err
+	}
+	return date, nil
 }
 
 type containerInfo struct {
@@ -581,37 +623,15 @@ func inspectExitCode(containerId string) (int, error) {
 	return int(code), nil
 }
 
-func inspect(containerId string, args ...string) ([]byte, error) {
+func readInspect(containerId string, args ...string) ([]byte, error) {
 	args = append([]string{
 		"inspect",
 		containerId,
 	}, args...)
 	cmd := exec.Command("docker", args...)
-	return cmd.Output()
-}
-
-func inspectStartedAt(containerId string) (time.Time, error) {
-	args := []string{"--format={{.State.StartedAt}}"}
-	output, err := inspect(containerId, args...)
+	output, err := cmd.Output()
 	if err != nil {
-		return time.Unix(0, 0), err
+		log.Println("failed to raed inspect:", err.Error())
 	}
-	startedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
-	if err != nil {
-		return time.Unix(0, 0), err
-	}
-	return startedAt, err
-}
-
-func inspectFinishedAt(containerId string) (time.Time, error) {
-	args := []string{"--format={{.State.FinishedAt}}"}
-	output, err := inspect(containerId, args...)
-	if err != nil {
-		return time.Unix(0, 0), err
-	}
-	finishedAt, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
-	if err != nil {
-		return time.Unix(0, 0), err
-	}
-	return finishedAt, err
+	return output, err
 }

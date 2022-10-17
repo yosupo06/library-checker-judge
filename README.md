@@ -82,13 +82,6 @@ cd library-checker-judge/judge
 sudo apt install g++ clang++ python3.8 pypy3 openjdk-11-jdk haskell-stack sbcl ...
 ```
 
-#### 環境変数の設定
-一部環境で実行時間を計測できない場合があることが確認されており、その場合は以下の環境変数を設定してください。
-
-```
-READ_INSPECT_INSTEAD=1
-```
-
 ### 起動
 
 ```
