@@ -7,14 +7,6 @@
 - Ubuntu 18.04(Judge Server)
 - docker, docker-compose(API, SQL)
 
-### WSLのUbuntuでの動作確認
-WSLのUbuntuで動作確認する際にwindows用のdocker-desktopと連携すると実行時間の計測ができないので下記を実行してUbuntuにdockerをインストールします。
-```sh
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-```
-上記のスクリプトを実行した際に20秒ほど一時停止してdocker-desktopを使用することを推奨されますが、そのまま実行が再開するまで待ってください。
-
 ## API Server
 
 ### 準備

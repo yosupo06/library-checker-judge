@@ -94,8 +94,8 @@ func init() {
 		log.Println("Started in judge server, use HighPrecisionContainerMonitor")
 		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
 	} else {
-		// TODO: use docker inspect for measuring time
-		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
+		log.Println("Started in judge server, use LowPrecisionContainerMonitor")
+		DEFAULT_MONITOR_BUILDER = NewLowPrecisionContainerMonitor
 	}
 }
 
@@ -480,6 +480,61 @@ func (cm *highPrecisionContainerMonitor) maxUsedMemory() int64 {
 	return cm.maxMemory
 }
 
+type lowPrecisionContainerMonitor struct {
+	c   *containerInfo
+	hcm containerMonitor
+}
+
+func NewLowPrecisionContainerMonitor(c *containerInfo) (containerMonitor, error) {
+	hcm, _ := NewHighPrecisionContainerMonitor(c)
+	cm := lowPrecisionContainerMonitor{
+		c:   c,
+		hcm: hcm,
+	}
+
+	return &cm, nil
+}
+func (cm *lowPrecisionContainerMonitor) start() {
+	cm.hcm.start()
+}
+func (cm *lowPrecisionContainerMonitor) stop() {
+	cm.hcm.stop()
+}
+func (cm *lowPrecisionContainerMonitor) usedTime() time.Duration {
+	var startedAt, finishedAt time.Time
+
+	output, err := readInspect(cm.c.containerID, "--format={{.State.StartedAt}}")
+	if err != nil {
+		return 0
+	}
+	startedAt, err = cm.parseDate(output)
+	if err != nil {
+		return 0
+	}
+	output, err = readInspect(cm.c.containerID, "--format={{.State.FinishedAt}}")
+	if err != nil {
+		return 0
+	}
+	finishedAt, err = cm.parseDate(output)
+	if err != nil {
+		return 0
+	}
+	return finishedAt.Sub(startedAt)
+}
+
+func (cm *lowPrecisionContainerMonitor) maxUsedMemory() int64 {
+	return cm.hcm.maxUsedMemory()
+}
+
+func (cm *lowPrecisionContainerMonitor) parseDate(output []byte) (time.Time, error) {
+	date, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(string(output)))
+	if err != nil {
+		log.Println("failed to parse date: ", err.Error())
+		return time.Unix(0, 0), err
+	}
+	return date, nil
+}
+
 type containerInfo struct {
 	containerID string
 }
@@ -567,4 +622,17 @@ func inspectExitCode(containerId string) (int, error) {
 	}
 
 	return int(code), nil
+}
+
+func readInspect(containerId string, args ...string) ([]byte, error) {
+	args = append([]string{
+		"inspect",
+		containerId,
+	}, args...)
+	cmd := exec.Command("docker", args...)
+	output, err := cmd.Output()
+	if err != nil {
+		log.Println("failed to read inspect:", err.Error())
+	}
+	return output, err
 }
