@@ -632,7 +632,7 @@ func readInspect(containerId string, args ...string) ([]byte, error) {
 	cmd := exec.Command("docker", args...)
 	output, err := cmd.Output()
 	if err != nil {
-		log.Println("failed to raed inspect:", err.Error())
+		log.Println("failed to read inspect:", err.Error())
 	}
 	return output, err
 }
