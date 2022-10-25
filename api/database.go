@@ -58,6 +58,18 @@ type Submission struct {
 	User         User `gorm:"foreignKey:UserName"`
 }
 
+func (s *Submission) AfterFind(tx *gorm.DB) (err error) {
+	if s.Status == "AC" || s.Status == "WA" {
+		if s.MaxTime == -1 {
+			s.MaxTime = 0
+		}
+		if s.MaxMemory == -1 {
+			s.MaxMemory = 0
+		}
+	}
+	return
+}
+
 // SubmissionTestcaseResult is db table
 type SubmissionTestcaseResult struct {
 	Submission int32
