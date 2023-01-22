@@ -59,7 +59,7 @@
     source = "Main.java"
     image_name = "library-checker-images-java"
     compile = ["javac", "Main.java"]
-    exec = ["java", "-Xss1G", "Main"]
+    exec = ["java", "-Xss1G", "-Xmx1G", "Main"]
 [[langs]]
     id = "python3"
     name = "Python3"
