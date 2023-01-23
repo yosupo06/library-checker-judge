@@ -15,6 +15,8 @@ ExecStart = /root/judge \
 -apipass-secret=projects/190778459730/secrets/api-judge-pass/versions/latest \
 -prod
 
+AllowedCPUs=2-3
+
 Restart = always
 Type = simple
 
