@@ -15,22 +15,16 @@ import (
 const COMPILE_TIMEOUT = 30 * time.Second
 
 type Judge struct {
-	dir  string
-	tl   float64
-	lang Lang
+	dir          string
+	tl           float64
+	lang         Lang
+	cgroupParent string
 
 	checkerVolume *Volume
 	sourceVolume  *Volume
 }
 
-var defaultOptions = []TaskInfoOption{
-	WithCpuset(0, 1),
-	WithPidsLimit(100),
-	WithStackLimitKB(-1),
-	WithMemoryLimitMB(1024),
-}
-
-func NewJudge(judgedir string, lang Lang, tl float64) (*Judge, error) {
+func NewJudge(judgedir string, lang Lang, tl float64, cgroupParent string) (*Judge, error) {
 	tempdir, err := ioutil.TempDir(judgedir, "judge")
 	if err != nil {
 		return nil, err
@@ -38,10 +32,23 @@ func NewJudge(judgedir string, lang Lang, tl float64) (*Judge, error) {
 	log.Println("create judge dir:", tempdir)
 
 	return &Judge{
-		dir:  tempdir,
-		tl:   tl,
-		lang: lang,
+		dir:          tempdir,
+		tl:           tl,
+		lang:         lang,
+		cgroupParent: cgroupParent,
 	}, nil
+}
+
+func (j *Judge) defaultOptions() []TaskInfoOption {
+	options := []TaskInfoOption{
+		WithPidsLimit(100),
+		WithStackLimitKB(-1),
+		WithMemoryLimitMB(1024),
+	}
+	if j.cgroupParent != "" {
+		options = append(options, WithCgroupParent(j.cgroupParent))
+	}
+	return options
 }
 
 func (j *Judge) Close() error {
@@ -85,7 +92,7 @@ func (j *Judge) CompileChecker(checkerFile io.Reader, includeFilePaths []string)
 	}
 
 	taskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
-		defaultOptions,
+		j.defaultOptions(),
 		WithArguments(langs["checker"].Compile...),
 		WithWorkDir("/workdir"),
 		WithVolume(&volume, "/workdir"),
@@ -121,7 +128,7 @@ func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) 
 		return TaskResult{}, nil, err
 	}
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
-		defaultOptions,
+		j.defaultOptions(),
 		WithArguments(j.lang.Compile...),
 		WithWorkDir("/workdir"),
 		WithVolume(&volume, "/workdir"),
@@ -150,7 +157,7 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 
 	// TODO: volume read only
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
-		defaultOptions,
+		j.defaultOptions(),
 		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...)...),
 		WithWorkDir("/workdir"),
 		WithVolume(j.sourceVolume, "/workdir"),
@@ -173,7 +180,7 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 	defer outFile.Close()
 
 	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
-		defaultOptions,
+		j.defaultOptions(),
 		WithArguments("cat", "/casedir/actual.out"),
 		WithTimeout(COMPILE_TIMEOUT),
 		WithVolume(&caseVolume, "/casedir"),
@@ -221,7 +228,7 @@ func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
 
 	// run checker
 	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
-		defaultOptions,
+		j.defaultOptions(),
 		WithArguments(langs["checker"].Exec...),
 		WithWorkDir("/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),

@@ -94,7 +94,7 @@ func init() {
 		log.Println("Started in judge server, use HighPrecisionContainerMonitor")
 		DEFAULT_MONITOR_BUILDER = NewHighPrecisionContainerMonitor
 	} else {
-		log.Println("Started in judge server, use LowPrecisionContainerMonitor")
+		log.Println("Started in local, use LowPrecisionContainerMonitor")
 		DEFAULT_MONITOR_BUILDER = NewLowPrecisionContainerMonitor
 	}
 }
@@ -110,6 +110,7 @@ type TaskInfo struct {
 	EnableNetwork       bool
 	EnableLoggingDriver bool
 	WorkDir             string
+	cgroupParent        string
 	VolumeMountInfo     []VolumeMountInfo
 	monitorBuilder      ContainerMonitorBuilder
 
@@ -207,6 +208,13 @@ func WithMonitorBuilder(builder ContainerMonitorBuilder) TaskInfoOption {
 	}
 }
 
+func WithCgroupParent(cgroupParent string) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.cgroupParent = cgroupParent
+		return nil
+	}
+}
+
 func NewTaskInfo(name string, ops ...TaskInfoOption) (*TaskInfo, error) {
 	ti := &TaskInfo{Name: name}
 	for _, option := range ops {
@@ -300,6 +308,11 @@ func (t *TaskInfo) create() (containerInfo, error) {
 		args = append(args, fmt.Sprintf("%s:%s", volumeMount.Volume.Name, volumeMount.Path))
 	}
 
+	// cgroup parent
+	if t.cgroupParent != "" {
+		args = append(args, fmt.Sprintf("--cgroup-parent=%s", t.cgroupParent))
+	}
+
 	// container name
 	args = append(args, t.Name)
 
@@ -321,7 +334,8 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	containerId := strings.TrimSpace(string(output))
 
 	return containerInfo{
-		containerID: containerId,
+		containerID:  containerId,
+		cgroupParent: t.cgroupParent,
 	}, nil
 }
 
@@ -536,7 +550,8 @@ func (cm *lowPrecisionContainerMonitor) parseDate(output []byte) (time.Time, err
 }
 
 type containerInfo struct {
-	containerID string
+	containerID  string
+	cgroupParent string
 }
 
 func (c *containerInfo) Remove() error {
@@ -563,8 +578,12 @@ func readCGroupTasksFromFile(filePath string) ([]string, error) {
 }
 
 func (c *containerInfo) readCGroupTasks() ([]string, error) {
+	cgroupParent := c.cgroupParent
+	if cgroupParent == "" {
+		cgroupParent = "system.slice"
+	}
 	filePathV1 := "/sys/fs/cgroup/cpu/docker/" + c.containerID + "/tasks"
-	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/container/cgroup.procs"
+	filePathV2 := "/sys/fs/cgroup/" + cgroupParent + "/docker-" + c.containerID + ".scope/container/cgroup.procs"
 
 	if result, err := readCGroupTasksFromFile(filePathV1); err == nil {
 		return result, nil
@@ -590,8 +609,12 @@ func readUsedMemoryFromFile(filePath string) (int64, error) {
 }
 
 func (c *containerInfo) readUsedMemory() (int64, error) {
+	cgroupParent := c.cgroupParent
+	if cgroupParent == "" {
+		cgroupParent = "system.slice"
+	}
 	filePathV1 := "/sys/fs/cgroup/memory/docker/" + c.containerID + "/memory.max_usage_in_bytes"
-	filePathV2 := "/sys/fs/cgroup/system.slice/docker-" + c.containerID + ".scope/container/memory.current"
+	filePathV2 := "/sys/fs/cgroup/" + cgroupParent + "/docker-" + c.containerID + ".scope/container/memory.current"
 
 	if result, err := readUsedMemoryFromFile(filePathV1); err == nil {
 		return result, nil

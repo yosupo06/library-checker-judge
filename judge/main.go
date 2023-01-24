@@ -25,6 +25,7 @@ var client pb.LibraryCheckerServiceClient
 var judgeName string
 var judgeCtx context.Context
 var testCaseFetcher TestCaseFetcher
+var cgroupParent string
 
 func execJudge(judgedir string, submissionID int32) (err error) {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
@@ -55,7 +56,7 @@ func execJudge(judgedir string, submissionID int32) (err error) {
 	}
 	log.Print("Fetched :", caseVersion)
 
-	judge, err := NewJudge(judgedir, langs[submission.Overview.Lang], problem.TimeLimit)
+	judge, err := NewJudge(judgedir, langs[submission.Overview.Lang], problem.TimeLimit, cgroupParent)
 	if err != nil {
 		return err
 	}
@@ -329,7 +330,11 @@ func main() {
 	apiPass := flag.String("apipass", "password", "api password")
 	apiPassSecret := flag.String("apipass-secret", "", "gcloud secret of api password")
 
+	tmpCgroupParent := flag.String("cgroup-parent", "", "cgroup parent")
+
 	flag.Parse()
+
+	cgroupParent = *tmpCgroupParent
 
 	ReadLangs(*langsTomlPath)
 
