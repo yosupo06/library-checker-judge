@@ -13,7 +13,7 @@ ExecStart = /root/judge \
 -miniobucket-secret=projects/190778459730/secrets/minio-bucket/versions/latest \
 -apihost=apiv1.yosupo.jp:443 \
 -apipass-secret=projects/190778459730/secrets/api-judge-pass/versions/latest \
--cgroup-parent=judge-docker.slice \
+-cgroup-parent=judge.slice \
 -prod
 
 Restart = always
