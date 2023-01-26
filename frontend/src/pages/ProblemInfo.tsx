@@ -7,7 +7,7 @@ import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import React, { useContext, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata,
@@ -19,15 +19,8 @@ import SourceEditor from "../components/SourceEditor";
 import KatexRender from "../components/katex/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn, Person } from "@mui/icons-material";
-import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
-
-const PlainLink = styled(Link)({
-  color: "inherit",
-  textDecoration: "none",
-  textTransform: "none",
-});
 
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
@@ -44,22 +37,24 @@ const UsefulLinks: React.FC<{
   return (
     <Box>
       {userId && (
-        <Button variant="outlined" startIcon={<Person />}>
-          <PlainLink
-            to={`/submissions/?${new URLSearchParams({
+        <Button
+          variant="outlined"
+          startIcon={<Person />}
+          href={`/submissions/?${new URLSearchParams({
               problem: problemId,
               user: userId,
               status: "AC",
             }).toString()}`}
           >
             My Submissions
-          </PlainLink>
         </Button>
       )}
-      <Button variant="outlined" startIcon={<FlashOn />}>
-        <PlainLink to={`/submissions/?${fastestParams.toString()}`}>
-          Fastest
-        </PlainLink>
+      <Button
+        variant="outlined"
+        startIcon={<FlashOn />}
+        href={`/submissions/?${fastestParams.toString()}`}
+      >
+        Fastest
       </Button>
       <Button
         variant="outlined"

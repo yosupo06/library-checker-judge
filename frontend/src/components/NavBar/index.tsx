@@ -159,34 +159,29 @@ const NavBar: React.FC = () => {
   let elements: ReactElement[] = [];
 
   elements.push(
-    <Button color="inherit">
-      <NavbarLink
-        to="/"
-        sx={{
-          fontSize: "16px",
-          fontWeight: "bolder",
-        }}
-      >
-        Library Checker
-      </NavbarLink>
+    <Button color="inherit" href="/" sx={{
+      fontSize: "16px",
+      fontWeight: "bolder",
+    }}>
+      Library Checker
     </Button>
   );
 
   elements.push(
-    <Button color="inherit">
-      <NavbarLink to="/submissions">Submissions</NavbarLink>
+    <Button color="inherit" href="/submissions">
+      Submissions
     </Button>
   );
 
   elements.push(
-    <Button color="inherit">
-      <NavbarLink to="/ranking">Ranking</NavbarLink>
+    <Button color="inherit" href="/ranking">
+      Ranking
     </Button>
   );
 
   elements.push(
-    <Button color="inherit">
-      <NavbarLink to="/help">Help</NavbarLink>
+    <Button color="inherit" href="/help">
+      Help
     </Button>
   );
 

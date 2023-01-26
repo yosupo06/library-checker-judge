@@ -10,7 +10,6 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import ListSubheader from "@mui/material/ListSubheader";
 import React from "react";
-import { Link } from "react-router-dom";
 import { useLocation } from "react-use";
 import {
   useLangList,
@@ -28,12 +27,6 @@ const FilterFormControl = styled(FormControl)({
   margin: 1,
   verticalAlign: "bottom",
   minWidth: "120px",
-});
-
-const PlainLink = styled(Link)({
-  color: "inherit",
-  textDecoration: "none",
-  textTransform: "none",
 });
 
 const Submissions: React.FC = () => {
@@ -229,15 +222,13 @@ const Submissions: React.FC = () => {
             <MenuItem value="+time">Time</MenuItem>
           </Select>
         </FilterFormControl>
-        <Button variant="outlined" type="submit">
-          <PlainLink
-            to={{
-              search: searchParams.toString(),
-            }}
-            onClick={() => submissionListQuery.remove()}
-          >
-            search
-          </PlainLink>
+        <Button
+          variant="outlined"
+          type="submit"
+          href={`?${searchParams.toString()}`}
+          onClick={() => submissionListQuery.remove()}
+        >
+          search
         </Button>
       </Box>
 
