@@ -80,10 +80,25 @@ type Metadata struct {
 	Value string
 }
 
-func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error {
-	passHash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+func generatePasswordHash(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
-		return errors.New("bcrypt broken")
+		return "", errors.New("bcrypt broken")
+	}
+	return string(hash), nil
+}
+
+func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error {
+	if name == "" {
+		return errors.New("empty user name")
+	}
+	if password == "" {
+		return errors.New("empty password")
+	}
+
+	passHash, err := generatePasswordHash(password)
+	if err != nil {
+		return err
 	}
 	user := User{
 		Name:     name,
@@ -91,8 +106,21 @@ func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error
 		Admin:    isAdmin,
 	}
 	if err := db.Create(&user).Error; err != nil {
-		return errors.New("this username are already registered")
+		return errors.New("this username is already registered")
 	}
+	return nil
+}
+
+func verifyUserPassword(db *gorm.DB, name string, password string) error {
+	user, err := fetchUser(db, name)
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(password)); err != nil {
+		return errors.New("password invalid")
+	}
+
 	return nil
 }
 

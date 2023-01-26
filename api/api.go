@@ -11,33 +11,15 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
 
 func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	if in.Name == "" {
-		return nil, errors.New("empty user name")
-	}
-	if in.Password == "" {
-		return nil, errors.New("empty password")
-	}
-	passHash, err := bcrypt.GenerateFromPassword([]byte(in.Password), 10)
+	token, err := s.authTokenManager.Register(s.db, in.Name, in.Password)
 	if err != nil {
-		return nil, errors.New("bcrypt broken")
-	}
-	user := User{
-		Name:     in.Name,
-		Passhash: string(passHash),
-	}
-	if err := s.db.Create(&user).Error; err != nil {
-		return nil, errors.New("this username are already registered")
-	}
-	token, err := s.authTokenManager.IssueToken(user)
-	if err != nil {
-		return nil, errors.New("broken")
+		return nil, err
 	}
 	return &pb.RegisterResponse{
 		Token: token,
@@ -45,15 +27,7 @@ func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Regi
 }
 
 func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
-	var user User
-	if err := s.db.Where("name = ?", in.Name).Take(&user).Error; err != nil {
-		return nil, errors.New("invalid username")
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(in.Password)); err != nil {
-		return nil, errors.New("invalid password")
-	}
-
-	token, err := s.authTokenManager.IssueToken(user)
+	token, err := s.authTokenManager.Login(s.db, in.Name, in.Password)
 	if err != nil {
 		return nil, err
 	}
