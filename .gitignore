@@ -1,5 +1,6 @@
+*.pb.go
+
 api/api
-api/proto/library_checker.pb.go
 
 judge/judge
 judge/judge.test

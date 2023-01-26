@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/golang-jwt/jwt"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 type AuthTokenManager struct {
@@ -23,9 +25,35 @@ func NewAuthTokenManager(hmacKey string) AuthTokenManager {
 	}
 }
 
-func (a *AuthTokenManager) IssueToken(user User) (string, error) {
+func (a *AuthTokenManager) Register(db *gorm.DB, name, password string) (string, error) {
+	if err := registerUser(db, name, password, false); err != nil {
+		return "", err
+	}
+
+	// Replace to login?
+	token, err := a.IssueToken(name)
+	if err != nil {
+		return "", errors.New("somehow broken")
+	}
+	return token, nil
+}
+
+func (a *AuthTokenManager) Login(db *gorm.DB, name, password string) (string, error) {
+	if err := verifyUserPassword(db, name, password); err != nil {
+		return "", err
+	}
+
+	token, err := a.IssueToken(name)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+func (a *AuthTokenManager) IssueToken(name string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": user.Name,
+		"user": name,
 	})
 	tokenString, err := token.SignedString(a.hmacKey)
 	if err != nil {
