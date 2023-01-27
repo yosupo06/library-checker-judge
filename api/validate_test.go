@@ -17,7 +17,7 @@ func TestUserNameValidate(t *testing.T) {
 		}
 	}
 
-	for _, name := range []string{"a a", "", "@"} {
+	for _, name := range []string{"a a", "", "@", " "} {
 		if err := validate.Struct(&UserNameParam{
 			UserName: name,
 		}); err == nil {

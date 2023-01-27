@@ -102,13 +102,6 @@ func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error
 		return err
 	}
 
-	if name == "" {
-		return errors.New("empty user name")
-	}
-	if password == "" {
-		return errors.New("empty password")
-	}
-
 	passHash, err := generatePasswordHash(password)
 	if err != nil {
 		return err
