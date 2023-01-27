@@ -15,6 +15,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
+
+	"github.com/go-playground/validator/v10"
 )
 
 // Problem is db table
@@ -89,6 +91,19 @@ func generatePasswordHash(password string) (string, error) {
 }
 
 func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error {
+	type UserParam struct {
+		User     string `validate:"required,alphanum,lt=50"`
+		Password string `validate:"required"`
+	}
+
+	userParam := &UserParam{
+		User:     name,
+		Password: password,
+	}
+	if err := validator.New().Struct(userParam); err != nil {
+		return err
+	}
+
 	if name == "" {
 		return errors.New("empty user name")
 	}
