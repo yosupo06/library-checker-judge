@@ -89,11 +89,17 @@ func generatePasswordHash(password string) (string, error) {
 }
 
 func registerUser(db *gorm.DB, name string, password string, isAdmin bool) error {
-	if name == "" {
-		return errors.New("empty user name")
+	type UserParam struct {
+		User     string `validate:"username"`
+		Password string `validate:"required"`
 	}
-	if password == "" {
-		return errors.New("empty password")
+
+	userParam := &UserParam{
+		User:     name,
+		Password: password,
+	}
+	if err := validate.Struct(userParam); err != nil {
+		return err
 	}
 
 	passHash, err := generatePasswordHash(password)
