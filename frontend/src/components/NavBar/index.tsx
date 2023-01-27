@@ -159,10 +159,14 @@ const NavBar: React.FC = () => {
   let elements: ReactElement[] = [];
 
   elements.push(
-    <Button color="inherit" href="/" sx={{
-      fontSize: "16px",
-      fontWeight: "bolder",
-    }}>
+    <Button
+      color="inherit"
+      href="/"
+      sx={{
+        fontSize: "16px",
+        fontWeight: "bolder",
+      }}
+    >
       Library Checker
     </Button>
   );

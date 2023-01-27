@@ -41,12 +41,12 @@ const UsefulLinks: React.FC<{
           variant="outlined"
           startIcon={<Person />}
           href={`/submissions/?${new URLSearchParams({
-              problem: problemId,
-              user: userId,
-              status: "AC",
-            }).toString()}`}
-          >
-            My Submissions
+            problem: problemId,
+            user: userId,
+            status: "AC",
+          }).toString()}`}
+        >
+          My Submissions
         </Button>
       )}
       <Button
