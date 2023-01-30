@@ -59,6 +59,6 @@ jobs:
     - id: copy judge-image
       name:	Run test_on_gce.py
       run: >
-      gcloud compute images create ${{ steps.instance-name.outputs.name }}
-      --source-image-family v1-${{ inputs.env }}_test-judge-image
-      --family v1-${{ inputs.env }}-judge-image
+        gcloud compute images create ${{ steps.instance-name.outputs.name }}
+        --source-image-family v1-${{ inputs.env }}_test-judge-image
+        --family v1-${{ inputs.env }}-judge-image
