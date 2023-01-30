@@ -1,4 +1,4 @@
-name: Prod-API-Deploy
+name: Judge image build test
 
 on:
   push:
