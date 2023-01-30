@@ -56,7 +56,7 @@ jobs:
       name: Generate instance template name
       run: echo "::set-output name=name::${{ inputs.env }}-judge-image-$(date +'%Y-%m-%d-%H-%M-%S')"
 
-    - id: copy judge-image
+    - id: copy-judge-image
       name:	Run test_on_gce.py
       run: >
         gcloud compute images create ${{ steps.instance-name.outputs.name }}
