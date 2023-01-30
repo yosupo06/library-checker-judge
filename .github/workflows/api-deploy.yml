@@ -1,9 +1,15 @@
 name: API-Deploy
 
 on:
-  push:
-    branches: 
-      - master
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ inputs.env }}-api-deploy
+  cancel-in-progress: true
 
 jobs:
   api-deploy:
@@ -34,11 +40,11 @@ jobs:
 
     - id: build-docker
       name: Build docker image
-      run: docker build -t asia.gcr.io/library-checker-project/judge-api -f Dockerfile.API .
+      run: docker build -t asia.gcr.io/library-checker-project/${{ inputs.env }}-api -f Dockerfile.API .
 
     - id: push-docker
       name: Push docker image
-      run: docker push asia.gcr.io/library-checker-project/judge-api
+      run: docker push asia.gcr.io/library-checker-project/${{ inputs.env }}-api
 
     # TODO: migrate to google-github-actions/deploy-cloudrun@v0
     - id: setup-cloud-sdk
@@ -49,8 +55,8 @@ jobs:
       name: Deploy API to Cloud Run
       run: >
         gcloud run deploy
-        judge-api-master
-        --image=asia.gcr.io/library-checker-project/judge-api
+        ${{ inputs.env }}-api
+        --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql
@@ -62,8 +68,8 @@ jobs:
       name: Deploy API(gRPC) to Cloud Run
       run: >
         gcloud run deploy
-        judge-grpcweb-api-master
-        --image=asia.gcr.io/library-checker-project/judge-api
+        ${{ inputs.env }}-api-grpcweb
+        --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql

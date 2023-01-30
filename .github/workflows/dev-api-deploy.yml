@@ -1,0 +1,10 @@
+name: API-Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  api-deploy:
+    uses: ./.github/workflows/api-deploy.yml
+    with:
+      env: dev
