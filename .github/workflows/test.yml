@@ -7,6 +7,6 @@ on:
 
 jobs:
   api-deploy:
-    uses: ./.github/workflows/judge/image-build.yml
+    uses: ./.github/workflows/judge-image-build.yml
     with:
       env: dev
