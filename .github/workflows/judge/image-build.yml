@@ -1,0 +1,64 @@
+name: Judge Image Build
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ inputs.env }}-judge-image-build
+  cancel-in-progress: true
+
+jobs:
+  build-judge-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - id: auth
+      uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+        service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
+        token_format: access_token
+    
+    - id: build-base-image
+      name: Build base image
+      run: packer build -var 'env=${{ inputs.env }}_test' .
+      working-directory: ./packer/base
+
+    - id: build-judge
+      name: Build judge
+      run: go build .
+      working-directory: ./judge
+
+    - id: build-judge-image
+      name: Build judge image
+      run: packer build -var 'env=${{ inputs.env }}_test' .
+      working-directory: ./packer/judge
+
+    - id: setup-cloud-sdk
+      name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+
+    - id: test-on-gce
+      name:	Run test_on_gce.py
+      run: ./test_on_gce.py --zone asia-northeast1-a --env ${{ inputs.env }}_test
+      working-directory: ./deploy
+
+    - id: instance-name
+      name: Generate instance template name
+      run: echo "::set-output name=name::${{ inputs.env }}-judge-image-$(date +'%Y-%m-%d-%H-%M-%S')"
+
+    - id: copy judge-image
+      name:	Run test_on_gce.py
+      run: >
+      gcloud compute images create ${{ steps.instance-name.outputs.name }} \
+      --source-image-family v1-${{ inputs.env }}_test-judge-image \
+      --family v1-${{ inputs.env }}-judge-image

@@ -1,0 +1,12 @@
+name: Prod-API-Deploy
+
+on:
+  push:
+    branches: 
+      - test/ci
+
+jobs:
+  api-deploy:
+    uses: ./.github/workflows/judge/image-build.yml
+    with:
+      env: dev
