@@ -6,9 +6,10 @@ on:
       env:
         required: true
         type: string
-  push:
-    branches: 
-      - master
+
+concurrency:
+  group: ${{ inputs.env }}-api-deploy
+  cancel-in-progress: true
 
 jobs:
   api-deploy:
