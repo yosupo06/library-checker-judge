@@ -1,0 +1,13 @@
+name: API-Deploy
+
+on:
+  push:
+    branches: 
+      - master
+      - test/ci
+
+jobs:
+  api-deploy:
+    uses: ./.github/workflows/api-deploy.yml
+    with:
+      env: prod
