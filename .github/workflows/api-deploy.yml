@@ -76,3 +76,4 @@ jobs:
         --args=-grpcweb,-pghost=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql,-pgpass-secret=projects/190778459730/secrets/postgre-pass/versions/latest,-hmackey-secret=projects/190778459730/secrets/hmac-key/versions/latest
         --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
         --max-instances=10
+        --allow-unauthenticated
