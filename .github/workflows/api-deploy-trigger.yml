@@ -1,4 +1,4 @@
-name: API-Deploy
+name: Prod-API-Deploy
 
 on:
   push:
