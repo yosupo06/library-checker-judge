@@ -54,7 +54,7 @@ jobs:
       name: Deploy API to Cloud Run
       run: >
         gcloud run deploy
-        judge-api-master
+        ${{ inputs.env }}-api
         --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
         --platform=managed
         --region=asia-northeast1
@@ -67,7 +67,7 @@ jobs:
       name: Deploy API(gRPC) to Cloud Run
       run: >
         gcloud run deploy
-        judge-grpcweb-api-master
+        ${{ inputs.env }}-api-grpcweb
         --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
         --platform=managed
         --region=asia-northeast1
