@@ -1,4 +1,4 @@
-name: Judge-Deploy
+name: Prod-Judge-Deploy
 
 on:
   push:
@@ -7,52 +7,7 @@ on:
       - test/ci
 
 jobs:
-  image-build:
-    uses: ./.github/workflows/judge-image-build.yml
+  judge-deploy:
+    uses: ./.github/workflows/judge-deploy.yml
     with:
       env: prod
-
-  deploy:
-    needs: [image-build]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - id: auth
-      uses: google-github-actions/auth@v0
-      with:
-        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-        service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
-        token_format: access_token
-
-
-    - id: setup-cloud-sdk
-      name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v0
-
-    - id: instance-template-name
-      name: Generate instance template name
-      run: echo "::set-output name=name::prod-judge-template-$(date +'%Y-%m-%d-%H-%M-%S')"
-
-    - id: create-judge-template
-      name:	Create judge template
-      run: >
-        gcloud compute instance-templates create ${{ steps.instance-template-name.outputs.name }}
-        --preemptible
-        --machine-type c2-standard-4
-        --image-family v1-prod-judge-image
-        --service-account gce-judge@library-checker-project.iam.gserviceaccount.com
-        --scopes default,cloud-platform
-        --boot-disk-size 50GB
-
-    - id: update-instance-group
-      name:	Update instance group
-      run: >
-        gcloud compute instance-groups managed rolling-action
-        start-update prod-judge-instance-group
-        --region asia-northeast1
-        --version=template=${{ steps.instance-name.outputs.name }}

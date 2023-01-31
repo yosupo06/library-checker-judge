@@ -1,0 +1,10 @@
+name: Dev-Judge-Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  judge-deploy:
+    uses: ./.github/workflows/judge-deploy.yml
+    with:
+      env: dev
