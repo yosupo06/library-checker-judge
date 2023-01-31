@@ -4,17 +4,16 @@ on:
   push:
     branches: 
       - master
+      - test/ci
 
 jobs:
-  build-base-image:
-    uses: ./.github/workflows/build-base-image.yml
+  image-build:
+    uses: ./.github/workflows/judge-image-build.yml
+    with:
+      env: prod
 
-  build-judge-image:
-    uses: ./.github/workflows/build-judge-image.yml
-    needs: [build-base-image]
-
-  judge-deploy:
-    needs: [build-base-image, build-judge-image]
+  deploy:
+    needs: [image-build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,14 +34,14 @@ jobs:
       name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
-    - id: instance-name
+    - id: instance-template-name
       name: Generate instance template name
       run: echo "::set-output name=name::prod-judge-template-$(date +'%Y-%m-%d-%H-%M-%S')"
 
     - id: create-judge-template
       name:	Create judge template
       run: >
-        gcloud compute instance-templates create ${{ steps.instance-name.outputs.name }}
+        gcloud compute instance-templates create ${{ steps.instance-template-name.outputs.name }}
         --preemptible
         --machine-type c2-standard-4
         --image-family v1-prod-judge-image
