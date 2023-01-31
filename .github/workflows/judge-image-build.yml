@@ -57,7 +57,7 @@ jobs:
       run: echo "::set-output name=name::${{ inputs.env }}-judge-image-$(date +'%Y-%m-%d-%H-%M-%S')"
 
     - id: copy-judge-image
-      name:	Run test_on_gce.py
+      name: Run test_on_gce.py
       run: >
         gcloud compute images create ${{ steps.instance-name.outputs.name }}
         --source-image-family v1-${{ inputs.env }}-test-judge-image
