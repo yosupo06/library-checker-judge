@@ -30,7 +30,7 @@ jobs:
     
     - id: build-base-image
       name: Build base image
-      run: packer build -var 'env=${{ inputs.env }}_test' .
+      run: packer build -var 'env=${{ inputs.env }}-test' .
       working-directory: ./packer/base
 
     - id: build-judge
@@ -40,7 +40,7 @@ jobs:
 
     - id: build-judge-image
       name: Build judge image
-      run: packer build -var 'env=${{ inputs.env }}_test' .
+      run: packer build -var 'env=${{ inputs.env }}-test' .
       working-directory: ./packer/judge
 
     - id: setup-cloud-sdk
@@ -49,7 +49,7 @@ jobs:
 
     - id: test-on-gce
       name:	Run test_on_gce.py
-      run: ./test_on_gce.py --zone asia-northeast1-a --env ${{ inputs.env }}_test
+      run: ./test_on_gce.py --zone asia-northeast1-a --env ${{ inputs.env }}-test
       working-directory: ./deploy
 
     - id: instance-name
@@ -60,5 +60,5 @@ jobs:
       name:	Run test_on_gce.py
       run: >
         gcloud compute images create ${{ steps.instance-name.outputs.name }}
-        --source-image-family v1-${{ inputs.env }}_test-judge-image
+        --source-image-family v1-${{ inputs.env }}-test-judge-image
         --family v1-${{ inputs.env }}-judge-image
