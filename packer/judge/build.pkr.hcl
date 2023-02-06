@@ -38,11 +38,16 @@ build {
     source = "judge.service"
     destination = "/tmp/judge.service"
   }
+  provisioner "file" {
+    source = "judge.sh"
+    destination = "/tmp/judge.sh"
+  }
   provisioner "shell" {
     inline = [
       "sudo cp /tmp/judge /root/judge",
       "sudo cp /tmp/langs.toml /root/langs.toml",
       "sudo cp /tmp/judge.service /usr/local/lib/systemd/system/judge.service",
+      "sudo cp /tmp/judge.sh /root/judge.sh",
     ]
   }
 
