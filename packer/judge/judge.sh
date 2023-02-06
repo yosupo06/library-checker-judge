@@ -16,4 +16,5 @@ API_PASS=$(gcloud secrets versions access latest --secret=api-judge-pass)
 -miniobucket=$MINIO_BUCKET \
 -apihost=$API_HOST \
 -apipass=$API_PASS \
--cgroup-parent=judge.slice
+-cgroup-parent=judge.slice \
+-prod
