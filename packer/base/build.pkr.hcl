@@ -90,7 +90,7 @@ build {
   }
   provisioner "shell" {
     inline = [
-      "sudo mkdir /etc/docker",
+      "sudo mkdir -p /etc/docker",
       "sudo cp /tmp/daemon.json /etc/docker/daemon.json",
     ]
   }
