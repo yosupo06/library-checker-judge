@@ -2,9 +2,13 @@ name: Dev-Judge-Deploy
 
 on:
   workflow_dispatch:
+    image_build:
+      default: true
+      type: boolean
 
 jobs:
   judge-deploy:
     uses: ./.github/workflows/judge-deploy.yml
     with:
       env: dev
+      image_build: ${{ inputs.image_build }}
