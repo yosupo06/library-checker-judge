@@ -2,9 +2,10 @@ name: Dev-Judge-Deploy
 
 on:
   workflow_dispatch:
-    image_build:
-      default: true
-      type: boolean
+    inputs:
+      image_build:
+        default: true
+        type: boolean
 
 jobs:
   judge-deploy:
