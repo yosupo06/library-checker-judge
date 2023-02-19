@@ -13,13 +13,13 @@ on:
 
 jobs:
   image-build:
-    if: inputs.image-build
+    if: inputs.image_build
     uses: ./.github/workflows/judge-image-build.yml
     with:
       env: ${{ inputs.env }}
 
   deploy:
-    if: success() || inputs.image-build
+    if: success() || inputs.image_build
     needs: [image-build]
     runs-on: ubuntu-latest
     permissions:
