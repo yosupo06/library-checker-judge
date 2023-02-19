@@ -2,13 +2,9 @@ name: Dev-API-Deploy
 
 on:
   workflow_dispatch:
-    image_build:
-      default: true
-      type: boolean
 
 jobs:
   api-deploy:
     uses: ./.github/workflows/api-deploy.yml
     with:
       env: dev
-      image_build: ${{ inputs.image_build }}
