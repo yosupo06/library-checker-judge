@@ -6,9 +6,14 @@ on:
       env:
         required: true
         type: string
+      image_build:
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   image-build:
+    if: inputs.image-build
     uses: ./.github/workflows/judge-image-build.yml
     with:
       env: ${{ inputs.env }}
