@@ -19,6 +19,7 @@ jobs:
       env: ${{ inputs.env }}
 
   deploy:
+    if: success() || inputs.image-build
     needs: [image-build]
     runs-on: ubuntu-latest
     permissions:
