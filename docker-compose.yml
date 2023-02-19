@@ -41,7 +41,6 @@ services:
   api:
     build:
       dockerfile: Dockerfile.API
-    command: -pghost=db -hmackey=dummy_secret
     ports:
       - 50051:50051
     depends_on:
@@ -51,6 +50,9 @@ services:
         condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
+      - HMAC_KEY=dummy_secret
+      - PG_HOST=db
+      - PG_PASS=passwd
     healthcheck:
         test: grpc_health_probe -addr localhost:50051
         timeout: 10s
@@ -60,7 +62,7 @@ services:
   api-grpcweb:
     build:
       dockerfile: Dockerfile.API
-    command: -grpcweb -pghost=db -hmackey=dummy_secret
+    command: -grpcweb
     ports:
       - 58080:50051
     depends_on:
@@ -70,6 +72,9 @@ services:
         condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
+      - HMAC_KEY=dummy_secret
+      - PG_HOST=db
+      - PG_PASS=passwd
     healthcheck:
         test: wget -q -O - localhost:50051/health || exit 1
         timeout: 10s
