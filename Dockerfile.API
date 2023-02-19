@@ -19,7 +19,8 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 COPY --from=builder /go/src/github.com/yosupo06/library-checker-judge/api/api .
+COPY ./api/api.sh .
 COPY ./langs/langs.toml .
 COPY --from=grpc_health_probe_getter /tmp/grpc_health_probe /bin/grpc_health_probe
 
-ENTRYPOINT ["./api", "--langs=./langs.toml"]
+ENTRYPOINT ["./api.sh", "--langs=./langs.toml"]

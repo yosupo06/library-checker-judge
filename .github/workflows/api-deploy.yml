@@ -60,7 +60,8 @@ jobs:
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql
-        --args=-pghost=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql,-pgpass-secret=projects/190778459730/secrets/postgre-pass/versions/latest,-hmackey-secret=projects/190778459730/secrets/hmac-key/versions/latest
+        --update-env-vars=PG_HOST=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql
+        --update-secrets=PG_PASS=postgre-pass/latest,HMAC_KEY=hmac-key/latest
         --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
         --max-instances=10
 
@@ -73,6 +74,8 @@ jobs:
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql
-        --args=-grpcweb,-pghost=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql,-pgpass-secret=projects/190778459730/secrets/postgre-pass/versions/latest,-hmackey-secret=projects/190778459730/secrets/hmac-key/versions/latest
+        --args=-grpcweb
+        --update-env-vars=PG_HOST=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql
+        --update-secrets=PG_PASS=postgre-pass/latest,HMAC_KEY=hmac-key/latest
         --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
         --max-instances=10
