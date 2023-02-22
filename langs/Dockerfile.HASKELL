@@ -4,9 +4,13 @@ RUN cargo build --release
 
 FROM haskell:9.0.2-slim
 
-RUN stack install --resolver lts-19.6 array bytestring containers deepseq hashable heaps io-streams lens mutable-containers massiv mono-traversable mtl random strict text transformers vector vector-algorithms word8
-COPY haskell_load.hs /tmp/
-RUN stack ghc -- /tmp/haskell_load.hs
+RUN cabal update && cabal install --lib \
+QuickCheck array attoparsec bitvec bytestring containers deepseq exceptions \
+extra fgl hashable heaps integer-logarithms lens linear-base massiv \
+mono-traversable mtl mutable-containers mwc-random parallel parsec primitive \
+psqueues random reflection regex-tdfa safe-exceptions template-haskell text \
+tf-random transformers unboxing-vector unordered-containers utility-ht vector \
+vector-algorithms vector-stream vector-th-unbox
 
 COPY --from=init-builder /home/rust/src/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
 

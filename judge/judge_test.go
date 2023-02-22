@@ -124,6 +124,10 @@ func TestHaskellStackAplusBAC(t *testing.T) {
 	testAplusBAC(t, "haskell", "ac_stack.hs")
 }
 
+func TestHaskellCabalAplusBAC(t *testing.T) {
+	testAplusBAC(t, "haskell", "ac_cabal.hs")
+}
+
 func TestCSharpAplusBAC(t *testing.T) {
 	testAplusBAC(t, "csharp", "ac.cs")
 }

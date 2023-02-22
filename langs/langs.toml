@@ -79,10 +79,10 @@
 [[langs]]
     id = "haskell"
     name = "GHC"
-    version = "ghc 9.0.2 + stack LTS 19.6"
+    version = "ghc 9.0.2"
     source = "main.hs"
     image_name = "library-checker-images-haskell"
-    compile = ["stack", "ghc", "--", "main.hs", "-O2"]
+    compile = ["ghc", "main.hs", "-O2"]
     exec = ["./main"]
 [[langs]]
     id = "csharp"
