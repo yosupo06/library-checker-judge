@@ -120,9 +120,6 @@ func TestRustAplusBAC(t *testing.T) {
 func TestHaskellAplusBAC(t *testing.T) {
 	testAplusBAC(t, "haskell", "ac.hs")
 }
-func TestHaskellStackAplusBAC(t *testing.T) {
-	testAplusBAC(t, "haskell", "ac_stack.hs")
-}
 
 func TestHaskellCabalAplusBAC(t *testing.T) {
 	testAplusBAC(t, "haskell", "ac_cabal.hs")
