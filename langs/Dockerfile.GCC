@@ -8,9 +8,10 @@ RUN apt-get install -y git
 WORKDIR /workdir
 RUN git clone https://github.com/atcoder/ac-library/ -b v1.4
 
-FROM gcc:12.1
+FROM debian:bullseye-slim
+
+COPY --from=gcc:12.2.0-bullseye /usr/local/ /usr/local
 COPY --from=builder /workdir/ac-library/atcoder /opt/ac-library/atcoder
-COPY init /usr/bin
 
 COPY --from=init-builder /home/rust/src/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
 
