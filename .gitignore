@@ -10,3 +10,5 @@ langs/init/target/
 deploy/__init__.py
 deploy/library_checker_pb2.py
 deploy/library_checker_pb2_grpc.py
+
+go.work
