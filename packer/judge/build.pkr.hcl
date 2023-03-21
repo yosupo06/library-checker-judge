@@ -7,7 +7,7 @@ source "googlecompute" "judge" {
   project_id = "library-checker-project"
   source_image_family = "v1-${var.env}-base-image"
   zone = "asia-northeast1-b"
-  machine_type = "n1-standard-2"
+  machine_type = "c2-standard-4"
   disk_size = 50
   ssh_username = "ubuntu"
   temporary_key_pair_type = "ed25519"
