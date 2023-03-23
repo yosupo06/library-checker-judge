@@ -302,7 +302,7 @@ func main() {
 	var err error
 
 	// init gRPC
-	conn := apiConnect(*apiHost, *prod)
+	conn := clientutil.ApiConnect(*apiHost, *prod)
 	defer conn.Close()
 	initClient(conn, *apiUser, *apiPass)
 

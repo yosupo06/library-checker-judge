@@ -19,4 +19,4 @@ require (
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )
 
-//replace github.com/yosupo06/library-checker-judge/api => ../api
+replace github.com/yosupo06/library-checker-judge/api => ../api
