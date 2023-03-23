@@ -10,5 +10,6 @@ on:
 jobs:
   problems-deploy:
     uses: ./.github/workflows/problems-deploy.yml
+    secrets: inherit
     with:
       env: prod
