@@ -1,12 +1,18 @@
-name: Deploy
+name: Problems-Deploy
 
 on:
-  push:
-    branches: 
-      - master
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ inputs.env }}-problems-deploy
+  cancel-in-progress: true
 
 jobs:
-  deploy:
+  probles-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

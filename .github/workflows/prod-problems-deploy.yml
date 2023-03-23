@@ -1,0 +1,13 @@
+name: Prod-Problems-Deploy
+
+on:
+  repository_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  problems-deploy:
+    uses: ./.github/workflows/problems-deploy.yml
+    with:
+      env: prod
