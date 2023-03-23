@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
@@ -246,6 +247,7 @@ func initClient(conn *grpc.ClientConn, apiUser, apiPassword string) {
 	if err != nil {
 		log.Fatal("Cannot get hostname:", err)
 	}
+	judgeName = judgeName + "-" + uuid.New().String()
 	log.Print("JudgeName: ", judgeName)
 }
 
