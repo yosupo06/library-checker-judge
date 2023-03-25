@@ -30,7 +30,7 @@ jobs:
     
     - uses: docker/login-action@v1
       with:
-        registry: asia.gcr.io
+        registry: asia-docker.pkg.dev
         username: oauth2accesstoken
         password: ${{ steps.auth.outputs.access_token }}
 
@@ -40,42 +40,31 @@ jobs:
 
     - id: build-docker
       name: Build docker image
-      run: docker build -t asia.gcr.io/library-checker-project/${{ inputs.env }}-api -f Dockerfile.API .
+      run: docker build -t asia-docker.pkg.dev/library-checker-project/${{ inputs.env }}-docker-repo/uploader -f Dockerfile.UPLOADER .
 
     - id: push-docker
       name: Push docker image
-      run: docker push asia.gcr.io/library-checker-project/${{ inputs.env }}-api
+      run: docker push asia-docker.pkg.dev/library-checker-project/${{ inputs.env }}-docker-repo/uploader
 
     # TODO: migrate to google-github-actions/deploy-cloudrun@v0
     - id: setup-cloud-sdk
       name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
-    - id: deploy-api
-      name: Deploy API to Cloud Run
+    - id: deploy-problems
+      name: Deploy Problems
       run: >
-        gcloud run deploy
-        ${{ inputs.env }}-api
-        --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
-        --platform=managed
-        --region=asia-northeast1
-        --add-cloudsql-instances=library-checker-sql
-        --update-env-vars=PG_HOST=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql
-        --update-secrets=PG_PASS=postgre-pass:latest,HMAC_KEY=hmac-key:latest
-        --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
-        --max-instances=10
-
-    - id: deploy-grpcweb-api
-      name: Deploy API(gRPC) to Cloud Run
-      run: >
-        gcloud run deploy
-        ${{ inputs.env }}-api-grpcweb
-        --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
-        --platform=managed
-        --region=asia-northeast1
-        --add-cloudsql-instances=library-checker-sql
-        --args=-grpcweb
-        --update-env-vars=PG_HOST=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql
-        --update-secrets=PG_PASS=postgre-pass:latest,HMAC_KEY=hmac-key:latest
-        --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
-        --max-instances=10
+        gcloud beta run jobs deploy ${{ inputs.env }}-upload \
+        --execute-now \
+        --wait \
+        --region=asia-northeast1 \
+        --image=asia-docker.pkg.dev/library-checker-project/${{ inputs.env }}-docker-repo/uploader
+        --cpu=4 \
+        --memory=16Gi \
+        --tasks=100 \
+        --parallelism=100 \
+        --max-retries=0 \
+        --set-cloudsql-instances=library-checker-sql \
+        --set-secrets=API_PASS=api-judge-pass:latest,MINIO_HOST=minio-host:latest,MINIO_ID=minio-id:latest,MINIO_SECRET=minio-secret:latest,MINIO_BUCKET=minio-bucket:latest \
+        --service-account=problems-deployer@library-checker-project.iam.gserviceaccount.com \
+        --quiet
