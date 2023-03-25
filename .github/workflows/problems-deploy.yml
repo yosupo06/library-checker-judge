@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  api-deploy:
+  problems-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
