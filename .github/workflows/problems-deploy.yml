@@ -53,7 +53,9 @@ jobs:
     # TODO: migrate to google-github-actions/deploy-cloudrun@v0
     - id: setup-cloud-sdk
       name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v0
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        install_components: beta
 
     - id: deploy-problems
       name: Deploy Problems
