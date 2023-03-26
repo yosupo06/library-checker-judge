@@ -30,6 +30,10 @@ jobs:
       run: ./build.sh
       working-directory: ./langs
 
+    - id: gen-protoc
+      name: Generate protoc
+      run: ./api/gen_protoc.sh
+
     - id: test-judge
       name: Test judge
       run: go test -v .
