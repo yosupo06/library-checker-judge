@@ -33,6 +33,10 @@ jobs:
       run: packer build -var 'env=${{ inputs.env }}-test' .
       working-directory: ./packer/base
 
+    - id: gen-protoc
+      name: Generate protoc
+      run: ./api/gen_protoc.sh
+
     - id: build-judge
       name: Build judge
       run: go build .
