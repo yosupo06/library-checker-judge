@@ -118,9 +118,9 @@ func main() {
 	pgHost := flag.String("pghost", "127.0.0.1", "postgre host")
 	pgUser := flag.String("pguser", "postgres", "postgre user")
 	pgPass := flag.String("pgpass", "passwd", "postgre password")
+	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
 
 	hmacKey := flag.String("hmackey", "", "hmac key")
-	hmacKeySecret := flag.String("hmackey-secret", "", "gcloud secret of hmac key")
 
 	portArg := flag.Int("port", -1, "port number")
 	flag.Parse()
@@ -134,11 +134,11 @@ func main() {
 	db := dbConnect(
 		*pgHost,
 		getEnv("POSTGRE_PORT", "5432"),
-		"librarychecker",
+		*pgTable,
 		*pgUser,
 		*pgPass,
 		getEnv("API_DB_LOG", "") != "")
-	authTokenManager := NewAuthTokenManager(getSecureString(*hmacKeySecret, *hmacKey))
+	authTokenManager := NewAuthTokenManager(*hmacKey)
 	s := NewGRPCServer(db, authTokenManager, *langsTomlPath)
 
 	if *isGRPCWeb {
