@@ -13,6 +13,7 @@ source "googlecompute" "judge" {
   temporary_key_pair_type = "ed25519"
   image_name = "v1-${var.env}-judge-image-{{timestamp}}"
   image_family = "v1-${var.env}-judge-image"
+  preemptible = true
 }
 
 build {
