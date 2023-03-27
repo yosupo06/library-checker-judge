@@ -60,6 +60,7 @@ jobs:
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql
+        --args=""
         --update-env-vars=PG_HOST=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql
         --update-secrets=PG_USER=${{ inputs.env }}-pg-user:latest,PG_PASS=${{ inputs.env }}-pg-pass:latest,PG_PASS=postgre-pass:latest,HMAC_KEY=hmac-key:latest
         --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
