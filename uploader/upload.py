@@ -19,7 +19,7 @@ if __name__ == "__main__":
         check=True
     )
 
-    API_HOST = "apiv1.yosupo.jp:443"
+    API_HOST = environ["API_HOST"]
     API_USER = "judge"
     API_PASS = environ["API_PASS"]
     MINIO_HOST = environ["MINIO_HOST"]

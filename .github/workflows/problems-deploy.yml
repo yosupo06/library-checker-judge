@@ -71,6 +71,6 @@ jobs:
         --parallelism=100
         --max-retries=0
         --set-cloudsql-instances=library-checker-sql
-        --set-secrets=API_PASS=api-judge-pass:latest,MINIO_HOST=minio-host:latest,MINIO_ID=minio-id:latest,MINIO_SECRET=minio-secret:latest,MINIO_BUCKET=minio-bucket:latest
+        --set-secrets=API_HOST=${{ inputs.env }}-api-host:latest,API_PASS=${{ inputs.env }}-api-judge-pass:latest,MINIO_HOST=minio-host:latest,MINIO_ID=minio-id:latest,MINIO_SECRET=minio-secret:latest,MINIO_BUCKET=minio-bucket:latest
         --service-account=problems-deployer@library-checker-project.iam.gserviceaccount.com
         --quiet
