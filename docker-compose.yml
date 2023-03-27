@@ -52,6 +52,8 @@ services:
       - API_DB_LOG=true
       - HMAC_KEY=dummy_secret
       - PG_HOST=db
+      - PG_TABLE=librarychecker
+      - PG_USER=postgres
       - PG_PASS=passwd
     healthcheck:
         test: grpc_health_probe -addr localhost:50051
@@ -74,6 +76,8 @@ services:
       - API_DB_LOG=true
       - HMAC_KEY=dummy_secret
       - PG_HOST=db
+      - PG_TABLE=librarychecker
+      - PG_USER=postgres
       - PG_PASS=passwd
     healthcheck:
         test: wget -q -O - localhost:50051/health || exit 1
