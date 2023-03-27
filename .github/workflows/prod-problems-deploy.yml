@@ -3,7 +3,7 @@ name: Prod-Problems-Deploy
 on:
   repository_dispatch:
     types: [prod-problems-deploy]
-  workflow_dispatch:
+  workflow_call:
 
 jobs:
   problems-deploy:
