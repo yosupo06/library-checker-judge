@@ -3,9 +3,7 @@ name: Prod-Problems-Deploy
 on:
   repository_dispatch:
     types: [prod-problems-deploy]
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
   problems-deploy:
