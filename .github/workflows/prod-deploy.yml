@@ -1,0 +1,20 @@
+name: Prod-Deploy
+
+on:
+  push:
+    branches: 
+      - master
+
+jobs:
+  api-deploy:
+    uses: ./.github/workflows/api-deploy.yml
+    with:
+      env: prod
+
+  problems-deploy:
+    uses: ./.github/workflows/prod-problems-deploy.yml
+
+  judge-deploy:
+    uses: ./.github/workflows/judge-deploy.yml
+    with:
+      env: prod
