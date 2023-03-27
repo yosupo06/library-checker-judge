@@ -1,0 +1,11 @@
+name: Dev-Problems-Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  problems-deploy:
+    uses: ./.github/workflows/problems-deploy.yml
+    secrets: inherit
+    with:
+      env: dev
