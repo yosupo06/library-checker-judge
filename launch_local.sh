@@ -8,4 +8,6 @@ docker compose down -v
 docker compose up -d --build --wait
 
 cd deploy && ./gen_protoc.sh && cd ..
-PYTHONPATH=../library-checker-problems ./deploy/problems_deploy.py ../library-checker-problems -p aplusb unionfind
+
+../library-checker-problems/generate.py --only-html -p aplusb unionfind
+cd uploader && go run . ../../library-checker-problems/sample/aplusb/info.toml ../../library-checker-problems/datastructure/unionfind/info.toml && cd ..
