@@ -6,17 +6,34 @@ on:
       env:
         required: true
         type: string
+      parallel:
+        default: 30
+        type: number
 
 concurrency:
   group: ${{ inputs.env }}-problems-deploy
   cancel-in-progress: true
 
 jobs:
+  gen-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+     - id: matrix
+       run: python3 -c "print('matrix={}'.format(list(map(str, range(0, ${{ inputs.parallel }})))))"
+      
+
   problems-deploy:
+    needs: gen-matrix
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    strategy:      
+      fail-fast: false
+      matrix:
+        index: ${{ fromJson(needs.gen-matrix.outputs.matrix) }}
 
     steps:
     - uses: actions/checkout@v3
@@ -74,8 +91,8 @@ jobs:
       run: >
         python3 upload.py
       env:
-        CLOUD_RUN_TASK_INDEX: '3'
-        CLOUD_RUN_TASK_COUNT: '100'
+        CLOUD_RUN_TASK_INDEX: '${{ matrix.index }}'
+        CLOUD_RUN_TASK_COUNT: '${{ inputs.parallel }}'
         API_HOST: '${{ steps.secrets.outputs.api-host }}'
         API_PASS: '${{ steps.secrets.outputs.api-judge-pass }}'
         MINIO_HOST: '${{ steps.secrets.outputs.minio-host }}'
