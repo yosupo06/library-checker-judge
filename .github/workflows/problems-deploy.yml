@@ -63,6 +63,11 @@ jobs:
           minio-secret:library-checker-project/minio-secret/latest
           minio-bucket:library-checker-project/minio-bucket/latest
 
+    - id: build-uploader
+      name: Build Uploader
+      working-directory: ./uploader
+      run: go build .
+
     - id: deploy-problems
       name: Deploy Problems
       working-directory: ./uploader
