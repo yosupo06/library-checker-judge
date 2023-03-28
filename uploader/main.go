@@ -33,20 +33,20 @@ func main() {
 
 	useTLS := flag.Bool("tls", false, "use https for api / minio")
 
+	t := flag.String("toml", "", "toml file of upload problem")
+
 	flag.Parse()
-	tomls := flag.Args()
 
-	ps := []problem{}
-
-	for _, t := range tomls {
-		p := problem{
-			root: *dir,
-			base: path.Dir(t),
-			name: path.Base(path.Dir(t)),
-		}
-		toml.DecodeFile(t, &p.info)
-		ps = append(ps, problem(p))
+	if *t == "" {
+		log.Fatal("Please specify toml")
 	}
+
+	p := problem{
+		root: *dir,
+		base: path.Dir(*t),
+		name: path.Base(path.Dir(*t)),
+	}
+	toml.DecodeFile(*t, &p.info)
 
 	// connect minio
 	mc, err := minio.New(
@@ -60,10 +60,8 @@ func main() {
 	client := pb.NewLibraryCheckerServiceClient(conn)
 	ctx := login(client, *apiUser, *apiPass)
 
-	for _, p := range ps {
-		if err := upload(p, mc, *minioBucket, client, ctx); err != nil {
-			log.Fatal("Failed to upload problem: ", err)
-		}
+	if err := upload(p, mc, *minioBucket, client, ctx); err != nil {
+		log.Fatal("Failed to upload problem: ", err)
 	}
 
 	if err := uploadCategories(*dir, client, ctx); err != nil {
