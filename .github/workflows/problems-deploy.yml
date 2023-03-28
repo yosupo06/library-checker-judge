@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       parallel:
-        default: 30
+        default: 10
         type: number
 
 concurrency:
@@ -55,19 +55,6 @@ jobs:
         workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
         service_account: cloud-run-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
-    
-    - uses: docker/login-action@v1
-      with:
-        registry: asia-docker.pkg.dev
-        username: oauth2accesstoken
-        password: ${{ steps.auth.outputs.access_token }}
-
-    # TODO: migrate to google-github-actions/deploy-cloudrun@v0
-    - id: setup-cloud-sdk
-      name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        install_components: beta
 
     - id: secrets
       uses: google-github-actions/get-secretmanager-secrets@v1
