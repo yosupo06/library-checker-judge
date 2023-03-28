@@ -9,7 +9,7 @@ if __name__ == "__main__":
     index = int(environ["CLOUD_RUN_TASK_INDEX"])
     count = int(environ["CLOUD_RUN_TASK_COUNT"])
 
-    tomls = sorted(list(filter(lambda p: not p.match('test/**/info.toml'), Path('./library-checker-problems/').glob('**/info.toml'))))[index::count]
+    tomls = sorted(list(filter(lambda p: not p.match('test/**/info.toml'), Path('../library-checker-problems/').glob('**/info.toml'))))[index::count]
 
     print("tomls: ", tomls)
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     for toml in tomls:
         subprocess.run(
-            ["./library-checker-problems/generate.py",
+            ["../library-checker-problems/generate.py",
                 "--only-html", str(toml.absolute())],
             check=True
         )
@@ -37,14 +37,14 @@ if __name__ == "__main__":
             ["-minioid", MINIO_ID] +
             ["-miniokey", MINIO_SECRET] +
             ["-miniobucket", MINIO_BUCKET] +
-            ["-dir", "./library-checker-problems"] +
+            ["-dir", "../library-checker-problems"] +
             ["-tls"] +
             ["-toml", str(toml.absolute())],
             check=True
         )
 
         subprocess.run(
-            ["./library-checker-problems/generate.py",
+            ["../library-checker-problems/generate.py",
                 "--clean", str(toml.absolute())],
             check=True
         )
