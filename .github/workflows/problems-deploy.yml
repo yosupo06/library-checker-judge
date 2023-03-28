@@ -69,7 +69,7 @@ jobs:
         CLOUD_RUN_TASK_INDEX: '3'
         CLOUD_RUN_TASK_COUNT: '100'
         API_HOST: '${{ steps.secrets.outputs.api-host }}'
-        API_JUDGE_PASS: '${{ steps.secrets.outputs.api-judge-pass }}'
+        API_PASS: '${{ steps.secrets.outputs.api-judge-pass }}'
         MINIO_HOST: '${{ steps.secrets.outputs.minio-host }}'
         MINIO_ID: '${{ steps.secrets.outputs.minio-id }}'
         MINIO_SECRET: '${{ steps.secrets.outputs.minio-secret }}'
