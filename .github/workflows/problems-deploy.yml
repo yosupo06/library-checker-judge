@@ -21,7 +21,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
      - id: matrix
-       run: python3 -c "import json; print('value={}'.format(json.dumps(list(map(str, range(0, ${{ inputs.parallel }}))))))"
+       run: python3 -c "import json; print('value="{}"'.format(json.dumps(list(map(str, range(0, ${{ inputs.parallel }}))))))"
       
 
   problems-deploy:
