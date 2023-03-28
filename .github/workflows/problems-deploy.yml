@@ -52,7 +52,7 @@ jobs:
     - id: secrets
       uses: google-github-actions/get-secretmanager-secrets@v1
       with:
-        secrets: >
+        secrets: |-
           api-host:library-checker-project/${{ inputs.env }}-api-host/latest
           api-judge-pass:library-checker-project/${{ inputs.env }}-api-judge-pass/latest
           minio-host:library-checker-project/minio-host/latest
