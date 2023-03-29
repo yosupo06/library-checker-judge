@@ -12,9 +12,11 @@ jobs:
       env: prod
 
   problems-deploy:
+    needs: api-deploy
     uses: ./.github/workflows/prod-problems-deploy.yml
 
   judge-deploy:
+    needs: problems-deploy
     uses: ./.github/workflows/judge-deploy.yml
     with:
       env: prod
