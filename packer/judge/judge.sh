@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -ev
+
 MINIO_HOST=$(gcloud secrets versions access latest --secret=minio-host)
 MINIO_ID=$(gcloud secrets versions access latest --secret=minio-id)
 MINIO_KEY=$(gcloud secrets versions access latest --secret=minio-secret)
