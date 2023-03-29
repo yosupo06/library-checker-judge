@@ -15,7 +15,7 @@ source "googlecompute" "judge" {
   image_family = "v1-${var.env}-judge-image"
   preemptible = true
   metadata = {
-    env = ${var.env}
+    env = "${var.env}"
   }
 }
 
