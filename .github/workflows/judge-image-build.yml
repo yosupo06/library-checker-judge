@@ -21,6 +21,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - id: setup-packer
+      uses: hashicorp/setup-packer@main
+
     - id: auth
       uses: google-github-actions/auth@v0
       with:
