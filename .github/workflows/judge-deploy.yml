@@ -36,7 +36,6 @@ jobs:
         service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
 
-
     - id: setup-cloud-sdk
       name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
@@ -55,6 +54,7 @@ jobs:
         --service-account gce-judge@library-checker-project.iam.gserviceaccount.com
         --scopes default,cloud-platform
         --boot-disk-size 50GB
+        --metadata env=${{ inputs.env }}
 
     - id: update-instance-group
       name:	Update instance group
