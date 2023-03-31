@@ -2,13 +2,15 @@
 
 set -ev
 
+ENV=$(curl -X GET -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/env")
+
 MINIO_HOST=$(gcloud secrets versions access latest --secret=minio-host)
 MINIO_ID=$(gcloud secrets versions access latest --secret=minio-id)
 MINIO_KEY=$(gcloud secrets versions access latest --secret=minio-secret)
 MINIO_BUCKET=$(gcloud secrets versions access latest --secret=minio-bucket)
 
-API_HOST="apiv1.yosupo.jp:443"
-API_PASS=$(gcloud secrets versions access latest --secret=api-judge-pass)
+API_HOST=$(gcloud secrets versions access latest --secret=$ENV-api-host)
+API_PASS=$(gcloud secrets versions access latest --secret=$ENV-api-judge-pass)
 
 /root/judge \
 -langs=/root/langs.toml \
