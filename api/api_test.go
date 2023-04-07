@@ -93,7 +93,7 @@ func createAPIClient(t *testing.T, db *gorm.DB) (pb.LibraryCheckerServiceClient,
 		t.Fatal(err)
 	}
 	autoTokenManager := NewAuthTokenManager("dummy-hmac-secret")
-	s := NewGRPCServer(db, autoTokenManager, "../langs/langs.toml")
+	s := NewGRPCServer(db, autoTokenManager, "../langs/langs.toml", false)
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			log.Fatal("Server exited: ", err)
