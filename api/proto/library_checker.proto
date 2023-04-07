@@ -30,6 +30,19 @@ service LibraryCheckerService {
     rpc FinishJudgeTask (FinishJudgeTaskRequest) returns (FinishJudgeTaskResponse) {}
 }
 
+service LibraryCheckerInternalService {
+    rpc Login (LoginRequest) returns (LoginResponse) {}
+    rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
+    rpc ChangeProblemInfo (ChangeProblemInfoRequest) returns (ChangeProblemInfoResponse) {}
+    rpc ChangeProblemCategories (ChangeProblemCategoriesRequest) returns (ChangeProblemCategoriesResponse) {}
+    rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
+
+    // --- Judge ---
+    rpc PopJudgeTask (PopJudgeTaskRequest) returns (PopJudgeTaskResponse) {}
+    rpc SyncJudgeTaskStatus (SyncJudgeTaskStatusRequest) returns (SyncJudgeTaskStatusResponse) {}
+    rpc FinishJudgeTask (FinishJudgeTaskRequest) returns (FinishJudgeTaskResponse) {}
+}
+
 // --- Register, Login ---
 
 message RegisterRequest {

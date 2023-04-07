@@ -35,6 +35,15 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 		Token: token,
 	}, nil
 }
+func (s *internalServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
+	token, err := s.authTokenManager.Login(s.db, in.Name, in.Password)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.LoginResponse{
+		Token: token,
+	}, nil
+}
 
 func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
 	name := ""
@@ -164,8 +173,59 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 		SourceUrl:   problem.SourceUrl,
 	}, nil
 }
+func (s *internalServer) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
+	name := in.Name
+	if name == "" {
+		return nil, errors.New("empty problem name")
+	}
+	var problem Problem
+	if err := s.db.Select("name, title, statement, timelimit, testhash, source_url").Where("name = ?", name).Take(&problem).Error; err != nil {
+		return nil, errors.New("failed to get problem")
+	}
+
+	return &pb.ProblemInfoResponse{
+		Title:       problem.Title,
+		Statement:   problem.Statement,
+		TimeLimit:   float64(problem.Timelimit) / 1000.0,
+		CaseVersion: problem.Testhash,
+		SourceUrl:   problem.SourceUrl,
+	}, nil
+}
 
 func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfoRequest) (*pb.ChangeProblemInfoResponse, error) {
+	currentUserName := getCurrentUserName(ctx)
+	currentUser, _ := fetchUser(s.db, currentUserName)
+	if !currentUser.Admin {
+		return nil, errors.New("must be admin")
+	}
+	name := in.Name
+	if name == "" {
+		return nil, errors.New("empty problem name")
+	}
+	var problem Problem
+	err := s.db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error
+	problem.Name = name
+	problem.Title = in.Title
+	problem.Timelimit = int32(in.TimeLimit * 1000.0)
+	problem.Statement = in.Statement
+	problem.Testhash = in.CaseVersion
+	problem.SourceUrl = in.SourceUrl
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Printf("add problem: %v", name)
+		if err := s.db.Create(&problem).Error; err != nil {
+			return nil, errors.New("failed to insert")
+		}
+	} else if err != nil {
+		log.Print(err)
+		return nil, errors.New("connect to db failed")
+	}
+	if err := s.db.Model(&Problem{}).Where("name = ?", name).Updates(problem).Error; err != nil {
+		return nil, errors.New("failed to update user")
+	}
+	return &pb.ChangeProblemInfoResponse{}, nil
+}
+func (s *internalServer) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfoRequest) (*pb.ChangeProblemInfoResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := fetchUser(s.db, currentUserName)
 	if !currentUser.Admin {
@@ -284,6 +344,45 @@ func canRejudge(currentUser User, submission *pb.SubmissionOverview) bool {
 }
 
 func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
+	currentUserName := getCurrentUserName(ctx)
+	currentUser, _ := fetchUser(s.db, currentUserName)
+	var sub Submission
+	sub, err := fetchSubmission(s.db, in.Id)
+	if err != nil {
+		return nil, err
+	}
+	var cases []SubmissionTestcaseResult
+	if err := s.db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
+		return nil, errors.New("Submission fetch failed")
+	}
+	overview, err := toProtoSubmission(&sub)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+
+	res := &pb.SubmissionInfoResponse{
+		Overview:     overview,
+		Source:       sub.Source,
+		CompileError: sub.CompileError,
+		CanRejudge:   canRejudge(currentUser, overview),
+	}
+
+	sort.Slice(cases, func(i, j int) bool {
+		return cases[i].Testcase < cases[j].Testcase
+	})
+
+	for _, c := range cases {
+		res.CaseResults = append(res.CaseResults, &pb.SubmissionCaseResult{
+			Case:   c.Testcase,
+			Status: c.Status,
+			Time:   float64(c.Time) / 1000.0,
+			Memory: int64(c.Memory),
+		})
+	}
+	return res, nil
+}
+func (s *internalServer) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := fetchUser(s.db, currentUserName)
 	var sub Submission
@@ -485,8 +584,108 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		SubmissionId: -1,
 	}, nil
 }
+func (s *internalServer) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (*pb.PopJudgeTaskResponse, error) {
+	currentUserName := getCurrentUserName(ctx)
+	currentUser, _ := fetchUser(s.db, currentUserName)
+	if !currentUser.Admin {
+		return nil, errors.New("permission denied")
+	}
+	if in.JudgeName == "" {
+		return nil, errors.New("JudgeName is empty")
+	}
+	for i := 0; i < 10; i++ {
+		task, err := popTask(s.db)
+		if err != nil {
+			return nil, err
+		}
+		if task.Submission == -1 {
+			// Judge queue is empty
+			return &pb.PopJudgeTaskResponse{
+				SubmissionId: -1,
+			}, nil
+		}
+		id := task.Submission
+
+		expectedTime := in.ExpectedTime.AsDuration()
+		if !in.ExpectedTime.IsValid() {
+			expectedTime = time.Minute
+		}
+		log.Println("Pop Submission:", id, expectedTime)
+
+		if err := registerSubmission(s.db, id, in.JudgeName, expectedTime, Waiting); err != nil {
+			log.Print(err)
+			continue
+		}
+		if err := pushTask(s.db, Task{
+			Submission: id,
+			Priority:   task.Priority + 1,
+			Available:  time.Now().Add(expectedTime),
+		}); err != nil {
+			log.Print(err)
+			return nil, err
+		}
+
+		log.Print("Clear SubmissionTestcaseResults: ", id)
+		if err := s.db.Where("submission = ?", id).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
+			log.Println(err)
+			return nil, errors.New("failed to clear submission testcase results")
+		}
+		return &pb.PopJudgeTaskResponse{
+			SubmissionId: task.Submission,
+		}, nil
+	}
+	log.Println("Too many invalid tasks")
+	return &pb.PopJudgeTaskResponse{
+		SubmissionId: -1,
+	}, nil
+}
 
 func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskStatusRequest) (*pb.SyncJudgeTaskStatusResponse, error) {
+	currentUserName := getCurrentUserName(ctx)
+	currentUser, _ := fetchUser(s.db, currentUserName)
+	if !currentUser.Admin {
+		return nil, errors.New("permission denied")
+	}
+	if in.JudgeName == "" {
+		return nil, errors.New("JudgeName is empty")
+	}
+	id := in.SubmissionId
+
+	expectedTime := in.ExpectedTime.AsDuration()
+	if !in.ExpectedTime.IsValid() {
+		expectedTime = time.Minute
+	}
+
+	if err := updateSubmissionRegistration(s.db, id, in.JudgeName, expectedTime); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	for _, testCase := range in.CaseResults {
+		if err := s.db.Create(&SubmissionTestcaseResult{
+			Submission: id,
+			Testcase:   testCase.Case,
+			Status:     testCase.Status,
+			Time:       int32(testCase.Time * 1000),
+			Memory:     testCase.Memory,
+		}).Error; err != nil {
+			log.Println(err)
+			return nil, errors.New("DB update failed")
+		}
+	}
+	if err := s.db.Model(&Submission{
+		ID: id,
+	}).Updates(&Submission{
+		Status:       in.Status,
+		MaxTime:      int32(in.Time * 1000),
+		MaxMemory:    in.Memory,
+		CompileError: in.CompileError,
+	}).Error; err != nil {
+		return nil, errors.New("update Status Failed")
+	}
+	return &pb.SyncJudgeTaskStatusResponse{}, nil
+}
+func (s *internalServer) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskStatusRequest) (*pb.SyncJudgeTaskStatusResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := fetchUser(s.db, currentUserName)
 	if !currentUser.Admin {
@@ -578,6 +777,52 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 	}
 	return &pb.FinishJudgeTaskResponse{}, nil
 }
+func (s *internalServer) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequest) (*pb.FinishJudgeTaskResponse, error) {
+	currentUserName := getCurrentUserName(ctx)
+	currentUser, _ := fetchUser(s.db, currentUserName)
+	if !currentUser.Admin {
+		return nil, errors.New("permission denied")
+	}
+	if in.JudgeName == "" {
+		return nil, errors.New("JudgeName is empty")
+	}
+	id := in.SubmissionId
+
+	if err := updateSubmissionRegistration(s.db, id, in.JudgeName, 10*time.Second); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	sub, err := fetchSubmission(s.db, id)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if err := s.db.Model(&Submission{
+		ID: id,
+	}).Updates(&Submission{
+		Status:    in.Status,
+		MaxTime:   int32(in.Time * 1000),
+		MaxMemory: in.Memory,
+		Hacked:    sub.PrevStatus == "AC" && in.Status != "AC",
+	}).Error; err != nil {
+		return nil, errors.New("update Status Failed")
+	}
+	if err := s.db.Model(&Submission{
+		ID: id,
+	}).Updates(map[string]interface{}{
+		"testhash": in.CaseVersion,
+	}).Error; err != nil {
+		log.Print(err)
+		return nil, errors.New("failed to clear judge_name")
+	}
+
+	if err := releaseSubmissionRegistration(s.db, id, in.JudgeName); err != nil {
+		return nil, errors.New("failed to release Submission")
+	}
+	return &pb.FinishJudgeTaskResponse{}, nil
+}
 
 type Category struct {
 	Title    string   `json:"title"`
@@ -608,6 +853,28 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 }
 
 func (s *server) ChangeProblemCategories(ctx context.Context, in *pb.ChangeProblemCategoriesRequest) (*pb.ChangeProblemCategoriesResponse, error) {
+	currentUserName := getCurrentUserName(ctx)
+	currentUser, _ := fetchUser(s.db, currentUserName)
+	if !currentUser.Admin {
+		return nil, errors.New("permission denied")
+	}
+	var categories []Category
+	for _, c := range in.Categories {
+		categories = append(categories, Category{
+			Title:    c.Title,
+			Problems: c.Problems,
+		})
+	}
+	data, err := json.Marshal(categories)
+	if err != nil {
+		return nil, err
+	}
+	if err := setMetadata(s.db, "problem_categories", string(data)); err != nil {
+		return nil, err
+	}
+	return &pb.ChangeProblemCategoriesResponse{}, nil
+}
+func (s *internalServer) ChangeProblemCategories(ctx context.Context, in *pb.ChangeProblemCategoriesRequest) (*pb.ChangeProblemCategoriesResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := fetchUser(s.db, currentUserName)
 	if !currentUser.Admin {

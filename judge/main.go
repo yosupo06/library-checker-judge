@@ -19,7 +19,7 @@ import (
 )
 
 // gRPC
-var client pb.LibraryCheckerServiceClient
+var client pb.LibraryCheckerInternalServiceClient
 var judgeName string
 var judgeCtx context.Context
 var testCaseFetcher TestCaseFetcher
@@ -231,7 +231,7 @@ func execJudge(judgedir string, submissionID int32) (err error) {
 }
 
 func initClient(conn *grpc.ClientConn, apiUser, apiPassword string) {
-	client = pb.NewLibraryCheckerServiceClient(conn)
+	client = pb.NewLibraryCheckerInternalServiceClient(conn)
 	ctx := context.Background()
 	resp, err := client.Login(ctx, &pb.LoginRequest{
 		Name:     apiUser,
