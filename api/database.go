@@ -297,3 +297,20 @@ func dbConnect(host, port, dbname, user, pass string, enableLogger bool) *gorm.D
 	log.Fatal("Cannot connect db 3 times")
 	return nil
 }
+
+
+func toProtoSubmission(submission *Submission) (*pb.SubmissionOverview, error) {
+	overview := &pb.SubmissionOverview{
+		Id:           int32(submission.ID),
+		ProblemName:  submission.Problem.Name,
+		ProblemTitle: submission.Problem.Title,
+		UserName:     submission.User.Name,
+		Lang:         submission.Lang,
+		IsLatest:     submission.Testhash == submission.Problem.Testhash,
+		Status:       submission.Status,
+		Hacked:       submission.Hacked,
+		Time:         float64(submission.MaxTime) / 1000.0,
+		Memory:       int64(submission.MaxMemory),
+	}
+	return overview, nil
+}

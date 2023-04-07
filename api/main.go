@@ -20,9 +20,6 @@ import (
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
 	"gorm.io/gorm"
-
-	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 func getEnv(key, defaultValue string) string {
@@ -46,22 +43,6 @@ func (h *healthHandler) Watch(*health.HealthCheckRequest, health.Health_WatchSer
 	return status.Error(codes.Unimplemented, "watch is not implemented.")
 }
 
-func toProtoSubmission(submission *Submission) (*pb.SubmissionOverview, error) {
-	overview := &pb.SubmissionOverview{
-		Id:           int32(submission.ID),
-		ProblemName:  submission.Problem.Name,
-		ProblemTitle: submission.Problem.Title,
-		UserName:     submission.User.Name,
-		Lang:         submission.Lang,
-		IsLatest:     submission.Testhash == submission.Problem.Testhash,
-		Status:       submission.Status,
-		Hacked:       submission.Hacked,
-		Time:         float64(submission.MaxTime) / 1000.0,
-		Memory:       int64(submission.MaxMemory),
-	}
-	return overview, nil
-}
-
 type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
 	db               *gorm.DB
@@ -69,46 +50,32 @@ type server struct {
 	authTokenManager AuthTokenManager
 }
 
-func NewGRPCServer(db *gorm.DB, authTokenManager AuthTokenManager, langsTomlPath string) *grpc.Server {
+type internalServer struct {
+	pb.UnimplementedLibraryCheckerInternalServiceServer
+	db               *gorm.DB
+	langs            []*pb.Lang
+	authTokenManager AuthTokenManager
+}
+
+func NewGRPCServer(db *gorm.DB, authTokenManager AuthTokenManager, langsTomlPath string, internal bool) *grpc.Server {
 	// launch gRPC server
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(authTokenManager.authnFunc)))
-	pb.RegisterLibraryCheckerServiceServer(s, &server{
-		db:               db,
-		langs:            ReadLangs(langsTomlPath),
-		authTokenManager: authTokenManager,
-	})
+
+	if internal {
+		pb.RegisterLibraryCheckerInternalServiceServer(s, &internalServer{
+			db:               db,
+			langs:            ReadLangs(langsTomlPath),
+			authTokenManager: authTokenManager,
+		})
+	} else {
+		pb.RegisterLibraryCheckerServiceServer(s, &server{
+			db:               db,
+			langs:            ReadLangs(langsTomlPath),
+			authTokenManager: authTokenManager,
+		})
+	}
 	return s
-}
-
-func getSecureString(secureKey, defaultValue string) string {
-	if secureKey == "" {
-		if defaultValue == "" {
-			log.Fatal("both secureKey and defaultValue is empty")
-		}
-		return defaultValue
-	}
-
-	// Create the client.
-	ctx := context.Background()
-	client, err := secretmanager.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("failed to create secretmanager client: %v", err)
-	}
-	defer client.Close()
-
-	// Build the request.
-	req := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: secureKey,
-	}
-
-	// Call the API.
-	result, err := client.AccessSecretVersion(ctx, req)
-	if err != nil {
-		log.Fatalf("failed to access secret version: %v", err)
-	}
-
-	return string(result.Payload.Data)
 }
 
 func main() {
@@ -139,7 +106,7 @@ func main() {
 		*pgPass,
 		getEnv("API_DB_LOG", "") != "")
 	authTokenManager := NewAuthTokenManager(*hmacKey)
-	s := NewGRPCServer(db, authTokenManager, *langsTomlPath)
+	s := NewGRPCServer(db, authTokenManager, *langsTomlPath, !*isGRPCWeb)
 
 	if *isGRPCWeb {
 		log.Print("launch gRPCWeb server port=", port)

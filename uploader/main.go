@@ -57,7 +57,7 @@ func main() {
 	}
 
 	conn := clientutil.ApiConnect(*apiHost, *useTLS)
-	client := pb.NewLibraryCheckerServiceClient(conn)
+	client := pb.NewLibraryCheckerInternalServiceClient(conn)
 	ctx := login(client, *apiUser, *apiPass)
 
 	if err := upload(p, mc, *minioBucket, client, ctx); err != nil {
@@ -69,7 +69,7 @@ func main() {
 	}
 }
 
-func upload(p problem, mc *minio.Client, bucket string, client pb.LibraryCheckerServiceClient, ctx context.Context) error {
+func upload(p problem, mc *minio.Client, bucket string, client pb.LibraryCheckerInternalServiceClient, ctx context.Context) error {
 	log.Print("Upload: ", p.name)
 
 	v, err := p.version()
@@ -207,7 +207,7 @@ func (p *problem) version() (string, error) {
 	return joinHashes(hashes), nil
 }
 
-func login(client pb.LibraryCheckerServiceClient, user, password string) context.Context {
+func login(client pb.LibraryCheckerInternalServiceClient, user, password string) context.Context {
 	ctx := context.Background()
 	resp, err := client.Login(ctx, &pb.LoginRequest{
 		Name:     user,
@@ -220,7 +220,7 @@ func login(client pb.LibraryCheckerServiceClient, user, password string) context
 	return clientutil.ContextWithToken(ctx, resp.Token)
 }
 
-func uploadCategories(dir string, client pb.LibraryCheckerServiceClient, ctx context.Context) error {
+func uploadCategories(dir string, client pb.LibraryCheckerInternalServiceClient, ctx context.Context) error {
 	var data struct {
 		Categories []struct {
 			Name     string
