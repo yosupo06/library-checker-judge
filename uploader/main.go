@@ -17,6 +17,8 @@ import (
 	"github.com/minio/minio-go/v6"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"github.com/yosupo06/library-checker-judge/database"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -25,6 +27,11 @@ func main() {
 	apiHost := flag.String("apihost", "localhost:50051", "api host")
 	apiUser := flag.String("apiuser", "upload", "api user")
 	apiPass := flag.String("apipass", "password", "api password")
+
+	pgHost := flag.String("pghost", "localhost", "postgre host")
+	pgUser := flag.String("pguser", "postgres", "postgre user")
+	pgPass := flag.String("pgpass", "passwd", "postgre password")
+	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
 
 	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
 	minioID := flag.String("minioid", "minio", "minio ID")
@@ -36,6 +43,15 @@ func main() {
 	t := flag.String("toml", "", "toml file of upload problem")
 
 	flag.Parse()
+
+	// connect db
+	db := database.Connect(
+		*pgHost,
+		"5432",
+		*pgTable,
+		*pgUser,
+		*pgPass,
+		false)
 
 	if *t == "" {
 		log.Fatal("Please specify toml")
@@ -60,7 +76,7 @@ func main() {
 	client := pb.NewLibraryCheckerInternalServiceClient(conn)
 	ctx := login(client, *apiUser, *apiPass)
 
-	if err := upload(p, mc, *minioBucket, client, ctx); err != nil {
+	if err := upload(p, mc, *minioBucket, db); err != nil {
 		log.Fatal("Failed to upload problem: ", err)
 	}
 
@@ -69,7 +85,7 @@ func main() {
 	}
 }
 
-func upload(p problem, mc *minio.Client, bucket string, client pb.LibraryCheckerInternalServiceClient, ctx context.Context) error {
+func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB) error {
 	log.Print("Upload: ", p.name)
 
 	v, err := p.version()
@@ -119,13 +135,13 @@ func upload(p problem, mc *minio.Client, bucket string, client pb.LibraryChecker
 
 	source := fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
 
-	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
-		Name:        p.name,
-		Title:       p.info.Title,
-		TimeLimit:   p.info.TimeLimit,
-		Statement:   string(statement),
-		CaseVersion: v,
-		SourceUrl:   source,
+	if err := database.SaveProblem(db, database.Problem{
+		Name:      p.name,
+		Title:     p.info.Title,
+		Timelimit: int32(p.info.TimeLimit * 1000),
+		Statement: string(statement),
+		SourceUrl: source,
+		Testhash:  v,
 	}); err != nil {
 		return err
 	}
