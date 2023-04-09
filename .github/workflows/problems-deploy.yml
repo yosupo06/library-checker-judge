@@ -53,7 +53,7 @@ jobs:
       uses: google-github-actions/auth@v0
       with:
         workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-        service_account: cloud-run-deployer@library-checker-project.iam.gserviceaccount.com
+        service_account: problems-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
 
     - id: secrets
@@ -62,7 +62,9 @@ jobs:
         secrets: |-
           api-host:library-checker-project/${{ inputs.env }}-api-host/latest
           api-judge-pass:library-checker-project/${{ inputs.env }}-api-judge-pass/latest
-          minio-host:library-checker-project/minio-host/latest
+          pg-user:library-checker-project/${{ inputs.env }}-pg-user/latest
+          pg-pass:library-checker-project/${{ inputs.env }}-pg-pass/latest
+          pg-table:library-checker-project/${{ inputs.env }}-pg-table/latest
           minio-id:library-checker-project/minio-id/latest
           minio-secret:library-checker-project/minio-secret/latest
           minio-bucket:library-checker-project/minio-bucket/latest
@@ -72,16 +74,26 @@ jobs:
       working-directory: ./uploader
       run: go build .
 
+    - id: download-cloud-sql-proxy
+      working-directory: ./uploader
+      run: |
+        curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.2/cloud-sql-proxy.linux.amd64
+        chmod +x ./cloud-sql-proxy
+
     - id: deploy-problems
       name: Deploy Problems
       working-directory: ./uploader
       run: >
+        ./cloud-sql-proxy library-checker-project:asia-northeast1:library-checker-sql &
         python3 upload.py
       env:
         CLOUD_RUN_TASK_INDEX: '${{ matrix.index }}'
         CLOUD_RUN_TASK_COUNT: '${{ inputs.parallel }}'
         API_HOST: '${{ steps.secrets.outputs.api-host }}'
         API_PASS: '${{ steps.secrets.outputs.api-judge-pass }}'
+        PG_USER: '${{ steps.secrets.outputs.pg-user }}'
+        PG_PASS: '${{ steps.secrets.outputs.pg-pass }}'
+        PG_TABLE: '${{ steps.secrets.outputs.pg-table }}'
         MINIO_HOST: '${{ steps.secrets.outputs.minio-host }}'
         MINIO_ID: '${{ steps.secrets.outputs.minio-id }}'
         MINIO_SECRET: '${{ steps.secrets.outputs.minio-secret }}'
