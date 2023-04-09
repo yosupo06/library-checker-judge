@@ -17,6 +17,49 @@ import (
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
+func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStatus, error) {
+	type Result struct {
+		ProblemName string
+		LatestAC    bool
+	}
+	var results = make([]Result, 0)
+	if err := db.
+		Model(&database.Submission{}).
+		Joins("left join problems on submissions.problem_name = problems.name").
+		Select("problem_name, bool_or(submissions.testhash=problems.testhash) as latest_ac").
+		Where("status = 'AC' and user_name = ?", userName).
+		Group("problem_name").
+		Find(&results).Error; err != nil {
+		log.Print(err)
+		return nil, errors.New("failed sql query")
+	}
+	stats := make(map[string]pb.SolvedStatus)
+	for _, result := range results {
+		if result.LatestAC {
+			stats[result.ProblemName] = pb.SolvedStatus_LATEST_AC
+		} else {
+			stats[result.ProblemName] = pb.SolvedStatus_AC
+		}
+	}
+	return stats, nil
+}
+
+func ToProtoSubmission(submission *database.Submission) (*pb.SubmissionOverview, error) {
+	overview := &pb.SubmissionOverview{
+		Id:           int32(submission.ID),
+		ProblemName:  submission.Problem.Name,
+		ProblemTitle: submission.Problem.Title,
+		UserName:     submission.User.Name,
+		Lang:         submission.Lang,
+		IsLatest:     submission.Testhash == submission.Problem.Testhash,
+		Status:       submission.Status,
+		Hacked:       submission.Hacked,
+		Time:         float64(submission.MaxTime) / 1000.0,
+		Memory:       int64(submission.MaxMemory),
+	}
+	return overview, nil
+}
+
 func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	token, err := s.authTokenManager.Register(s.db, in.Name, in.Password)
 	if err != nil {
@@ -63,7 +106,7 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 	if err != nil {
 		return nil, errors.New("invalid user name")
 	}
-	stats, err := database.FetchUserStatistics(s.db, name)
+	stats, err := FetchUserStatistics(s.db, name)
 	if err != nil {
 		return nil, errors.New("failed to fetch statistics")
 	}
@@ -356,7 +399,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	if err := s.db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
 		return nil, errors.New("Submission fetch failed")
 	}
-	overview, err := database.ToProtoSubmission(&sub)
+	overview, err := ToProtoSubmission(&sub)
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -395,7 +438,7 @@ func (s *internalServer) SubmissionInfo(ctx context.Context, in *pb.SubmissionIn
 	if err := s.db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
 		return nil, errors.New("Submission fetch failed")
 	}
-	overview, err := database.ToProtoSubmission(&sub)
+	overview, err := ToProtoSubmission(&sub)
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -467,7 +510,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		Count: int32(count),
 	}
 	for _, sub := range submissions {
-		protoSub, err := database.ToProtoSubmission(&sub)
+		protoSub, err := ToProtoSubmission(&sub)
 		if err != nil {
 			log.Print(err)
 			return nil, err

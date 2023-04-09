@@ -10,7 +10,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/lib/pq"
-	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -240,33 +239,6 @@ func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
 	return sub, nil
 }
 
-func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStatus, error) {
-	type Result struct {
-		ProblemName string
-		LatestAC    bool
-	}
-	var results = make([]Result, 0)
-	if err := db.
-		Model(&Submission{}).
-		Joins("left join problems on submissions.problem_name = problems.name").
-		Select("problem_name, bool_or(submissions.testhash=problems.testhash) as latest_ac").
-		Where("status = 'AC' and user_name = ?", userName).
-		Group("problem_name").
-		Find(&results).Error; err != nil {
-		log.Print(err)
-		return nil, errors.New("failed sql query")
-	}
-	stats := make(map[string]pb.SolvedStatus)
-	for _, result := range results {
-		if result.LatestAC {
-			stats[result.ProblemName] = pb.SolvedStatus_LATEST_AC
-		} else {
-			stats[result.ProblemName] = pb.SolvedStatus_AC
-		}
-	}
-	return stats, nil
-}
-
 func PushTask(db *gorm.DB, task Task) error {
 	log.Print("Insert task:", task)
 	if err := db.Create(&task).Error; err != nil {
@@ -296,20 +268,4 @@ func PopTask(db *gorm.DB) (Task, error) {
 		return nil
 	})
 	return task, err
-}
-
-func ToProtoSubmission(submission *Submission) (*pb.SubmissionOverview, error) {
-	overview := &pb.SubmissionOverview{
-		Id:           int32(submission.ID),
-		ProblemName:  submission.Problem.Name,
-		ProblemTitle: submission.Problem.Title,
-		UserName:     submission.User.Name,
-		Lang:         submission.Lang,
-		IsLatest:     submission.Testhash == submission.Problem.Testhash,
-		Status:       submission.Status,
-		Hacked:       submission.Hacked,
-		Time:         float64(submission.MaxTime) / 1000.0,
-		Memory:       int64(submission.MaxMemory),
-	}
-	return overview, nil
 }
