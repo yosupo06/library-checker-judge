@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/minio/minio-go/v6 v6.0.57
-	github.com/yosupo06/library-checker-judge/api v0.0.0-20230407183104-0e83a2bd05ef
+	github.com/yosupo06/library-checker-judge/api v0.0.0-00010101000000-000000000000
 )
 
 require (
