@@ -20,8 +20,10 @@ func FetchProblem(db *gorm.DB, name string) (*Problem, error) {
 	if name == "" {
 		return nil, errors.New("empty problem name")
 	}
-	var problem Problem
-	if err := db.Select("name, title, statement, timelimit, testhash, source_url").Where("name = ?", name).Take(&problem).Error; err != nil {
+	problem := Problem{
+		Name: name,
+	}
+	if err := db.First(&problem).Error; err != nil {
 		return nil, err
 	}
 
