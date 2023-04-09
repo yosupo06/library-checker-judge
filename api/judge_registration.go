@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/yosupo06/library-checker-judge/database"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -38,7 +39,7 @@ func (status RegistrationStatus) String() string {
 	}
 }
 
-func currentRegistrationStatus(sub *Submission, judgeName string) RegistrationStatus {
+func currentRegistrationStatus(sub *database.Submission, judgeName string) RegistrationStatus {
 	now := time.Now()
 
 	if sub.JudgeName != "" && sub.JudgePing.After(now) {
@@ -57,7 +58,7 @@ func currentRegistrationStatus(sub *Submission, judgeName string) RegistrationSt
 
 func changeRegistrationStatus(db *gorm.DB, id int32, judgeName string, updateJudgeName string, expiration time.Duration, expect RegistrationStatus) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		sub := &Submission{}
+		sub := &database.Submission{}
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(sub, id).Error; err != nil {
 			log.Print(err)
 			return errors.New("Submission fetch failed")
@@ -98,7 +99,7 @@ func toWaitingJudge(db *gorm.DB, id int32, priority int32, after time.Duration) 
 		return err
 	}
 
-	sub := &Submission{}
+	sub := &database.Submission{}
 	if err := db.Take(sub, id).Error; err != nil {
 		log.Print(err)
 		return errors.New("failed to fetch submission")
@@ -110,7 +111,7 @@ func toWaitingJudge(db *gorm.DB, id int32, priority int32, after time.Duration) 
 		return errors.New("failed to update status")
 	}
 
-	if err := pushTask(db, Task{
+	if err := database.PushTask(db, database.Task{
 		Submission: id,
 		Available:  time.Now().Add(after),
 		Priority:   priority,

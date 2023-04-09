@@ -10,11 +10,10 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/lib/pq v1.10.7
-	golang.org/x/crypto v0.8.0
+	github.com/yosupo06/library-checker-judge/database v0.0.0-00010101000000-000000000000
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
-	gorm.io/driver/postgres v1.5.0
 	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
 )
 
@@ -32,10 +31,13 @@ require (
 	github.com/klauspost/compress v1.16.4 // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/rs/cors v1.8.3 // indirect
+	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd // indirect
+	gorm.io/driver/postgres v1.5.0 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )
+
+replace github.com/yosupo06/library-checker-judge/database => ../database

@@ -1,11 +1,16 @@
 FROM golang:1.18 as builder
+
 WORKDIR /go/src/github.com/yosupo06/library-checker-judge/api
 
-COPY api/go.mod .
-COPY api/go.sum .
+COPY ./api/go.mod /go/src/github.com/yosupo06/library-checker-judge/api/
+COPY ./api/go.sum /go/src/github.com/yosupo06/library-checker-judge/api/
+
+COPY ./database/go.mod /go/src/github.com/yosupo06/library-checker-judge/database/
+COPY ./database/go.sum /go/src/github.com/yosupo06/library-checker-judge/database/
+
 RUN go mod download
 
-COPY api/ .
+COPY . /go/src/github.com/yosupo06/library-checker-judge/
 
 RUN CGO_ENABLED=0 GOOS=linux go build .
 
