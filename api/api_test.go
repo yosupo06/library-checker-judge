@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"github.com/yosupo06/library-checker-judge/database"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -63,10 +64,10 @@ func createTestDB(t *testing.T) *gorm.DB {
 		t.Fatal("exec failed: ", err.Error())
 	}
 
-	db := dbConnect("localhost", "5432", dbName, "postgres", "passwd", getEnv("API_DB_LOG", "") != "")
+	db := database.Connect("localhost", "5432", dbName, "postgres", "passwd", getEnv("API_DB_LOG", "") != "")
 
-	registerUser(db, "admin", "password", true)
-	registerUser(db, "tester", "password", false)
+	database.RegisterUser(db, "admin", "password", true)
+	database.RegisterUser(db, "tester", "password", false)
 
 	client, close := createAPIClient(t, db)
 	defer close()

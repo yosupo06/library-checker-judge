@@ -12,6 +12,7 @@ import (
 
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"github.com/yosupo06/library-checker-judge/database"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	health "google.golang.org/grpc/health/grpc_health_v1"
@@ -98,7 +99,7 @@ func main() {
 	}
 
 	// connect db
-	db := dbConnect(
+	db := database.Connect(
 		*pgHost,
 		getEnv("POSTGRE_PORT", "5432"),
 		*pgTable,

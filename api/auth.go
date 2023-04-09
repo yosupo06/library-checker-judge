@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
+	"github.com/yosupo06/library-checker-judge/database"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +27,7 @@ func NewAuthTokenManager(hmacKey string) AuthTokenManager {
 }
 
 func (a *AuthTokenManager) Register(db *gorm.DB, name, password string) (string, error) {
-	if err := registerUser(db, name, password, false); err != nil {
+	if err := database.RegisterUser(db, name, password, false); err != nil {
 		return "", err
 	}
 
@@ -39,7 +40,7 @@ func (a *AuthTokenManager) Register(db *gorm.DB, name, password string) (string,
 }
 
 func (a *AuthTokenManager) Login(db *gorm.DB, name, password string) (string, error) {
-	if err := verifyUserPassword(db, name, password); err != nil {
+	if err := database.VerifyUserPassword(db, name, password); err != nil {
 		return "", err
 	}
 
