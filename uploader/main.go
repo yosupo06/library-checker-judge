@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"flag"
@@ -15,18 +14,12 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/minio/minio-go/v6"
-	"github.com/yosupo06/library-checker-judge/api/clientutil"
-	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
 	"gorm.io/gorm"
 )
 
 func main() {
 	dir := flag.String("dir", "../../library-checker-problems", "directory of library-checker-problems")
-
-	apiHost := flag.String("apihost", "localhost:50051", "api host")
-	apiUser := flag.String("apiuser", "upload", "api user")
-	apiPass := flag.String("apipass", "password", "api password")
 
 	pgHost := flag.String("pghost", "localhost", "postgre host")
 	pgUser := flag.String("pguser", "postgres", "postgre user")
@@ -72,15 +65,11 @@ func main() {
 		log.Fatal("Cannot connect to Minio:", err)
 	}
 
-	conn := clientutil.ApiConnect(*apiHost, *useTLS)
-	client := pb.NewLibraryCheckerInternalServiceClient(conn)
-	ctx := login(client, *apiUser, *apiPass)
-
 	if err := upload(p, mc, *minioBucket, db); err != nil {
 		log.Fatal("Failed to upload problem: ", err)
 	}
 
-	if err := uploadCategories(*dir, client, ctx); err != nil {
+	if err := uploadCategories(*dir, db); err != nil {
 		log.Fatal("Failed to update categories: ", err)
 	}
 }
@@ -223,20 +212,7 @@ func (p *problem) version() (string, error) {
 	return joinHashes(hashes), nil
 }
 
-func login(client pb.LibraryCheckerInternalServiceClient, user, password string) context.Context {
-	ctx := context.Background()
-	resp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     user,
-		Password: password,
-	})
-
-	if err != nil {
-		log.Fatal("Cannot login to API Server:", err)
-	}
-	return clientutil.ContextWithToken(ctx, resp.Token)
-}
-
-func uploadCategories(dir string, client pb.LibraryCheckerInternalServiceClient, ctx context.Context) error {
+func uploadCategories(dir string, db *gorm.DB) error {
 	var data struct {
 		Categories []struct {
 			Name     string
@@ -247,18 +223,17 @@ func uploadCategories(dir string, client pb.LibraryCheckerInternalServiceClient,
 		log.Fatal(err)
 	}
 
-	req := pb.ChangeProblemCategoriesRequest{}
+	cs := []database.ProblemCategory{}
 
 	for _, c := range data.Categories {
-		req.Categories = append(req.Categories,
-			&pb.ProblemCategory{
+		cs = append(cs,
+			database.ProblemCategory{
 				Title:    c.Name,
 				Problems: c.Problems,
 			})
 	}
 
-	_, err := client.ChangeProblemCategories(ctx, &req)
-	return err
+	return database.SaveProblemCategories(db, cs)
 }
 
 func fileHash(path string) (string, error) {
