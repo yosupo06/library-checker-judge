@@ -13,9 +13,6 @@ if __name__ == "__main__":
 
     print("tomls: ", tomls)
 
-    API_HOST = environ["API_HOST"]
-    API_USER = "judge"
-    API_PASS = environ["API_PASS"]
     PG_USER = environ["PG_USER"]
     PG_PASS = environ["PG_PASS"]
     PG_TABLE = environ["PG_TABLE"]
@@ -33,9 +30,6 @@ if __name__ == "__main__":
 
         subprocess.run(
             ["./uploader"] +
-            ["-apihost", API_HOST] +
-            ["-apiuser", API_USER] +
-            ["-apipass", API_PASS] +
             ["-pguser", PG_USER] +
             ["-pgpass", PG_PASS] +
             ["-pgtable", PG_TABLE] +

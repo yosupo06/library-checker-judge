@@ -60,8 +60,6 @@ jobs:
       uses: google-github-actions/get-secretmanager-secrets@v1
       with:
         secrets: |-
-          api-host:library-checker-project/${{ inputs.env }}-api-host/latest
-          api-judge-pass:library-checker-project/${{ inputs.env }}-api-judge-pass/latest
           pg-user:library-checker-project/${{ inputs.env }}-pg-user/latest
           pg-pass:library-checker-project/${{ inputs.env }}-pg-pass/latest
           pg-table:library-checker-project/${{ inputs.env }}-pg-table/latest
@@ -90,8 +88,6 @@ jobs:
       env:
         CLOUD_RUN_TASK_INDEX: '${{ matrix.index }}'
         CLOUD_RUN_TASK_COUNT: '${{ inputs.parallel }}'
-        API_HOST: '${{ steps.secrets.outputs.api-host }}'
-        API_PASS: '${{ steps.secrets.outputs.api-judge-pass }}'
         PG_USER: '${{ steps.secrets.outputs.pg-user }}'
         PG_PASS: '${{ steps.secrets.outputs.pg-pass }}'
         PG_TABLE: '${{ steps.secrets.outputs.pg-table }}'
