@@ -64,11 +64,6 @@ type Task struct {
 	Available  time.Time
 }
 
-type Metadata struct {
-	Key   string `gorm:"primaryKey"`
-	Value string
-}
-
 func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB {
 	connStr := fmt.Sprintf(
 		"host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
@@ -184,32 +179,6 @@ func UpdateUser(db *gorm.DB, user User) error {
 	}
 	if result.RowsAffected == 0 {
 		return errors.New("User not found")
-	}
-	return nil
-}
-
-func FetchMetadata(db *gorm.DB, key string) (string, error) {
-	metadata := Metadata{}
-	if key == "" {
-		return "", errors.New("key is empty")
-	}
-	if err := db.Where("key = ?", key).Take(&metadata).Error; err != nil {
-		return "", errors.New("metadata not found")
-	}
-	return metadata.Value, nil
-
-}
-
-func SetMetadata(db *gorm.DB, key string, value string) error {
-	if key == "" {
-		return errors.New("key is empty")
-	}
-	if err := db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&Metadata{
-		Key:   key,
-		Value: value,
-	}).Error; err != nil {
-		log.Print(err)
-		return errors.New("metadata upsert failed")
 	}
 	return nil
 }
