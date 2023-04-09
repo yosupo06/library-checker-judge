@@ -65,6 +65,7 @@ jobs:
           pg-user:library-checker-project/${{ inputs.env }}-pg-user/latest
           pg-pass:library-checker-project/${{ inputs.env }}-pg-pass/latest
           pg-table:library-checker-project/${{ inputs.env }}-pg-table/latest
+          minio-host:library-checker-project/minio-host/latest
           minio-id:library-checker-project/minio-id/latest
           minio-secret:library-checker-project/minio-secret/latest
           minio-bucket:library-checker-project/minio-bucket/latest
