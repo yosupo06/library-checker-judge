@@ -853,7 +853,7 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 		return nil, err
 	}
 	var categories []Category
-	if json.Unmarshal([]byte(data), &categories); err != nil {
+	if json.Unmarshal([]byte(*data), &categories); err != nil {
 		return nil, err
 	}
 
@@ -887,7 +887,7 @@ func (s *server) ChangeProblemCategories(ctx context.Context, in *pb.ChangeProbl
 	if err != nil {
 		return nil, err
 	}
-	if err := database.SetMetadata(s.db, "problem_categories", string(data)); err != nil {
+	if err := database.SaveMetadata(s.db, "problem_categories", string(data)); err != nil {
 		return nil, err
 	}
 	return &pb.ChangeProblemCategoriesResponse{}, nil
@@ -909,7 +909,7 @@ func (s *internalServer) ChangeProblemCategories(ctx context.Context, in *pb.Cha
 	if err != nil {
 		return nil, err
 	}
-	if err := database.SetMetadata(s.db, "problem_categories", string(data)); err != nil {
+	if err := database.SaveMetadata(s.db, "problem_categories", string(data)); err != nil {
 		return nil, err
 	}
 	return &pb.ChangeProblemCategoriesResponse{}, nil
