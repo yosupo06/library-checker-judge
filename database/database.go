@@ -16,16 +16,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// Problem is db table
-type Problem struct {
-	Name      string `gorm:"primaryKey"`
-	Title     string
-	SourceUrl string
-	Statement string
-	Timelimit int32
-	Testhash  string
-}
-
 // User is db table
 type User struct {
 	Name        string `gorm:"primaryKey"`

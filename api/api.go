@@ -200,13 +200,10 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 }
 
 func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
-	name := in.Name
-	if name == "" {
-		return nil, errors.New("empty problem name")
-	}
-	var problem database.Problem
-	if err := s.db.Select("name, title, statement, timelimit, testhash, source_url").Where("name = ?", name).Take(&problem).Error; err != nil {
-		return nil, errors.New("failed to get problem")
+	problem, err := database.FetchProblem(s.db, in.Name)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.ProblemInfoResponse{
@@ -218,13 +215,10 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 	}, nil
 }
 func (s *internalServer) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
-	name := in.Name
-	if name == "" {
-		return nil, errors.New("empty problem name")
-	}
-	var problem database.Problem
-	if err := s.db.Select("name, title, statement, timelimit, testhash, source_url").Where("name = ?", name).Take(&problem).Error; err != nil {
-		return nil, errors.New("failed to get problem")
+	problem, err := database.FetchProblem(s.db, in.Name)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.ProblemInfoResponse{
@@ -242,31 +236,21 @@ func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfo
 	if !currentUser.Admin {
 		return nil, errors.New("must be admin")
 	}
-	name := in.Name
-	if name == "" {
-		return nil, errors.New("empty problem name")
-	}
-	var problem database.Problem
-	err := s.db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error
-	problem.Name = name
-	problem.Title = in.Title
-	problem.Timelimit = int32(in.TimeLimit * 1000.0)
-	problem.Statement = in.Statement
-	problem.Testhash = in.CaseVersion
-	problem.SourceUrl = in.SourceUrl
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Printf("add problem: %v", name)
-		if err := s.db.Create(&problem).Error; err != nil {
-			return nil, errors.New("failed to insert")
-		}
-	} else if err != nil {
-		log.Print(err)
-		return nil, errors.New("connect to db failed")
+	problem := database.Problem{
+		Name:      in.Name,
+		Title:     in.Title,
+		Timelimit: int32(in.TimeLimit * 1000.0),
+		Statement: in.Statement,
+		Testhash:  in.CaseVersion,
+		SourceUrl: in.SourceUrl,
 	}
-	if err := s.db.Model(&database.Problem{}).Where("name = ?", name).Updates(problem).Error; err != nil {
-		return nil, errors.New("failed to update user")
+
+	if err := database.SaveProblem(s.db, problem); err != nil {
+		log.Print("failed to save problem:", err)
+		return nil, errors.New("failed to save problem")
 	}
+
 	return &pb.ChangeProblemInfoResponse{}, nil
 }
 func (s *internalServer) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfoRequest) (*pb.ChangeProblemInfoResponse, error) {
@@ -275,31 +259,21 @@ func (s *internalServer) ChangeProblemInfo(ctx context.Context, in *pb.ChangePro
 	if !currentUser.Admin {
 		return nil, errors.New("must be admin")
 	}
-	name := in.Name
-	if name == "" {
-		return nil, errors.New("empty problem name")
-	}
-	var problem database.Problem
-	err := s.db.Select("name, title, statement, timelimit").Where("name = ?", name).First(&problem).Error
-	problem.Name = name
-	problem.Title = in.Title
-	problem.Timelimit = int32(in.TimeLimit * 1000.0)
-	problem.Statement = in.Statement
-	problem.Testhash = in.CaseVersion
-	problem.SourceUrl = in.SourceUrl
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Printf("add problem: %v", name)
-		if err := s.db.Create(&problem).Error; err != nil {
-			return nil, errors.New("failed to insert")
-		}
-	} else if err != nil {
-		log.Print(err)
-		return nil, errors.New("connect to db failed")
+	problem := database.Problem{
+		Name:      in.Name,
+		Title:     in.Title,
+		Timelimit: int32(in.TimeLimit * 1000.0),
+		Statement: in.Statement,
+		Testhash:  in.CaseVersion,
+		SourceUrl: in.SourceUrl,
 	}
-	if err := s.db.Model(&database.Problem{}).Where("name = ?", name).Updates(problem).Error; err != nil {
-		return nil, errors.New("failed to update user")
+
+	if err := database.SaveProblem(s.db, problem); err != nil {
+		log.Print("failed to save problem:", err)
+		return nil, errors.New("failed to save problem")
 	}
+
 	return &pb.ChangeProblemInfoResponse{}, nil
 }
 
