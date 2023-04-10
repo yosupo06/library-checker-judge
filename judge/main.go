@@ -11,11 +11,13 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"gorm.io/gorm"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"github.com/yosupo06/library-checker-judge/database"
 )
 
 // gRPC
@@ -25,17 +27,19 @@ var judgeCtx context.Context
 var testCaseFetcher TestCaseFetcher
 var cgroupParent string
 
-func execJudge(judgedir string, submissionID int32) (err error) {
+func execJudge(db *gorm.DB, judgedir string, submissionID int32) (err error) {
 	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
 		Id: submissionID,
 	})
 	if err != nil {
 		return err
 	}
-	problem, err := client.ProblemInfo(judgeCtx, &pb.ProblemInfoRequest{
-		Name: submission.Overview.ProblemName,
-	})
 	log.Println("Submission info:", submissionID, submission.Overview.ProblemTitle)
+
+	problem, err := database.FetchProblem(db, submission.Overview.ProblemName)
+	if err != nil {
+		return err
+	}
 
 	log.Println("Fetch data")
 	if _, err = client.SyncJudgeTaskStatus(judgeCtx, &pb.SyncJudgeTaskStatusRequest{
@@ -46,7 +50,7 @@ func execJudge(judgedir string, submissionID int32) (err error) {
 		return err
 	}
 
-	caseVersion := problem.CaseVersion
+	caseVersion := problem.Testhash
 	testCases, err := testCaseFetcher.Fetch(submission.Overview.ProblemName, caseVersion)
 	if err != nil {
 		log.Println("Fail to fetchData")
@@ -54,7 +58,7 @@ func execJudge(judgedir string, submissionID int32) (err error) {
 	}
 	log.Print("Fetched :", caseVersion)
 
-	judge, err := NewJudge(judgedir, langs[submission.Overview.Lang], problem.TimeLimit, cgroupParent)
+	judge, err := NewJudge(judgedir, langs[submission.Overview.Lang], float64(problem.Timelimit)/1000, cgroupParent)
 	if err != nil {
 		return err
 	}
@@ -280,20 +284,32 @@ func main() {
 
 	prod := flag.Bool("prod", false, "production mode")
 
+	pgHost := flag.String("pghost", "localhost", "postgre host")
+	pgUser := flag.String("pguser", "postgres", "postgre user")
+	pgPass := flag.String("pgpass", "passwd", "postgre password")
+	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
+
 	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
 	minioID := flag.String("minioid", "minio", "minio ID")
 	minioKey := flag.String("miniokey", "miniopass", "minio access key")
 	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
 
 	apiHost := flag.String("apihost", "localhost:50051", "api host")
-
 	apiUser := flag.String("apiuser", "judge", "api user")
-
 	apiPass := flag.String("apipass", "password", "api password")
 
 	tmpCgroupParent := flag.String("cgroup-parent", "", "cgroup parent")
 
 	flag.Parse()
+
+	// connect db
+	db := database.Connect(
+		*pgHost,
+		"5432",
+		*pgTable,
+		*pgUser,
+		*pgPass,
+		false)
 
 	cgroupParent = *tmpCgroupParent
 
@@ -333,7 +349,7 @@ func main() {
 			continue
 		}
 		log.Println("Start Judge:", task.SubmissionId)
-		err = execJudge(*judgedir, task.SubmissionId)
+		err = execJudge(db, *judgedir, task.SubmissionId)
 		if err != nil {
 			log.Println(err.Error())
 			continue
