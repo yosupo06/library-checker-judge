@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"errors"
 
 	"gorm.io/gorm"
@@ -37,6 +38,35 @@ func SaveProblem(db *gorm.DB, problem Problem) error {
 	}
 
 	if err := db.Save(&problem).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+type ProblemCategory struct {
+	Title    string   `json:"title"`
+	Problems []string `json:"problems"`
+}
+
+func FetchProblemCategories(db *gorm.DB) ([]ProblemCategory, error) {
+	data, err := FetchMetadata(db, "problem_categories")
+	if err != nil {
+		return nil, err
+	}
+	var categories []ProblemCategory
+	if json.Unmarshal([]byte(*data), &categories); err != nil {
+		return nil, err
+	}
+
+	return categories, nil
+}
+
+func SaveProblemCategories(db *gorm.DB, categories []ProblemCategory) error {
+	data, err := json.Marshal(categories)
+	if err != nil {
+		return err
+	}
+	if err := SaveMetadata(db, "problem_categories", string(data)); err != nil {
 		return err
 	}
 	return nil

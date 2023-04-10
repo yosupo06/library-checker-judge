@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"flag"
@@ -15,16 +14,17 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/minio/minio-go/v6"
-	"github.com/yosupo06/library-checker-judge/api/clientutil"
-	pb "github.com/yosupo06/library-checker-judge/api/proto"
+	"github.com/yosupo06/library-checker-judge/database"
+	"gorm.io/gorm"
 )
 
 func main() {
 	dir := flag.String("dir", "../../library-checker-problems", "directory of library-checker-problems")
 
-	apiHost := flag.String("apihost", "localhost:50051", "api host")
-	apiUser := flag.String("apiuser", "upload", "api user")
-	apiPass := flag.String("apipass", "password", "api password")
+	pgHost := flag.String("pghost", "localhost", "postgre host")
+	pgUser := flag.String("pguser", "postgres", "postgre user")
+	pgPass := flag.String("pgpass", "passwd", "postgre password")
+	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
 
 	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
 	minioID := flag.String("minioid", "minio", "minio ID")
@@ -36,6 +36,15 @@ func main() {
 	t := flag.String("toml", "", "toml file of upload problem")
 
 	flag.Parse()
+
+	// connect db
+	db := database.Connect(
+		*pgHost,
+		"5432",
+		*pgTable,
+		*pgUser,
+		*pgPass,
+		false)
 
 	if *t == "" {
 		log.Fatal("Please specify toml")
@@ -56,20 +65,16 @@ func main() {
 		log.Fatal("Cannot connect to Minio:", err)
 	}
 
-	conn := clientutil.ApiConnect(*apiHost, *useTLS)
-	client := pb.NewLibraryCheckerInternalServiceClient(conn)
-	ctx := login(client, *apiUser, *apiPass)
-
-	if err := upload(p, mc, *minioBucket, client, ctx); err != nil {
+	if err := upload(p, mc, *minioBucket, db); err != nil {
 		log.Fatal("Failed to upload problem: ", err)
 	}
 
-	if err := uploadCategories(*dir, client, ctx); err != nil {
+	if err := uploadCategories(*dir, db); err != nil {
 		log.Fatal("Failed to update categories: ", err)
 	}
 }
 
-func upload(p problem, mc *minio.Client, bucket string, client pb.LibraryCheckerInternalServiceClient, ctx context.Context) error {
+func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB) error {
 	log.Print("Upload: ", p.name)
 
 	v, err := p.version()
@@ -119,13 +124,13 @@ func upload(p problem, mc *minio.Client, bucket string, client pb.LibraryChecker
 
 	source := fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
 
-	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
-		Name:        p.name,
-		Title:       p.info.Title,
-		TimeLimit:   p.info.TimeLimit,
-		Statement:   string(statement),
-		CaseVersion: v,
-		SourceUrl:   source,
+	if err := database.SaveProblem(db, database.Problem{
+		Name:      p.name,
+		Title:     p.info.Title,
+		Timelimit: int32(p.info.TimeLimit * 1000),
+		Statement: string(statement),
+		SourceUrl: source,
+		Testhash:  v,
 	}); err != nil {
 		return err
 	}
@@ -207,20 +212,7 @@ func (p *problem) version() (string, error) {
 	return joinHashes(hashes), nil
 }
 
-func login(client pb.LibraryCheckerInternalServiceClient, user, password string) context.Context {
-	ctx := context.Background()
-	resp, err := client.Login(ctx, &pb.LoginRequest{
-		Name:     user,
-		Password: password,
-	})
-
-	if err != nil {
-		log.Fatal("Cannot login to API Server:", err)
-	}
-	return clientutil.ContextWithToken(ctx, resp.Token)
-}
-
-func uploadCategories(dir string, client pb.LibraryCheckerInternalServiceClient, ctx context.Context) error {
+func uploadCategories(dir string, db *gorm.DB) error {
 	var data struct {
 		Categories []struct {
 			Name     string
@@ -231,18 +223,17 @@ func uploadCategories(dir string, client pb.LibraryCheckerInternalServiceClient,
 		log.Fatal(err)
 	}
 
-	req := pb.ChangeProblemCategoriesRequest{}
+	cs := []database.ProblemCategory{}
 
 	for _, c := range data.Categories {
-		req.Categories = append(req.Categories,
-			&pb.ProblemCategory{
+		cs = append(cs,
+			database.ProblemCategory{
 				Title:    c.Name,
 				Problems: c.Problems,
 			})
 	}
 
-	_, err := client.ChangeProblemCategories(ctx, &req)
-	return err
+	return database.SaveProblemCategories(db, cs)
 }
 
 func fileHash(path string) (string, error) {

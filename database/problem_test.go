@@ -1,6 +1,7 @@
 package database
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -37,5 +38,32 @@ func TestProblemInfo(t *testing.T) {
 	}
 	if problem != *problem2 {
 		t.Fatal(problem, "!=", problem2)
+	}
+}
+
+func TestProblemCategory(t *testing.T) {
+	db := createTestDB(t)
+
+	categories := []ProblemCategory{
+		{
+			Title:    "Sample",
+			Problems: []string{"aplusb", "many_aplusb"},
+		},
+		{
+			Title:    "Data Structure",
+			Problems: []string{"unionfind"},
+		},
+	}
+
+	if err := SaveProblemCategories(db, categories); err != nil {
+		t.Fatal(err)
+	}
+
+	categories2, err := FetchProblemCategories(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(categories, categories2) {
+		t.Fatal(categories, "!=", categories2)
 	}
 }
