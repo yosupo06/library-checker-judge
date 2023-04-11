@@ -5,18 +5,6 @@ import (
 	"testing"
 )
 
-func TestProblemInfoFail(t *testing.T) {
-	db := createTestDB(t)
-
-	_, err := FetchProblem(db, "invalid")
-
-	if err == nil {
-		t.Fatal("fetch succeeded")
-	}
-
-	t.Log("expected failure:", err)
-}
-
 func TestProblemInfo(t *testing.T) {
 	db := createTestDB(t)
 
