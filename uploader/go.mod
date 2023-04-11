@@ -4,12 +4,16 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.2.1
+	github.com/disgoorg/disgo v0.16.2
 	github.com/minio/minio-go/v6 v6.0.57
 	github.com/yosupo06/library-checker-judge/database v0.0.0-00010101000000-000000000000
 	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
 )
 
 require (
+	github.com/disgoorg/json v1.0.0 // indirect
+	github.com/disgoorg/log v1.2.0 // indirect
+	github.com/disgoorg/snowflake/v2 v2.0.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.12.0 // indirect
@@ -27,7 +31,9 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/sasha-s/go-csync v0.0.0-20210812194225-61421b77c44b // indirect
 	golang.org/x/crypto v0.8.0 // indirect
+	golang.org/x/exp v0.0.0-20220325121720-054d8573a5d8 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect

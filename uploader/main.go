@@ -13,6 +13,8 @@ import (
 	"sort"
 
 	"github.com/BurntSushi/toml"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/webhook"
 	"github.com/minio/minio-go/v6"
 	"github.com/yosupo06/library-checker-judge/database"
 	"gorm.io/gorm"
@@ -31,11 +33,24 @@ func main() {
 	minioKey := flag.String("miniokey", "miniopass", "minio access key")
 	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
 
+	discordUrl := flag.String("discordwebhook", "", "webhook URL of discord")
+
 	useTLS := flag.Bool("tls", false, "use https for api / minio")
 
 	t := flag.String("toml", "", "toml file of upload problem")
 
 	flag.Parse()
+
+	// connect discord
+	var dc webhook.Client
+
+	if *discordUrl != "" {
+		c, err := webhook.NewWithURL(*discordUrl)
+		if err != nil {
+			log.Fatal("Failed to init discord client:", err)
+		}
+		dc = c
+	}
 
 	// connect db
 	db := database.Connect(
@@ -65,7 +80,7 @@ func main() {
 		log.Fatal("Cannot connect to Minio:", err)
 	}
 
-	if err := upload(p, mc, *minioBucket, db); err != nil {
+	if err := upload(p, mc, *minioBucket, db, dc); err != nil {
 		log.Fatal("Failed to upload problem: ", err)
 	}
 
@@ -74,7 +89,7 @@ func main() {
 	}
 }
 
-func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB) error {
+func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB, dc webhook.Client) error {
 	log.Print("Upload: ", p.name)
 
 	v, err := p.version()
@@ -124,6 +139,11 @@ func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB) error {
 
 	source := fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
 
+	prevP, err := database.FetchProblem(db, p.name)
+	if err != nil {
+		log.Fatal("Failed to fetch problem:", err)
+	}
+
 	if err := database.SaveProblem(db, database.Problem{
 		Name:      p.name,
 		Title:     p.info.Title,
@@ -133,6 +153,23 @@ func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB) error {
 		Testhash:  v,
 	}); err != nil {
 		return err
+	}
+
+	if dc != nil {
+		if prevP == nil {
+			if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
+				AddEmbeds(discord.NewEmbedBuilder().
+					SetTitlef("New Problem added: %s", p.info.Title).
+					SetColor(0x00ff00).
+					SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
+					AddField("Github", fmt.Sprintf("[link](%s)", source), false).
+					AddField("Testcase hash", v, false).
+					Build()).
+				Build(),
+			); err != nil {
+				log.Fatal("error sending message:", err)
+			}
+		}
 	}
 
 	return nil

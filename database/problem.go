@@ -24,7 +24,10 @@ func FetchProblem(db *gorm.DB, name string) (*Problem, error) {
 	problem := Problem{
 		Name: name,
 	}
-	if err := db.First(&problem).Error; err != nil {
+
+	if err := db.First(&problem).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 

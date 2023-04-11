@@ -20,6 +20,7 @@ if __name__ == "__main__":
     MINIO_ID = environ["MINIO_ID"]
     MINIO_SECRET = environ["MINIO_SECRET"]
     MINIO_BUCKET = environ["MINIO_BUCKET"]
+    DISCORD_WEBHOOK = environ["DISCORD_WEBHOOK"]
 
     for toml in tomls:
         subprocess.run(
@@ -37,6 +38,7 @@ if __name__ == "__main__":
             ["-minioid", MINIO_ID] +
             ["-miniokey", MINIO_SECRET] +
             ["-miniobucket", MINIO_BUCKET] +
+            ["-discordwebhook", DISCORD_WEBHOOK] +
             ["-dir", "../library-checker-problems"] +
             ["-tls"] +
             ["-toml", str(toml.absolute())],
