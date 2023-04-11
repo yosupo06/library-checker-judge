@@ -38,7 +38,7 @@ if __name__ == "__main__":
             ["-minioid", MINIO_ID] +
             ["-miniokey", MINIO_SECRET] +
             ["-miniobucket", MINIO_BUCKET] +
-            ["-discordwebhook", DISCORD_WEBHOOK]
+            ["-discordwebhook", DISCORD_WEBHOOK] +
             ["-dir", "../library-checker-problems"] +
             ["-tls"] +
             ["-toml", str(toml.absolute())],
