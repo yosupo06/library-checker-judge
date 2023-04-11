@@ -39,6 +39,10 @@ func TestProblemInfo(t *testing.T) {
 	if problem != *problem2 {
 		t.Fatal(problem, "!=", problem2)
 	}
+
+	if problem3, err := FetchProblem(db, "aplusc"); problem3 != nil || err != nil {
+		t.Fatal(problem3, err)
+	}
 }
 
 func TestProblemCategory(t *testing.T) {
