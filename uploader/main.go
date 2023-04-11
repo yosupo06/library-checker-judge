@@ -283,8 +283,8 @@ func fileHash(path string) (string, error) {
 
 func joinHashes(hashes []string) string {
 	arr := make([]string, len(hashes))
-	sort.Strings(arr)
 	copy(arr, hashes)
+	sort.Strings(arr)
 
 	h := sha256.New()
 	for _, v := range arr {
