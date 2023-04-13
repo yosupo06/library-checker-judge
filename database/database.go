@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -15,46 +14,6 @@ import (
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 )
-
-// User is db table
-type User struct {
-	Name        string `gorm:"primaryKey"`
-	Passhash    string
-	Admin       bool
-	Email       string
-	LibraryURL  string
-	IsDeveloper bool
-}
-
-// Submission is db table
-type Submission struct {
-	ID           int32 `gorm:"primaryKey"`
-	ProblemName  string
-	Problem      Problem `gorm:"foreignKey:ProblemName"`
-	Lang         string
-	Status       string
-	PrevStatus   string
-	Hacked       bool
-	Source       string
-	Testhash     string
-	MaxTime      int32
-	MaxMemory    int64
-	CompileError []byte
-	JudgePing    time.Time
-	JudgeName    string
-	JudgeTasked  bool
-	UserName     sql.NullString
-	User         User `gorm:"foreignKey:UserName"`
-}
-
-// SubmissionTestcaseResult is db table
-type SubmissionTestcaseResult struct {
-	Submission int32
-	Testcase   string
-	Status     string
-	Time       int32
-	Memory     int64
-}
 
 // Task is db table
 type Task struct {
@@ -107,97 +66,6 @@ func generatePasswordHash(password string) (string, error) {
 	}
 	return string(hash), nil
 }
-
-func RegisterUser(db *gorm.DB, name string, password string, isAdmin bool) error {
-	type UserParam struct {
-		User     string `validate:"username"`
-		Password string `validate:"required"`
-	}
-
-	userParam := &UserParam{
-		User:     name,
-		Password: password,
-	}
-	if err := validate.Struct(userParam); err != nil {
-		return err
-	}
-
-	passHash, err := generatePasswordHash(password)
-	if err != nil {
-		return err
-	}
-	user := User{
-		Name:     name,
-		Passhash: string(passHash),
-		Admin:    isAdmin,
-	}
-	if err := db.Create(&user).Error; err != nil {
-		return errors.New("this username is already registered")
-	}
-	return nil
-}
-
-func VerifyUserPassword(db *gorm.DB, name string, password string) error {
-	user, err := FetchUser(db, name)
-	if err != nil {
-		return err
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(password)); err != nil {
-		return errors.New("password invalid")
-	}
-
-	return nil
-}
-
-func FetchUser(db *gorm.DB, name string) (User, error) {
-	user := User{}
-	if name == "" {
-		return User{}, errors.New("User name is empty")
-	}
-	if err := db.Where("name = ?", name).Take(&user).Error; err != nil {
-		return User{}, errors.New("User not found")
-	}
-	return user, nil
-}
-
-func UpdateUser(db *gorm.DB, user User) error {
-	name := user.Name
-	if name == "" {
-		return errors.New("User name is empty")
-	}
-	result := db.Model(&User{}).Where("name = ?", name).Updates(
-		map[string]interface{}{
-			"admin":        user.Admin,
-			"email":        user.Email,
-			"library_url":  user.LibraryURL,
-			"is_developer": user.IsDeveloper,
-		})
-	if err := result.Error; err != nil {
-		log.Print(err)
-		return errors.New("failed to update user")
-	}
-	if result.RowsAffected == 0 {
-		return errors.New("User not found")
-	}
-	return nil
-}
-
-func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
-	sub := Submission{}
-	if err := db.
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name")
-		}).
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Where("id = ?", id).First(&sub).Error; err != nil {
-		return Submission{}, errors.New("Submission fetch failed")
-	}
-	return sub, nil
-}
-
 func PushTask(db *gorm.DB, task Task) error {
 	log.Print("Insert task:", task)
 	if err := db.Create(&task).Error; err != nil {

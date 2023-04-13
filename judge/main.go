@@ -28,15 +28,13 @@ var testCaseFetcher TestCaseFetcher
 var cgroupParent string
 
 func execJudge(db *gorm.DB, judgedir string, submissionID int32) (err error) {
-	submission, err := client.SubmissionInfo(judgeCtx, &pb.SubmissionInfoRequest{
-		Id: submissionID,
-	})
+	submission, err := database.FetchSubmission(db, submissionID)
 	if err != nil {
 		return err
 	}
-	log.Println("Submission info:", submissionID, submission.Overview.ProblemTitle)
+	log.Println("Submission info:", submissionID, submission.Problem.Title)
 
-	problem, err := database.FetchProblem(db, submission.Overview.ProblemName)
+	problem, err := database.FetchProblem(db, submission.ProblemName)
 	if err != nil {
 		return err
 	}
@@ -51,14 +49,14 @@ func execJudge(db *gorm.DB, judgedir string, submissionID int32) (err error) {
 	}
 
 	caseVersion := problem.Testhash
-	testCases, err := testCaseFetcher.Fetch(submission.Overview.ProblemName, caseVersion)
+	testCases, err := testCaseFetcher.Fetch(submission.ProblemName, caseVersion)
 	if err != nil {
 		log.Println("Fail to fetchData")
 		return err
 	}
 	log.Print("Fetched :", caseVersion)
 
-	judge, err := NewJudge(judgedir, langs[submission.Overview.Lang], float64(problem.Timelimit)/1000, cgroupParent)
+	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, cgroupParent)
 	if err != nil {
 		return err
 	}

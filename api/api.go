@@ -103,7 +103,7 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 		return nil, errors.New("empty name")
 	}
 	user, err := database.FetchUser(s.db, name)
-	if err != nil {
+	if user == nil || err != nil {
 		return nil, errors.New("invalid user name")
 	}
 	stats, err := FetchUserStatistics(s.db, name)
@@ -118,7 +118,7 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 		IsDeveloper: user.IsDeveloper,
 	}
 
-	if in.Name != myName && !currentUser.Admin {
+	if in.Name != myName && (currentUser == nil || !currentUser.Admin) {
 		respUser.Email = ""
 	}
 
@@ -139,7 +139,7 @@ func (s *server) UserList(ctx context.Context, in *pb.UserListRequest) (*pb.User
 	if currentUser.Name == "" {
 		return nil, errors.New("not login")
 	}
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("must be admin")
 	}
 	users := []database.User{}
@@ -165,7 +165,7 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
 
-	if currentUser.Name == "" {
+	if currentUser == nil || currentUser.Name == "" {
 		return nil, errors.New("not login")
 	}
 	if name == "" {
@@ -233,7 +233,7 @@ func (s *internalServer) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequ
 func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfoRequest) (*pb.ChangeProblemInfoResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("must be admin")
 	}
 
@@ -256,7 +256,7 @@ func (s *server) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfo
 func (s *internalServer) ChangeProblemInfo(ctx context.Context, in *pb.ChangeProblemInfoRequest) (*pb.ChangeProblemInfoResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("must be admin")
 	}
 
@@ -318,7 +318,11 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	}
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	name := currentUser.Name
+
+	name := ""
+	if currentUser != nil {
+		name = currentUser.Name
+	}
 	submission := database.Submission{
 		ProblemName: in.Problem,
 		Lang:        in.Lang,
@@ -364,6 +368,7 @@ func canRejudge(currentUser database.User, submission *pb.SubmissionOverview) bo
 func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
+
 	var sub database.Submission
 	sub, err := database.FetchSubmission(s.db, in.Id)
 	if err != nil {
@@ -379,11 +384,17 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 		return nil, err
 	}
 
+	rej := false
+
+	if currentUser != nil {
+		rej = canRejudge(*currentUser, overview)
+	}
+
 	res := &pb.SubmissionInfoResponse{
 		Overview:     overview,
 		Source:       sub.Source,
 		CompileError: sub.CompileError,
-		CanRejudge:   canRejudge(currentUser, overview),
+		CanRejudge:   rej,
 	}
 
 	sort.Slice(cases, func(i, j int) bool {
@@ -403,6 +414,9 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 func (s *internalServer) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
+	if currentUser == nil {
+		return nil, errors.New("Auth failed")
+	}
 	var sub database.Submission
 	sub, err := database.FetchSubmission(s.db, in.Id)
 	if err != nil {
@@ -422,7 +436,7 @@ func (s *internalServer) SubmissionInfo(ctx context.Context, in *pb.SubmissionIn
 		Overview:     overview,
 		Source:       sub.Source,
 		CompileError: sub.CompileError,
-		CanRejudge:   canRejudge(currentUser, overview),
+		CanRejudge:   canRejudge(*currentUser, overview),
 	}
 
 	sort.Slice(cases, func(i, j int) bool {
@@ -550,7 +564,7 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (*pb.PopJudgeTaskResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	if in.JudgeName == "" {
@@ -605,7 +619,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 func (s *internalServer) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (*pb.PopJudgeTaskResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	if in.JudgeName == "" {
@@ -661,7 +675,7 @@ func (s *internalServer) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRe
 func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskStatusRequest) (*pb.SyncJudgeTaskStatusResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	if in.JudgeName == "" {
@@ -706,7 +720,7 @@ func (s *server) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskSt
 func (s *internalServer) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJudgeTaskStatusRequest) (*pb.SyncJudgeTaskStatusResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	if in.JudgeName == "" {
@@ -752,7 +766,7 @@ func (s *internalServer) SyncJudgeTaskStatus(ctx context.Context, in *pb.SyncJud
 func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequest) (*pb.FinishJudgeTaskResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	if in.JudgeName == "" {
@@ -798,7 +812,7 @@ func (s *server) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequ
 func (s *internalServer) FinishJudgeTask(ctx context.Context, in *pb.FinishJudgeTaskRequest) (*pb.FinishJudgeTaskResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	if in.JudgeName == "" {
@@ -873,7 +887,7 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 func (s *server) ChangeProblemCategories(ctx context.Context, in *pb.ChangeProblemCategoriesRequest) (*pb.ChangeProblemCategoriesResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	var categories []Category
@@ -895,7 +909,7 @@ func (s *server) ChangeProblemCategories(ctx context.Context, in *pb.ChangeProbl
 func (s *internalServer) ChangeProblemCategories(ctx context.Context, in *pb.ChangeProblemCategoriesRequest) (*pb.ChangeProblemCategoriesResponse, error) {
 	currentUserName := getCurrentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if !currentUser.Admin {
+	if currentUser == nil || !currentUser.Admin {
 		return nil, errors.New("permission denied")
 	}
 	var categories []Category
