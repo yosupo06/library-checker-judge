@@ -14,9 +14,6 @@ PG_USER=$(gcloud secrets versions access latest --secret=$ENV-pg-user)
 PG_PASS=$(gcloud secrets versions access latest --secret=$ENV-pg-pass)
 PG_TABLE=$(gcloud secrets versions access latest --secret=$ENV-pg-table)
 
-API_HOST=$(gcloud secrets versions access latest --secret=$ENV-api-host)
-API_PASS=$(gcloud secrets versions access latest --secret=$ENV-api-judge-pass)
-
 /root/judge \
 -langs=/root/langs.toml \
 -miniohost=$MINIO_HOST \
@@ -27,7 +24,5 @@ API_PASS=$(gcloud secrets versions access latest --secret=$ENV-api-judge-pass)
 -pguser=$PG_USER \
 -pgpass=$PG_PASS \
 -pgtable=$PG_TABLE \
--apihost=$API_HOST \
--apipass=$API_PASS \
 -cgroup-parent=judge.slice \
 -prod
