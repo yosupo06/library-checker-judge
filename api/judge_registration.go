@@ -111,7 +111,7 @@ func toWaitingJudge(db *gorm.DB, id int32, priority int32, after time.Duration) 
 		return errors.New("failed to update status")
 	}
 
-	if err := database.PushTask(db, database.Task{
+	if err := PushTask(db, database.Task{
 		Submission: id,
 		Available:  time.Now().Add(after),
 		Priority:   priority,

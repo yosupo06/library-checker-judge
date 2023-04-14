@@ -12,6 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
@@ -338,12 +339,12 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 		return nil, errors.New("Submit failed")
 	}
 
-	if err := toWaitingJudge(s.db, submission.ID, 50, time.Duration(0)); err != nil {
+	log.Println("Submit ", submission.ID)
+
+	if err := s.pushTask(ctx, submission.ID, 50); err != nil {
 		log.Print(err)
 		return nil, errors.New("inserting to judge queue is failed")
 	}
-
-	log.Println("Submit ", submission.ID)
 
 	return &pb.SubmitResponse{Id: submission.ID}, nil
 }
@@ -454,6 +455,21 @@ func (s *internalServer) SubmissionInfo(ctx context.Context, in *pb.SubmissionIn
 	return res, nil
 }
 
+func (s *server) pushTask(ctx context.Context, subID, priority int32) error {
+	sub, err := s.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{Id: subID})
+	if err != nil {
+		return err
+	}
+	if !sub.CanRejudge {
+		return errors.New("no permission")
+	}
+
+	if err := database.PushTask(s.db, subID, priority); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListRequest) (*pb.SubmissionListResponse, error) {
 	if 1000 < in.Limit {
 		in.Limit = 1000
@@ -509,16 +525,9 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 }
 
 func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.RejudgeResponse, error) {
-	sub, err := s.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{Id: in.Id})
-	if err != nil {
-		return nil, err
-	}
-	if !sub.CanRejudge {
-		return nil, errors.New("no permission")
-	}
-	if err := toWaitingJudge(s.db, in.Id, 40, time.Duration(0)); err != nil {
-		log.Print(err)
-		return nil, errors.New("cannot insert into queue")
+	if err := s.pushTask(ctx, in.Id, 40); err != nil {
+		log.Print("rejudge failed:", err)
+		return nil, errors.New("rejudge failed")
 	}
 	return &pb.RejudgeResponse{}, nil
 }
@@ -571,7 +580,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 		return nil, errors.New("JudgeName is empty")
 	}
 	for i := 0; i < 10; i++ {
-		task, err := database.PopTask(s.db)
+		task, err := PopTask(s.db)
 		if err != nil {
 			return nil, err
 		}
@@ -593,7 +602,7 @@ func (s *server) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRequest) (
 			log.Print(err)
 			continue
 		}
-		if err := database.PushTask(s.db, database.Task{
+		if err := PushTask(s.db, database.Task{
 			Submission: id,
 			Priority:   task.Priority + 1,
 			Available:  time.Now().Add(expectedTime),
@@ -626,7 +635,7 @@ func (s *internalServer) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRe
 		return nil, errors.New("JudgeName is empty")
 	}
 	for i := 0; i < 10; i++ {
-		task, err := database.PopTask(s.db)
+		task, err := PopTask(s.db)
 		if err != nil {
 			return nil, err
 		}
@@ -648,7 +657,7 @@ func (s *internalServer) PopJudgeTask(ctx context.Context, in *pb.PopJudgeTaskRe
 			log.Print(err)
 			continue
 		}
-		if err := database.PushTask(s.db, database.Task{
+		if err := PushTask(s.db, database.Task{
 			Submission: id,
 			Priority:   task.Priority + 1,
 			Available:  time.Now().Add(expectedTime),
@@ -927,4 +936,35 @@ func (s *internalServer) ChangeProblemCategories(ctx context.Context, in *pb.Cha
 		return nil, err
 	}
 	return &pb.ChangeProblemCategoriesResponse{}, nil
+}
+
+func PushTask(db *gorm.DB, task database.Task) error {
+	log.Print("Insert task:", task)
+	if err := db.Create(&task).Error; err != nil {
+		log.Print(err)
+		return errors.New("cannot insert into queue")
+	}
+	return nil
+}
+
+func PopTask(db *gorm.DB) (database.Task, error) {
+	task := database.Task{}
+	task.Submission = -1
+
+	err := db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		if err != nil {
+			log.Print(err)
+			return errors.New("connection to db failed")
+		}
+		if tx.Delete(&task).RowsAffected != 1 {
+			log.Print("Failed to delete task:", task.ID)
+			return errors.New("failed to delete task")
+		}
+		return nil
+	})
+	return task, err
 }
