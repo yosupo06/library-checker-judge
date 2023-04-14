@@ -377,7 +377,8 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	}
 	var cases []database.SubmissionTestcaseResult
 	if err := s.db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
-		return nil, errors.New("Submission fetch failed")
+		log.Print(err)
+		return nil, errors.New("submission fetch failed")
 	}
 	overview, err := ToProtoSubmission(&sub)
 	if err != nil {
@@ -456,14 +457,6 @@ func (s *internalServer) SubmissionInfo(ctx context.Context, in *pb.SubmissionIn
 }
 
 func (s *server) pushTask(ctx context.Context, subID, priority int32) error {
-	sub, err := s.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{Id: subID})
-	if err != nil {
-		return err
-	}
-	if !sub.CanRejudge {
-		return errors.New("no permission")
-	}
-
 	if err := database.PushTask(s.db, subID, priority); err != nil {
 		return err
 	}
@@ -525,6 +518,14 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 }
 
 func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.RejudgeResponse, error) {
+	sub, err := s.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{Id: in.Id})
+	if err != nil {
+		return nil, err
+	}
+	if !sub.CanRejudge {
+		return nil, errors.New("no permission")
+	}
+
 	if err := s.pushTask(ctx, in.Id, 40); err != nil {
 		log.Print("rejudge failed:", err)
 		return nil, errors.New("rejudge failed")
