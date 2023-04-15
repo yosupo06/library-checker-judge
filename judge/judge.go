@@ -25,6 +25,8 @@ type Judge struct {
 }
 
 func NewJudge(judgedir string, lang Lang, tl float64, cgroupParent string) (*Judge, error) {
+	log.Println("TL:", tl)
+
 	tempdir, err := ioutil.TempDir(judgedir, "judge")
 	if err != nil {
 		return nil, err

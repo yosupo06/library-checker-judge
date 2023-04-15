@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -97,9 +98,17 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 	if err != nil {
 		return err
 	}
-	version := submission.Problem.Testhash
+	problem, err := database.FetchProblem(db, submission.ProblemName)
+	if problem == nil {
+		return fmt.Errorf("somehow problem is not found: %s", submission.ProblemName)
+	}
+	if err != nil {
+		return err
+	}
 
-	log.Println("Submission info:", subID, submission.Problem.Title)
+	version := problem.Testhash
+
+	log.Println("Submission info:", subID, problem.Title)
 	submission.MaxTime = -1
 	submission.MaxMemory = -1
 	submission.PrevStatus = submission.Status
@@ -116,7 +125,7 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 		return err
 	}
 
-	if err := judgeSubmission(db, judgedir, judgeName, task, submission); err != nil {
+	if err := judgeSubmission(db, judgedir, judgeName, task, submission, *problem); err != nil {
 		// error detected, try to change status into IE
 		submission.Status = "IE"
 		if err2 := database.SaveSubmission(db, submission); err2 != nil {
@@ -130,9 +139,10 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 	return nil
 }
 
-func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task, submission database.Submission) error {
+func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task, submission database.Submission, problem database.Problem) error {
+	log.Println(submission)
 	subID := submission.ID
-	version := submission.Problem.Testhash
+	version := problem.Testhash
 
 	submission.MaxTime = -1
 	submission.MaxMemory = -1
@@ -154,7 +164,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	}
 	log.Print("Fetched :", version)
 
-	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(submission.Problem.Timelimit)/1000, cgroupParent)
+	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, cgroupParent)
 	if err != nil {
 		return err
 	}
