@@ -50,7 +50,7 @@ func TouchTask(db *gorm.DB, taskID int32, judgeName string) error {
 func PopTask(db *gorm.DB, judgeName string) (*Task, error) {
 	task := Task{}
 
-	if err := db.Where("available <= ?", time.Now()).Order("priority desc").Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := db.Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
