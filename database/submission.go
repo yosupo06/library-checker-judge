@@ -31,8 +31,8 @@ type Submission struct {
 
 // SubmissionTestcaseResult is db table
 type SubmissionTestcaseResult struct {
-	Submission int32
-	Testcase   string
+	Submission int32  `gorm:"primaryKey"`
+	Testcase   string `gorm:"primaryKey"`
 	Status     string
 	Time       int32
 	Memory     int64
@@ -55,6 +55,21 @@ func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
 
 func SaveSubmission(db *gorm.DB, submission Submission) error {
 	if err := db.Save(&submission).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ClearTestcaseResult(db *gorm.DB, subID int32) error {
+	if err := db.Where("submission = ?", subID).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func SaveTestcaseResult(db *gorm.DB, result SubmissionTestcaseResult) error {
+	if err := db.Save(&result).Error; err != nil {
 		return err
 	}
 
