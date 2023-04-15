@@ -320,7 +320,6 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	args = append(args, t.Argments...)
 
 	cmd := exec.Command("docker", args...)
-	log.Println("arg: ", args)
 
 	cmd.Stderr = os.Stderr
 
@@ -340,7 +339,6 @@ func (t *TaskInfo) create() (containerInfo, error) {
 }
 
 func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
-	log.Println("Start: ", t.Name, t.Argments)
 	ctx := context.Background()
 	if t.Timeout != 0 {
 		ctx2, cancel := context.WithTimeout(context.Background(), t.Timeout+500*time.Millisecond)
@@ -386,7 +384,10 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 		// stop docker
 		cmd := exec.Command("docker", "stop", c.containerID)
 		cmd.Stderr = os.Stderr
-		cmd.Run()
+		if err := cmd.Run(); err != nil {
+			log.Println("failed to stop docker:", err)
+			return TaskResult{}, err
+		}
 
 		return TaskResult{
 			Time:     t.Timeout,
