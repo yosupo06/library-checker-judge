@@ -8,6 +8,8 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"log"
+	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -37,13 +39,12 @@ func main() {
 
 	useTLS := flag.Bool("tls", false, "use https for api / minio")
 
-	t := flag.String("toml", "", "toml file of upload problem")
-
 	flag.Parse()
+
+	tomls := flag.Args()
 
 	// connect discord
 	var dc webhook.Client
-
 	if *discordUrl != "" {
 		c, err := webhook.NewWithURL(*discordUrl)
 		if err != nil {
@@ -61,17 +62,6 @@ func main() {
 		*pgPass,
 		false)
 
-	if *t == "" {
-		log.Fatal("Please specify toml")
-	}
-
-	p := problem{
-		root: *dir,
-		base: path.Dir(*t),
-		name: path.Base(path.Dir(*t)),
-	}
-	toml.DecodeFile(*t, &p.info)
-
 	// connect minio
 	mc, err := minio.New(
 		*minioHost, *minioID, *minioKey, *useTLS,
@@ -80,8 +70,89 @@ func main() {
 		log.Fatal("Cannot connect to Minio:", err)
 	}
 
-	if err := upload(p, mc, *minioBucket, db, dc); err != nil {
-		log.Fatal("Failed to upload problem: ", err)
+	for _, t := range tomls {
+		p := problem{
+			root: *dir,
+			base: path.Dir(t),
+			name: path.Base(path.Dir(t)),
+		}
+		log.Println("upload problem:", p.name)
+
+		if _, err := toml.DecodeFile(t, &p.info); err != nil {
+			log.Fatalln("failed to decode toml:", err)
+		}
+
+		v, err := p.version()
+		if err != nil {
+			log.Fatalln("failed to calculate version:", err)
+		}
+		log.Println("new version:", v)
+
+		dbP, err := database.FetchProblem(db, p.name)
+		if err != nil {
+			log.Fatalln("failed to fetch problem:", err)
+		}
+		oldV := ""
+		if dbP != nil {
+			oldV = dbP.Testhash
+		}
+		if oldV == "" {
+			log.Println("new problem")
+		} else {
+			log.Println("old version:", dbP.Testhash)
+		}
+
+		if v == oldV {
+			log.Println("version is the same, skip")
+			continue
+		}
+
+		if err := p.generate(); err != nil {
+			log.Fatalln("failed to generate:", err)
+		}
+
+		if err := uploadFiles(p, mc, *minioBucket); err != nil {
+			log.Fatalln("failed to upload files:", err)
+		}
+
+		statement, err := ioutil.ReadFile(path.Join(p.base, "task_body.html"))
+		if err != nil {
+			log.Fatalln("failed to read task_body:", err)
+		}
+
+		source := fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
+
+		if err := database.SaveProblem(db, database.Problem{
+			Name:      p.name,
+			Title:     p.info.Title,
+			Timelimit: int32(p.info.TimeLimit * 1000),
+			Statement: string(statement),
+			SourceUrl: source,
+			Testhash:  v,
+		}); err != nil {
+			log.Fatalln("failed to update problem info:", err)
+		}
+
+		if dc != nil {
+			if oldV == "" {
+				if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
+					AddEmbeds(discord.NewEmbedBuilder().
+						SetTitlef("New Problem added: %s", p.info.Title).
+						SetColor(0x00ff00).
+						SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
+						AddField("Github", fmt.Sprintf("[link](%s)", source), false).
+						AddField("Testcase hash", v, false).
+						Build()).
+					Build(),
+				); err != nil {
+					log.Fatal("error sending message:", err)
+				}
+			}
+		}
+
+		if err := p.clean(); err != nil {
+			log.Fatalln("failed to clean:", err)
+		}
 	}
 
 	if err := uploadCategories(*dir, db); err != nil {
@@ -89,14 +160,11 @@ func main() {
 	}
 }
 
-func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB, dc webhook.Client) error {
-	log.Print("Upload: ", p.name)
-
+func uploadFiles(p problem, mc *minio.Client, bucket string) error {
 	v, err := p.version()
 	if err != nil {
 		log.Fatal("Failed to fetch version: ", err)
 	}
-	log.Print("New Version: ", v)
 
 	filepath.Walk(path.Join(p.base, "in"), func(fpath string, info fs.FileInfo, err error) error {
 		if path.Ext(fpath) == ".in" {
@@ -132,46 +200,6 @@ func upload(p problem, mc *minio.Client, bucket string, db *gorm.DB, dc webhook.
 	}
 	log.Print("File uploaded")
 
-	statement, err := ioutil.ReadFile(path.Join(p.base, "task_body.html"))
-	if err != nil {
-		return err
-	}
-
-	source := fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
-
-	prevP, err := database.FetchProblem(db, p.name)
-	if err != nil {
-		log.Fatal("Failed to fetch problem:", err)
-	}
-
-	if err := database.SaveProblem(db, database.Problem{
-		Name:      p.name,
-		Title:     p.info.Title,
-		Timelimit: int32(p.info.TimeLimit * 1000),
-		Statement: string(statement),
-		SourceUrl: source,
-		Testhash:  v,
-	}); err != nil {
-		return err
-	}
-
-	if dc != nil {
-		if prevP == nil {
-			if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
-				AddEmbeds(discord.NewEmbedBuilder().
-					SetTitlef("New Problem added: %s", p.info.Title).
-					SetColor(0x00ff00).
-					SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
-					AddField("Github", fmt.Sprintf("[link](%s)", source), false).
-					AddField("Testcase hash", v, false).
-					Build()).
-				Build(),
-			); err != nil {
-				log.Fatal("error sending message:", err)
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -184,6 +212,20 @@ type problem struct {
 		Title     string
 		TimeLimit float64
 	}
+}
+
+func (p *problem) generate() error {
+	cmd := exec.Command("../../library-checker-problems/generate.py", "--only-html", "-p", p.name)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func (p *problem) clean() error {
+	cmd := exec.Command("../../library-checker-problems/generate.py", "--clean", "-p", p.name)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func (p *problem) checkerHash() (string, error) {
@@ -249,6 +291,26 @@ func (p *problem) version() (string, error) {
 	return joinHashes(hashes), nil
 }
 
+func fileHash(path string) (string, error) {
+	checker, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(checker)), nil
+}
+
+func joinHashes(hashes []string) string {
+	arr := make([]string, len(hashes))
+	copy(arr, hashes)
+	sort.Strings(arr)
+
+	h := sha256.New()
+	for _, v := range arr {
+		h.Write([]byte(v))
+	}
+	return fmt.Sprintf("%x", h.Sum([]byte{}))
+}
+
 func uploadCategories(dir string, db *gorm.DB) error {
 	var data struct {
 		Categories []struct {
@@ -271,24 +333,4 @@ func uploadCategories(dir string, db *gorm.DB) error {
 	}
 
 	return database.SaveProblemCategories(db, cs)
-}
-
-func fileHash(path string) (string, error) {
-	checker, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", sha256.Sum256(checker)), nil
-}
-
-func joinHashes(hashes []string) string {
-	arr := make([]string, len(hashes))
-	copy(arr, hashes)
-	sort.Strings(arr)
-
-	h := sha256.New()
-	for _, v := range arr {
-		h.Write([]byte(v))
-	}
-	return fmt.Sprintf("%x", h.Sum([]byte{}))
 }

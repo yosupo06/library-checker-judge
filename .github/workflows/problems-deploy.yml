@@ -15,25 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gen-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
-    steps:
-     - id: matrix
-       run: python3 -c "import json; print('matrix={}'.format(json.dumps(list(map(str, range(0, ${{ inputs.parallel }}))))))" >> $GITHUB_OUTPUT
-      
-
   problems-deploy:
-    needs: gen-matrix
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
-    strategy:      
-      fail-fast: false
-      matrix:
-        index: ${{ fromJson(needs.gen-matrix.outputs.matrix) }}
 
     steps:
     - uses: actions/checkout@v3
