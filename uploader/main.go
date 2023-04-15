@@ -82,6 +82,11 @@ func main() {
 			log.Fatalln("failed to decode toml:", err)
 		}
 
+		// clean testcase & generate params.h
+		if err := p.clean(); err != nil {
+			log.Fatalln("failed to clean:", err)
+		}
+
 		v, err := p.version()
 		if err != nil {
 			log.Fatalln("failed to calculate version:", err)
