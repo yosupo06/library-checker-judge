@@ -220,14 +220,14 @@ type problem struct {
 }
 
 func (p *problem) generate() error {
-	cmd := exec.Command("../../library-checker-problems/generate.py", "--only-html", "-p", p.name)
+	cmd := exec.Command(path.Join(p.root, "generate.py"), "--only-html", "-p", p.name)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func (p *problem) clean() error {
-	cmd := exec.Command("../../library-checker-problems/generate.py", "--clean", "-p", p.name)
+	cmd := exec.Command(path.Join(p.root, "generate.py"), "--clean", "-p", p.name)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
