@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-import "google/protobuf/duration.proto";
-
 package librarychecker;
 
 option go_package = "github.com/yosupo06/library-checker-judge/api/proto";
@@ -14,7 +12,6 @@ service LibraryCheckerService {
     rpc ChangeUserInfo (ChangeUserInfoRequest) returns (ChangeUserInfoResponse) {}
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
-    rpc ChangeProblemInfo (ChangeProblemInfoRequest) returns (ChangeProblemInfoResponse) {}
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
     rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
     rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}
@@ -22,25 +19,6 @@ service LibraryCheckerService {
     rpc LangList (LangListRequest) returns (LangListResponse) {}
     rpc Ranking (RankingRequest) returns (RankingResponse) {} // used by another product
     rpc ProblemCategories (ProblemCategoriesRequest) returns (ProblemCategoriesResponse) {}
-    rpc ChangeProblemCategories (ChangeProblemCategoriesRequest) returns (ChangeProblemCategoriesResponse) {}
-
-    // --- Judge ---
-    rpc PopJudgeTask (PopJudgeTaskRequest) returns (PopJudgeTaskResponse) {}
-    rpc SyncJudgeTaskStatus (SyncJudgeTaskStatusRequest) returns (SyncJudgeTaskStatusResponse) {}
-    rpc FinishJudgeTask (FinishJudgeTaskRequest) returns (FinishJudgeTaskResponse) {}
-}
-
-service LibraryCheckerInternalService {
-    rpc Login (LoginRequest) returns (LoginResponse) {}
-    rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
-    rpc ChangeProblemInfo (ChangeProblemInfoRequest) returns (ChangeProblemInfoResponse) {}
-    rpc ChangeProblemCategories (ChangeProblemCategoriesRequest) returns (ChangeProblemCategoriesResponse) {}
-    rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
-
-    // --- Judge ---
-    rpc PopJudgeTask (PopJudgeTaskRequest) returns (PopJudgeTaskResponse) {}
-    rpc SyncJudgeTaskStatus (SyncJudgeTaskStatusRequest) returns (SyncJudgeTaskStatusResponse) {}
-    rpc FinishJudgeTask (FinishJudgeTaskRequest) returns (FinishJudgeTaskResponse) {}
 }
 
 // --- Register, Login ---
@@ -120,17 +98,6 @@ message ProblemInfoResponse {
     string case_version = 4; // hash of testcases
 }
 
-message ChangeProblemInfoRequest {
-    string name = 1; // "aplusb"
-    string title = 2;
-    string source_url = 6;
-    string statement = 3;
-    double time_limit = 4;
-    string case_version = 5;
-}
-message ChangeProblemInfoResponse {
-}
-
 // --- Category ---
 message ProblemCategory {
     string title = 1; // "Data Structure"
@@ -142,13 +109,6 @@ message ProblemCategoriesRequest {
 message ProblemCategoriesResponse {
     repeated ProblemCategory categories = 1;
 }
-
-message ChangeProblemCategoriesRequest {
-    repeated ProblemCategory categories = 1;
-}
-message ChangeProblemCategoriesResponse {
-}
-
 
 // --- Submission ---
 
@@ -236,39 +196,4 @@ message RankingRequest {
 }
 message RankingResponse {
     repeated UserStatistics statistics = 1;
-}
-
-// --- Judge ---
-
-message PopJudgeTaskRequest {
-    string judge_name = 1;
-    google.protobuf.Duration expected_time = 2;
-}
-
-message PopJudgeTaskResponse {
-    int32 submission_id = 1; // submission id
-}
-
-message SyncJudgeTaskStatusRequest {
-    string judge_name = 1;
-    int32 submission_id = 2;
-    string status = 3;
-    double time = 4; // 2.0 = 2 seconds
-    int64 memory = 5; // x bytes
-    bytes compile_error = 8;
-    repeated SubmissionCaseResult case_results = 6;
-    google.protobuf.Duration expected_time = 7;
-}
-message SyncJudgeTaskStatusResponse {
-}
-
-message FinishJudgeTaskRequest {
-    string judge_name = 1;
-    int32 submission_id = 2;
-    string status = 3 [deprecated=true];
-    double time = 4 [deprecated=true]; // 2.0 = 2 seconds
-    int64 memory = 5 [deprecated=true]; // x bytes
-    string case_version = 6;
-}
-message FinishJudgeTaskResponse {
 }

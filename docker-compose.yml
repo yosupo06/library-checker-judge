@@ -38,33 +38,9 @@ services:
       exit 0;
       "
 
-  api:
-    build:
-      dockerfile: Dockerfile.API
-    ports:
-      - 50051:50051
-    depends_on:
-      db:
-        condition: service_healthy
-      create-minio-bucket:
-        condition: service_completed_successfully
-    environment:
-      - API_DB_LOG=true
-      - HMAC_KEY=dummy_secret
-      - PG_HOST=db
-      - PG_TABLE=librarychecker
-      - PG_USER=postgres
-      - PG_PASS=passwd
-    healthcheck:
-        test: grpc_health_probe -addr localhost:50051
-        timeout: 10s
-        interval: 1s
-        retries: 30
-
   api-grpcweb:
     build:
       dockerfile: Dockerfile.API
-    command: -grpcweb
     ports:
       - 58080:50051
     depends_on:
