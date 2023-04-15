@@ -8,8 +8,6 @@ if __name__ == "__main__":
 
     tomls = sorted(list(filter(lambda p: not p.match('test/**/info.toml'), Path('../library-checker-problems/').glob('**/info.toml'))))
 
-    print("tomls: ", tomls)
-
     PG_USER = environ["PG_USER"]
     PG_PASS = environ["PG_PASS"]
     PG_TABLE = environ["PG_TABLE"]

@@ -142,11 +142,25 @@ func main() {
 			if oldV == "" {
 				if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
 					AddEmbeds(discord.NewEmbedBuilder().
-						SetTitlef("New Problem added: %s", p.info.Title).
+						SetTitlef("New problem added: %s", p.info.Title).
 						SetColor(0x00ff00).
 						SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
 						AddField("Github", fmt.Sprintf("[link](%s)", source), false).
-						AddField("Testcase hash", v, false).
+						AddField("Test case hash", v[0:16], false).
+						Build()).
+					Build(),
+				); err != nil {
+					log.Fatal("error sending message:", err)
+				}
+			} else if oldV != v {
+				if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
+					AddEmbeds(discord.NewEmbedBuilder().
+						SetTitlef("Testcase updated: %s", p.info.Title).
+						SetColor(0x0000ff).
+						SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
+						AddField("Github", fmt.Sprintf("[link](%s)", source), false).
+						AddField("Old test case hash", v[0:16], false).
+						AddField("New test case hash", v[0:16], false).
 						Build()).
 					Build(),
 				); err != nil {
