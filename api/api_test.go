@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +17,7 @@ import (
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/gorm"
 )
 
@@ -61,20 +61,20 @@ func createTestDB(t *testing.T) *gorm.DB {
 
 	db := database.Connect("localhost", "5432", dbName, "postgres", "passwd", getEnv("API_DB_LOG", "") != "")
 
-	database.RegisterUser(db, "admin", "password", true)
-	database.RegisterUser(db, "tester", "password", false)
+	if err := database.RegisterUser(db, "admin", "password", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := database.RegisterUser(db, "tester", "password", false); err != nil {
+		t.Fatal(err)
+	}
 
-	client, close := createAPIClient(t, db)
-	defer close()
-
-	ctx := loginAsAdmin(t, client)
-	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
-		Name:        "aplusb",
-		Title:       "A + B",
-		Statement:   "Please calculate A + B",
-		TimeLimit:   2.0,
-		CaseVersion: "dummy-initial-version",
-		SourceUrl:   "https://github.com/yosupo06/library-checker-problems/tree/master/sample/aplusb",
+	if err := database.SaveProblem(db, database.Problem{
+		Name:      "aplusb",
+		Title:     "A + B",
+		Statement: "Please calculate A + B",
+		Timelimit: 2000,
+		Testhash:  "dummy-initial-version",
+		SourceUrl: "https://github.com/yosupo06/library-checker-problems/tree/master/sample/aplusb",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func createAPIClient(t *testing.T, db *gorm.DB) (pb.LibraryCheckerServiceClient,
 		t.Fatal(err)
 	}
 	autoTokenManager := NewAuthTokenManager("dummy-hmac-secret")
-	s := NewGRPCServer(db, autoTokenManager, "../langs/langs.toml", false)
+	s := NewGRPCServer(db, autoTokenManager, "../langs/langs.toml")
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			log.Fatal("Server exited: ", err)
@@ -97,7 +97,7 @@ func createAPIClient(t *testing.T, db *gorm.DB) (pb.LibraryCheckerServiceClient,
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithInsecure()}
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.DialContext(
 		ctx,
 		"localhost:50053",
@@ -132,46 +132,6 @@ func loginAsAdmin(t *testing.T, client pb.LibraryCheckerServiceClient) context.C
 
 func loginAsTester(t *testing.T, client pb.LibraryCheckerServiceClient) context.Context {
 	return loginContext(t, "tester", client)
-}
-
-func submitSomething(t *testing.T, client pb.LibraryCheckerServiceClient) int32 {
-	ctx := context.Background()
-	src := "this is a test source"
-	submitResp, err := client.Submit(ctx, &pb.SubmitRequest{
-		Problem: "aplusb",
-		Source:  src,
-		Lang:    "cpp",
-	})
-	id := submitResp.Id
-	if err != nil {
-		t.Fatal("Failed to submit:", err)
-	}
-	t.Log("Submit: ", id)
-	return id
-}
-
-func testFetchSubmission(t *testing.T, id int32, client pb.LibraryCheckerServiceClient) *pb.SubmissionInfoResponse {
-	ctx := context.Background()
-	resp, err := client.SubmissionInfo(ctx, &pb.SubmissionInfoRequest{
-		Id: id,
-	})
-	if err != nil {
-		t.Fatalf("Failed to SubmissionInfo %d %d", id, err)
-	}
-	return resp
-}
-
-func assertEqualCases(t *testing.T, expectCases []*pb.SubmissionCaseResult, actualCases []*pb.SubmissionCaseResult) {
-	if len(actualCases) != len(expectCases) {
-		t.Fatal("Error CaseResults length differ", actualCases, expectCases)
-	}
-	for i := 0; i < len(actualCases); i++ {
-		expect := expectCases[i]
-		actual := actualCases[i]
-		if expect.Case != actual.Case || expect.Memory != actual.Memory || expect.Status != actual.Status || expect.Time != actual.Time {
-			t.Fatal("Case differ", expect, actual)
-		}
-	}
 }
 
 func TestProblemInfo(t *testing.T) {
@@ -465,193 +425,5 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 	}
 	if resp.User.IsAdmin {
 		t.Fatal("Promote to admin")
-	}
-}
-
-func TestChangeProblemInfo(t *testing.T) {
-	client, close := createAPIClient(t, createTestDB(t))
-	defer close()
-
-	ctx := loginAsAdmin(t, client)
-
-	oldProblem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
-		Name: "aplusb",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
-		Name:        "aplusb",
-		Title:       "dummy-title",
-		TimeLimit:   123.0,
-		Statement:   "dummy-statement",
-		CaseVersion: "dummy-version",
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
-		Name: "aplusb",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if problem.Title != "dummy-title" {
-		t.Fatal("Title is not changed")
-	}
-	if problem.TimeLimit != 123.0 {
-		t.Fatalf("TimeLimit is not changed: %v", problem.TimeLimit)
-	}
-	if problem.Statement != "dummy-statement" {
-		t.Fatal("statement is not changed")
-	}
-	if problem.CaseVersion != "dummy-version" {
-		t.Fatal("CaseVersion is not changed: ", problem.CaseVersion)
-	}
-
-	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
-		Name:        "aplusb",
-		Title:       oldProblem.Title,
-		TimeLimit:   oldProblem.TimeLimit,
-		Statement:   oldProblem.Statement,
-		CaseVersion: oldProblem.CaseVersion,
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	nowProblem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
-		Name: "aplusb",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if nowProblem.Title != oldProblem.Title {
-		t.Fatal("Title is not recovered")
-	}
-	if nowProblem.TimeLimit != oldProblem.TimeLimit {
-		t.Fatalf("TimeLimit is not recovered: %v vs %v", nowProblem.TimeLimit, problem.TimeLimit)
-	}
-	if nowProblem.Statement != oldProblem.Statement {
-		t.Fatal("Statement is not changed")
-	}
-	if nowProblem.CaseVersion != oldProblem.CaseVersion {
-		t.Fatal("CaseVersion is not changed")
-	}
-}
-
-func TestChangeProblemInfoByTester(t *testing.T) {
-	client, close := createAPIClient(t, createTestDB(t))
-	defer close()
-
-	ctx := loginAsTester(t, client)
-
-	_, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
-		Name: "aplusb",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
-		Name:        "aplusb",
-		Title:       "dummy-title",
-		TimeLimit:   123.0,
-		Statement:   "dummy-statement",
-		CaseVersion: "dummy-version",
-	})
-	if err == nil {
-		t.Fatal("success to ChangeProblemInfo")
-	}
-	t.Log(err)
-}
-
-func TestCreateProblem(t *testing.T) {
-	client, close := createAPIClient(t, createTestDB(t))
-	defer close()
-
-	ctx := loginAsAdmin(t, client)
-
-	name := uuid.New().String()
-	if _, err := client.ChangeProblemInfo(ctx, &pb.ChangeProblemInfoRequest{
-		Name:        name,
-		Title:       "dummy-title-x",
-		TimeLimit:   1234.0,
-		Statement:   "dummy-statement-x",
-		CaseVersion: "dummy-version-x",
-	}); err != nil {
-		t.Fatal("Failed to create problem")
-	}
-
-	problem, err := client.ProblemInfo(ctx, &pb.ProblemInfoRequest{
-		Name: name,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if problem.Title != "dummy-title-x" {
-		t.Fatal("Title is invalid")
-	}
-	if problem.TimeLimit != 1234.0 {
-		t.Fatalf("TimeLimit is invalid: %v", problem.TimeLimit)
-	}
-	if problem.Statement != "dummy-statement-x" {
-		t.Fatal("statement is invalid")
-	}
-	if problem.CaseVersion != "dummy-version-x" {
-		t.Fatal("CaseVersion is invalid")
-	}
-}
-
-func TestProblemCategories(t *testing.T) {
-	client, close := createAPIClient(t, createTestDB(t))
-	defer close()
-
-	ctx := loginAsAdmin(t, client)
-	testData := []*pb.ProblemCategory{
-		{
-			Title:    "a",
-			Problems: []string{"x", "y"},
-		},
-		{
-			Title:    "b",
-			Problems: []string{"z"},
-		},
-	}
-
-	for phase := 0; phase <= 1; phase++ {
-
-		if _, err := client.ChangeProblemCategories(ctx, &pb.ChangeProblemCategoriesRequest{
-			Categories: testData,
-		}); err != nil {
-			t.Fatal(err)
-		}
-		res, err := client.ProblemCategories(ctx, &pb.ProblemCategoriesRequest{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		expect := testData
-		actual := res.Categories
-
-		if len(expect) != len(actual) {
-			t.Fatal("len is differ")
-		}
-
-		for i := 0; i < len(expect); i++ {
-			if expect[i].Title != actual[i].Title {
-				t.Fatal("title is differ")
-			}
-			if !reflect.DeepEqual(expect[i].Problems, actual[i].Problems) {
-				t.Fatal("problems is differ")
-			}
-		}
-
-		testData = append(testData, &pb.ProblemCategory{
-			Title:    "c",
-			Problems: []string{"w"},
-		})
 	}
 }
