@@ -51,21 +51,6 @@ jobs:
       name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
-    - id: deploy-api
-      name: Deploy API to Cloud Run
-      run: >
-        gcloud run deploy
-        ${{ inputs.env }}-api
-        --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
-        --platform=managed
-        --region=asia-northeast1
-        --add-cloudsql-instances=library-checker-sql
-        --args=""
-        --set-env-vars=PG_HOST=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql
-        --set-secrets=PG_TABLE=${{ inputs.env }}-pg-table:latest,PG_USER=${{ inputs.env }}-pg-user:latest,PG_PASS=${{ inputs.env }}-pg-pass:latest,HMAC_KEY=${{ inputs.env }}-hmac-key:latest
-        --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
-        --max-instances=10
-
     - id: deploy-grpcweb-api
       name: Deploy API(gRPC) to Cloud Run
       run: >
@@ -75,7 +60,6 @@ jobs:
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql
-        --args=-grpcweb
         --set-env-vars=PG_HOST=/cloudsql/library-checker-project:asia-northeast1:library-checker-sql
         --set-secrets=PG_TABLE=${{ inputs.env }}-pg-table:latest,PG_USER=${{ inputs.env }}-pg-user:latest,PG_PASS=${{ inputs.env }}-pg-pass:latest,HMAC_KEY=${{ inputs.env }}-hmac-key:latest
         --service-account=cloud-run-api@library-checker-project.iam.gserviceaccount.com
