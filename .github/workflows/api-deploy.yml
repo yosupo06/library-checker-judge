@@ -57,6 +57,7 @@ jobs:
         gcloud run deploy
         ${{ inputs.env }}-api-grpcweb
         --image=asia.gcr.io/library-checker-project/${{ inputs.env }}-api
+        --args=""
         --platform=managed
         --region=asia-northeast1
         --add-cloudsql-instances=library-checker-sql
