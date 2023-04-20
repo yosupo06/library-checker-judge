@@ -29,7 +29,7 @@ if __name__ == "__main__":
         ["-miniobucket", MINIO_BUCKET] +
         ["-discordwebhook", DISCORD_WEBHOOK] +
         ["-dir", "../library-checker-problems"] +
-        ["-force"] if FORCE_UPLOAD == "true" else [] +
+        (["-force"] if FORCE_UPLOAD == "true" else []) +
         ["-tls"] +
         [str(toml.absolute()) for toml in tomls],
         check=True
