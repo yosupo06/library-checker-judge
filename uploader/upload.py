@@ -5,8 +5,10 @@ import resource
 
 if __name__ == "__main__":
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+    print("#######################################")
 
     tomls = sorted(list(filter(lambda p: not p.match('test/**/info.toml'), Path('../library-checker-problems/').glob('**/info.toml'))))
+    print("#######################################")
 
     PG_USER = environ["PG_USER"]
     PG_PASS = environ["PG_PASS"]
@@ -17,8 +19,10 @@ if __name__ == "__main__":
     MINIO_BUCKET = environ["MINIO_BUCKET"]
     DISCORD_WEBHOOK = environ["DISCORD_WEBHOOK"]
     FORCE_UPLOAD = environ["FORCE_UPLOAD"]
+    print("#######################################")
 
     print("force: ", FORCE_UPLOAD)
+    print("#######################################")
     subprocess.run(
         ["./uploader"] +
         ["-pguser", PG_USER] +
