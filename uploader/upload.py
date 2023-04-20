@@ -18,6 +18,7 @@ if __name__ == "__main__":
     DISCORD_WEBHOOK = environ["DISCORD_WEBHOOK"]
     FORCE_UPLOAD = environ["FORCE_UPLOAD"]
 
+    print("force: ", FORCE_UPLOAD)
     subprocess.run(
         ["./uploader"] +
         ["-pguser", PG_USER] +
