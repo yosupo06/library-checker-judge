@@ -2,8 +2,10 @@ import subprocess
 from pathlib import Path
 from os import environ
 import resource
+import time
 
 if __name__ == "__main__":
+    time.sleep(10)
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
     print("#######################################")
 
