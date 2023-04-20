@@ -6,9 +6,6 @@ on:
       env:
         required: true
         type: string
-      parallel:
-        default: 10
-        type: number
 
 concurrency:
   group: ${{ inputs.env }}-problems-deploy
@@ -52,7 +49,7 @@ jobs:
           minio-host:library-checker-project/minio-host/latest
           minio-id:library-checker-project/minio-id/latest
           minio-secret:library-checker-project/minio-secret/latest
-          minio-bucket:library-checker-project/minio-bucket/latest
+          minio-bucket:library-checker-project/${{ inputs.env }}-minio-bucket/latest
           discord-webhook:library-checker-project/${{ inputs.env }}-discord-announcement-webhook/latest
 
     - id: build-uploader
@@ -73,8 +70,6 @@ jobs:
         ./cloud-sql-proxy library-checker-project:asia-northeast1:library-checker-sql &
         python3 upload.py
       env:
-        CLOUD_RUN_TASK_INDEX: '${{ matrix.index }}'
-        CLOUD_RUN_TASK_COUNT: '${{ inputs.parallel }}'
         PG_USER: '${{ steps.secrets.outputs.pg-user }}'
         PG_PASS: '${{ steps.secrets.outputs.pg-pass }}'
         PG_TABLE: '${{ steps.secrets.outputs.pg-table }}'
