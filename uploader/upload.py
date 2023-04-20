@@ -23,7 +23,7 @@ if __name__ == "__main__":
     FORCE_UPLOAD = environ["FORCE_UPLOAD"]
     print("#######################################")
 
-    print("force: ", FORCE_UPLOAD)
+    print("force: ", FORCE_UPLOAD, FORCE_UPLOAD == 'true', FORCE_UPLOAD.strip() == 'true')
     print("#######################################")
     subprocess.run(
         ["./uploader"] +
