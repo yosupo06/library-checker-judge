@@ -106,7 +106,7 @@ func main() {
 			log.Println("old version:", dbP.Testhash)
 		}
 
-		if v != oldV && !*forceUpload {
+		if v != oldV || *forceUpload {
 			if err := p.generate(); err != nil {
 				log.Fatalln("failed to generate:", err)
 			}

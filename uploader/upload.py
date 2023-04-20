@@ -21,10 +21,7 @@ if __name__ == "__main__":
     MINIO_BUCKET = environ["MINIO_BUCKET"]
     DISCORD_WEBHOOK = environ["DISCORD_WEBHOOK"]
     FORCE_UPLOAD = environ["FORCE_UPLOAD"]
-    print("#######################################")
 
-    print("force: ", FORCE_UPLOAD, FORCE_UPLOAD == 'true', FORCE_UPLOAD.strip() == 'true')
-    print("#######################################")
     subprocess.run(
         ["./uploader"] +
         ["-pguser", PG_USER] +
