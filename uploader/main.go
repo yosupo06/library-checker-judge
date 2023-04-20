@@ -40,6 +40,8 @@ func main() {
 
 	useTLS := flag.Bool("tls", false, "use https for api / minio")
 
+	forceUpload := flag.Bool("force", false, "force upload even if the version is the same")
+
 	flag.Parse()
 
 	tomls := flag.Args()
@@ -104,9 +106,7 @@ func main() {
 			log.Println("old version:", dbP.Testhash)
 		}
 
-		if v == oldV {
-			log.Println("version is the same, skip upload")
-		} else {
+		if v != oldV && !*forceUpload {
 			if err := p.generate(); err != nil {
 				log.Fatalln("failed to generate:", err)
 			}
@@ -154,7 +154,7 @@ func main() {
 							SetColor(0x0000ff).
 							SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
 							AddField("Github", fmt.Sprintf("[link](%s)", source), false).
-							AddField("Old test case hash", v[0:16], false).
+							AddField("Old test case hash", oldV[0:16], false).
 							AddField("New test case hash", v[0:16], false).
 							Build()).
 						Build(),
@@ -163,6 +163,8 @@ func main() {
 					}
 				}
 			}
+		} else {
+			log.Println("version is the same, skip upload")
 		}
 
 		if err := p.deleteFiles(mc, *minioBucket); err != nil {
