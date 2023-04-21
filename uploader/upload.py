@@ -5,12 +5,9 @@ import resource
 import time
 
 if __name__ == "__main__":
-    time.sleep(10)
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
-    print("#######################################")
 
     tomls = sorted(list(filter(lambda p: not p.match('test/**/info.toml'), Path('../library-checker-problems/').glob('**/info.toml'))))
-    print("#######################################")
 
     PG_USER = environ["PG_USER"]
     PG_PASS = environ["PG_PASS"]
