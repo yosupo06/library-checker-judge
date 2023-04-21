@@ -2,6 +2,11 @@ name: Dev-Problems-Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        type: boolean
+        default: false
+        description: "force upload"
 
 jobs:
   problems-deploy:
@@ -9,3 +14,4 @@ jobs:
     secrets: inherit
     with:
       env: dev
+      force: ${{ inputs.force }}

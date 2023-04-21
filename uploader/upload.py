@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 from os import environ
 import resource
+import time
 
 if __name__ == "__main__":
     resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
@@ -16,6 +17,7 @@ if __name__ == "__main__":
     MINIO_SECRET = environ["MINIO_SECRET"]
     MINIO_BUCKET = environ["MINIO_BUCKET"]
     DISCORD_WEBHOOK = environ["DISCORD_WEBHOOK"]
+    FORCE_UPLOAD = environ["FORCE_UPLOAD"]
 
     subprocess.run(
         ["./uploader"] +
@@ -28,6 +30,7 @@ if __name__ == "__main__":
         ["-miniobucket", MINIO_BUCKET] +
         ["-discordwebhook", DISCORD_WEBHOOK] +
         ["-dir", "../library-checker-problems"] +
+        (["-force"] if FORCE_UPLOAD == "true" else []) +
         ["-tls"] +
         [str(toml.absolute()) for toml in tomls],
         check=True
