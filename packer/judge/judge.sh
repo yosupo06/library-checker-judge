@@ -7,7 +7,7 @@ ENV=$(curl -X GET -H "Metadata-Flavor: Google" "http://metadata.google.internal/
 MINIO_HOST=$(gcloud secrets versions access latest --secret=minio-host)
 MINIO_ID=$(gcloud secrets versions access latest --secret=minio-id)
 MINIO_KEY=$(gcloud secrets versions access latest --secret=minio-secret)
-MINIO_BUCKET=$(gcloud secrets versions access latest --secret=minio-bucket)
+MINIO_BUCKET=$(gcloud secrets versions access latest --secret=$ENV-minio-bucket)
 
 PG_HOST=$(gcloud secrets versions access latest --secret=pg-private-ip)
 PG_USER=$(gcloud secrets versions access latest --secret=$ENV-pg-user)
