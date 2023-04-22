@@ -34,8 +34,7 @@
     "rehype-sanitize": "^5.0.1",
     "remark-math": "^5.1.1",
     "stream-browserify": "^3.0.0",
-    "toml": "^3.0.0",
-    "typescript": "^4.5.4"
+    "toml": "^3.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -46,35 +45,6 @@
     "prettier:check": "prettier --check \"src/**/*.{ts,js,tsx,jsx}\"",
     "lint": "eslint --max-warnings 0 src --ext .ts,.js,.tsx,.jsx",
     "lint:fix": "eslint --fix src --ext .ts,.js,.tsx,.jsx"
-  },
-  "eslintConfig": {
-    "env": {
-      "browser": true
-    },
-    "plugins": [
-      "@typescript-eslint",
-      "unused-imports"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "ignorePatterns": [
-      "build",
-      "src/api/Library_checkerServiceClientPb.ts",
-      "**/*_pb.js",
-      "**/*_pb.d.ts"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "project": [
-        "./tsconfig.json"
-      ]
-    },
-    "rules": {
-      "@typescript-eslint/no-empty-interface": "off",
-      "unused-imports/no-unused-imports": "error"
-    }
   },
   "browserslist": {
     "production": [
@@ -89,13 +59,15 @@
     ]
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
     "@typescript-eslint/typescript-estree": "^5.0.0",
+    "eslint": "^8.39.0",
     "eslint-plugin-unused-imports": "^2.0.0",
     "grpc_tools_node_protoc_ts": "^5.3.2",
     "grpc-tools": "^1.11.2",
     "prettier": "^2.4.1",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "typescript": "^5.0.4"
   }
 }

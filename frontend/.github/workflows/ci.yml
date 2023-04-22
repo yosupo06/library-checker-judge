@@ -17,7 +17,7 @@ jobs:
           path: library-checker-judge
       - uses: actions/setup-node@v2
         with:
-          node-version: '15'
+          node-version: '18'
       - name: install
         run: |
           npm ci
