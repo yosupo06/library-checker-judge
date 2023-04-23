@@ -42,3 +42,7 @@ jobs:
     - id: deploy
       name: App engine deploy
       run: gcloud app deploy app.yaml
+
+    - id: deploy-dispatch
+      name: App engine deploy
+      run: gcloud app deploy dispatch.yaml
