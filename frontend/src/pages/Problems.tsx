@@ -151,10 +151,6 @@ const Problems: React.FC = () => {
         <Typography variant="h2" paragraph={true}>
           Problem List
         </Typography>
-        <Alert severity="info">
-          If you have some trouble, please use{" "}
-          <Link href="https://old.yosupo.jp">old.yosupo.jp</Link>
-        </Alert>
         <ProblemsTabs categories={categories} solvedStatus={solvedStatus} />
       </Box>
     </Container>
