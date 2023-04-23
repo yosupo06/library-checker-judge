@@ -1,8 +1,6 @@
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
-import Alert from "@mui/material/Alert";
-import Link from "@mui/material/Link";
 import React, { useContext, useEffect, useState } from "react";
 import {
   useProblemCategories,
