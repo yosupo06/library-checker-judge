@@ -1,4 +1,4 @@
-service: spa
+service: default
 runtime: nodejs12
 
 handlers:
