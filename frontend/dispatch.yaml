@@ -1,7 +1,7 @@
 dispatch:
   - url: "judge.yosupo.jp/*"
-    service: spa
+    service: default
   - url: "beta.yosupo.jp/*"
-    service: spa
+    service: default
   - url: "old.yosupo.jp/*"
-    service: spa
+    service: default

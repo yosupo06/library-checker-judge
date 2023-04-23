@@ -40,9 +40,9 @@ jobs:
       run: npm run build
 
     - id: deploy
-      name: App engine deploy
+      name: Deploy app
       run: gcloud app deploy --quiet app.yaml
 
     - id: deploy-dispatch
-      name: App engine deploy
+      name: Deploy dispatch.yaml
       run: gcloud app deploy --quiet dispatch.yaml
