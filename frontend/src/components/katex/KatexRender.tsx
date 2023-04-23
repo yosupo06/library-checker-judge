@@ -1,4 +1,4 @@
-import renderMathInElement from "katex/dist/contrib/auto-render";
+import renderMathInElement from "katex/contrib/auto-render";
 import React, { useContext, useEffect, useRef } from "react";
 import { LangContext } from "../../contexts/LangContext";
 

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import Typography from "@mui/material/Typography";
 import renderMathInElement, {
   RenderMathInElementOptions,
-} from "katex/dist/contrib/auto-render";
+} from "katex/contrib/auto-render";
 
 interface Props {
   variant?:
