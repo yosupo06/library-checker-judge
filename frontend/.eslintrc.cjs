@@ -4,7 +4,6 @@ module.exports = {
     plugins: ['@typescript-eslint'],
     root: true,
     ignorePatterns: [
-        "build",
         "src/api/library_checker.ts",
         "src/api/library_checker.client.ts",
     ]
