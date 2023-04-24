@@ -12,7 +12,7 @@ import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
 import { styled } from "@mui/system";
-import { useUserInfo } from "../../api/library_checker_client";
+import { useUserInfo } from "../../api/client_wrapper";
 import { Box } from "@mui/material";
 
 const NavbarLink = styled(Link)({
@@ -154,7 +154,7 @@ const NavBar: React.FC = () => {
   });
 
   const isDeveloper =
-    userInfoQuery.isFetched && userInfoQuery.data?.getUser()?.getIsDeveloper();
+    userInfoQuery.isSuccess && userInfoQuery.data.user?.isDeveloper;
 
   let elements: ReactElement[] = [];
 

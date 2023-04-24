@@ -13,8 +13,8 @@ import library_checker_client, {
   authMetadata,
   useLangList,
   useProblemInfo,
-} from "../api/library_checker_client";
-import { ProblemInfoResponse, SubmitRequest } from "../api/library_checker_pb";
+} from "../api/client_wrapper";
+import { ProblemInfoResponse } from "../api/library_checker";
 import SourceEditor from "../components/SourceEditor";
 import KatexRender from "../components/katex/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
@@ -59,7 +59,7 @@ const UsefulLinks: React.FC<{
       <Button
         variant="outlined"
         startIcon={<GitHub />}
-        href={problemInfo.getSourceUrl()}
+        href={problemInfo.sourceUrl}
       >
         Github
       </Button>
@@ -80,7 +80,7 @@ const ProblemInfo: React.FC = () => {
   const problemInfoQuery = useProblemInfo(problemId);
   const langListQuery = useLangList();
 
-  if (problemInfoQuery.isLoading || problemInfoQuery.isIdle) {
+  if (problemInfoQuery.isLoading) {
     return (
       <Box>
         <CircularProgress />
@@ -106,24 +106,21 @@ const ProblemInfo: React.FC = () => {
     }
     library_checker_client
       .submit(
-        new SubmitRequest()
-          .setLang(lang)
-          .setProblem(problemId)
-          .setSource(source),
-        (auth && authMetadata(auth.state)) ?? null
+        { lang: lang, problem: problemId, source: source },
+        (auth && authMetadata(auth.state)) ?? undefined
       )
       .then((resp) => {
-        navigate(`/submission/${resp.getId()}`);
+        navigate(`/submission/${resp.response.id}`);
       });
   };
 
   return (
     <Container>
       <KatexTypography variant="h2" paragraph={true}>
-        {problemInfoQuery.data.getTitle()}
+        {problemInfoQuery.data.title}
       </KatexTypography>
       <Typography variant="body1" paragraph={true}>
-        Time Limit: {problemInfoQuery.data.getTimeLimit()} sec
+        Time Limit: {problemInfoQuery.data.timeLimit} sec
       </Typography>
 
       <UsefulLinks
@@ -133,7 +130,7 @@ const ProblemInfo: React.FC = () => {
       />
       <Divider />
 
-      <KatexRender text={problemInfoQuery.data.getStatement()} />
+      <KatexRender text={problemInfoQuery.data.statement} />
 
       <Divider
         sx={{
@@ -171,9 +168,9 @@ const ProblemInfo: React.FC = () => {
           >
             <MenuItem value="">Lang</MenuItem>
             {langListQuery.isSuccess &&
-              langListQuery.data.getLangsList().map((e) => (
-                <MenuItem key={e.getId()} value={e.getId()}>
-                  {e.getName()}
+              langListQuery.data.langs.map((e) => (
+                <MenuItem key={e.id} value={e.id}>
+                  {e.name}
                 </MenuItem>
               ))}
           </Select>

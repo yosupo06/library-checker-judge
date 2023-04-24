@@ -16,7 +16,7 @@ import {
   useProblemCategories,
   useProblemList,
   useSubmissionList,
-} from "../api/library_checker_client";
+} from "../api/client_wrapper";
 import SubmissionTable from "../components/SubmissionTable";
 import { categoriseProblems } from "../utils/ProblemCategorizer";
 import { styled } from "@mui/system";
@@ -76,11 +76,8 @@ const Submissions: React.FC = () => {
 
   if (
     langListQuery.isLoading ||
-    langListQuery.isIdle ||
     problemListQuery.isLoading ||
-    problemListQuery.isIdle ||
-    problemCategoriesQuery.isLoading ||
-    problemCategoriesQuery.isIdle
+    problemCategoriesQuery.isLoading
   ) {
     return (
       <Box>
@@ -122,7 +119,7 @@ const Submissions: React.FC = () => {
   };
 
   const submissionList = (() => {
-    if (submissionListQuery.isLoading || submissionListQuery.isIdle) {
+    if (submissionListQuery.isLoading) {
       return (
         <Paper>
           <SubmissionTable overviews={[]} />
@@ -136,11 +133,11 @@ const Submissions: React.FC = () => {
     const value = submissionListQuery.data;
     return (
       <Paper>
-        <SubmissionTable overviews={value.getSubmissionsList()} />
+        <SubmissionTable overviews={value.submissions} />
         <TablePagination
           rowsPerPage={rowsPerPage}
           component="div"
-          count={value.getCount()}
+          count={value.count}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
@@ -150,8 +147,8 @@ const Submissions: React.FC = () => {
   })();
 
   const categories = categoriseProblems(
-    problemListQuery.data.getProblemsList(),
-    problemCategoriesQuery.data.getCategoriesList()
+    problemListQuery.data.problems,
+    problemCategoriesQuery.data.categories
   );
 
   return (
@@ -170,8 +167,8 @@ const Submissions: React.FC = () => {
             {categories.map((category) =>
               [<ListSubheader>{category.name}</ListSubheader>].concat(
                 category.problems.map((problem) => (
-                  <MenuItem key={problem.getName()} value={problem.getName()}>
-                    <KatexTypography>{problem.getTitle()}</KatexTypography>
+                  <MenuItem key={problem.name} value={problem.name}>
+                    <KatexTypography>{problem.title}</KatexTypography>
                   </MenuItem>
                 ))
               )
@@ -205,9 +202,9 @@ const Submissions: React.FC = () => {
           >
             <MenuItem value="">Lang</MenuItem>
             {langListQuery.isSuccess &&
-              langListQuery.data.getLangsList().map((e) => (
-                <MenuItem key={e.getId()} value={e.getId()}>
-                  {e.getName()}
+              langListQuery.data.langs.map((e) => (
+                <MenuItem key={e.id} value={e.id}>
+                  {e.name}
                 </MenuItem>
               ))}
           </Select>

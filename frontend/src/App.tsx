@@ -18,7 +18,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { grey } from "@mui/material/colors";
 import NotFound from "./pages/NotFound";
 import Register from "./pages/Register";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import StatementViewer from "./pages/StatementViewer";
 import { Box } from "@mui/system";
 const theme = createTheme({

@@ -6,8 +6,8 @@ import {
   useProblemCategories,
   useProblemList,
   useUserInfo,
-} from "../api/library_checker_client";
-import { SolvedStatus } from "../api/library_checker_pb";
+} from "../api/client_wrapper";
+import { SolvedStatus } from "../api/library_checker";
 import ProblemList from "../components/ProblemList";
 import { AuthContext } from "../contexts/AuthContext";
 import {
@@ -97,12 +97,7 @@ const Problems: React.FC = () => {
     enabled: userName !== "",
   });
 
-  if (
-    problemListQuery.isLoading ||
-    problemListQuery.isIdle ||
-    problemCategoriesQuery.isLoading ||
-    problemCategoriesQuery.isIdle
-  ) {
+  if (problemListQuery.isLoading || problemCategoriesQuery.isLoading) {
     return (
       <Box>
         <CircularProgress />
@@ -125,22 +120,22 @@ const Problems: React.FC = () => {
     );
   }
 
-  const problemList = problemListQuery.data.getProblemsList();
+  const problemList = problemListQuery.data.problems;
 
   const solvedStatus: { [problem: string]: "latest_ac" | "ac" } = {};
   if (userInfoQuery.data != null) {
-    userInfoQuery.data.toObject().solvedMapMap.forEach((value) => {
-      if (value[1] === SolvedStatus.LATEST_AC) {
-        solvedStatus[value[0]] = "latest_ac";
-      } else if (value[1] === SolvedStatus.AC) {
-        solvedStatus[value[0]] = "ac";
+    Object.entries(userInfoQuery.data.solvedMap).forEach(([p, status]) => {
+      if (status === SolvedStatus.LATEST_AC) {
+        solvedStatus[p] = "latest_ac";
+      } else if (status === SolvedStatus.AC) {
+        solvedStatus[p] = "ac";
       }
     });
   }
 
   const categories = categoriseProblems(
     problemList,
-    problemCategoriesQuery.data.getCategoriesList()
+    problemCategoriesQuery.data.categories
   );
 
   return (

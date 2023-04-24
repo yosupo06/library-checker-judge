@@ -8,9 +8,9 @@
 ## How to Use
 
 ```sh
-./gen_protoc.sh /path/to/library-checker-judge/api/proto/library_checker.proto
-
 npm install
+
+npx protoc --ts_out src/api/ --proto_path ../library-checker-judge/api/proto ../library-checker-judge/api/proto/library_checker.proto
 
 # access to the API server of judge.yosupo.jp
 npm run start

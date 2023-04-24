@@ -5,7 +5,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
-import { Problem } from "../api/library_checker_pb";
+import { Problem } from "../api/library_checker";
 import { Link } from "react-router-dom";
 import { lightGreen, cyan } from "@mui/material/colors";
 import KatexTypography from "./katex/KatexTypography";
@@ -37,14 +37,14 @@ const ProblemList: React.FC<Props> = (props) => {
       <Table>
         <TableBody>
           {problems.map((problem) => (
-            <TableRow key={problem.getName()}>
+            <TableRow key={problem.name}>
               <TableCell
                 sx={{
-                  bgcolor: bgColorMap[solvedStatus[problem.getName()]],
+                  bgcolor: bgColorMap[solvedStatus[problem.name]],
                 }}
               >
-                <NavbarLink to={`/problem/${problem.getName()}`}>
-                  <KatexTypography>{problem.getTitle()}</KatexTypography>
+                <NavbarLink to={`/problem/${problem.name}`}>
+                  <KatexTypography>{problem.title}</KatexTypography>
                 </NavbarLink>
               </TableCell>
             </TableRow>

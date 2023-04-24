@@ -10,8 +10,8 @@ import { DoneOutline } from "@mui/icons-material";
 import "katex/dist/katex.min.css";
 import React from "react";
 import { Link } from "react-router-dom";
-import { useLangList } from "../api/library_checker_client";
-import { SubmissionOverview } from "../api/library_checker_pb";
+import { useLangList } from "../api/client_wrapper";
+import { SubmissionOverview } from "../api/library_checker";
 import KatexTypography from "./katex/KatexTypography";
 import { styled } from "@mui/system";
 
@@ -30,11 +30,7 @@ const SubmissionTable: React.FC<Props> = (props) => {
 
   const langListQuery = useLangList();
 
-  if (
-    langListQuery.isLoading ||
-    langListQuery.isIdle ||
-    langListQuery.isError
-  ) {
+  if (langListQuery.isLoading || langListQuery.isError) {
     return (
       <TableContainer>
         <Table>
@@ -56,12 +52,13 @@ const SubmissionTable: React.FC<Props> = (props) => {
       </TableContainer>
     );
   }
-  const idToName = langListQuery.data
-    .getLangsList()
-    .reduce<{ [name: string]: string }>((dict, problem) => {
-      dict[problem.getId()] = problem.getName();
+  const idToName = langListQuery.data.langs.reduce<{ [name: string]: string }>(
+    (dict, problem) => {
+      dict[problem.id] = problem.name;
       return dict;
-    }, {});
+    },
+    {}
+  );
 
   return (
     <TableContainer>
@@ -79,38 +76,36 @@ const SubmissionTable: React.FC<Props> = (props) => {
         </TableHead>
         <TableBody>
           {overviews.map((row) => (
-            <TableRow key={row.getId()}>
+            <TableRow key={row.id}>
               <TableCell>
-                <CustomLink to={`/submission/${row.getId()}`}>
-                  {row.getId()}
-                </CustomLink>
+                <CustomLink to={`/submission/${row.id}`}>{row.id}</CustomLink>
               </TableCell>
               <TableCell>
-                <CustomLink to={`/problem/${row.getProblemName()}`}>
-                  <KatexTypography>{row.getProblemTitle()}</KatexTypography>
+                <CustomLink to={`/problem/${row.problemName}`}>
+                  <KatexTypography>{row.problemTitle}</KatexTypography>
                 </CustomLink>
               </TableCell>
-              <TableCell>{idToName[row.getLang()]}</TableCell>
+              <TableCell>{idToName[row.lang]}</TableCell>
               <TableCell>
-                {row.getUserName() === "" ? (
+                {row.userName === "" ? (
                   "(Anonymous)"
                 ) : (
-                  <CustomLink to={`/user/${row.getUserName()}`}>
-                    {row.getUserName()}
+                  <CustomLink to={`/user/${row.userName}`}>
+                    {row.userName}
                   </CustomLink>
                 )}
               </TableCell>
               <TableCell>
-                {row.getStatus()}
-                {row.getIsLatest() && row.getStatus() === "AC" && (
+                {row.status}
+                {row.isLatest && row.status === "AC" && (
                   <DoneOutline style={{ color: green[500], height: "15px" }} />
                 )}
               </TableCell>
-              <TableCell>{Math.round(row.getTime() * 1000)} ms</TableCell>
+              <TableCell>{Math.round(row.time * 1000)} ms</TableCell>
               <TableCell>
-                {row.getMemory() === -1
+                {row.memory === -1n
                   ? -1
-                  : (row.getMemory() / 1024 / 1024).toFixed(2)}{" "}
+                  : (Number(row.memory) / 1024 / 1024).toFixed(2)}{" "}
                 Mib
               </TableCell>
             </TableRow>
