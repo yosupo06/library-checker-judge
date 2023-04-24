@@ -29,9 +29,8 @@ export const authMetadata = (state: AuthState): RpcOptions | undefined => {
   }
 };
 
-const api_url = process.env.REACT_APP_API_URL;
 const transport = new GrpcWebFetchTransport({
-  baseUrl: api_url ?? "https://grpcweb-apiv1.yosupo.jp:443",
+  baseUrl: import.meta.env.VITE_API_URL,
 });
 const client = new LibraryCheckerServiceClient(transport);
 export default client;

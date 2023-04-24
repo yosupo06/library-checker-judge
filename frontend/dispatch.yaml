@@ -1,3 +1,5 @@
 dispatch:
   - url: "judge.yosupo.jp/*"
     service: default
+  - url: "dev.judge.yosupo.jp/*"
+    service: dev

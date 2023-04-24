@@ -1,5 +1,5 @@
-service: default
-runtime: nodejs12
+service: dev
+runtime: nodejs18
 
 handlers:
   # Following items are necessary: https://github.com/atcoder/ac-library/issues/74
@@ -16,14 +16,12 @@ handlers:
     static_files: keep_for_compatibility/uikit-icons.min.js
     upload: keep_for_compatibility/uikit-icons.min.js
 
-  - url: /static
-    static_dir: build/static
-  - url: /(.*\.(json|ico|js))$
-    static_files: build/\1
-    upload: build/.*\.(json|ico|js)$
-  
-  - url: .*
-    static_files: build/index.html
-    upload: build/index.html
+
+  - url: /(.+\..+)$
+    static_files: dist/\1
+    upload: dist/(.+\..+)$
+  - url: /.*
+    static_files: dist/index.html
+    upload: dist/index.html
     secure: always   
     expiration: '0s'
