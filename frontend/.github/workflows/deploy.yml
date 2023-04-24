@@ -2,9 +2,8 @@ name: Deploy
 
 on:
   push:
-    branches: 
+    branches:
       - master
-
 
 jobs:
   deploy:
@@ -12,37 +11,34 @@ jobs:
     permissions:
       contents: read
       id-token: write
-
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/checkout@v3
-      with:
-        repository: yosupo06/library-checker-judge
-        path: library-checker-judge
-    
-    - id: auth
-      uses: google-github-actions/auth@v0
-      with:
-        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-        service_account: app-engine-deployer@library-checker-project.iam.gserviceaccount.com
-        token_format: access_token
-    
+      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          repository: yosupo06/library-checker-judge
+          path: library-checker-judge
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "18"
 
-    - id: ci
-      name: Run npm ci
-      run: npm ci
+      - id: auth
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+          service_account: app-engine-deployer@library-checker-project.iam.gserviceaccount.com
+          token_format: access_token
 
-    - name: gen protoc
-      run: npx protoc --ts_out src/api/ --proto_path ./library-checker-judge/api/proto ./library-checker-judge/api/proto/library_checker.proto
+      - name: Run npm ci
+        run: npm ci
 
-    - id: build
-      name: Run npm build
-      run: npm run build
+      - name: Generate protoc
+        run: npx protoc --ts_out src/api/ --proto_path ./library-checker-judge/api/proto ./library-checker-judge/api/proto/library_checker.proto
 
-    - id: deploy
-      name: Deploy app
-      run: gcloud app deploy --quiet app.yaml
+      - name: Run npm build
+        run: npm run build
 
-    - id: deploy-dispatch
-      name: Deploy dispatch.yaml
-      run: gcloud app deploy --quiet dispatch.yaml
+      - name: Deploy app.yaml
+        run: gcloud app deploy --quiet app.yaml
+
+      - name: Deploy dispatch.yaml
+        run: gcloud app deploy --quiet dispatch.yaml
