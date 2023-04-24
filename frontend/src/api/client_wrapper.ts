@@ -103,23 +103,27 @@ export const useSubmissionList = (
       ).response
   );
 
-
 export const useSubmissionInfo = (
   id: number,
   state?: AuthState,
   options?: Omit<
-    UseQueryOptions<SubmissionInfoResponse, unknown, SubmissionInfoResponse, string[]>,
+    UseQueryOptions<
+      SubmissionInfoResponse,
+      unknown,
+      SubmissionInfoResponse,
+      string[]
+    >,
     "queryKey" | "queryFn"
   >
 ): UseQueryResult<SubmissionInfoResponse> =>
   useQuery(
     ["submissionInfo2", String(id)],
     async () =>
-        await client.submissionInfo(
+      await client.submissionInfo(
         {
-          id: id
+          id: id,
         },
         state ? authMetadata(state) : undefined
       ).response,
-      options
+    options
   );

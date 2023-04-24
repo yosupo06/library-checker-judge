@@ -22,7 +22,6 @@ import library_checker_client, {
   useSubmissionInfo,
   useUserInfo,
 } from "../api/client_wrapper";
-import { useQuery } from "@tanstack/react-query";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import { LibraryBooks } from "@mui/icons-material";
@@ -66,23 +65,18 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
   const auth = useContext(AuthContext);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const submissionInfoQuery = useSubmissionInfo(
-    submissionId, auth?.state,
-    {
-      refetchInterval: autoRefresh ? 1000 : false,
-      onSuccess: () => {
-        const status = submissionInfoQuery.data?.overview?.status;
-        if (
-          status &&
-          new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(
-            status
-          )
-        ) {
-          setAutoRefresh(false);
-        }
-      },
-    }
-  );
+  const submissionInfoQuery = useSubmissionInfo(submissionId, auth?.state, {
+    refetchInterval: autoRefresh ? 1000 : false,
+    onSuccess: () => {
+      const status = submissionInfoQuery.data?.overview?.status;
+      if (
+        status &&
+        new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(status)
+      ) {
+        setAutoRefresh(false);
+      }
+    },
+  });
 
   if (submissionInfoQuery.isLoading) {
     return (
@@ -122,7 +116,7 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
           marginTop: 1,
         }}
       >
-        {overview.userName && (<LibraryButton name={overview.userName} />)}
+        {overview.userName && <LibraryButton name={overview.userName} />}
         {info.canRejudge && (
           <Button
             variant="outlined"
@@ -141,7 +135,7 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
   const { submissionId } = props;
   const auth = useContext(AuthContext);
 
-  const submissionInfoQuery = useSubmissionInfo(submissionId, auth?.state)
+  const submissionInfoQuery = useSubmissionInfo(submissionId, auth?.state);
 
   if (submissionInfoQuery.isLoading) {
     return (
@@ -210,23 +204,18 @@ const SubmissionInfo: React.FC = () => {
   const submissionIdInt = parseInt(submissionId);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const submissionInfoQuery = useSubmissionInfo(
-    submissionIdInt, auth?.state,
-    {
-      refetchInterval: autoRefresh ? 1000 : false,
-      onSuccess: () => {
-        const status = submissionInfoQuery.data?.overview?.status;
-        if (
-          status &&
-          new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(
-            status
-          )
-        ) {
-          setAutoRefresh(false);
-        }
-      },
-    }
-  );
+  const submissionInfoQuery = useSubmissionInfo(submissionIdInt, auth?.state, {
+    refetchInterval: autoRefresh ? 1000 : false,
+    onSuccess: () => {
+      const status = submissionInfoQuery.data?.overview?.status;
+      if (
+        status &&
+        new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(status)
+      ) {
+        setAutoRefresh(false);
+      }
+    },
+  });
 
   if (submissionInfoQuery.isLoading) {
     return <h1>Loading</h1>;
