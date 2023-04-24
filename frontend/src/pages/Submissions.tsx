@@ -151,8 +151,6 @@ const Submissions: React.FC = () => {
     problemCategoriesQuery.data.categories
   );
 
-  console.log(submissionList)
-
   return (
     <Container>
       <Typography variant="h2" paragraph={true}>

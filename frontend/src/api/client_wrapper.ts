@@ -17,16 +17,14 @@ import {
   UserInfoResponse,
 } from "./library_checker";
 
-export const authMetadata = (
-  state: AuthState
-): RpcOptions | undefined => {
+export const authMetadata = (state: AuthState): RpcOptions | undefined => {
   if (!state.token) {
     return undefined;
   } else {
     return {
       meta: {
         authorization: "bearer " + state.token,
-      }
+      },
     };
   }
 };
