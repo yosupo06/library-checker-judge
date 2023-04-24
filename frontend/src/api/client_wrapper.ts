@@ -13,6 +13,7 @@ import {
   ProblemInfoResponse,
   ProblemListResponse,
   RankingResponse,
+  SubmissionInfoResponse,
   SubmissionListResponse,
   UserInfoResponse,
 } from "./library_checker";
@@ -100,4 +101,25 @@ export const useSubmissionList = (
         },
         {}
       ).response
+  );
+
+
+export const useSubmissionInfo = (
+  id: number,
+  state?: AuthState,
+  options?: Omit<
+    UseQueryOptions<SubmissionInfoResponse, unknown, SubmissionInfoResponse, string[]>,
+    "queryKey" | "queryFn"
+  >
+): UseQueryResult<SubmissionInfoResponse> =>
+  useQuery(
+    ["submissionInfo2", String(id)],
+    async () =>
+        await client.submissionInfo(
+        {
+          id: id
+        },
+        state ? authMetadata(state) : undefined
+      ).response,
+      options
   );

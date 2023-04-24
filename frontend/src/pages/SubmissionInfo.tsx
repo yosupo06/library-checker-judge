@@ -19,6 +19,7 @@ import SourceEditor from "../components/SourceEditor";
 import { AuthContext } from "../contexts/AuthContext";
 import library_checker_client, {
   authMetadata,
+  useSubmissionInfo,
   useUserInfo,
 } from "../api/client_wrapper";
 import { useQuery } from "@tanstack/react-query";
@@ -65,17 +66,12 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
   const auth = useContext(AuthContext);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const submissionInfoQuery = useQuery(
-    ["submissionInfo", submissionId],
-    async () =>
-      await library_checker_client.submissionInfo(
-        { id: submissionId },
-        (auth ? authMetadata(auth.state) : null) ?? undefined
-      ),
+  const submissionInfoQuery = useSubmissionInfo(
+    submissionId, auth?.state,
     {
       refetchInterval: autoRefresh ? 1000 : false,
       onSuccess: () => {
-        const status = submissionInfoQuery.data?.response.overview?.status;
+        const status = submissionInfoQuery.data?.overview?.status;
         if (
           status &&
           new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(
@@ -96,9 +92,9 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
     );
   }
   if (submissionInfoQuery.isError) {
-    return <Box>Loading error</Box>;
+    return <Box>Loading error: {submissionInfoQuery.error}</Box>;
   }
-  const info = submissionInfoQuery.data.response;
+  const info = submissionInfoQuery.data;
   const overview = info.overview;
 
   if (!overview) {
@@ -126,7 +122,7 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
           marginTop: 1,
         }}
       >
-        <LibraryButton name={overview.userName} />
+        {overview.userName && (<LibraryButton name={overview.userName} />)}
         {info.canRejudge && (
           <Button
             variant="outlined"
@@ -145,14 +141,7 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
   const { submissionId } = props;
   const auth = useContext(AuthContext);
 
-  const submissionInfoQuery = useQuery(
-    ["submissionInfo", submissionId],
-    async () =>
-      await library_checker_client.submissionInfo(
-        { id: submissionId },
-        (auth ? authMetadata(auth.state) : null) ?? undefined
-      ).response
-  );
+  const submissionInfoQuery = useSubmissionInfo(submissionId, auth?.state)
 
   if (submissionInfoQuery.isLoading) {
     return (
@@ -162,7 +151,7 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
     );
   }
   if (submissionInfoQuery.isError) {
-    return <Box>Loading error</Box>;
+    return <Box>Loading error: {submissionInfoQuery.error}</Box>;
   }
   const info = submissionInfoQuery.data;
   const overview = info.overview;
@@ -221,13 +210,8 @@ const SubmissionInfo: React.FC = () => {
   const submissionIdInt = parseInt(submissionId);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const submissionInfoQuery = useQuery(
-    ["submissionInfo", submissionId],
-    async () =>
-      await library_checker_client.submissionInfo(
-        { id: submissionIdInt },
-        (auth ? authMetadata(auth.state) : null) ?? undefined
-      ).response,
+  const submissionInfoQuery = useSubmissionInfo(
+    submissionIdInt, auth?.state,
     {
       refetchInterval: autoRefresh ? 1000 : false,
       onSuccess: () => {
