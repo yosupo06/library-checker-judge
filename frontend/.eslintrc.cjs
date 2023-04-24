@@ -5,8 +5,7 @@ module.exports = {
     root: true,
     ignorePatterns: [
         "build",
-        "src/api/Library_checkerServiceClientPb.ts",
-        "**/*_pb.js",
-        "**/*_pb.d.ts"
+        "src/api/library_checker.ts",
+        "src/api/library_checker.client.ts",
     ]
 };

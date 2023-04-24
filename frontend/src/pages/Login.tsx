@@ -8,8 +8,7 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import library_checker_client from "../api/library_checker_client";
-import { LoginRequest } from "../api/library_checker_pb";
+import library_checker_client from "../api/client_wrapper";
 import { AuthContext } from "../contexts/AuthContext";
 
 const Login: React.FC = () => {
@@ -22,11 +21,11 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoginStatus(<CircularProgress />);
     library_checker_client
-      .login(new LoginRequest().setName(userName).setPassword(password), {})
+      .login({ name: userName, password: password }, {})
       .then((resp) => {
         auth?.dispatch({
           type: "login",
-          payload: { token: resp.getToken(), user: userName },
+          payload: { token: resp.response.token, user: userName },
         });
         navigate(`/`);
       })

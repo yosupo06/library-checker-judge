@@ -14,8 +14,7 @@ import React, { useContext, useState } from "react";
 import library_checker_client, {
   authMetadata,
   useUserInfo,
-} from "../api/library_checker_client";
-import { ChangeUserInfoRequest } from "../api/library_checker_pb";
+} from "../api/client_wrapper";
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import NotFound from "./NotFound";
@@ -35,13 +34,12 @@ const Profile: React.FC = () => {
   const [isDeveloper, setIsDeveloper] = useState(false);
   const userInfoQuery = useUserInfo(userId, {
     onSuccess: (data) => {
-      console.log(data.getUser());
-      setLibraryURL(data.getUser()?.getLibraryUrl() ?? "");
-      setIsDeveloper(data.getUser()?.getIsDeveloper() ?? false);
+      setLibraryURL(data.user?.libraryUrl ?? "");
+      setIsDeveloper(data.user?.isDeveloper ?? false);
     },
   });
 
-  if (userInfoQuery.isLoading || userInfoQuery.isIdle) {
+  if (userInfoQuery.isLoading) {
     return (
       <Box>
         <CircularProgress />
@@ -52,25 +50,23 @@ const Profile: React.FC = () => {
     return <NotFound />;
   }
 
-  const showUser = userInfoQuery.data.getUser();
+  const showUser = userInfoQuery.data.user;
   if (!showUser) {
     return <NotFound />;
   }
-  const showUserName = showUser.getName();
+  const showUserName = showUser.name;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newUser = showUser
-      .setLibraryUrl(libraryURL)
-      .setIsDeveloper(isDeveloper);
-
-    console.log(newUser);
+    const newUser = showUser;
+    newUser.libraryUrl = libraryURL;
+    newUser.isDeveloper = isDeveloper;
 
     library_checker_client
       .changeUserInfo(
-        new ChangeUserInfoRequest().setUser(newUser),
-        (auth && authMetadata(auth.state)) ?? null
+        { user: newUser },
+        (auth && authMetadata(auth.state)) ?? undefined
       )
       .then(() => {
         history.go(0);

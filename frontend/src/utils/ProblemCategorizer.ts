@@ -1,4 +1,4 @@
-import { Problem, ProblemCategory } from "../api/library_checker_pb";
+import { Problem, ProblemCategory } from "../api/library_checker";
 
 export type CategorisedProblems = {
   name: string;
@@ -11,23 +11,20 @@ export const categoriseProblems = (
 ): CategorisedProblems => {
   const nameToProblem = problems.reduce<{ [name: string]: Problem }>(
     (dict, problem) => {
-      dict[problem.getName()] = problem;
+      dict[problem.name] = problem;
       return dict;
     },
     {}
   );
 
-  const problemNames = problems.map((e) => e.getName());
+  const problemNames = problems.map((e) => e.name);
   const problemNameSet = new Set(problemNames);
-  const classifiedSet = new Set(
-    categories.map((e) => e.getProblemsList()).flat()
-  );
+  const classifiedSet = new Set(categories.map((e) => e.problems).flat());
   const newProblems = problemNames.filter((e) => !classifiedSet.has(e));
 
   const result = categories.map((category) => ({
-    name: category.getTitle(),
-    problems: category
-      .getProblemsList()
+    name: category.title,
+    problems: category.problems
       .filter((e) => problemNameSet.has(e))
       .map((e) => nameToProblem[e]),
   }));

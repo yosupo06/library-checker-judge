@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import React from "react";
-import { useRanking } from "../api/library_checker_client";
+import { useRanking } from "../api/client_wrapper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -12,7 +12,7 @@ import TableRow from "@mui/material/TableRow";
 const RankingList: React.FC = () => {
   const rankingQuery = useRanking();
 
-  if (rankingQuery.isLoading || rankingQuery.isIdle) {
+  if (rankingQuery.isLoading) {
     return (
       <Box>
         <Typography>Loading...</Typography>
@@ -27,11 +27,11 @@ const RankingList: React.FC = () => {
     );
   }
 
-  const rows = rankingQuery.data.getStatisticsList().map((e, index) => {
+  const rows = rankingQuery.data.statistics.map((e, index) => {
     return {
       id: index,
-      name: e.getName(),
-      count: e.getCount(),
+      name: e.name,
+      count: e.count,
     };
   });
   return (

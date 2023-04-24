@@ -8,12 +8,12 @@ import TableHead from "@mui/material/TableHead";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import React from "react";
-import { useLangList } from "../api/library_checker_client";
+import { useLangList } from "../api/client_wrapper";
 
 const LangList: React.FC = () => {
   const langListQuery = useLangList();
 
-  if (langListQuery.isLoading || langListQuery.isIdle) {
+  if (langListQuery.isLoading) {
     return (
       <Box>
         <Typography>Loading...</Typography>
@@ -38,10 +38,10 @@ const LangList: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {langList.getLangsList().map((row) => (
-            <TableRow key={row.getName()}>
-              <TableCell>{row.getName()}</TableCell>
-              <TableCell>{row.getVersion()}</TableCell>
+          {langList.langs.map((row) => (
+            <TableRow key={row.name}>
+              <TableCell>{row.name}</TableCell>
+              <TableCell>{row.version}</TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -14,18 +14,14 @@ import TableRow from "@mui/material/TableRow";
 import { Autorenew, ExpandMore } from "@mui/icons-material";
 import React, { useContext, useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  RejudgeRequest,
-  SubmissionInfoRequest,
-} from "../api/library_checker_pb";
 import SubmissionTable from "../components/SubmissionTable";
 import SourceEditor from "../components/SourceEditor";
 import { AuthContext } from "../contexts/AuthContext";
 import library_checker_client, {
   authMetadata,
   useUserInfo,
-} from "../api/library_checker_client";
-import { useQuery } from "react-query";
+} from "../api/client_wrapper";
+import { useQuery } from "@tanstack/react-query";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import { LibraryBooks } from "@mui/icons-material";
@@ -34,7 +30,7 @@ import { Container, Divider } from "@mui/material";
 const LibraryButton: React.FC<{ name: string }> = (props) => {
   const userInfoQuery = useUserInfo(props.name, {});
 
-  if (userInfoQuery.isLoading || userInfoQuery.isIdle) {
+  if (userInfoQuery.isLoading) {
     return (
       <Box>
         <CircularProgress />
@@ -46,13 +42,13 @@ const LibraryButton: React.FC<{ name: string }> = (props) => {
   }
 
   const userInfo = userInfoQuery.data;
-  const user = userInfo.getUser();
+  const user = userInfo.user;
 
   if (!user) {
     return <Box>Failed to load user</Box>;
   }
 
-  const libraryURL = user.getLibraryUrl();
+  const libraryURL = user.libraryUrl;
 
   if (!libraryURL) {
     return <Box></Box>;
@@ -71,15 +67,15 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const submissionInfoQuery = useQuery(
     ["submissionInfo", submissionId],
-    () =>
-      library_checker_client.submissionInfo(
-        new SubmissionInfoRequest().setId(submissionId),
-        (auth ? authMetadata(auth.state) : null) ?? null
+    async () =>
+      await library_checker_client.submissionInfo(
+        { id: submissionId },
+        (auth ? authMetadata(auth.state) : null) ?? undefined
       ),
     {
       refetchInterval: autoRefresh ? 1000 : false,
       onSuccess: () => {
-        const status = submissionInfoQuery.data?.getOverview()?.getStatus();
+        const status = submissionInfoQuery.data?.response.overview?.status;
         if (
           status &&
           new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(
@@ -92,7 +88,7 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
     }
   );
 
-  if (submissionInfoQuery.isLoading || submissionInfoQuery.isIdle) {
+  if (submissionInfoQuery.isLoading) {
     return (
       <Box>
         <CircularProgress />
@@ -102,8 +98,8 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
   if (submissionInfoQuery.isError) {
     return <Box>Loading error</Box>;
   }
-  const info = submissionInfoQuery.data;
-  const overview = info.getOverview();
+  const info = submissionInfoQuery.data.response;
+  const overview = info.overview;
 
   if (!overview) {
     return <Box>Loading error</Box>;
@@ -113,8 +109,8 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
     e.preventDefault();
     library_checker_client
       .rejudge(
-        new RejudgeRequest().setId(submissionId),
-        (auth ? authMetadata(auth.state) : null) ?? null
+        { id: submissionId },
+        (auth ? authMetadata(auth.state) : null) ?? undefined
       )
       .then(() => {
         console.log("Rejudge requested");
@@ -130,8 +126,8 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
           marginTop: 1,
         }}
       >
-        <LibraryButton name={overview.getUserName()} />
-        {info.getCanRejudge() && (
+        <LibraryButton name={overview.userName} />
+        {info.canRejudge && (
           <Button
             variant="outlined"
             startIcon={<Autorenew />}
@@ -149,14 +145,16 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
   const { submissionId } = props;
   const auth = useContext(AuthContext);
 
-  const submissionInfoQuery = useQuery(["submissionInfo", submissionId], () =>
-    library_checker_client.submissionInfo(
-      new SubmissionInfoRequest().setId(submissionId),
-      (auth ? authMetadata(auth.state) : null) ?? null
-    )
+  const submissionInfoQuery = useQuery(
+    ["submissionInfo", submissionId],
+    async () =>
+      await library_checker_client.submissionInfo(
+        { id: submissionId },
+        (auth ? authMetadata(auth.state) : null) ?? undefined
+      ).response
   );
 
-  if (submissionInfoQuery.isLoading || submissionInfoQuery.isIdle) {
+  if (submissionInfoQuery.isLoading) {
     return (
       <Box>
         <CircularProgress />
@@ -167,7 +165,7 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
     return <Box>Loading error</Box>;
   }
   const info = submissionInfoQuery.data;
-  const overview = info.getOverview();
+  const overview = info.overview;
 
   if (!overview) {
     return <Box>Loading error</Box>;
@@ -191,15 +189,15 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {info.getCaseResultsList().map((row) => (
-                  <TableRow key={row.getCase()}>
-                    <TableCell>{row.getCase()}</TableCell>
-                    <TableCell>{row.getStatus()}</TableCell>
-                    <TableCell>{Math.round(row.getTime() * 1000)} ms</TableCell>
+                {info.caseResults.map((row) => (
+                  <TableRow key={row.case}>
+                    <TableCell>{row.case}</TableCell>
+                    <TableCell>{row.status}</TableCell>
+                    <TableCell>{Math.round(row.time * 1000)} ms</TableCell>
                     <TableCell>
-                      {row.getMemory() === -1
+                      {row.memory === -1n
                         ? -1
-                        : (row.getMemory() / 1024 / 1024).toFixed(2)}{" "}
+                        : (Number(row.memory) / 1024 / 1024).toFixed(2)}{" "}
                       Mib
                     </TableCell>
                   </TableRow>
@@ -225,15 +223,15 @@ const SubmissionInfo: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const submissionInfoQuery = useQuery(
     ["submissionInfo", submissionId],
-    () =>
-      library_checker_client.submissionInfo(
-        new SubmissionInfoRequest().setId(submissionIdInt),
-        (auth ? authMetadata(auth.state) : null) ?? null
-      ),
+    async () =>
+      await library_checker_client.submissionInfo(
+        { id: submissionIdInt },
+        (auth ? authMetadata(auth.state) : null) ?? undefined
+      ).response,
     {
       refetchInterval: autoRefresh ? 1000 : false,
       onSuccess: () => {
-        const status = submissionInfoQuery.data?.getOverview()?.getStatus();
+        const status = submissionInfoQuery.data?.overview?.status;
         if (
           status &&
           new Set(["AC", "WA", "RE", "TLE", "PE", "Fail", "CE", "IE"]).has(
@@ -246,7 +244,7 @@ const SubmissionInfo: React.FC = () => {
     }
   );
 
-  if (submissionInfoQuery.isLoading || submissionInfoQuery.isIdle) {
+  if (submissionInfoQuery.isLoading) {
     return <h1>Loading</h1>;
   }
   if (submissionInfoQuery.isError) {
@@ -254,9 +252,9 @@ const SubmissionInfo: React.FC = () => {
   }
 
   const info = submissionInfoQuery.data;
-  const compileError = new TextDecoder().decode(info.getCompileError_asU8());
-  const overview = info.getOverview();
-  const lang = overview ? overview.getLang() : undefined;
+  const compileError = new TextDecoder().decode(info.compileError);
+  const overview = info.overview;
+  const lang = overview ? overview.lang : undefined;
 
   return (
     <Container>
@@ -291,7 +289,7 @@ const SubmissionInfo: React.FC = () => {
       />
       <Paper>
         <SourceEditor
-          value={info.getSource()}
+          value={info.source}
           language={lang}
           readOnly={true}
           autoHeight={true}
