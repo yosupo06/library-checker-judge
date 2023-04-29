@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"sort"
 	"time"
 
 	"gorm.io/gorm"
@@ -36,6 +37,8 @@ type SubmissionTestcaseResult struct {
 	Status     string
 	Time       int32
 	Memory     int64
+	Stderr     []byte
+	CheckerOut []byte
 }
 
 func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
@@ -74,4 +77,18 @@ func SaveTestcaseResult(db *gorm.DB, result SubmissionTestcaseResult) error {
 	}
 
 	return nil
+}
+
+func FetchTestcaseResults(db *gorm.DB, id int32) ([]SubmissionTestcaseResult, error) {
+	var cases []SubmissionTestcaseResult
+	if err := db.Where("submission = ?", id).Find(&cases).Error; err != nil {
+		return nil, err
+	}
+
+	// TODO: to DB query
+	sort.Slice(cases, func(i, j int) bool {
+		return cases[i].Testcase < cases[j].Testcase
+	})
+
+	return cases, nil
 }

@@ -138,6 +138,8 @@ message SubmissionCaseResult {
     string status = 2; // "AC"
     double time = 3; // 2.0( = 2 seconds)
     int64 memory = 4; // x bytes
+    bytes stderr = 5; // stderr of user solution
+    bytes checker_out = 6; // stderr of checker
 }
 
 message SubmissionInfoRequest {
