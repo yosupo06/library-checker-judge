@@ -25,7 +25,10 @@ import library_checker_client, {
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import { LibraryBooks } from "@mui/icons-material";
-import { Container, Divider } from "@mui/material";
+import { Collapse, Container, Divider, IconButton } from "@mui/material";
+import { SubmissionCaseResult } from "../api/library_checker";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 const LibraryButton: React.FC<{ name: string }> = (props) => {
   const userInfoQuery = useUserInfo(props.name, {});
@@ -131,6 +134,10 @@ const Overview: React.FC<{ submissionId: number }> = (props) => {
   );
 };
 
+const toStringAsUTF8 = (data: Uint8Array) => {
+  return new TextDecoder("utf-8", { fatal: false }).decode(data);
+};
+
 const CaseResults: React.FC<{ submissionId: number }> = (props) => {
   const { submissionId } = props;
   const auth = useContext(AuthContext);
@@ -164,7 +171,8 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow key={"details"}>
+                  <TableCell />
                   <TableCell>Name</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Time</TableCell>
@@ -173,17 +181,7 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
               </TableHead>
               <TableBody>
                 {info.caseResults.map((row) => (
-                  <TableRow key={row.case}>
-                    <TableCell>{row.case}</TableCell>
-                    <TableCell>{row.status}</TableCell>
-                    <TableCell>{Math.round(row.time * 1000)} ms</TableCell>
-                    <TableCell>
-                      {row.memory === -1n
-                        ? -1
-                        : (Number(row.memory) / 1024 / 1024).toFixed(2)}{" "}
-                      Mib
-                    </TableCell>
-                  </TableRow>
+                  <CaseResultRow key={row.case} row={row} />
                 ))}
               </TableBody>
             </Table>
@@ -191,6 +189,51 @@ const CaseResults: React.FC<{ submissionId: number }> = (props) => {
         </AccordionDetails>
       </Accordion>
     </Box>
+  );
+};
+const CaseResultRow: React.FC<{ row: SubmissionCaseResult }> = (props) => {
+  const { row } = props;
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>
+          <IconButton
+            aria-label="expand row"
+            size="small"
+            onClick={() => setOpen(!open)}
+          >
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
+        </TableCell>
+        <TableCell>{row.case}</TableCell>
+        <TableCell>{row.status}</TableCell>
+        <TableCell>{Math.round(row.time * 1000)} ms</TableCell>
+        <TableCell>
+          {row.memory === -1n
+            ? -1
+            : (Number(row.memory) / 1024 / 1024).toFixed(2)}{" "}
+          Mib
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <Box sx={{ margin: 1 }}>
+              <Typography variant="h6" gutterBottom>
+                Stdout
+              </Typography>
+              <pre>{toStringAsUTF8(row.stderr)}</pre>
+              <Typography variant="h6" gutterBottom>
+                Checker Output
+              </Typography>
+              <pre>{toStringAsUTF8(row.checkerOut)}</pre>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
   );
 };
 
