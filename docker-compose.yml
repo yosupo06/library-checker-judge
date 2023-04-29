@@ -5,8 +5,6 @@ services:
     image: postgres:11.3
     ports:
       - 5432:5432
-    volumes:
-      - ./tools/db_init:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_DB=librarychecker
       - POSTGRES_PASSWORD=passwd
@@ -42,7 +40,7 @@ services:
     build:
       dockerfile: Dockerfile.API
     ports:
-      - 58080:50051
+      - 12380:12380
     depends_on:
       db:
         condition: service_healthy
@@ -56,7 +54,7 @@ services:
       - PG_USER=postgres
       - PG_PASS=passwd
     healthcheck:
-        test: wget -q -O - localhost:50051/health || exit 1
+        test: wget -q -O - localhost:12380/health || exit 1
         timeout: 10s
         interval: 1s
         retries: 30

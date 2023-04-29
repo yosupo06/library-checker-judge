@@ -60,7 +60,7 @@ func main() {
 	portArg := flag.Int("port", -1, "port number")
 	flag.Parse()
 
-	port := getEnv("PORT", "50051")
+	port := getEnv("PORT", "12380")
 	if *portArg != -1 {
 		port = strconv.Itoa(*portArg)
 	}
