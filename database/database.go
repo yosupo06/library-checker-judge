@@ -14,19 +14,23 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+const (
+	MAX_TRY_TIMES = 3
+)
+
 func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB {
 	connStr := fmt.Sprintf(
 		"host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
 		host, port, dbname, user, pass)
-	log.Printf("Try connect %s", connStr)
-	for i := 0; i < 3; i++ {
+	log.Printf("try to connect db, host=%s port=%s dbname=%s user=%s", host, port, dbname, user)
+	for i := 0; i < MAX_TRY_TIMES; i++ {
 		config := gorm.Config{}
 		if enableLogger {
 			config.Logger = logger.Default.LogMode(logger.Info)
 		}
 		db, err := gorm.Open(postgres.Open(connStr), &config)
 		if err != nil {
-			log.Printf("Cannot connect db %d/3", i)
+			log.Printf("cannot connect db %d/%d", i, MAX_TRY_TIMES)
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -46,7 +50,7 @@ func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB 
 
 		return db
 	}
-	log.Fatal("Cannot connect db 3 times")
+	log.Fatalf("cannot connect db %d times", MAX_TRY_TIMES)
 	return nil
 }
 

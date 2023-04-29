@@ -30,4 +30,6 @@ func main() {
 	if err := database.RegisterUser(db, "tester", "password", false); err != nil {
 		log.Fatalln("failed to add user, tester:", err)
 	}
+
+	log.Println("test user added")
 }
