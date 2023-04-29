@@ -33,11 +33,10 @@ APIサーバーへは gRPC でアクセスします。例えばクライアン�
 
 ### 動作確認
 
-通常の gRPC 版と gRPC-Web 版のふたつが建つ
+grpc-web のAPIサーバーが建つ
 
 ```sh
-evans --host localhost --port 50051 api/proto/library_checker.proto
-evans --host localhost --port 58080 api/proto/library_checker.proto --web
+evans --host localhost --port 18080 api/proto/library_checker.proto --web
 ```
 
 ## Judge Server

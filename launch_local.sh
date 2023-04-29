@@ -7,6 +7,7 @@ docker --version
 docker compose down -v
 docker compose up -d --build --wait
 
-(cd deploy && ./gen_protoc.sh)
-
+# add test users
+(cd tools && go run testuser/main.go)
+# deploy sample problems
 (cd uploader && go run . ../../library-checker-problems/sample/aplusb/info.toml ../../library-checker-problems/datastructure/unionfind/info.toml)
