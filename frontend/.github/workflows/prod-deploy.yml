@@ -1,0 +1,13 @@
+name: Prod-Deploy
+
+on:
+  push:
+    branches: 
+      - master
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      env: prod
