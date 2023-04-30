@@ -67,7 +67,7 @@ func (t *TestCaseFetcher) Close() error {
 func (t *TestCaseFetcher) Fetch(problem database.Problem) (TestCaseDir, error) {
 	objectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.Testhash)
 	publicObjectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.PublicFilesHash)
-	dataPath := path.Join(t.casesDir, objectPath+"-"+publicObjectPath)
+	dataPath := path.Join(t.casesDir, path.Join(BASE_OBJECT_PATH, problem.Name, problem.Testhash+"-"+problem.PublicFilesHash))
 	if _, err := os.Stat(dataPath); err != nil {
 		if err := os.MkdirAll(dataPath, os.ModePerm); err != nil {
 			return TestCaseDir{}, err
