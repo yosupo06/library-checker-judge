@@ -8,7 +8,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import React, { useContext, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useLocalStorage, useQueue } from "react-use";
+import { useLocalStorage } from "react-use";
 import library_checker_client, {
   authMetadata,
   useLangList,
@@ -68,7 +68,6 @@ const UsefulLinks: React.FC<{
   );
 };
 
-
 const ProblemInfo: React.FC = () => {
   const navigate = useNavigate();
   const auth = useContext(AuthContext);
@@ -84,15 +83,25 @@ const ProblemInfo: React.FC = () => {
 
   const version = problemInfoQuery.data?.publicFilesHash ?? "";
 
-  const solveHppQuery = useQuery(["header", problemId], () => fetch(new URL(`${problemId}/${version}/grader/solve.hpp`, import.meta.env.VITE_PUBLIC_BUCKET_URL)).then(r => {
-    if (r.status == 200) {
-      return r.text();
-    } else {
-      return null;
-    }}
-    ), {
-    enabled: problemInfoQuery.isSuccess,
-  })
+  const solveHppQuery = useQuery(
+    ["header", problemId],
+    () =>
+      fetch(
+        new URL(
+          `${problemId}/${version}/grader/solve.hpp`,
+          import.meta.env.VITE_PUBLIC_BUCKET_URL
+        )
+      ).then((r) => {
+        if (r.status == 200) {
+          return r.text();
+        } else {
+          return null;
+        }
+      }),
+    {
+      enabled: problemInfoQuery.isSuccess,
+    }
+  );
 
   if (problemInfoQuery.isLoading) {
     return (
@@ -155,28 +164,24 @@ const ProblemInfo: React.FC = () => {
         C++(Function) header
       </Typography>
 
-      {
-        solveHppQuery.isSuccess && solveHppQuery.data && (
-          <>
-            <Typography variant="h6" paragraph={true}>
-              solve.hpp
-            </Typography>
-            <SourceEditor
-              value={solveHppQuery.data}
-              language="cpp"
-              readOnly={true}
-              autoHeight={true}
-            />
-          </>
-        )
-      }
-      {
-        solveHppQuery.isSuccess && !solveHppQuery.data && (
-          <Typography variant="body1" paragraph={true}>
-            Unsupported
+      {solveHppQuery.isSuccess && solveHppQuery.data && (
+        <>
+          <Typography variant="h6" paragraph={true}>
+            solve.hpp
           </Typography>
-        )
-      }
+          <SourceEditor
+            value={solveHppQuery.data}
+            language="cpp"
+            readOnly={true}
+            autoHeight={true}
+          />
+        </>
+      )}
+      {solveHppQuery.isSuccess && !solveHppQuery.data && (
+        <Typography variant="body1" paragraph={true}>
+          Unsupported
+        </Typography>
+      )}
 
       <Divider
         sx={{
