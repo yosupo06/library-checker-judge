@@ -268,6 +268,8 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 			Status:     caseResult.Status,
 			Time:       int32(caseResult.Time.Milliseconds()),
 			Memory:     caseResult.Memory,
+			Stderr:     caseResult.Stderr,
+			CheckerOut: caseResult.CheckerOut,
 		}); err != nil {
 			return err
 		}

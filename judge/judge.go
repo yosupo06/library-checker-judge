@@ -12,7 +12,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const COMPILE_TIMEOUT = 30 * time.Second
+const (
+	COMPILE_TIMEOUT    = 30 * time.Second
+	MAX_MESSAGE_LENGTH = 1 << 10
+)
 
 type Judge struct {
 	dir          string
@@ -123,7 +126,7 @@ func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) 
 		return TaskResult{}, nil, err
 	}
 
-	ceWriter, err := NewLimitedWriter(1 << 10)
+	ceWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
 	if err != nil {
 		return TaskResult{}, nil, err
 	}
@@ -146,15 +149,19 @@ func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) 
 	return result, ceWriter.Bytes(), nil
 }
 
-func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, error) {
+func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, []byte, error) {
 	caseVolume, err := CreateVolume()
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 	defer caseVolume.Remove()
 
 	caseVolume.CopyFile(inFile, "input.in")
 
+	stderrWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
+	if err != nil {
+		return TaskResult{}, nil, err
+	}
 	// TODO: volume read only
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
 		j.defaultOptions(),
@@ -163,19 +170,20 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 		WithVolume(j.sourceVolume, "/workdir"),
 		WithVolume(&caseVolume, "/casedir"),
 		WithTimeout(time.Duration(j.tl*1000*1000*1000)*time.Nanosecond),
+		WithStderr(stderrWriter),
 	)...)
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 
 	result, err := taskInfo.Run()
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 
 	outFile, err := os.Create(outFilePath)
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 	defer outFile.Close()
 
@@ -187,15 +195,15 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 		WithStdout(outFile),
 	)...)
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 
 	_, err = genOutputFileTaskInfo.Run()
 	if err != nil {
-		return TaskResult{}, err
+		return TaskResult{}, nil, err
 	}
 
-	return result, err
+	return result, stderrWriter.Bytes(), err
 }
 
 func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
@@ -208,18 +216,26 @@ func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
 	var inFile2 bytes.Buffer
 	tee := io.TeeReader(inFile, &inFile2)
 
-	result, err := j.createOutput(tee, outFile.Name())
+	result, stderr, err := j.createOutput(tee, outFile.Name())
 	if err != nil {
 		return CaseResult{}, err
 	}
+	checkerOutWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
+	if err != nil {
+		return CaseResult{}, err
+	}
+
+	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: stderr, CheckerOut: []byte{}}
 	if result.TLE {
 		//timeout
-		return CaseResult{Status: "TLE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
+		baseResult.Status = "TLE"
+		return baseResult, nil
 	}
 
 	if result.ExitCode != 0 {
 		//runtime error
-		return CaseResult{Status: "RE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
+		baseResult.Status = "RE"
+		return baseResult, nil
 	}
 
 	j.checkerVolume.CopyFile(&inFile2, "input.in")
@@ -233,6 +249,7 @@ func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
 		WithWorkDir("/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),
 		WithVolume(j.checkerVolume, "/workdir"),
+		WithStderr(checkerOutWriter),
 	)...)
 	if err != nil {
 		return CaseResult{}, err
@@ -242,30 +259,33 @@ func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
 	if err != nil {
 		return CaseResult{}, err
 	}
+
+	baseResult.CheckerOut = checkerOutWriter.Bytes()
+
 	if checkerResult.TLE {
-		return CaseResult{Status: "ITLE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
+		baseResult.Status = "ITLE"
+	} else if checkerResult.ExitCode == 1 {
+		baseResult.Status = "WA"
+	} else if checkerResult.ExitCode == 2 {
+		baseResult.Status = "PE"
+	} else if checkerResult.ExitCode == 3 {
+		baseResult.Status = "Fail"
+	} else if checkerResult.ExitCode != 0 {
+		baseResult.Status = "Unknown"
+	} else {
+		baseResult.Status = "AC"
 	}
-	if checkerResult.ExitCode == 1 {
-		return CaseResult{Status: "WA", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
-	}
-	if checkerResult.ExitCode == 2 {
-		return CaseResult{Status: "PE", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
-	}
-	if checkerResult.ExitCode == 3 {
-		return CaseResult{Status: "Fail", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
-	}
-	if checkerResult.ExitCode != 0 {
-		return CaseResult{Status: "Unknown", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
-	}
-	return CaseResult{Status: "AC", Time: result.Time, Memory: result.Memory, TLE: result.TLE}, nil
+	return baseResult, nil
 }
 
 type CaseResult struct {
-	CaseName string
-	Status   string
-	Time     time.Duration
-	Memory   int64
-	TLE      bool
+	CaseName   string
+	Status     string
+	Time       time.Duration
+	Memory     int64
+	TLE        bool
+	Stderr     []byte
+	CheckerOut []byte
 }
 
 func AggregateResults(results []CaseResult) CaseResult {

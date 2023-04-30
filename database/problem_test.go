@@ -3,11 +3,11 @@ package database
 import (
 	"reflect"
 	"testing"
+
+	"gorm.io/gorm"
 )
 
-func TestProblemInfo(t *testing.T) {
-	db := createTestDB(t)
-
+func createDummyProblem(t *testing.T, db *gorm.DB) {
 	problem := Problem{
 		Name:      "aplusb",
 		Title:     "Title",
@@ -19,13 +19,26 @@ func TestProblemInfo(t *testing.T) {
 	if err := SaveProblem(db, problem); err != nil {
 		t.Fatal(err)
 	}
+}
 
-	problem2, err := FetchProblem(db, "aplusb")
+func TestProblemInfo(t *testing.T) {
+	db := createTestDB(t)
+	createDummyProblem(t, db)
+
+	problem, err := FetchProblem(db, "aplusb")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if problem != *problem2 {
-		t.Fatal(problem, "!=", problem2)
+	expect := Problem{
+		Name:      "aplusb",
+		Title:     "Title",
+		SourceUrl: "url",
+		Statement: "statement",
+		Timelimit: 123,
+		Testhash:  "2345",
+	}
+	if *problem != expect {
+		t.Fatal(problem, "!=", expect)
 	}
 
 	if problem3, err := FetchProblem(db, "aplusc"); problem3 != nil || err != nil {

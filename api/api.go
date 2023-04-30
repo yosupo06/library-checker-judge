@@ -302,13 +302,15 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	var sub database.Submission
 	sub, err := database.FetchSubmission(s.db, in.Id)
 	if err != nil {
+		log.Fatalln("failed to fetch submission")
 		return nil, err
 	}
-	var cases []database.SubmissionTestcaseResult
-	if err := s.db.Where("submission = ?", in.Id).Find(&cases).Error; err != nil {
-		log.Print(err)
-		return nil, errors.New("submission fetch failed")
+	cases, err := database.FetchTestcaseResults(s.db, in.Id)
+	if err != nil {
+		log.Fatalln("failed to fetch submission results")
+		return nil, err
 	}
+
 	overview, err := ToProtoSubmission(&sub)
 	if err != nil {
 		log.Print(err)
@@ -334,10 +336,12 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 
 	for _, c := range cases {
 		res.CaseResults = append(res.CaseResults, &pb.SubmissionCaseResult{
-			Case:   c.Testcase,
-			Status: c.Status,
-			Time:   float64(c.Time) / 1000.0,
-			Memory: int64(c.Memory),
+			Case:       c.Testcase,
+			Status:     c.Status,
+			Time:       float64(c.Time) / 1000.0,
+			Memory:     int64(c.Memory),
+			Stderr:     c.Stderr,
+			CheckerOut: c.CheckerOut,
 		})
 	}
 	return res, nil
