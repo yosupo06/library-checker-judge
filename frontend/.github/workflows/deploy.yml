@@ -4,14 +4,20 @@ on:
   workflow_call:
     inputs:
       env:
+        type: string
         required: true
+      problems-branch:
         type: string
   workflow_dispatch:
     inputs:
       env:
-        default: dev
         type: string
+        default: dev
         description: environment of deploy
+      judge-branch:
+        type: string
+        default: master
+        description: branch of library-checker-judge
 
 jobs:
   deploy:
@@ -25,6 +31,8 @@ jobs:
         with:
           repository: yosupo06/library-checker-judge
           path: library-checker-judge
+          ref: ${{ inputs.judge-branch }}
+
       - uses: actions/setup-node@v2
         with:
           node-version: "18"

@@ -8,7 +8,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import React, { useContext, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useLocalStorage } from "react-use";
+import { useLocalStorage, useQueue } from "react-use";
 import library_checker_client, {
   authMetadata,
   useLangList,
@@ -21,6 +21,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
@@ -67,6 +68,7 @@ const UsefulLinks: React.FC<{
   );
 };
 
+
 const ProblemInfo: React.FC = () => {
   const navigate = useNavigate();
   const auth = useContext(AuthContext);
@@ -79,6 +81,18 @@ const ProblemInfo: React.FC = () => {
   }
   const problemInfoQuery = useProblemInfo(problemId);
   const langListQuery = useLangList();
+
+  const version = problemInfoQuery.data?.publicFilesHash ?? "";
+
+  const solveHppQuery = useQuery(["header", problemId], () => fetch(new URL(`${problemId}/${version}/grader/solve.hpp`, import.meta.env.VITE_PUBLIC_BUCKET_URL)).then(r => {
+    if (r.status == 200) {
+      return r.text();
+    } else {
+      return null;
+    }}
+    ), {
+    enabled: problemInfoQuery.isSuccess,
+  })
 
   if (problemInfoQuery.isLoading) {
     return (
@@ -131,6 +145,29 @@ const ProblemInfo: React.FC = () => {
       <Divider />
 
       <KatexRender text={problemInfoQuery.data.statement} />
+
+      {
+        solveHppQuery.isSuccess && solveHppQuery.data && (
+          <>
+            <Divider
+              sx={{
+                margin: 1,
+              }}
+            />
+
+            <Typography variant="h4" paragraph={true}>
+              (Beta) solve.hpp
+            </Typography>
+
+            <SourceEditor
+              value={solveHppQuery.data}
+              language="cpp"
+              readOnly={true}
+              autoHeight={true}
+            />
+          </>
+        )
+      }
 
       <Divider
         sx={{
