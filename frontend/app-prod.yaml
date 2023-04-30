@@ -1,4 +1,4 @@
-service: dev
+service: default
 runtime: nodejs18
 
 handlers:
