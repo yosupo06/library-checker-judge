@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,9 +23,11 @@ type Judge struct {
 
 	checkerVolume *Volume
 	sourceVolume  *Volume
+
+	caseDir *TestCaseDir
 }
 
-func NewJudge(judgedir string, lang Lang, tl float64, cgroupParent string) (*Judge, error) {
+func NewJudge(judgedir string, lang Lang, tl float64, cgroupParent string, caseDir *TestCaseDir) (*Judge, error) {
 	tempdir, err := ioutil.TempDir(judgedir, "judge")
 	if err != nil {
 		return nil, err
@@ -39,6 +39,7 @@ func NewJudge(judgedir string, lang Lang, tl float64, cgroupParent string) (*Jud
 		tl:           tl,
 		lang:         lang,
 		cgroupParent: cgroupParent,
+		caseDir:      caseDir,
 	}, nil
 }
 
@@ -71,25 +72,23 @@ func (j *Judge) Close() error {
 	return nil
 }
 
-func (j *Judge) CompileChecker(checkerFile io.Reader, includeFilePaths []string) (TaskResult, error) {
+func (j *Judge) CompileChecker() (TaskResult, error) {
 	volume, err := CreateVolume()
 	if err != nil {
 		return TaskResult{}, err
 	}
 	j.checkerVolume = &volume
 
-	if err := volume.CopyFile(checkerFile, "checker.cpp"); err != nil {
+	if err := volume.CopyFile(j.caseDir.CheckerPath(), "checker.cpp"); err != nil {
 		return TaskResult{}, err
 	}
 
+	includeFilePaths, err := j.caseDir.IncludeFilePaths()
+	if err != nil {
+		return TaskResult{}, err
+	}
 	for _, filePath := range includeFilePaths {
-		file, err := os.Open(filePath)
-		if err != nil {
-			return TaskResult{}, err
-		}
-		defer file.Close()
-
-		if err := volume.CopyFile(file, path.Base(filePath)); err != nil {
+		if err := volume.CopyFile(filePath, path.Base(filePath)); err != nil {
 			return TaskResult{}, err
 		}
 	}
@@ -114,7 +113,7 @@ func (j *Judge) CompileChecker(checkerFile io.Reader, includeFilePaths []string)
 	return result, err
 }
 
-func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) {
+func (j *Judge) CompileSource(sourcePath string) (TaskResult, []byte, error) {
 	// create dir for source
 	volume, err := CreateVolume()
 	if err != nil {
@@ -122,7 +121,7 @@ func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) 
 	}
 	j.sourceVolume = &volume
 
-	if err := volume.CopyFile(sourceFile, j.lang.Source); err != nil {
+	if err := volume.CopyFile(sourcePath, j.lang.Source); err != nil {
 		return TaskResult{}, nil, err
 	}
 
@@ -149,14 +148,14 @@ func (j *Judge) CompileSource(sourceFile io.Reader) (TaskResult, []byte, error) 
 	return result, ceWriter.Bytes(), nil
 }
 
-func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, []byte, error) {
+func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, []byte, error) {
 	caseVolume, err := CreateVolume()
 	if err != nil {
 		return TaskResult{}, nil, err
 	}
 	defer caseVolume.Remove()
 
-	caseVolume.CopyFile(inFile, "input.in")
+	caseVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in")
 
 	stderrWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
 	if err != nil {
@@ -206,17 +205,15 @@ func (j *Judge) createOutput(inFile io.Reader, outFilePath string) (TaskResult, 
 	return result, stderrWriter.Bytes(), err
 }
 
-func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
+func (j *Judge) TestCase(caseName string) (CaseResult, error) {
+	log.Println("start to judge case:", caseName)
 	outFile, err := ioutil.TempFile(j.dir, "output-")
 	if err != nil {
 		return CaseResult{}, err
 	}
 	defer os.Remove(outFile.Name())
 
-	var inFile2 bytes.Buffer
-	tee := io.TeeReader(inFile, &inFile2)
-
-	result, stderr, err := j.createOutput(tee, outFile.Name())
+	result, stderr, err := j.createOutput(caseName, outFile.Name())
 	if err != nil {
 		return CaseResult{}, err
 	}
@@ -238,9 +235,9 @@ func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
 		return baseResult, nil
 	}
 
-	j.checkerVolume.CopyFile(&inFile2, "input.in")
-	j.checkerVolume.CopyFile(expectFile, "expect.out")
-	j.checkerVolume.CopyFile(outFile, "actual.out")
+	j.checkerVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in")
+	j.checkerVolume.CopyFile(j.caseDir.OutFilePath(caseName), "expect.out")
+	j.checkerVolume.CopyFile(outFile.Name(), "actual.out")
 
 	// run checker
 	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
@@ -255,10 +252,14 @@ func (j *Judge) TestCase(inFile, expectFile io.Reader) (CaseResult, error) {
 		return CaseResult{}, err
 	}
 
+	log.Println("test1")
+
 	checkerResult, err := checkerTaskInfo.Run()
 	if err != nil {
 		return CaseResult{}, err
 	}
+
+	log.Println("test2")
 
 	baseResult.CheckerOut = checkerOutWriter.Bytes()
 

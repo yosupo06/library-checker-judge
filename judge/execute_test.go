@@ -2,11 +2,25 @@ package main
 
 import (
 	"bytes"
+	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
 	"time"
 )
+
+func toRealFile(src io.Reader, t *testing.T) string {
+	outFile, err := ioutil.TempFile("", "test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(outFile, src); err != nil {
+		t.Fatal(err)
+	}
+	outFile.Seek(0, 0)
+	return outFile.Name()
+}
 
 func TestRunHelloWorld(t *testing.T) {
 	task, err := NewTaskInfo("ubuntu", WithArguments("echo", "hello-world"))
@@ -174,7 +188,10 @@ func TestVolume(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := volume.CopyFile(bytes.NewBufferString("dummy"), "test.txt"); err != nil {
+	file := toRealFile(bytes.NewBufferString("dummy"), t)
+	defer os.Remove(file)
+
+	if err := volume.CopyFile(file, "test.txt"); err != nil {
 		t.Fatal(err)
 	}
 	output := new(bytes.Buffer)
@@ -229,7 +246,11 @@ func TestForkBomb(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := volume.CopyFile(src, "fork_bomb.sh"); err != nil {
+
+	file := toRealFile(src, t)
+	defer os.Remove(file)
+
+	if err := volume.CopyFile(file, "fork_bomb.sh"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -256,7 +277,11 @@ func TestUseManyStack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := volume.CopyFile(src, "use_many_stack.cpp"); err != nil {
+
+	file := toRealFile(src, t)
+	defer os.Remove(file)
+
+	if err := volume.CopyFile(file, "use_many_stack.cpp"); err != nil {
 		t.Fatal(err)
 	}
 

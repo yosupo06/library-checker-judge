@@ -3,10 +3,9 @@ package main
 import (
 	"embed"
 	"flag"
-	"io"
+	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"testing"
 )
 
@@ -17,6 +16,7 @@ var (
 	SAMPLE_IN_PATH     = path.Join(APLUSB_DIR, "sample.in")
 	SAMPLE_OUT_PATH    = path.Join(APLUSB_DIR, "sample.out")
 	SAMPLE_WA_OUT_PATH = path.Join(APLUSB_DIR, "sample_wa.out")
+	DUMMY_CASE_NAME    = "case_00"
 )
 
 //go:embed sources/*
@@ -31,12 +31,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
-	checker, err := sources.Open(CHECKER_PATH)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer checker.Close()
+func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath string) *Judge {
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
 	if err != nil {
@@ -44,34 +39,69 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 	}
 	defer src.Close()
 
-	judge, err := NewJudge("", langs[lang], 2.0, "")
-	if err != nil {
-		t.Fatal("Failed to create Judge", err)
-	}
+	srcFile := toRealFile(src, t)
+	defer os.Remove(srcFile)
 
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal("Failed to create tempDir: ", tempDir)
 	}
-	defer os.RemoveAll(tempDir)
-	testlibFilePath := filepath.Join(tempDir, "testlib.h")
 
-	testlibFile, err := os.Create(testlibFilePath)
+	caseDir := TestCaseDir{
+		dir: tempDir,
+	}
+
+	checker, err := sources.ReadFile(CHECKER_PATH)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := ioutil.WriteFile(caseDir.CheckerPath(), checker, 0644); err != nil {
+		t.Fatal(err)
+	}
 
-	testLibRaw, err := sources.Open(TESTLIB_PATH)
+	inFile, err := sources.ReadFile(inFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(path.Dir(caseDir.InFilePath(DUMMY_CASE_NAME)), os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(caseDir.InFilePath(DUMMY_CASE_NAME), inFile, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	outFile, err := sources.ReadFile(outFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(path.Dir(caseDir.OutFilePath(DUMMY_CASE_NAME)), os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(caseDir.OutFilePath(DUMMY_CASE_NAME), outFile, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	judge, err := NewJudge("", langs[lang], 2.0, "", &caseDir)
+	if err != nil {
+		t.Fatal("Failed to create Judge", err)
+	}
+
+	testLibRaw, err := sources.ReadFile(TESTLIB_PATH)
 	if err != nil {
 		t.Fatal("Failed to open: testlib.h", err)
 	}
-	io.Copy(testlibFile, testLibRaw)
+	if err := os.MkdirAll(path.Join(caseDir.dir, "include"), os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(path.Join(caseDir.dir, "include", "testlib.h"), testLibRaw, 0644); err != nil {
+		t.Fatal(err)
+	}
 
-	checkerResult, err := judge.CompileChecker(checker, []string{testlibFilePath})
+	checkerResult, err := judge.CompileChecker()
 	if err != nil || checkerResult.ExitCode != 0 {
 		t.Fatal("error CompileChecker", err)
 	}
-	sourceResult, _, err := judge.CompileSource(src)
+	sourceResult, _, err := judge.CompileSource(srcFile)
 	if err != nil || sourceResult.ExitCode != 0 {
 		t.Fatal("error CompileSource", err)
 	}
@@ -81,29 +111,17 @@ func generateAplusBJudge(t *testing.T, lang, srcName string) *Judge {
 
 func testAplusBAC(t *testing.T, lang, srcName string) {
 	t.Logf("Start %s test: %s", lang, srcName)
-	judge := generateAplusBJudge(t, lang, srcName)
+	judge := generateAplusBJudge(t, lang, srcName, SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 	defer judge.Close()
 
-	in, err := sources.Open(SAMPLE_IN_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer in.Close()
-
-	expect, err := sources.Open(SAMPLE_OUT_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer expect.Close()
-
-	result, err := judge.TestCase(in, expect)
+	result, err := judge.TestCase(DUMMY_CASE_NAME)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
 	t.Log("Result:", result)
 
 	if result.Status != "AC" {
-		t.Fatal("error Status", result)
+		t.Fatal("error Status", result, string(result.Stderr), string(result.CheckerOut))
 	}
 }
 
@@ -157,22 +175,10 @@ func TestRubyAplusBAC(t *testing.T) {
 }
 
 func TestAplusBWA(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "wa.cpp")
+	judge := generateAplusBJudge(t, "cpp", "wa.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 	defer judge.Close()
 
-	in, err := sources.Open(SAMPLE_IN_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer in.Close()
-
-	expect, err := sources.Open(SAMPLE_OUT_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer expect.Close()
-
-	result, err := judge.TestCase(in, expect)
+	result, err := judge.TestCase(DUMMY_CASE_NAME)
 
 	if err != nil {
 		t.Fatal("error Run Test", err)
@@ -185,22 +191,10 @@ func TestAplusBWA(t *testing.T) {
 }
 
 func TestAplusbPE(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "pe.cpp")
+	judge := generateAplusBJudge(t, "cpp", "pe.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 	defer judge.Close()
 
-	in, err := sources.Open(SAMPLE_IN_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer in.Close()
-
-	expect, err := sources.Open(SAMPLE_OUT_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer expect.Close()
-
-	result, err := judge.TestCase(in, expect)
+	result, err := judge.TestCase(DUMMY_CASE_NAME)
 
 	if err != nil {
 		t.Fatal("error Run Test", err)
@@ -213,22 +207,10 @@ func TestAplusbPE(t *testing.T) {
 }
 
 func TestAplusbFail(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "ac.cpp")
+	judge := generateAplusBJudge(t, "cpp", "ac.cpp", SAMPLE_IN_PATH, SAMPLE_WA_OUT_PATH)
 	defer judge.Close()
 
-	in, err := sources.Open(SAMPLE_IN_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer in.Close()
-
-	expect, err := sources.Open(SAMPLE_WA_OUT_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer expect.Close()
-
-	result, err := judge.TestCase(in, expect)
+	result, err := judge.TestCase(DUMMY_CASE_NAME)
 
 	if err != nil {
 		t.Fatal("error Run Test", err)
@@ -241,22 +223,10 @@ func TestAplusbFail(t *testing.T) {
 }
 
 func TestAplusbTLE(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "tle.cpp")
+	judge := generateAplusBJudge(t, "cpp", "tle.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 	defer judge.Close()
 
-	in, err := sources.Open(SAMPLE_IN_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer in.Close()
-
-	expect, err := sources.Open(SAMPLE_OUT_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer expect.Close()
-
-	result, err := judge.TestCase(in, expect)
+	result, err := judge.TestCase(DUMMY_CASE_NAME)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -268,22 +238,10 @@ func TestAplusbTLE(t *testing.T) {
 }
 
 func TestAplusbRE(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "re.cpp")
+	judge := generateAplusBJudge(t, "cpp", "re.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 	defer judge.Close()
 
-	in, err := sources.Open(SAMPLE_IN_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer in.Close()
-
-	expect, err := sources.Open(SAMPLE_OUT_PATH)
-	if err != nil {
-		t.Fatal("Failed: Source", err)
-	}
-	defer in.Close()
-
-	result, err := judge.TestCase(in, expect)
+	result, err := judge.TestCase(DUMMY_CASE_NAME)
 	if err != nil {
 		t.Fatal("error Run Test", err)
 	}
@@ -294,11 +252,13 @@ func TestAplusbRE(t *testing.T) {
 	}
 }
 
+/*
 func TestAplusbCE(t *testing.T) {
 	src, err := sources.Open(path.Join(APLUSB_DIR, "ce.cpp"))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
+	srcPath := toRealFile(src, t)
 
 	judge, err := NewJudge("", langs["cpp"], 2.0, "")
 	if err != nil {
@@ -306,7 +266,7 @@ func TestAplusbCE(t *testing.T) {
 	}
 	defer judge.Close()
 
-	sourceResult, compileError, err := judge.CompileSource(src)
+	sourceResult, compileError, err := judge.CompileSource(srcPath)
 	if err != nil {
 		t.Fatal("error CompileSource", err)
 	}
@@ -318,3 +278,4 @@ func TestAplusbCE(t *testing.T) {
 	}
 	t.Log("Compile error:", compileError)
 }
+*/

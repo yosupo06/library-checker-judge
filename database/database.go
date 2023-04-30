@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -24,9 +25,20 @@ func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB 
 		host, port, dbname, user, pass)
 	log.Printf("try to connect db, host=%s port=%s dbname=%s user=%s", host, port, dbname, user)
 	for i := 0; i < MAX_TRY_TIMES; i++ {
-		config := gorm.Config{}
+		newLogger := logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold:             200 * time.Millisecond,
+				LogLevel:                  logger.Warn,
+				IgnoreRecordNotFoundError: true,
+				Colorful:                  true,
+			},
+		)
+		config := gorm.Config{
+			Logger: newLogger,
+		}
 		if enableLogger {
-			config.Logger = logger.Default.LogMode(logger.Info)
+			config.Logger.LogMode(logger.Info)
 		}
 		db, err := gorm.Open(postgres.Open(connStr), &config)
 		if err != nil {
