@@ -4,8 +4,14 @@ on:
   workflow_call:
     inputs:
       env:
-        required: true
         type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        default: dev
+        description: environment of deploy
 
 concurrency:
   group: ${{ inputs.env }}-api-deploy

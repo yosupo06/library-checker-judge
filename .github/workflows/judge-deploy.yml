@@ -4,19 +4,38 @@ on:
   workflow_call:
     inputs:
       env:
-        required: true
         type: string
-      image_build:
+        required: true
+      build-base:
+        type: boolean
         required: false
         default: true
+      test-created-image:
         type: boolean
+        required: false
+        default: true
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        default: dev
+        description: "build base image or not"
+      build-base:
+        type: boolean
+        default: true
+        description: "build base image or not"
+      test-created-image:
+        type: boolean
+        default: true
+        description: "whether test created judge image or not"
 
 jobs:
   image-build:
-    if: inputs.image_build
     uses: ./.github/workflows/judge-image-build.yml
     with:
       env: ${{ inputs.env }}
+      build-base: ${{ inputs.build-base }}
+      test-created-image: ${{ inputs.test-created-image }}
 
   deploy:
     if: success() || !inputs.image_build
