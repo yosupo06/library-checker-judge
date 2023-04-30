@@ -222,7 +222,7 @@ const CaseResultRow: React.FC<{ row: SubmissionCaseResult }> = (props) => {
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Typography variant="h6" gutterBottom>
-                Stdout
+                Stderr
               </Typography>
               <pre>{toStringAsUTF8(row.stderr)}</pre>
               <Typography variant="h6" gutterBottom>
