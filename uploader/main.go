@@ -107,19 +107,13 @@ func main() {
 			log.Println("old version:", dbP.Testhash)
 		}
 
+		// update problem fields
 		if dbP == nil {
 			dbP = &database.Problem{}
-		}
-
-		// update problem fields
-		statement, err := ioutil.ReadFile(path.Join(p.base, "task_body.html"))
-		if err != nil {
-			log.Fatalln("failed to read task_body:", err)
 		}
 		dbP.Name = p.name
 		dbP.Title = p.info.Title
 		dbP.Timelimit = int32(p.info.TimeLimit * 1000)
-		dbP.Statement = string(statement)
 		dbP.SourceUrl = fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
 		dbP.Testhash = v
 
@@ -134,6 +128,12 @@ func main() {
 			if err := p.generate(); err != nil {
 				log.Fatalln("failed to generate:", err)
 			}
+
+			statement, err := ioutil.ReadFile(path.Join(p.base, "task_body.html"))
+			if err != nil {
+				log.Fatalln("failed to read task_body:", err)
+			}
+			dbP.Statement = string(statement)
 
 			if err := p.uploadFiles(mc, *minioBucket); err != nil {
 				log.Fatalln("failed to upload files:", err)
