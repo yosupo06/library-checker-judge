@@ -1,9 +1,17 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - master
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      env:
+        default: dev
+        type: string
+        description: environment of deploy
 
 jobs:
   deploy:
@@ -38,7 +46,7 @@ jobs:
         run: npm run build
 
       - name: Deploy app.yaml
-        run: gcloud app deploy --quiet app.yaml
+        run: gcloud app deploy --quiet app-${{ inputs.env }}.yaml
 
       - name: Deploy dispatch.yaml
         run: gcloud app deploy --quiet dispatch.yaml
