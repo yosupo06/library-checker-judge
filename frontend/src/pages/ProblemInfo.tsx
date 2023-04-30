@@ -146,19 +146,21 @@ const ProblemInfo: React.FC = () => {
 
       <KatexRender text={problemInfoQuery.data.statement} />
 
+      <Divider
+        sx={{
+          margin: 1,
+        }}
+      />
+      <Typography variant="h4" paragraph={true}>
+        C++(Function) header
+      </Typography>
+
       {
         solveHppQuery.isSuccess && solveHppQuery.data && (
           <>
-            <Divider
-              sx={{
-                margin: 1,
-              }}
-            />
-
-            <Typography variant="h4" paragraph={true}>
-              (Beta) solve.hpp
+            <Typography variant="h6" paragraph={true}>
+              solve.hpp
             </Typography>
-
             <SourceEditor
               value={solveHppQuery.data}
               language="cpp"
@@ -166,6 +168,13 @@ const ProblemInfo: React.FC = () => {
               autoHeight={true}
             />
           </>
+        )
+      }
+      {
+        solveHppQuery.isSuccess && !solveHppQuery.data && (
+          <Typography variant="body1" paragraph={true}>
+            Unsupported
+          </Typography>
         )
       }
 
