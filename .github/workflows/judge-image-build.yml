@@ -4,8 +4,14 @@ on:
   workflow_call:
     inputs:
       env:
-        required: true
         type: string
+        required: true
+      build-base:
+        type: boolean
+        default: true
+      test-created-image:
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ inputs.env }}-judge-image-build
@@ -29,6 +35,7 @@ jobs:
         token_format: access_token
     
     - id: build-base-image
+      if: ${{ inputs.build-base }}
       name: Build base image
       run: packer build -var 'env=${{ inputs.env }}-test' .
       working-directory: ./packer/base
@@ -52,6 +59,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v0
 
     - id: test-on-gce
+      if: ${{ inputs.test-created-image }}
       name:	Run test_on_gce.py
       run: ./test_on_gce.py --zone asia-northeast1-a --env ${{ inputs.env }}-test
       working-directory: ./deploy

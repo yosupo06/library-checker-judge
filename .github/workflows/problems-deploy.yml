@@ -4,12 +4,28 @@ on:
   workflow_call:
     inputs:
       env:
-        required: true
         type: string
+        required: true
       force:
         type: boolean
         default: false
-        description: "force upload"
+      problems-branch:
+        type: string
+        default: master
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        default: dev
+        description: environment of deploy
+      force:
+        type: boolean
+        default: false
+        description: force upload
+      problems-branch:
+        type: string
+        default: master
+        description: branch of library-checker-problems
 
 concurrency:
   group: ${{ inputs.env }}-problems-deploy
@@ -28,6 +44,7 @@ jobs:
       with:
         repository: yosupo06/library-checker-problems
         path: library-checker-problems
+        ref: ${{ inputs.problems-branch }}
 
     - id: gen-protoc
       name: Generate protoc
@@ -54,6 +71,7 @@ jobs:
           minio-id:library-checker-project/minio-id/latest
           minio-secret:library-checker-project/minio-secret/latest
           minio-bucket:library-checker-project/${{ inputs.env }}-minio-bucket/latest
+          minio-public-bucket:library-checker-project/${{ inputs.env }}-minio-public-bucket/latest
           discord-webhook:library-checker-project/${{ inputs.env }}-discord-announcement-webhook/latest
 
     - id: build-uploader
@@ -81,5 +99,6 @@ jobs:
         MINIO_ID: '${{ steps.secrets.outputs.minio-id }}'
         MINIO_SECRET: '${{ steps.secrets.outputs.minio-secret }}'
         MINIO_BUCKET: '${{ steps.secrets.outputs.minio-bucket }}'
+        MINIO_PUBLIC_BUCKET: '${{ steps.secrets.outputs.minio-public-bucket }}'
         DISCORD_WEBHOOK: '${{ steps.secrets.outputs.discord-webhook }}'
         FORCE_UPLOAD: '${{ inputs.force }}'
