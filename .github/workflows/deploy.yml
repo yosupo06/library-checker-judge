@@ -4,14 +4,21 @@ on:
   workflow_call:
     inputs:
       env:
-        required: true
         type: string
+        required: true
+      problems-branch:
+        type: string
+        default: master
   workflow_dispatch:
     inputs:
       env:
-        default: dev
         type: string
+        default: dev
         description: environment of deploy
+      problems-branch:
+        type: string
+        default: master
+        description: branch of library-checker-problems
 
 jobs:
   api-deploy:
@@ -24,6 +31,7 @@ jobs:
     uses: ./.github/workflows/problems-deploy.yml
     with:
       env: ${{ inputs.env }}
+      problems-branch: ${{ inputs.problems-branch }}
 
   judge-deploy:
     needs: problems-deploy
