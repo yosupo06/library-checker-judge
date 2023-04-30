@@ -31,6 +31,41 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func generateTestCaseDir(t *testing.T, lang, inFilePath, outFilePath string) TestCaseDir {
+	tempDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatal("Failed to create tempDir: ", tempDir)
+	}
+
+	caseDir := TestCaseDir{
+		dir: tempDir,
+	}
+
+	type Info struct {
+		src string
+		dst string
+	}
+	for _, info := range []Info{
+		{src: CHECKER_PATH, dst: caseDir.CheckerPath()},
+		{src: inFilePath, dst: caseDir.InFilePath(DUMMY_CASE_NAME)},
+		{src: outFilePath, dst: caseDir.OutFilePath(DUMMY_CASE_NAME)},
+		{src: TESTLIB_PATH, dst: path.Join(caseDir.dir, "include", "testlib.h")},
+	} {
+		checker, err := sources.ReadFile(info.src)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(path.Dir(info.dst), os.ModePerm); err != nil {
+			t.Fatal(err)
+		}
+		if err := ioutil.WriteFile(info.dst, checker, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	return caseDir
+}
+
 func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath string) *Judge {
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
@@ -42,59 +77,11 @@ func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath st
 	srcFile := toRealFile(src, t)
 	defer os.Remove(srcFile)
 
-	tempDir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal("Failed to create tempDir: ", tempDir)
-	}
-
-	caseDir := TestCaseDir{
-		dir: tempDir,
-	}
-
-	checker, err := sources.ReadFile(CHECKER_PATH)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := ioutil.WriteFile(caseDir.CheckerPath(), checker, 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	inFile, err := sources.ReadFile(inFilePath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(path.Dir(caseDir.InFilePath(DUMMY_CASE_NAME)), os.ModePerm); err != nil {
-		t.Fatal(err)
-	}
-	if err := ioutil.WriteFile(caseDir.InFilePath(DUMMY_CASE_NAME), inFile, 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	outFile, err := sources.ReadFile(outFilePath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(path.Dir(caseDir.OutFilePath(DUMMY_CASE_NAME)), os.ModePerm); err != nil {
-		t.Fatal(err)
-	}
-	if err := ioutil.WriteFile(caseDir.OutFilePath(DUMMY_CASE_NAME), outFile, 0644); err != nil {
-		t.Fatal(err)
-	}
+	caseDir := generateTestCaseDir(t, lang, inFilePath, outFilePath)
 
 	judge, err := NewJudge("", langs[lang], 2.0, "", &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
-	}
-
-	testLibRaw, err := sources.ReadFile(TESTLIB_PATH)
-	if err != nil {
-		t.Fatal("Failed to open: testlib.h", err)
-	}
-	if err := os.MkdirAll(path.Join(caseDir.dir, "include"), os.ModePerm); err != nil {
-		t.Fatal(err)
-	}
-	if err := ioutil.WriteFile(path.Join(caseDir.dir, "include", "testlib.h"), testLibRaw, 0644); err != nil {
-		t.Fatal(err)
 	}
 
 	checkerResult, err := judge.CompileChecker()
@@ -252,15 +239,16 @@ func TestAplusbRE(t *testing.T) {
 	}
 }
 
-/*
 func TestAplusbCE(t *testing.T) {
+	caseDir := generateTestCaseDir(t, "cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
+
 	src, err := sources.Open(path.Join(APLUSB_DIR, "ce.cpp"))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
 	srcPath := toRealFile(src, t)
 
-	judge, err := NewJudge("", langs["cpp"], 2.0, "")
+	judge, err := NewJudge("", langs["cpp"], 2.0, "", &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
@@ -278,4 +266,3 @@ func TestAplusbCE(t *testing.T) {
 	}
 	t.Log("Compile error:", compileError)
 }
-*/
