@@ -35,6 +35,7 @@ func main() {
 	minioID := flag.String("minioid", "minio", "minio ID")
 	minioKey := flag.String("miniokey", "miniopass", "minio access key")
 	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
+	minioPublicBucket := flag.String("miniopublicbucket", "testcase-public", "minio public bucket")
 
 	discordUrl := flag.String("discordwebhook", "", "webhook URL of discord")
 
@@ -106,7 +107,30 @@ func main() {
 			log.Println("old version:", dbP.Testhash)
 		}
 
-		if v != oldV || *forceUpload {
+		if dbP == nil {
+			dbP = &database.Problem{}
+		}
+
+		// update problem fields
+		statement, err := ioutil.ReadFile(path.Join(p.base, "task_body.html"))
+		if err != nil {
+			log.Fatalln("failed to read task_body:", err)
+		}
+		dbP.Name = p.name
+		dbP.Title = p.info.Title
+		dbP.Timelimit = int32(p.info.TimeLimit * 1000)
+		dbP.Statement = string(statement)
+		dbP.SourceUrl = fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
+		dbP.Testhash = v
+
+		if pV, err := p.publicFilesVersion(); err != nil {
+			log.Fatalln("failed to calc public files hash:", err)
+		} else {
+			dbP.PublicFilesHash = pV
+		}
+
+		uploadData := (v != oldV || *forceUpload)
+		if uploadData {
 			if err := p.generate(); err != nil {
 				log.Fatalln("failed to generate:", err)
 			}
@@ -114,25 +138,27 @@ func main() {
 			if err := p.uploadFiles(mc, *minioBucket); err != nil {
 				log.Fatalln("failed to upload files:", err)
 			}
+		} else {
+			log.Println("version is the same, skip upload")
+		}
 
-			statement, err := ioutil.ReadFile(path.Join(p.base, "task_body.html"))
-			if err != nil {
-				log.Fatalln("failed to read task_body:", err)
-			}
+		if err := p.uploadPublicFiles(mc, *minioPublicBucket); err != nil {
+			log.Fatalln("failed to upload public files:", err)
+		}
 
-			source := fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
+		if err := p.deleteFiles(mc, *minioBucket); err != nil {
+			log.Fatalln("failed to clean minio:", err)
+		}
 
-			if err := database.SaveProblem(db, database.Problem{
-				Name:      p.name,
-				Title:     p.info.Title,
-				Timelimit: int32(p.info.TimeLimit * 1000),
-				Statement: string(statement),
-				SourceUrl: source,
-				Testhash:  v,
-			}); err != nil {
-				log.Fatalln("failed to update problem info:", err)
-			}
+		if err := p.clean(); err != nil {
+			log.Fatalln("failed to clean local:", err)
+		}
 
+		if err := database.SaveProblem(db, *dbP); err != nil {
+			log.Fatalln("failed to update problem info:", err)
+		}
+
+		if uploadData {
 			if dc != nil {
 				if oldV == "" {
 					if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
@@ -140,7 +166,7 @@ func main() {
 							SetTitlef("New problem added: %s", p.info.Title).
 							SetColor(0x00ff00).
 							SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
-							AddField("Github", fmt.Sprintf("[link](%s)", source), false).
+							AddField("Github", fmt.Sprintf("[link](%s)", dbP.SourceUrl), false).
 							AddField("Test case hash", v[0:16], false).
 							Build()).
 						Build(),
@@ -153,7 +179,7 @@ func main() {
 							SetTitlef("Testcase updated: %s", p.info.Title).
 							SetColor(0x0000ff).
 							SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
-							AddField("Github", fmt.Sprintf("[link](%s)", source), false).
+							AddField("Github", fmt.Sprintf("[link](%s)", dbP.SourceUrl), false).
 							AddField("Old test case hash", oldV[0:16], false).
 							AddField("New test case hash", v[0:16], false).
 							Build()).
@@ -163,16 +189,6 @@ func main() {
 					}
 				}
 			}
-		} else {
-			log.Println("version is the same, skip upload")
-		}
-
-		if err := p.deleteFiles(mc, *minioBucket); err != nil {
-			log.Fatalln("failed to clean minio:", err)
-		}
-
-		if err := p.clean(); err != nil {
-			log.Fatalln("failed to clean local:", err)
 		}
 	}
 
@@ -264,6 +280,33 @@ func (p *problem) uploadFiles(mc *minio.Client, bucket string) error {
 	return nil
 }
 
+func (p *problem) uploadPublicFiles(mc *minio.Client, bucket string) error {
+	v, err := p.publicFilesVersion()
+	if err != nil {
+		log.Fatal("Failed to fetch version: ", err)
+	}
+
+	type Info struct {
+		from string
+		to   string
+	}
+
+	for _, info := range []Info{
+		{from: path.Join(p.root, "common", "fastio.h"), to: fmt.Sprintf("v1/%v/%v/common/fastio.h", p.name, v)},
+		{from: path.Join(p.base, "grader", "grader.cpp"), to: fmt.Sprintf("v1/%v/%v/grader/grader.cpp", p.name, v)},
+		{from: path.Join(p.base, "grader", "solve.hpp"), to: fmt.Sprintf("v1/%v/%v/grader/solve.hpp", p.name, v)},
+	} {
+		if _, err := os.Stat(info.from); err != nil {
+			continue
+		}
+
+		if _, err := mc.FPutObject(bucket, info.to, info.from, minio.PutObjectOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (p *problem) deleteFiles(mc *minio.Client, bucket string) error {
 	v, err := p.version()
 	if err != nil {
@@ -304,6 +347,28 @@ func (p *problem) version() (string, error) {
 		return "", err
 	} else {
 		hashes = append(hashes, h)
+	}
+
+	return joinHashes(hashes), nil
+}
+
+func (p *problem) publicFilesVersion() (string, error) {
+	hashes := []string{}
+
+	for _, file := range []string{
+		path.Join(p.root, "common", "fastio.h"),
+		path.Join(p.base, "grader", "grader.cpp"),
+		path.Join(p.root, "grader", "solve.h"),
+	} {
+		if _, err := os.Stat(file); err != nil {
+			continue
+		}
+
+		if h, err := fileHash(file); err != nil {
+			return "", err
+		} else {
+			hashes = append(hashes, h)
+		}
 	}
 
 	return joinHashes(hashes), nil

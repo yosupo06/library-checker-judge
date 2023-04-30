@@ -32,6 +32,7 @@ func main() {
 	minioID := flag.String("minioid", "minio", "minio ID")
 	minioKey := flag.String("miniokey", "miniopass", "minio access key")
 	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
+	minioPublicBucket := flag.String("miniopublicbucket", "testcase-public", "minio public bucket")
 
 	tmpCgroupParent := flag.String("cgroup-parent", "", "cgroup parent")
 
@@ -63,6 +64,7 @@ func main() {
 		*minioID,
 		*minioKey,
 		*minioBucket,
+		*minioPublicBucket,
 		*prod,
 	)
 	if err != nil {
@@ -157,7 +159,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 		return err
 	}
 
-	testCases, err := testCaseFetcher.Fetch(submission.ProblemName, version)
+	testCases, err := testCaseFetcher.Fetch(submission.Problem)
 	if err != nil {
 		return err
 	}

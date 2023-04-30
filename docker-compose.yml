@@ -31,8 +31,12 @@ services:
       /bin/sh -c "
       /usr/bin/mc config host add myminio http://minio:9000 minio miniopass;
       /usr/bin/mc rm --recursive --force myminio/testcase;
+      /usr/bin/mc rm --recursive --force myminio/testcase-public;
       /usr/bin/mc mb myminio/testcase;
+      /usr/bin/mc mb myminio/testcase-public;
       /usr/bin/mc policy download myminio/testcase;
+      /usr/bin/mc policy download myminio/testcase-public;
+      /usr/bin/mc anonymous set public myminio/testcase-public;
       exit 0;
       "
 

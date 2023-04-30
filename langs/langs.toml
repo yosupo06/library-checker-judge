@@ -3,7 +3,16 @@
     source = "checker.cpp"    
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "checker", "checker.cpp"]
-    exec = ["./checker", "input.in", "actual.out", "expect.out"]
+    exec = ["./checker", "input.in", "actual.out", "expect.out"]    
+[[langs]]
+    id = "cpp-func"
+    name = "C++20(Function)"
+    version = "g++(12.1) + ac-library 1.4"
+    source = "main.cpp"    
+    image_name = "library-checker-images-gcc"
+    compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
+    exec = ["./main"]
+    additional_files = ["common/fastio.h", "grader/grader.cpp", "grader/solve.hpp"]
 [[langs]]
     id = "cpp"
     name = "C++20"

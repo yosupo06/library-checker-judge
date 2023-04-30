@@ -10,22 +10,24 @@ import (
 	"strings"
 
 	"github.com/minio/minio-go/v6"
+	"github.com/yosupo06/library-checker-judge/database"
 )
 
 const BASE_OBJECT_PATH = "v1"
 
 type TestCaseFetcher struct {
-	minioClient *minio.Client
-	minioBucket string
-	casesDir    string
+	minioClient       *minio.Client
+	minioBucket       string
+	minioPublicBucket string
+	casesDir          string
 }
 
 type TestCaseDir struct {
 	dir string
 }
 
-func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket string, minioSecure bool) (TestCaseFetcher, error) {
-	log.Print("Init TestCaseFetcher bucket: ", minioBucket)
+func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket, minioPublicBucket string, minioSecure bool) (TestCaseFetcher, error) {
+	log.Println("init TestCaseFetcher bucket:", minioBucket, minioPublicBucket)
 
 	// create case directory
 	dir, err := ioutil.TempDir("", "case")
@@ -48,9 +50,10 @@ func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket string, mi
 	}
 
 	return TestCaseFetcher{
-		minioClient: client,
-		minioBucket: minioBucket,
-		casesDir:    dir,
+		minioClient:       client,
+		minioBucket:       minioBucket,
+		minioPublicBucket: minioPublicBucket,
+		casesDir:          dir,
 	}, nil
 }
 
@@ -61,18 +64,28 @@ func (t *TestCaseFetcher) Close() error {
 	return nil
 }
 
-func (t *TestCaseFetcher) Fetch(problem string, version string) (TestCaseDir, error) {
-	objectPath := path.Join(problem, version)
+func (t *TestCaseFetcher) Fetch(problem database.Problem) (TestCaseDir, error) {
+	objectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.Testhash)
+	publicObjectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.PublicFilesHash)
 	dataPath := path.Join(t.casesDir, objectPath)
 	if _, err := os.Stat(dataPath); err != nil {
 		if err := os.MkdirAll(dataPath, os.ModePerm); err != nil {
 			return TestCaseDir{}, err
 		}
 
-		for object := range t.minioClient.ListObjects(t.minioBucket, path.Join(BASE_OBJECT_PATH, objectPath), true, nil) {
-			key := strings.TrimPrefix(object.Key, path.Join(BASE_OBJECT_PATH, objectPath))
+		for object := range t.minioClient.ListObjects(t.minioBucket, objectPath, true, nil) {
+			key := strings.TrimPrefix(object.Key, objectPath)
 			log.Printf("Download: %s -> %s", object.Key, path.Join(dataPath, key))
 			if err := t.minioClient.FGetObject(t.minioBucket, object.Key, path.Join(dataPath, key), minio.GetObjectOptions{}); err != nil {
+				return TestCaseDir{}, err
+			}
+		}
+
+		for object := range t.minioClient.ListObjects(t.minioPublicBucket, publicObjectPath, true, nil) {
+			key := strings.TrimPrefix(object.Key, publicObjectPath)
+			dstPath := path.Join(dataPath, "public", key)
+			log.Printf("Download: %s -> %s", object.Key, dstPath)
+			if err := t.minioClient.FGetObject(t.minioPublicBucket, object.Key, dstPath, minio.GetObjectOptions{}); err != nil {
 				return TestCaseDir{}, err
 			}
 		}
@@ -118,6 +131,10 @@ func (t *TestCaseDir) OutFilePath(name string) string {
 
 func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
 	return os.Open(t.OutFilePath(name))
+}
+
+func (t *TestCaseDir) PublicFilePath(key string) string {
+	return path.Join(t.dir, "public", key)
 }
 
 func (t *TestCaseDir) CaseNames() ([]string, error) {

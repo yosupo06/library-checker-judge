@@ -96,6 +96,7 @@ message ProblemInfoResponse {
     string statement = 2;
     double time_limit = 3; // 2.0 = 2 seconds
     string case_version = 4; // hash of testcases
+    string public_files_hash = 6; // hash of public files
 }
 
 // --- Category ---

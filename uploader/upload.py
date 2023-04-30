@@ -16,6 +16,7 @@ if __name__ == "__main__":
     MINIO_ID = environ["MINIO_ID"]
     MINIO_SECRET = environ["MINIO_SECRET"]
     MINIO_BUCKET = environ["MINIO_BUCKET"]
+    MINIO_PUBLIC_BUCKET = environ["MINIO_PUBLIC_BUCKET"]
     DISCORD_WEBHOOK = environ["DISCORD_WEBHOOK"]
     FORCE_UPLOAD = environ["FORCE_UPLOAD"]
 
@@ -28,6 +29,7 @@ if __name__ == "__main__":
         ["-minioid", MINIO_ID] +
         ["-miniokey", MINIO_SECRET] +
         ["-miniobucket", MINIO_BUCKET] +
+        ["-miniopublicbucket", MINIO_PUBLIC_BUCKET] +
         ["-discordwebhook", DISCORD_WEBHOOK] +
         ["-dir", "../library-checker-problems"] +
         (["-force"] if FORCE_UPLOAD == "true" else []) +
