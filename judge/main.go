@@ -140,7 +140,6 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 }
 
 func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task, submission database.Submission, problem database.Problem) error {
-	log.Println(submission)
 	subID := submission.ID
 	version := problem.Testhash
 
@@ -164,13 +163,13 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	}
 	log.Print("Fetched :", version)
 
-	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, cgroupParent)
+	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, cgroupParent, &testCases)
 	if err != nil {
 		return err
 	}
 	defer judge.Close()
 
-	log.Println("Compile start")
+	log.Println("compile start")
 	submission.Status = "Compiling"
 	if err := database.SaveSubmission(db, submission); err != nil {
 		return err
@@ -179,18 +178,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 		return err
 	}
 
-	checkerFile, err := testCases.CheckerFile()
-	if err != nil {
-		return err
-	}
-	defer checkerFile.Close()
-
-	includeFilePaths, err := testCases.IncludeFilePaths()
-	if err != nil {
-		return err
-	}
-
-	taskResult, err := judge.CompileChecker(checkerFile, includeFilePaths)
+	taskResult, err := judge.CompileChecker()
 	if err != nil {
 		return err
 	}
@@ -213,13 +201,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	}
 	tmpSourceFile.Close()
 
-	tmpSourceFile2, err := os.Open(tmpSourceFile.Name())
-	if err != nil {
-		return err
-	}
-	defer tmpSourceFile2.Close()
-
-	result, compileError, err := judge.CompileSource(tmpSourceFile2)
+	result, compileError, err := judge.CompileSource(tmpSourceFile.Name())
 	if err != nil {
 		return err
 	}
@@ -248,15 +230,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 
 	caseResults := []CaseResult{}
 	for _, caseName := range cases {
-		inFile, err := testCases.InFile(caseName)
-		if err != nil {
-			return err
-		}
-		outFile, err := testCases.OutFile(caseName)
-		if err != nil {
-			return err
-		}
-		caseResult, err := judge.TestCase(inFile, outFile)
+		caseResult, err := judge.TestCase(caseName)
 		if err != nil {
 			return err
 		}
@@ -280,7 +254,6 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	submission.MaxTime = int32(caseResult.Time.Milliseconds())
 	submission.MaxMemory = caseResult.Memory
 
-	log.Println(submission)
 	if err := database.SaveSubmission(db, submission); err != nil {
 		return err
 	}

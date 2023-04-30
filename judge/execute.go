@@ -45,22 +45,27 @@ func CreateVolume() (Volume, error) {
 	}, nil
 }
 
-func (v *Volume) CopyFile(src io.Reader, dstPath string) error {
+func (v *Volume) CopyFile(srcPath string, dstPath string) error {
 	log.Printf("Copy file to %v:%v", v.Name, dstPath)
 	task := TaskInfo{
-		WorkDir: "/workdir",
 		VolumeMountInfo: []VolumeMountInfo{
 			{
 				Path:   "/workdir",
 				Volume: v,
 			},
 		},
-		Name:     "ubuntu",
-		Argments: []string{"sh", "-c", fmt.Sprintf("cat > %s", path.Join("/workdir", dstPath))},
-		Stdin:    src,
+		Name: "ubuntu",
 	}
-	if _, err := task.Run(); err != nil {
-		log.Println("copy file failed:", err.Error())
+	ci, err := task.create()
+
+	if err := ci.CopyFile(srcPath, path.Join("/workdir", dstPath)); err != nil {
+		return err
+	}
+
+	if err != nil {
+		return err
+	}
+	if err := ci.Remove(); err != nil {
 		return err
 	}
 	return nil
@@ -553,6 +558,18 @@ func (cm *lowPrecisionContainerMonitor) parseDate(output []byte) (time.Time, err
 type containerInfo struct {
 	containerID  string
 	cgroupParent string
+}
+
+func (c *containerInfo) CopyFile(src string, dst string) error {
+	args := []string{"cp", src, c.containerID + ":" + dst}
+
+	cmd := exec.Command("docker", args...)
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *containerInfo) Remove() error {
