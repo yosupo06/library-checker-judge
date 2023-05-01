@@ -128,9 +128,7 @@ func (j *Judge) CompileSource(sourcePath string) (TaskResult, []byte, error) {
 	for _, key := range j.lang.AdditionalFiles {
 		filePath := j.caseDir.PublicFilePath(key)
 		if _, err := os.Stat(filePath); err != nil {
-			return TaskResult{
-				ExitCode: 1,
-			}, []byte("file not found:" + key), nil
+			continue
 		}
 		if err := volume.CopyFile(j.caseDir.PublicFilePath(key), path.Base(key)); err != nil {
 			return TaskResult{}, nil, err
