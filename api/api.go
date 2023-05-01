@@ -199,11 +199,12 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 	}
 
 	return &pb.ProblemInfoResponse{
-		Title:       problem.Title,
-		Statement:   problem.Statement,
-		TimeLimit:   float64(problem.Timelimit) / 1000.0,
-		CaseVersion: problem.Testhash,
-		SourceUrl:   problem.SourceUrl,
+		Title:           problem.Title,
+		Statement:       problem.Statement,
+		TimeLimit:       float64(problem.Timelimit) / 1000.0,
+		CaseVersion:     problem.Testhash,
+		SourceUrl:       problem.SourceUrl,
+		PublicFilesHash: problem.PublicFilesHash,
 	}, nil
 }
 

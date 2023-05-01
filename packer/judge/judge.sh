@@ -8,6 +8,7 @@ MINIO_HOST=$(gcloud secrets versions access latest --secret=minio-host)
 MINIO_ID=$(gcloud secrets versions access latest --secret=minio-id)
 MINIO_KEY=$(gcloud secrets versions access latest --secret=minio-secret)
 MINIO_BUCKET=$(gcloud secrets versions access latest --secret=$ENV-minio-bucket)
+MINIO_PUBLIC_BUCKET=$(gcloud secrets versions access latest --secret=$ENV-minio-public-bucket)
 
 PG_HOST=$(gcloud secrets versions access latest --secret=pg-private-ip)
 PG_USER=$(gcloud secrets versions access latest --secret=$ENV-pg-user)
@@ -20,6 +21,7 @@ PG_TABLE=$(gcloud secrets versions access latest --secret=$ENV-pg-table)
 -minioid=$MINIO_ID \
 -miniokey=$MINIO_KEY \
 -miniobucket=$MINIO_BUCKET \
+-miniopublicbucket=$MINIO_PUBLIC_BUCKET \
 -pghost=$PG_HOST \
 -pguser=$PG_USER \
 -pgpass=$PG_PASS \

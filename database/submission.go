@@ -48,7 +48,7 @@ func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
 			return db.Select("name")
 		}).
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
+			return db.Select("name, title, testhash, public_files_hash")
 		}).
 		Where("id = ?", id).First(&sub).Error; err != nil {
 		return Submission{}, errors.New("Submission fetch failed")

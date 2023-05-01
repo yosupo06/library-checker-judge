@@ -125,6 +125,16 @@ func (j *Judge) CompileSource(sourcePath string) (TaskResult, []byte, error) {
 		return TaskResult{}, nil, err
 	}
 
+	for _, key := range j.lang.AdditionalFiles {
+		filePath := j.caseDir.PublicFilePath(key)
+		if _, err := os.Stat(filePath); err != nil {
+			continue
+		}
+		if err := volume.CopyFile(j.caseDir.PublicFilePath(key), path.Base(key)); err != nil {
+			return TaskResult{}, nil, err
+		}
+	}
+
 	ceWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
 	if err != nil {
 		return TaskResult{}, nil, err
@@ -252,14 +262,10 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 		return CaseResult{}, err
 	}
 
-	log.Println("test1")
-
 	checkerResult, err := checkerTaskInfo.Run()
 	if err != nil {
 		return CaseResult{}, err
 	}
-
-	log.Println("test2")
 
 	baseResult.CheckerOut = checkerOutWriter.Bytes()
 
