@@ -21,6 +21,7 @@ import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
@@ -80,6 +81,28 @@ const ProblemInfo: React.FC = () => {
   const problemInfoQuery = useProblemInfo(problemId);
   const langListQuery = useLangList();
 
+  const version = problemInfoQuery.data?.publicFilesHash ?? "";
+
+  const solveHppQuery = useQuery(
+    ["header", problemId],
+    () =>
+      fetch(
+        new URL(
+          `${problemId}/${version}/grader/solve.hpp`,
+          import.meta.env.VITE_PUBLIC_BUCKET_URL
+        )
+      ).then((r) => {
+        if (r.status == 200) {
+          return r.text();
+        } else {
+          return null;
+        }
+      }),
+    {
+      enabled: problemInfoQuery.isSuccess,
+    }
+  );
+
   if (problemInfoQuery.isLoading) {
     return (
       <Box>
@@ -131,6 +154,34 @@ const ProblemInfo: React.FC = () => {
       <Divider />
 
       <KatexRender text={problemInfoQuery.data.statement} />
+
+      <Divider
+        sx={{
+          margin: 1,
+        }}
+      />
+      <Typography variant="h4" paragraph={true}>
+        C++(Function) header
+      </Typography>
+
+      {solveHppQuery.isSuccess && solveHppQuery.data && (
+        <>
+          <Typography variant="h6" paragraph={true}>
+            solve.hpp
+          </Typography>
+          <SourceEditor
+            value={solveHppQuery.data}
+            language="cpp"
+            readOnly={true}
+            autoHeight={true}
+          />
+        </>
+      )}
+      {solveHppQuery.isSuccess && !solveHppQuery.data && (
+        <Typography variant="body1" paragraph={true}>
+          Unsupported
+        </Typography>
+      )}
 
       <Divider
         sx={{
