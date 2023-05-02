@@ -223,19 +223,23 @@ const GithubDataLoader: React.FC<{
         >
           <TextField label="yosupo06:master" {...register("ref")} />
           <TextField label="sample/aplusb" {...register("problem")} />
-
-          <Button
-            variant="outlined"
-            component="label"
+          <Box
             sx={{
-              width: 150,
-              height: "fit-content",
-              marginTop: "auto",
+              display: "flex",
             }}
-            onClick={handleSubmit(onSubmit)}
           >
-            Load from GitHub
-          </Button>
+            <Button
+              variant="outlined"
+              component="label"
+              sx={{
+                width: 150,
+                marginTop: "auto",
+              }}
+              onClick={handleSubmit(onSubmit)}
+            >
+              Load from GitHub
+            </Button>
+          </Box>
         </Stack>
       </FormControl>
     </>
