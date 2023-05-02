@@ -10,79 +10,67 @@ import {
   Stack,
   Tab,
   Tabs,
+  TextField,
 } from "@mui/material";
-import { useLang } from "../contexts/LangContext";
-import { parseStatement } from "../utils/StatementParser";
-import { parse } from "toml";
-import { unified } from "unified";
-import remarkRehype from "remark-rehype";
-import remarkParse from "remark-parse";
-import rehypeStringify from "rehype-stringify";
 import KatexTypography from "../components/katex/KatexTypography";
 import SourceEditor from "../components/SourceEditor";
-import KatexRender from "../components/katex/KatexRender";
+import Statement from "../components/Statement";
+import { parse } from "@iarna/toml";
+import urlJoin from "url-join";
+import { SubmitHandler, useForm } from "react-hook-form";
 
-const StatementSideView: React.FC<{
-  enHtml: string;
-  jaHtml: string;
-  title: string;
-}> = (props) => {
-  const { enHtml, jaHtml, title } = props;
-  const [tabIndex, setTabIndex] = React.useState(0);
-
-  return (
-    <Container>
-      <KatexTypography variant="h2" paragraph={true}>
-        {title}
-      </KatexTypography>
-
-      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs
-          value={tabIndex}
-          onChange={(event, newValue) => setTabIndex(newValue)}
-          aria-label="basic tabs example"
-        >
-          <Tab label="Statement(en)" />
-          <Tab label="Statement(ja)" />
-        </Tabs>
-      </Box>
-
-      {tabIndex === 0 && (
-        <Box sx={{ p: 3 }}>
-          <KatexRender text={enHtml} />
-        </Box>
-      )}
-      {tabIndex === 1 && (
-        <Box sx={{ p: 3 }}>
-          <KatexRender text={jaHtml} />
-        </Box>
-      )}
-    </Container>
-  );
+type StatementData = {
+  info: string;
+  statement: string;
+  examples: { [name: string]: string };
 };
 
 const StatementViewer: React.FC = () => {
-  const lang = useLang();
+  const [data, setData] = useState<StatementData | null>({
+    info: "",
+    statement: "",
+    examples: {},
+  });
 
-  const [tabIndex, setTabIndex] = React.useState(0);
+  return (
+    <Box>
+      <Container maxWidth="xl">
+        <Typography variant="h2" paragraph={true}>
+          Statement Viewer
+        </Typography>
 
-  const [files, setFiles] = useState<File[]>([]);
+        <DataLoader updateData={(newData) => setData(newData)} />
+      </Container>
 
-  const [taskMd, setTaskMd] = useState(""); // task.md
-  const [infoToml, setInfoToml] = useState(""); // info.toml
-  const [infoValue, setInfoValue] = useState<{
-    title: string;
-    params: { [key: string]: object };
-  }>({ title: "", params: {} }); // parsed info.toml
+      <Box>
+        <Divider
+          sx={{
+            margin: 3,
+          }}
+        />
 
-  const [examples, setExamples] = useState<{ [key: string]: string }>({}); // example.in / example.out
+        {data && <StatementViewerInternal data={data} />}
+      </Box>
+    </Box>
+  );
+};
 
-  const [parsedEnMarkdown, setParsedEnMarkdown] = useState("");
-  const [parsedJaMarkdown, setParsedJaMarkdown] = useState("");
-  const [parsedEnHtml, setParsedEnHtml] = useState("");
-  const [parsedJaHtml, setParsedJaHtml] = useState("");
+export default StatementViewer;
+
+const DataLoader: React.FC<{
+  updateData: (data: StatementData) => void;
+}> = (props) => {
+  const [data, setData] = useState<StatementData>({
+    info: "",
+    statement: "",
+    examples: {},
+  });
 
   useEffect(() => {
+    props.updateData(data);
+  }, [data]);
+
+  const setFiles = (files: File[]) => {
     const taskFile = files.find((e) =>
       e.webkitRelativePath.endsWith("task.md")
     );
@@ -90,12 +78,18 @@ const StatementViewer: React.FC = () => {
       console.log("task.md not found");
       return;
     }
-    taskFile.text().then((text) => {
-      setTaskMd(text);
-    });
-  }, [files]);
+    taskFile
+      .text()
+      .then((text) => {
+        setData((data) => ({
+          ...data,
+          statement: text,
+        }));
+      })
+      .catch((err) => {
+        console.log(err);
+      });
 
-  useEffect(() => {
     const infoFile = files.find((e) =>
       e.webkitRelativePath.endsWith("info.toml")
     );
@@ -104,16 +98,12 @@ const StatementViewer: React.FC = () => {
       return;
     }
     infoFile.text().then((text) => {
-      setInfoToml(text);
+      setData((data) => ({
+        ...data,
+        info: text,
+      }));
     });
-  }, [files]);
 
-  useEffect(() => {
-    console.log(parse(infoToml));
-    setInfoValue(parse(infoToml));
-  }, [infoToml]);
-
-  useEffect(() => {
     const pattern = /(in|out)\/example_[0-9]*.(in|out)/;
     const exampleFiles = files.filter((e) =>
       e.webkitRelativePath.match(pattern)
@@ -123,40 +113,166 @@ const StatementViewer: React.FC = () => {
       exampleFiles.forEach((value, index) => {
         examples[value.name] = texts[index];
       });
-      setExamples(examples);
+      setData((data) => ({
+        ...data,
+        examples: examples,
+      }));
     });
-  }, [files]);
+  };
+
+  return (
+    <>
+      <FormControl>
+        <Button
+          variant="outlined"
+          component="label"
+          sx={{
+            width: 150,
+          }}
+        >
+          Load directory
+          <input
+            hidden
+            type="file"
+            onChange={(e) => {
+              setFiles(Array.from(e.target.files || []));
+            }}
+            /* @ts-expect-error webkitdirectory is not standard */
+            webkitdirectory=""
+          />
+        </Button>
+        <FormHelperText>
+          set problem directory (example:
+          /path/to/library-checker-problems/sample/aplusb)
+        </FormHelperText>
+      </FormControl>
+      <Divider sx={{ margin: 3 }} />
+      <GithubDataLoader updateData={setData} />
+    </>
+  );
+};
+
+const GithubDataLoader: React.FC<{
+  updateData: (data: StatementData) => void;
+}> = (props) => {
+  const [data, setData] = useState<StatementData>({
+    info: "",
+    statement: "",
+    examples: {},
+  });
+
+  type Form = {
+    ref: string;
+    problem: string;
+  };
+  const { register, handleSubmit } = useForm<Form>();
 
   useEffect(() => {
-    parseStatement(taskMd, "en", infoValue.params, examples).then(
-      setParsedEnMarkdown
+    props.updateData(data);
+  }, [data]);
+
+  const onSubmit: SubmitHandler<Form> = (data) => {
+    const { ref, problem } = data;
+    const [owner, branch] = ref.split(":");
+    const baseUrl = urlJoin(
+      "https://raw.githubusercontent.com/",
+      owner,
+      "library-checker-problems",
+      branch,
+      problem
     );
-    parseStatement(taskMd, "ja", infoValue.params, examples).then(
-      setParsedJaMarkdown
-    );
-  }, [lang, taskMd, infoValue, examples]);
+
+    fetch(new URL(urlJoin(baseUrl, "info.toml")))
+      .then((r) => {
+        if (r.status == 200) {
+          return r.text();
+        } else {
+          throw new Error("failed to fetch info.toml:" + r.status);
+        }
+      })
+      .then((info) => {
+        setData((data) => ({
+          ...data,
+          info: info,
+        }));
+      });
+
+    fetch(new URL(urlJoin(baseUrl, "task.md")))
+      .then((r) => {
+        if (r.status == 200) {
+          return r.text();
+        } else {
+          throw new Error("failed to fetch task.md:" + r.status);
+        }
+      })
+      .then((task) => {
+        setData((data) => ({
+          ...data,
+          statement: task,
+        }));
+      });
+  };
+
+  return (
+    <>
+      <FormControl>
+        <Stack
+          direction="row"
+          divider={<Divider orientation="vertical" flexItem />}
+          spacing={2}
+        >
+          <TextField label="yosupo06:master" {...register("ref")} />
+          <TextField label="sample/aplusb" {...register("problem")} />
+
+          <Button
+            variant="outlined"
+            component="label"
+            sx={{
+              width: 150,
+              height: "fit-content",
+              marginTop: "auto",
+            }}
+            onClick={handleSubmit(onSubmit)}
+          >
+            Load from GitHub
+          </Button>
+        </Stack>
+      </FormControl>
+    </>
+  );
+};
+
+interface Props {
+  data: StatementData;
+}
+
+const StatementViewerInternal: React.FC<Props> = (props) => {
+  const [editorTabIndex, setEditorTabIndex] = useState(0);
+  const [viewerTabIndex, setViewerTabIndex] = useState(0);
+  const [info, setInfo] = useState(props.data.info);
+  const [statement, setStatement] = useState(props.data.statement);
 
   useEffect(() => {
-    unified()
-      .use(remarkParse)
-      .use(remarkRehype)
-      .use(rehypeStringify)
-      .process(parsedEnMarkdown)
-      .then((e) => setParsedEnHtml(String(e)));
-    unified()
-      .use(remarkParse)
-      .use(remarkRehype)
-      .use(rehypeStringify)
-      .process(parsedJaMarkdown)
-      .then((e) => setParsedJaHtml(String(e)));
-  }, [parsedEnMarkdown, parsedJaMarkdown]);
+    setInfo(props.data.info);
+  }, [props.data.info]);
+  useEffect(() => {
+    setStatement(props.data.statement);
+  }, [props.data.statement]);
 
-  const editorSideView = (
+  const infoToml = (() => {
+    try {
+      return parse(info);
+    } catch (error) {
+      console.log(error);
+      return {};
+    }
+  })();
+  const editorSide = (
     <Container>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
-          value={tabIndex}
-          onChange={(event, newValue) => setTabIndex(newValue)}
+          value={editorTabIndex}
+          onChange={(event, newValue) => setEditorTabIndex(newValue)}
           aria-label="basic tabs example"
         >
           <Tab label="task.md" />
@@ -164,7 +280,7 @@ const StatementViewer: React.FC = () => {
         </Tabs>
       </Box>
 
-      {tabIndex === 0 && (
+      {editorTabIndex === 0 && (
         <Box sx={{ p: 3 }}>
           <Typography variant="h4" paragraph={true}>
             task.md
@@ -176,10 +292,10 @@ const StatementViewer: React.FC = () => {
             }}
           >
             <SourceEditor
-              value={taskMd}
+              value={statement}
               language="plaintext" // todo: markdown?
               onChange={(e) => {
-                setTaskMd(e);
+                setStatement(e);
               }}
               readOnly={false}
               autoHeight={false}
@@ -187,7 +303,7 @@ const StatementViewer: React.FC = () => {
           </Box>
         </Box>
       )}
-      {tabIndex === 1 && (
+      {editorTabIndex === 1 && (
         <Box sx={{ p: 3 }}>
           <Typography variant="h4" paragraph={true}>
             info.toml
@@ -199,10 +315,10 @@ const StatementViewer: React.FC = () => {
             }}
           >
             <SourceEditor
-              value={infoToml}
-              language="plaintext" // todo: markdown?
+              value={info}
+              language="plaintext"
               onChange={(e) => {
-                setInfoToml(e);
+                setInfo(e);
               }}
               readOnly={false}
               autoHeight={false}
@@ -213,60 +329,54 @@ const StatementViewer: React.FC = () => {
     </Container>
   );
 
-  return (
-    <Box>
-      <Container maxWidth="xl">
-        <Typography variant="h2" paragraph={true}>
-          Statement Viewer
-        </Typography>
+  const viewerSide = (
+    <Container>
+      <KatexTypography variant="h2" paragraph={true}>
+        {infoToml?.title ?? "<title not found>"}
+      </KatexTypography>
 
-        <FormControl>
-          <Button
-            variant="outlined"
-            component="label"
-            sx={{
-              width: 150,
-            }}
-          >
-            Load directory
-            <input
-              hidden
-              type="file"
-              onChange={(e) => {
-                setFiles(Array.from(e.target.files || []));
-              }}
-              /* @ts-expect-error webkitdirectory is not standard */
-              webkitdirectory=""
-            />
-          </Button>
-          <FormHelperText>
-            set problem directory (example:
-            /path/to/library-checker-problems/sample/aplusb)
-          </FormHelperText>
-        </FormControl>
-      </Container>
-
-      <Box>
-        <Divider
-          sx={{
-            margin: 3,
-          }}
-        />
-        <Stack
-          direction="row"
-          divider={<Divider orientation="vertical" flexItem />}
-          spacing={2}
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs
+          value={viewerTabIndex}
+          onChange={(_, newValue) => setViewerTabIndex(newValue)}
+          aria-label="basic tabs example"
         >
-          {editorSideView}
-          <StatementSideView
-            enHtml={parsedEnHtml}
-            jaHtml={parsedJaHtml}
-            title={infoValue["title"]}
-          />
-        </Stack>
+          <Tab label="Statement(en)" />
+          <Tab label="Statement(ja)" />
+        </Tabs>
       </Box>
-    </Box>
+
+      {viewerTabIndex === 0 && (
+        <Box sx={{ p: 3 }}>
+          <Statement
+            lang="en"
+            info={infoToml}
+            statement={statement}
+            examples={props.data.examples}
+          />
+        </Box>
+      )}
+      {viewerTabIndex === 1 && (
+        <Box sx={{ p: 3 }}>
+          <Statement
+            lang="ja"
+            info={infoToml}
+            statement={statement}
+            examples={props.data.examples}
+          />
+        </Box>
+      )}
+    </Container>
+  );
+
+  return (
+    <Stack
+      direction="row"
+      divider={<Divider orientation="vertical" flexItem />}
+      spacing={2}
+    >
+      {editorSide}
+      {viewerSide}
+    </Stack>
   );
 };
-
-export default StatementViewer;

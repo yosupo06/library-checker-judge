@@ -1,6 +1,7 @@
 import { Liquid } from "liquidjs";
 import { TagToken, Template, ParseStream } from "liquidjs";
 import { Lang } from "../contexts/LangContext";
+import { AnyJson } from "@iarna/toml";
 
 const engine = new Liquid({
   tagDelimiterLeft: "@{",
@@ -34,7 +35,6 @@ const numberParamToStr = (value: number) => {
   if (Number.isInteger(value)) {
     if (value != 0 && value % 1000000 == 0) {
       const k = Math.floor(Math.log10(Math.abs(value)));
-      console.log(value, k);
       if (value === 10 ** k) {
         return `10^{${k}}`;
       }
@@ -147,7 +147,7 @@ engine.registerTag("lang", {
 export const parseStatement = (
   statement: string,
   lang: Lang,
-  params: { [key in string]: object },
+  params: { [key in string]: AnyJson },
   examples: { [name in string]: string }
 ): Promise<string> => {
   return engine.parseAndRender(statement, {
