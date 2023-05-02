@@ -6,7 +6,7 @@
     "@emotion/react": "^11.6.0",
     "@emotion/styled": "^11.6.0",
     "@fontsource/roboto": "^4.0.0",
-    "@iarna/toml": "^3.0.0",
+    "@iarna/toml": "^2.2.5",
     "@monaco-editor/react": "^4.3.1",
     "@mui/icons-material": "^5.2.0",
     "@mui/material": "^5.1.0",
@@ -28,6 +28,7 @@
     "monaco-editor": "^0.31.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-hook-form": "^7.43.9",
     "react-markdown": "^8.0.3",
     "react-router-dom": "^6.2.1",
     "react-use": "^17.3.1",
@@ -36,7 +37,7 @@
     "rehype-sanitize": "^5.0.1",
     "remark-math": "^5.1.1",
     "stream-browserify": "^3.0.0",
-    "toml": "^3.0.0",
+    "url-join": "^5.0.0",
     "vite": "^4.3.1"
   },
   "scripts": {
