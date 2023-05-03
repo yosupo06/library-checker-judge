@@ -121,6 +121,7 @@ const ProblemInfo: React.FC = () => {
       </Box>
     );
   }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (submitProcessing.current) return;
