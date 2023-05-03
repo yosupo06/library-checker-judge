@@ -6,7 +6,7 @@ import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import React, { useContext, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import library_checker_client, {
@@ -82,6 +82,7 @@ const ProblemInfo: React.FC = () => {
   const langListQuery = useLangList();
 
   const version = problemInfoQuery.data?.publicFilesHash ?? "";
+  const submitProcessing = useRef(false);
 
   const solveHppQuery = useQuery(
     ["header", problemId],
@@ -120,9 +121,11 @@ const ProblemInfo: React.FC = () => {
       </Box>
     );
   }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitProcessing.current) return;
+    submitProcessing.current = true;
+
     if (!lang) {
       console.log("Please select lang");
       return;
@@ -133,6 +136,7 @@ const ProblemInfo: React.FC = () => {
         (auth && authMetadata(auth.state)) ?? undefined
       )
       .then((resp) => {
+        submitProcessing.current = false;
         navigate(`/submission/${resp.response.id}`);
       });
   };
