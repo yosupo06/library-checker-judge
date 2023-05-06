@@ -2,10 +2,9 @@ import Button from "@mui/material/Button";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
 import Menu from "@mui/material/Menu";
 import { GitHub } from "@mui/icons-material";
-import React, { ReactElement, useContext } from "react";
+import React, { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext";
 import { LangContext } from "../../contexts/LangContext";
@@ -155,62 +154,40 @@ const NavBar: React.FC = () => {
 
   const isDeveloper =
     userInfoQuery.isSuccess && userInfoQuery.data.user?.isDeveloper;
-
-  let elements: ReactElement[] = [];
-
-  elements.push(
-    <Button
-      color="inherit"
-      href="/"
-      sx={{
-        fontSize: "16px",
-        fontWeight: "bolder",
-      }}
-    >
-      Library Checker
-    </Button>
-  );
-
-  elements.push(
-    <Button color="inherit" href="/submissions">
-      Submissions
-    </Button>
-  );
-
-  elements.push(
-    <Button color="inherit" href="/ranking">
-      Ranking
-    </Button>
-  );
-
-  elements.push(
-    <Button color="inherit" href="/help">
-      Help
-    </Button>
-  );
-
-  if (isDeveloper) {
-    elements.push(<ToolsMenu />);
-  }
-
-  elements.push(LangSelect());
-
-  elements = elements.concat(UserMenu());
-
-  elements.push(
-    <Button
-      color="inherit"
-      href="https://github.com/yosupo06/library-checker-problems"
-      target="_blank"
-      rel="noopener"
-    >
-      <GitHub />
-    </Button>
-  );
+  const userMenu = UserMenu();
 
   return (
     <AppBar position="static">
-      <Toolbar>{elements}</Toolbar>
+      <Button
+        color="inherit"
+        href="/"
+        sx={{
+          fontSize: "16px",
+          fontWeight: "bolder",
+        }}
+      >
+        Library Checker
+      </Button>
+      <Button color="inherit" href="/submissions">
+        Submissions
+      </Button>
+      <Button color="inherit" href="/ranking">
+        Ranking
+      </Button>
+      <Button color="inherit" href="/help">
+        Help
+      </Button>
+      {isDeveloper && <ToolsMenu />}
+      <LangSelect />
+      {userMenu}
+      <Button
+        color="inherit"
+        href="https://github.com/yosupo06/library-checker-problems"
+        target="_blank"
+        rel="noopener"
+      >
+        <GitHub />
+      </Button>
     </AppBar>
   );
 };
