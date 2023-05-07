@@ -12,7 +12,7 @@ import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
 import { styled } from "@mui/system";
 import { useUserInfo } from "../../api/client_wrapper";
-import { Box } from "@mui/material";
+import { Box, Toolbar } from "@mui/material";
 
 const NavbarLink = styled(Link)({
   color: "inherit",
@@ -158,36 +158,38 @@ const NavBar: React.FC = () => {
 
   return (
     <AppBar position="static">
-      <Button
-        color="inherit"
-        href="/"
-        sx={{
-          fontSize: "16px",
-          fontWeight: "bolder",
-        }}
-      >
-        Library Checker
-      </Button>
-      <Button color="inherit" href="/submissions">
-        Submissions
-      </Button>
-      <Button color="inherit" href="/ranking">
-        Ranking
-      </Button>
-      <Button color="inherit" href="/help">
-        Help
-      </Button>
-      {isDeveloper && <ToolsMenu />}
-      <LangSelect />
-      {userMenu}
-      <Button
-        color="inherit"
-        href="https://github.com/yosupo06/library-checker-problems"
-        target="_blank"
-        rel="noopener"
-      >
-        <GitHub />
-      </Button>
+      <Toolbar>
+        <Button
+          color="inherit"
+          href="/"
+          sx={{
+            fontSize: "16px",
+            fontWeight: "bolder",
+          }}
+        >
+          Library Checker
+        </Button>
+        <Button color="inherit" href="/submissions">
+          Submissions
+        </Button>
+        <Button color="inherit" href="/ranking">
+          Ranking
+        </Button>
+        <Button color="inherit" href="/help">
+          Help
+        </Button>
+        {isDeveloper && <ToolsMenu />}
+        <LangSelect />
+        {userMenu}
+        <Button
+          color="inherit"
+          href="https://github.com/yosupo06/library-checker-problems"
+          target="_blank"
+          rel="noopener"
+        >
+          <GitHub />
+        </Button>
+      </Toolbar>
     </AppBar>
   );
 };
