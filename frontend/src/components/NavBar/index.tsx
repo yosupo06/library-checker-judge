@@ -2,6 +2,7 @@ import Button from "@mui/material/Button";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
 import Menu from "@mui/material/Menu";
 import { GitHub } from "@mui/icons-material";
 import React, { useContext } from "react";
@@ -12,7 +13,7 @@ import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
 import { styled } from "@mui/system";
 import { useUserInfo } from "../../api/client_wrapper";
-import { Box, Toolbar } from "@mui/material";
+import { Box } from "@mui/material";
 
 const NavbarLink = styled(Link)({
   color: "inherit",
