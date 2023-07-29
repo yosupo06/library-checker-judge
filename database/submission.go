@@ -11,28 +11,29 @@ import (
 
 // Submission is db table
 type Submission struct {
-	ID           int32 `gorm:"primaryKey"`
-	ProblemName  string
-	Problem      Problem `gorm:"foreignKey:ProblemName"`
-	Lang         string
-	Status       string
-	PrevStatus   string
-	Hacked       bool
-	Source       string
-	Testhash     string
-	MaxTime      int32
-	MaxMemory    int64
-	CompileError []byte
-	JudgePing    time.Time
-	JudgeName    string
-	JudgeTasked  bool
-	UserName     sql.NullString
-	User         User `gorm:"foreignKey:UserName"`
+	ID             int32 `gorm:"primaryKey"`
+	SubmissionTime time.Time
+	ProblemName    string
+	Problem        Problem `gorm:"foreignKey:ProblemName"`
+	Lang           string
+	Status         string
+	PrevStatus     string
+	Hacked         bool
+	Source         string
+	Testhash       string
+	MaxTime        int32
+	MaxMemory      int64
+	CompileError   []byte
+	JudgePing      time.Time
+	JudgeName      string
+	JudgeTasked    bool
+	UserName       sql.NullString
+	User           User `gorm:"foreignKey:UserName"`
 }
 
 // SubmissionTestcaseResult is db table
 type SubmissionTestcaseResult struct {
-	Submission int32  `gorm:"primaryKey"`
+	Submission int32  `gorm:"primaryKey"` // TODO: should be foreign key
 	Testcase   string `gorm:"primaryKey"`
 	Status     string
 	Time       int32
@@ -51,17 +52,21 @@ func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
 			return db.Select("name, title, testhash, public_files_hash")
 		}).
 		Where("id = ?", id).First(&sub).Error; err != nil {
-		return Submission{}, errors.New("Submission fetch failed")
+		return Submission{}, err
 	}
 	return sub, nil
 }
 
-func SaveSubmission(db *gorm.DB, submission Submission) error {
+// save submission and return id
+func SaveSubmission(db *gorm.DB, submission Submission) (int32, error) {
+	if submission.ID != 0 {
+		return 0, errors.New("must not specify submission id")
+	}
 	if err := db.Save(&submission).Error; err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return submission.ID, nil
 }
 
 func ClearTestcaseResult(db *gorm.DB, subID int32) error {

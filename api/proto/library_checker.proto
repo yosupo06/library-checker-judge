@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package librarychecker;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/yosupo06/library-checker-judge/api/proto";
 
 service LibraryCheckerService {
@@ -133,7 +135,9 @@ message SubmissionOverview {
     bool hacked = 10;
     double time = 8; // 2.0 = 2 seconds
     int64 memory = 9; // x bytes
+    google.protobuf.Timestamp submission_time = 11;
 }
+
 message SubmissionCaseResult {
     string case = 1; // "example_00.in"
     string status = 2; // "AC"
