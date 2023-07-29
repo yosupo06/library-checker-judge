@@ -82,7 +82,11 @@ const SubmissionTable: React.FC<Props> = (props) => {
               <TableCell>
                 <CustomLink to={`/submission/${row.id}`}>{row.id}</CustomLink>
               </TableCell>
-              <TableCell>{row.submissionTime ? Timestamp.toDate(row.submissionTime).toLocaleString() : "-"}</TableCell>
+              <TableCell>
+                {row.submissionTime
+                  ? Timestamp.toDate(row.submissionTime).toLocaleString()
+                  : "-"}
+              </TableCell>
               <TableCell>
                 <CustomLink to={`/problem/${row.problemName}`}>
                   <KatexTypography>{row.problemTitle}</KatexTypography>
