@@ -117,7 +117,7 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 	submission.Testhash = version
 	submission.Status = "Judging"
 
-	if err = database.SaveSubmission(db, submission); err != nil {
+	if err = database.UpdateSubmission(db, submission); err != nil {
 		return err
 	}
 	if err = database.ClearTestcaseResult(db, subID); err != nil {
@@ -130,7 +130,7 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 	if err := judgeSubmission(db, judgedir, judgeName, task, submission, *problem); err != nil {
 		// error detected, try to change status into IE
 		submission.Status = "IE"
-		if err2 := database.SaveSubmission(db, submission); err2 != nil {
+		if err2 := database.UpdateSubmission(db, submission); err2 != nil {
 			log.Println("deep error:", err2)
 		}
 		if err2 := database.FinishTask(db, task.ID); err2 != nil {
@@ -152,7 +152,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 
 	log.Println("Fetch data")
 	submission.Status = "Fetching"
-	if err := database.SaveSubmission(db, submission); err != nil {
+	if err := database.UpdateSubmission(db, submission); err != nil {
 		return err
 	}
 	if err := database.TouchTask(db, task.ID, judgeName); err != nil {
@@ -173,7 +173,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 
 	log.Println("compile start")
 	submission.Status = "Compiling"
-	if err := database.SaveSubmission(db, submission); err != nil {
+	if err := database.UpdateSubmission(db, submission); err != nil {
 		return err
 	}
 	if err := database.TouchTask(db, task.ID, judgeName); err != nil {
@@ -186,7 +186,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	}
 	if taskResult.ExitCode != 0 {
 		submission.Status = "ICE"
-		if err = database.SaveSubmission(db, submission); err != nil {
+		if err = database.UpdateSubmission(db, submission); err != nil {
 			return err
 		}
 		return database.FinishTask(db, task.ID)
@@ -210,7 +210,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	if result.ExitCode != 0 {
 		submission.Status = "CE"
 		submission.CompileError = compileError
-		if err = database.SaveSubmission(db, submission); err != nil {
+		if err = database.UpdateSubmission(db, submission); err != nil {
 			return err
 		}
 		return database.FinishTask(db, task.ID)
@@ -218,7 +218,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 
 	log.Println("Start executing")
 	submission.Status = "Executing"
-	if err := database.SaveSubmission(db, submission); err != nil {
+	if err := database.UpdateSubmission(db, submission); err != nil {
 		return err
 	}
 	if err := database.TouchTask(db, task.ID, judgeName); err != nil {
@@ -256,7 +256,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	submission.MaxTime = int32(caseResult.Time.Milliseconds())
 	submission.MaxMemory = caseResult.Memory
 
-	if err := database.SaveSubmission(db, submission); err != nil {
+	if err := database.UpdateSubmission(db, submission); err != nil {
 		return err
 	}
 	return database.FinishTask(db, task.ID)

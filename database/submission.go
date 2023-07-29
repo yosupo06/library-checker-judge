@@ -69,6 +69,17 @@ func SaveSubmission(db *gorm.DB, submission Submission) (int32, error) {
 	return submission.ID, nil
 }
 
+func UpdateSubmission(db *gorm.DB, submission Submission) error {
+	if submission.ID == 0 {
+		return errors.New("must specify submission id")
+	}
+	if err := db.Save(&submission).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func ClearTestcaseResult(db *gorm.DB, subID int32) error {
 	if err := db.Where("submission = ?", subID).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
 		return err
