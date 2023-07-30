@@ -58,9 +58,17 @@ func ToProtoSubmission(submission *database.Submission) (*pb.SubmissionOverview,
 		Hacked:         submission.Hacked,
 		Time:           float64(submission.MaxTime) / 1000.0,
 		Memory:         int64(submission.MaxMemory),
-		SubmissionTime: timestamppb.New(submission.SubmissionTime),
+		SubmissionTime: toProtoTimestamp(submission.SubmissionTime),
 	}
 	return overview, nil
+}
+
+func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {
+	if t.IsZero() {
+		return &timestamppb.Timestamp{}
+	} else {
+		return timestamppb.New(t)
+	}
 }
 
 func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
