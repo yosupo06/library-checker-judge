@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -47,16 +48,17 @@ func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStat
 
 func ToProtoSubmission(submission *database.Submission) (*pb.SubmissionOverview, error) {
 	overview := &pb.SubmissionOverview{
-		Id:           int32(submission.ID),
-		ProblemName:  submission.Problem.Name,
-		ProblemTitle: submission.Problem.Title,
-		UserName:     submission.User.Name,
-		Lang:         submission.Lang,
-		IsLatest:     submission.Testhash == submission.Problem.Testhash,
-		Status:       submission.Status,
-		Hacked:       submission.Hacked,
-		Time:         float64(submission.MaxTime) / 1000.0,
-		Memory:       int64(submission.MaxMemory),
+		Id:             int32(submission.ID),
+		ProblemName:    submission.Problem.Name,
+		ProblemTitle:   submission.Problem.Title,
+		UserName:       submission.User.Name,
+		Lang:           submission.Lang,
+		IsLatest:       submission.Testhash == submission.Problem.Testhash,
+		Status:         submission.Status,
+		Hacked:         submission.Hacked,
+		Time:           float64(submission.MaxTime) / 1000.0,
+		Memory:         int64(submission.MaxMemory),
+		SubmissionTime: timestamppb.New(submission.SubmissionTime),
 	}
 	return overview, nil
 }
@@ -255,28 +257,30 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 		name = currentUser.Name
 	}
 	submission := database.Submission{
-		ProblemName: in.Problem,
-		Lang:        in.Lang,
-		Status:      "WJ",
-		Source:      in.Source,
-		MaxTime:     -1,
-		MaxMemory:   -1,
-		UserName:    sql.NullString{String: name, Valid: name != ""},
+		SubmissionTime: time.Now(),
+		ProblemName:    in.Problem,
+		Lang:           in.Lang,
+		Status:         "WJ",
+		Source:         in.Source,
+		MaxTime:        -1,
+		MaxMemory:      -1,
+		UserName:       sql.NullString{String: name, Valid: name != ""},
 	}
 
-	if err := s.db.Create(&submission).Error; err != nil {
+	id, err := database.SaveSubmission(s.db, submission)
+	if err != nil {
 		log.Print(err)
 		return nil, errors.New("Submit failed")
 	}
 
-	log.Println("Submit ", submission.ID)
+	log.Println("Submit ", id)
 
-	if err := s.pushTask(ctx, submission.ID, 50); err != nil {
+	if err := s.pushTask(ctx, id, 50); err != nil {
 		log.Print(err)
 		return nil, errors.New("inserting to judge queue is failed")
 	}
 
-	return &pb.SubmitResponse{Id: submission.ID}, nil
+	return &pb.SubmitResponse{Id: id}, nil
 }
 
 func canRejudge(currentUser database.User, submission *pb.SubmissionOverview) bool {
@@ -303,13 +307,13 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	var sub database.Submission
 	sub, err := database.FetchSubmission(s.db, in.Id)
 	if err != nil {
-		log.Fatalln("failed to fetch submission")
-		return nil, err
+		log.Println("failed to fetch submission:", err)
+		return nil, errors.New("failed to fetch submission")
 	}
 	cases, err := database.FetchTestcaseResults(s.db, in.Id)
 	if err != nil {
-		log.Fatalln("failed to fetch submission results")
-		return nil, err
+		log.Println("failed to fetch submission results:", err)
+		return nil, errors.New("failed to fetch submission results")
 	}
 
 	overview, err := ToProtoSubmission(&sub)
@@ -389,7 +393,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		Preload("Problem", func(db *gorm.DB) *gorm.DB {
 			return db.Select("name, title, testhash")
 		}).
-		Select("id, user_name, problem_name, lang, status, hacked, testhash, max_time, max_memory").
+		Select("id, submission_time, user_name, problem_name, lang, status, hacked, testhash, max_time, max_memory").
 		Order(order).
 		Find(&submissions).Error; err != nil {
 		return nil, errors.New("select query failed")

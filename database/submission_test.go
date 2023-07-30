@@ -19,15 +19,16 @@ func TestSubmission(t *testing.T) {
 	}
 
 	sub := Submission{
-		ID:          123,
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
 	}
-	if err := SaveSubmission(db, sub); err != nil {
+
+	id, err := SaveSubmission(db, sub)
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	sub2, err := FetchSubmission(db, 123)
+	sub2, err := FetchSubmission(db, id)
 
 	if err != nil {
 		t.Fatal(err)
@@ -51,16 +52,17 @@ func TestSubmissionResult(t *testing.T) {
 	}
 
 	sub := Submission{
-		ID:          123,
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
 	}
-	if err := SaveSubmission(db, sub); err != nil {
+
+	id, err := SaveSubmission(db, sub)
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	result := SubmissionTestcaseResult{
-		Submission: sub.ID,
+		Submission: id,
 		Testcase:   "case1.in",
 		Status:     "AC",
 		Time:       123,
@@ -71,7 +73,7 @@ func TestSubmissionResult(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	actual, err := FetchTestcaseResults(db, sub.ID)
+	actual, err := FetchTestcaseResults(db, id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,11 +96,10 @@ func TestSubmissionResultEmpty(t *testing.T) {
 	}
 
 	sub := Submission{
-		ID:          123,
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
 	}
-	if err := SaveSubmission(db, sub); err != nil {
+	if _, err := SaveSubmission(db, sub); err != nil {
 		t.Fatal(err)
 	}
 
