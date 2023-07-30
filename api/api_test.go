@@ -427,3 +427,9 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 		t.Fatal("Promote to admin")
 	}
 }
+
+func TestToProtoTimestamp(t *testing.T) {
+	if toProtoTimestamp(time.Time{}).Nanos != 0 || toProtoTimestamp(time.Time{}).Seconds != 0 {
+		t.Fatal("toProtoTimestamp(time.Time{}) should returns default value")
+	}
+}
