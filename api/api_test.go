@@ -429,7 +429,7 @@ func TestAddAdminByNotAdmin(t *testing.T) {
 }
 
 func TestToProtoTimestamp(t *testing.T) {
-	if toProtoTimestamp(time.Time{}).Nanos != 0 || toProtoTimestamp(time.Time{}).Seconds != 0 {
+	if toProtoTimestamp(time.Time{}) != nil {
 		t.Fatal("toProtoTimestamp(time.Time{}) should returns default value")
 	}
 }

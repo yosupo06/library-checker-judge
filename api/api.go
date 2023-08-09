@@ -65,7 +65,7 @@ func ToProtoSubmission(submission *database.Submission) (*pb.SubmissionOverview,
 
 func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {
 	if t.IsZero() {
-		return &timestamppb.Timestamp{}
+		return nil
 	} else {
 		return timestamppb.New(t)
 	}
