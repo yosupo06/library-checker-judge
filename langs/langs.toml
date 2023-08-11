@@ -48,10 +48,10 @@
 [[langs]]
     id = "rust"
     name = "Rust"
-    version = "rustc(1.60 edition 2018)"
+    version = "rustc(1.71.1 edition 2021)"
     source = "main.rs"
     image_name = "library-checker-images-rust"
-    compile = ["rustc", "--edition", "2018", "-C", "opt-level=3", "main.rs"]
+    compile = ["rustc", "--edition", "2021", "-C", "opt-level=3", "main.rs"]
     exec = ["./main"]
 [[langs]]
     id = "d"
