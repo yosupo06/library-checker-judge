@@ -57,14 +57,14 @@ func (v *Volume) CopyFile(srcPath string, dstPath string) error {
 		Name: "ubuntu",
 	}
 	ci, err := task.create()
+	if err != nil {
+		return err
+	}
 
 	if err := ci.CopyFile(srcPath, path.Join("/workdir", dstPath)); err != nil {
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
 	if err := ci.Remove(); err != nil {
 		return err
 	}
