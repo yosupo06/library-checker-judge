@@ -165,7 +165,9 @@ func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, [
 	}
 	defer caseVolume.Remove()
 
-	caseVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in")
+	if err := caseVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in"); err != nil {
+		return TaskResult{}, nil, err
+	}
 
 	stderrWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
 	if err != nil {
@@ -245,9 +247,15 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 		return baseResult, nil
 	}
 
-	j.checkerVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in")
-	j.checkerVolume.CopyFile(j.caseDir.OutFilePath(caseName), "expect.out")
-	j.checkerVolume.CopyFile(outFile.Name(), "actual.out")
+	if err := j.checkerVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in"); err != nil {
+		return CaseResult{}, err
+	}
+	if err := j.checkerVolume.CopyFile(j.caseDir.OutFilePath(caseName), "expect.out"); err != nil {
+		return CaseResult{}, err
+	}
+	if err := j.checkerVolume.CopyFile(outFile.Name(), "actual.out"); err != nil {
+		return CaseResult{}, err
+	}
 
 	// run checker
 	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
