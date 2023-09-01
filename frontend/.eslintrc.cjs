@@ -6,5 +6,6 @@ module.exports = {
     ignorePatterns: [
         "src/api/library_checker.ts",
         "src/api/library_checker.client.ts",
+        "src/api/google/*"
     ]
 };

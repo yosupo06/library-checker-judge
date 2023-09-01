@@ -14,6 +14,7 @@ import { useLangList } from "../api/client_wrapper";
 import { SubmissionOverview } from "../api/library_checker";
 import KatexTypography from "./katex/KatexTypography";
 import { styled } from "@mui/system";
+import { Timestamp } from "../api/google/protobuf/timestamp";
 
 interface Props {
   overviews: SubmissionOverview[];
@@ -66,6 +67,7 @@ const SubmissionTable: React.FC<Props> = (props) => {
         <TableHead>
           <TableRow>
             <TableCell>ID</TableCell>
+            <TableCell>Date</TableCell>
             <TableCell>Problem</TableCell>
             <TableCell>Lang</TableCell>
             <TableCell>User</TableCell>
@@ -79,6 +81,11 @@ const SubmissionTable: React.FC<Props> = (props) => {
             <TableRow key={row.id}>
               <TableCell>
                 <CustomLink to={`/submission/${row.id}`}>{row.id}</CustomLink>
+              </TableCell>
+              <TableCell>
+                {row.submissionTime
+                  ? Timestamp.toDate(row.submissionTime).toLocaleString()
+                  : "-"}
               </TableCell>
               <TableCell>
                 <CustomLink to={`/problem/${row.problemName}`}>
