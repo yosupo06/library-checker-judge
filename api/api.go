@@ -53,7 +53,7 @@ func ToProtoSubmission(submission *database.Submission) (*pb.SubmissionOverview,
 		ProblemTitle:   submission.Problem.Title,
 		UserName:       submission.User.Name,
 		Lang:           submission.Lang,
-		IsLatest:       submission.Testhash == submission.Problem.Testhash,
+		IsLatest:       submission.TestCasesVersion == submission.Problem.TestCasesVersion,
 		Status:         submission.Status,
 		Hacked:         submission.Hacked,
 		Time:           float64(submission.MaxTime) / 1000.0,
@@ -209,12 +209,12 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 	}
 
 	return &pb.ProblemInfoResponse{
-		Title:           problem.Title,
-		Statement:       problem.Statement,
-		TimeLimit:       float64(problem.Timelimit) / 1000.0,
-		CaseVersion:     problem.Testhash,
-		SourceUrl:       problem.SourceUrl,
-		PublicFilesHash: problem.PublicFilesHash,
+		Title:       problem.Title,
+		Statement:   problem.Statement,
+		TimeLimit:   float64(problem.Timelimit) / 1000.0,
+		CaseVersion: problem.Testhash,
+		SourceUrl:   problem.SourceUrl,
+		Version:     problem.Version,
 	}, nil
 }
 
@@ -395,13 +395,8 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 
 	var submissions = make([]database.Submission, 0)
 	if err := s.db.Where(filter).Limit(int(in.Limit)).Offset(int(in.Skip)).
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name")
-		}).
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash")
-		}).
-		Select("id, submission_time, user_name, problem_name, lang, status, hacked, testhash, max_time, max_memory").
+		Preload("User").
+		Preload("Problem").
 		Order(order).
 		Find(&submissions).Error; err != nil {
 		return nil, errors.New("select query failed")

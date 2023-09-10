@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/disgoorg/disgo v0.16.2
-	github.com/minio/minio-go/v6 v6.0.57
+	github.com/minio/minio-go/v7 v7.0.61
 	github.com/yosupo06/library-checker-judge/database v0.0.0-00010101000000-000000000000
 	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
 )

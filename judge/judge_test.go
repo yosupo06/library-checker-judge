@@ -49,7 +49,7 @@ func generateTestCaseDir(t *testing.T, lang, inFilePath, outFilePath string) Tes
 		{src: CHECKER_PATH, dst: caseDir.CheckerPath()},
 		{src: inFilePath, dst: caseDir.InFilePath(DUMMY_CASE_NAME)},
 		{src: outFilePath, dst: caseDir.OutFilePath(DUMMY_CASE_NAME)},
-		{src: TESTLIB_PATH, dst: path.Join(caseDir.dir, "include", "testlib.h")},
+		{src: TESTLIB_PATH, dst: path.Join(caseDir.dir, "common", "testlib.h")},
 	} {
 		checker, err := sources.ReadFile(info.src)
 		if err != nil {

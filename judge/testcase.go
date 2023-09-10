@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -13,7 +15,7 @@ import (
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
-const BASE_OBJECT_PATH = "v1"
+const BASE_OBJECT_PATH = "v2"
 
 type TestCaseFetcher struct {
 	minioClient       *minio.Client
@@ -26,15 +28,68 @@ type TestCaseDir struct {
 	dir string
 }
 
+func (t *TestCaseDir) PublicFileDir() string {
+	return path.Join(t.dir, "public")
+}
+
+func (t *TestCaseDir) PublicFilePath(key string) string {
+	return path.Join(t.PublicFileDir(), key)
+}
+
+func (t *TestCaseDir) CheckerPath() string {
+	return t.PublicFilePath("checker.cpp")
+}
+
+func (t *TestCaseDir) CheckerFile() (*os.File, error) {
+	return os.Open(t.CheckerPath())
+}
+
+func (t *TestCaseDir) IncludeFilePaths() ([]string, error) {
+	filePaths := []string{
+		t.PublicFilePath("params.h"),
+	}
+
+	files, err := os.ReadDir(path.Join(t.PublicFileDir(), "common"))
+	if err != nil {
+		return nil, err
+	}
+	for _, file := range files {
+		filePaths = append(filePaths, path.Join(t.PublicFileDir(), "common", file.Name()))
+	}
+
+	return filePaths, nil
+}
+
+func (t *TestCaseDir) InFilesDir() string {
+	return path.Join(t.dir, "in")
+}
+
+func (t *TestCaseDir) InFilePath(name string) string {
+	return path.Join(t.InFilesDir(), name+".in")
+}
+
+func (t *TestCaseDir) InFile(name string) (*os.File, error) {
+	return os.Open(t.InFilePath(name))
+}
+
+func (t *TestCaseDir) OutFilePath(name string) string {
+	return path.Join(t.dir, "out", name+".out")
+}
+
+func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
+	return os.Open(t.OutFilePath(name))
+}
+
 func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket, minioPublicBucket string, minioSecure bool) (TestCaseFetcher, error) {
-	log.Println("init TestCaseFetcher bucket:", minioBucket, minioPublicBucket)
+	log.Println("Init TestCaseFetcher bucket:", minioBucket, minioPublicBucket)
 
 	// create case directory
 	dir, err := ioutil.TempDir("", "case")
 	if err != nil {
-		log.Print("Failed to create tempdir: ", err)
+		log.Println("Failed to create tempdir:", err)
 		return TestCaseFetcher{}, err
 	}
+	log.Println("TestCaseFetcher data dir:", dir)
 
 	// connect minio
 	client, err := minio.New(
@@ -45,7 +100,7 @@ func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket, minioPubl
 	)
 
 	if err != nil {
-		log.Fatal("Cannot connect to Minio: ", err)
+		log.Fatalln("Cannot connect to Minio:", err)
 		return TestCaseFetcher{}, err
 	}
 
@@ -65,20 +120,21 @@ func (t *TestCaseFetcher) Close() error {
 }
 
 func (t *TestCaseFetcher) Fetch(problem database.Problem) (TestCaseDir, error) {
-	objectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.Testhash)
-	publicObjectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.PublicFilesHash)
-	dataPath := path.Join(t.casesDir, path.Join(BASE_OBJECT_PATH, problem.Name, problem.Testhash+"-"+problem.PublicFilesHash))
+	publicObjectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.Version)
+	dataPath := path.Join(t.casesDir, path.Join(BASE_OBJECT_PATH, problem.Name, problem.Version))
+
+	if err := t.downloadTestCases(problem); err != nil {
+		return TestCaseDir{}, err
+	}
+
 	if _, err := os.Stat(dataPath); err != nil {
 		if err := os.MkdirAll(dataPath, os.ModePerm); err != nil {
 			return TestCaseDir{}, err
 		}
 
-		for object := range t.minioClient.ListObjects(t.minioBucket, objectPath, true, nil) {
-			key := strings.TrimPrefix(object.Key, objectPath)
-			log.Printf("Download: %s -> %s", object.Key, path.Join(dataPath, key))
-			if err := t.minioClient.FGetObject(t.minioBucket, object.Key, path.Join(dataPath, key), minio.GetObjectOptions{}); err != nil {
-				return TestCaseDir{}, err
-			}
+		cmd := exec.Command("tar", "-xf", t.testCasesPath(problem), "-C", dataPath)
+		if err := cmd.Run(); err != nil {
+			return TestCaseDir{}, err
 		}
 
 		for object := range t.minioClient.ListObjects(t.minioPublicBucket, publicObjectPath, true, nil) {
@@ -93,53 +149,25 @@ func (t *TestCaseFetcher) Fetch(problem database.Problem) (TestCaseDir, error) {
 	return TestCaseDir{dir: dataPath}, nil
 }
 
-func (t *TestCaseDir) CheckerPath() string {
-	return path.Join(t.dir, "checker.cpp")
-}
+func (t *TestCaseFetcher) downloadTestCases(problem database.Problem) error {
+	s3TestCasesPath := path.Join(BASE_OBJECT_PATH, problem.Name, fmt.Sprintf("%s.tar.gz", problem.TestCasesVersion))
 
-func (t *TestCaseDir) CheckerFile() (*os.File, error) {
-	return os.Open(t.CheckerPath())
-}
-
-func (t *TestCaseDir) IncludeDir() string {
-	return path.Join(t.dir, "include")
-}
-
-func (t *TestCaseDir) IncludeFilePaths() ([]string, error) {
-	files, err := os.ReadDir(t.IncludeDir())
-	if err != nil {
-		return nil, err
+	if _, err := os.Stat(t.testCasesPath(problem)); err != nil {
+		if err := t.minioClient.FGetObject(t.minioBucket, s3TestCasesPath, t.testCasesPath(problem), minio.GetObjectOptions{}); err != nil {
+			return err
+		}
 	}
-	filePaths := []string{}
-	for _, file := range files {
-		filePaths = append(filePaths, path.Join(t.IncludeDir(), file.Name()))
-	}
-	return filePaths, nil
+
+	return nil
 }
 
-func (t *TestCaseDir) InFilePath(name string) string {
-	return path.Join(t.dir, "testcases", "in", name+".in")
-}
-
-func (t *TestCaseDir) InFile(name string) (*os.File, error) {
-	return os.Open(t.InFilePath(name))
-}
-
-func (t *TestCaseDir) OutFilePath(name string) string {
-	return path.Join(t.dir, "testcases", "out", name+".out")
-}
-
-func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
-	return os.Open(t.OutFilePath(name))
-}
-
-func (t *TestCaseDir) PublicFilePath(key string) string {
-	return path.Join(t.dir, "public", key)
+func (t *TestCaseFetcher) testCasesPath(problem database.Problem) string {
+	return path.Join(t.casesDir, fmt.Sprintf("%s-%s.tar.gz", problem.Name, problem.TestCasesVersion))
 }
 
 func (t *TestCaseDir) CaseNames() ([]string, error) {
 	// write glob code
-	matches, err := filepath.Glob(path.Join(t.dir, "testcases", "in", "*.in"))
+	matches, err := filepath.Glob(path.Join(t.InFilesDir(), "*.in"))
 	if err != nil {
 		return nil, err
 	}

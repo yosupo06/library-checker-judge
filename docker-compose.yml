@@ -43,6 +43,7 @@ services:
   api-grpcweb:
     build:
       dockerfile: Dockerfile.API
+      network: host
     ports:
       - 12380:12380
     depends_on:
