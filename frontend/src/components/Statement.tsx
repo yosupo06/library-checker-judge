@@ -2,14 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Container } from "@mui/material";
 import { Lang } from "../contexts/LangContext";
 import { parseStatement } from "../utils/StatementParser";
-import { JsonArray, JsonMap, parse } from "@iarna/toml";
+import { JsonMap, parse } from "@iarna/toml";
 import { unified } from "unified";
 import remarkRehype from "remark-rehype";
 import remarkParse from "remark-parse";
 import rehypeStringify from "rehype-stringify";
 import KatexRender from "../components/katex/KatexRender";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import urlJoin from "url-join";
 
 export type StatementData = {
   info: JsonMap;
@@ -95,7 +94,7 @@ export const StatementOnHttp: React.FC<{
   const exampleNumber = (() => {
     if (!info.tests) return null;
     return (info.tests as JsonMap[]).find((v) => v.name === "example.in")
-      ?.number as Number;
+      ?.number as number;
   })();
 
   console.log("example", exampleNumber);
