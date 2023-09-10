@@ -13,6 +13,7 @@ var (
 	TESTLIB_PATH       = path.Join("sources", "testlib.h")
 	APLUSB_DIR         = path.Join("sources", "aplusb")
 	CHECKER_PATH       = path.Join(APLUSB_DIR, "checker.cpp")
+	PARAMS_H_PATH      = path.Join(APLUSB_DIR, "checker.cpp")
 	SAMPLE_IN_PATH     = path.Join(APLUSB_DIR, "sample.in")
 	SAMPLE_OUT_PATH    = path.Join(APLUSB_DIR, "sample.out")
 	SAMPLE_WA_OUT_PATH = path.Join(APLUSB_DIR, "sample_wa.out")
@@ -49,7 +50,8 @@ func generateTestCaseDir(t *testing.T, lang, inFilePath, outFilePath string) Tes
 		{src: CHECKER_PATH, dst: caseDir.CheckerPath()},
 		{src: inFilePath, dst: caseDir.InFilePath(DUMMY_CASE_NAME)},
 		{src: outFilePath, dst: caseDir.OutFilePath(DUMMY_CASE_NAME)},
-		{src: TESTLIB_PATH, dst: path.Join(caseDir.dir, "include", "testlib.h")},
+		{src: TESTLIB_PATH, dst: path.Join(caseDir.PublicFileDir(), "common", "testlib.h")},
+		{src: PARAMS_H_PATH, dst: caseDir.PublicFilePath("params.h")},
 	} {
 		checker, err := sources.ReadFile(info.src)
 		if err != nil {

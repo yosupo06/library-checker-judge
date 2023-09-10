@@ -11,24 +11,25 @@ import (
 
 // Submission is db table
 type Submission struct {
-	ID             int32 `gorm:"primaryKey"`
-	SubmissionTime time.Time
-	ProblemName    string
-	Problem        Problem `gorm:"foreignKey:ProblemName"`
-	Lang           string
-	Status         string
-	PrevStatus     string
-	Hacked         bool
-	Source         string
-	Testhash       string
-	MaxTime        int32
-	MaxMemory      int64
-	CompileError   []byte
-	JudgePing      time.Time
-	JudgeName      string
-	JudgeTasked    bool
-	UserName       sql.NullString
-	User           User `gorm:"foreignKey:UserName"`
+	ID               int32 `gorm:"primaryKey"`
+	SubmissionTime   time.Time
+	ProblemName      string
+	Problem          Problem `gorm:"foreignKey:ProblemName"`
+	Lang             string
+	Status           string
+	PrevStatus       string
+	Hacked           bool
+	Source           string
+	Testhash         string // deprecated
+	TestCasesVersion string
+	MaxTime          int32
+	MaxMemory        int64
+	CompileError     []byte
+	JudgePing        time.Time
+	JudgeName        string
+	JudgeTasked      bool
+	UserName         sql.NullString
+	User             User `gorm:"foreignKey:UserName"`
 }
 
 // SubmissionTestcaseResult is db table
@@ -45,12 +46,8 @@ type SubmissionTestcaseResult struct {
 func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
 	sub := Submission{}
 	if err := db.
-		Preload("User", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name")
-		}).
-		Preload("Problem", func(db *gorm.DB) *gorm.DB {
-			return db.Select("name, title, testhash, public_files_hash")
-		}).
+		Preload("User").
+		Preload("Problem").
 		Where("id = ?", id).First(&sub).Error; err != nil {
 		return Submission{}, err
 	}

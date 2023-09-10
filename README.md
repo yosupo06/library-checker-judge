@@ -1,11 +1,12 @@
 # Library Checker Judge
 
-ジャッジ / API のソースコードです
+Judge server / API server のソースコードです
 
 ## Requirements
 
-- Ubuntu 18.04(Judge Server)
-- docker, docker-compose(API, SQL)
+- docker
+- Ubuntu 22.04(Judge Server)
+
 
 ## API Server
 
@@ -41,7 +42,7 @@ evans --host localhost --port 18080 api/proto/library_checker.proto --web
 
 ## Judge Server
 
-ジャッジサーバーはgoで書かれたAPIサーバーと通信するクライアント(`/judge`)と、このクライアントが呼び出す軽量コンテナ(`/executor`)からなる。
+Judge serverはgoで書かれたAPIサーバーと通信するクライアント(`/judge`)と、このクライアントが呼び出す軽量コンテナ(`/executor`)からなる。
 
 ### 準備
 

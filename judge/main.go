@@ -149,6 +149,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	submission.MaxMemory = -1
 	submission.PrevStatus = submission.Status
 	submission.Testhash = version
+	submission.TestCasesVersion = problem.TestCasesVersion
 
 	log.Println("Fetch data")
 	submission.Status = "Fetching"
