@@ -354,9 +354,11 @@ const StatementViewerInternal: React.FC<Props> = (props) => {
         <Box sx={{ p: 3 }}>
           <Statement
             lang="en"
-            info={infoToml}
-            statement={statement}
-            examples={props.data.examples}
+            data={{
+              info: infoToml,
+              statement: statement,
+              examples: props.data.examples,
+            }}
           />
         </Box>
       )}
@@ -364,9 +366,11 @@ const StatementViewerInternal: React.FC<Props> = (props) => {
         <Box sx={{ p: 3 }}>
           <Statement
             lang="ja"
-            info={infoToml}
-            statement={statement}
-            examples={props.data.examples}
+            data={{
+              info: infoToml,
+              statement: statement,
+              examples: props.data.examples,
+            }}
           />
         </Box>
       )}

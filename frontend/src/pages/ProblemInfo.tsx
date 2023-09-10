@@ -22,6 +22,9 @@ import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { StatementOnHttp } from "../components/Statement";
+import { LangContext } from "../contexts/LangContext";
+import urlJoin from "url-join";
 
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
@@ -72,7 +75,8 @@ const ProblemInfo: React.FC = () => {
   const navigate = useNavigate();
   const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
-  const [lang, setLang] = useLocalStorage("programming-lang", "");
+  const [progLang, setProgLang] = useLocalStorage("programming-lang", "");
+  const lang = useContext(LangContext);
 
   const { problemId } = useParams<"problemId">();
   if (problemId === undefined) {
@@ -81,7 +85,7 @@ const ProblemInfo: React.FC = () => {
   const problemInfoQuery = useProblemInfo(problemId);
   const langListQuery = useLangList();
 
-  const version = problemInfoQuery.data?.publicFilesHash ?? "";
+  const version = problemInfoQuery.data?.version ?? "";
   const submitProcessing = useRef(false);
 
   const solveHppQuery = useQuery(
@@ -127,13 +131,13 @@ const ProblemInfo: React.FC = () => {
     if (submitProcessing.current) return;
     submitProcessing.current = true;
 
-    if (!lang) {
-      console.log("Please select lang");
+    if (!progLang) {
+      console.log("Please select progLang");
       return;
     }
     library_checker_client
       .submit(
-        { lang: lang, problem: problemId, source: source },
+        { lang: progLang, problem: problemId, source: source },
         (auth && authMetadata(auth.state)) ?? undefined
       )
       .then((resp) => {
@@ -141,6 +145,12 @@ const ProblemInfo: React.FC = () => {
         navigate(`/submission/${resp.response.id}`);
       });
   };
+
+  console.log(
+    urlJoin(import.meta.env.VITE_PUBLIC_BUCKET_URL, `${problemId}/${version}/`)
+  );
+
+  console.log("version", version);
 
   return (
     <Container>
@@ -159,6 +169,18 @@ const ProblemInfo: React.FC = () => {
       <Divider />
 
       <KatexRender text={problemInfoQuery.data.statement} />
+
+      <StatementOnHttp
+        lang={lang?.state.lang ?? "en"}
+        baseUrl={
+          new URL(
+            urlJoin(
+              import.meta.env.VITE_PUBLIC_BUCKET_URL,
+              `${problemId}/${version}/`
+            )
+          )
+        }
+      />
 
       <Divider
         sx={{
@@ -207,7 +229,7 @@ const ProblemInfo: React.FC = () => {
         >
           <SourceEditor
             value={source}
-            language={lang}
+            language={progLang}
             onChange={(e) => {
               setSource(e);
             }}
@@ -219,8 +241,8 @@ const ProblemInfo: React.FC = () => {
           <Select
             displayEmpty
             required
-            value={lang}
-            onChange={(e) => setLang(e.target.value as string)}
+            value={progLang}
+            onChange={(e) => setProgLang(e.target.value as string)}
           >
             <MenuItem value="">Lang</MenuItem>
             {langListQuery.isSuccess &&
