@@ -12,7 +12,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
@@ -463,35 +462,4 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 	return &pb.ProblemCategoriesResponse{
 		Categories: result,
 	}, nil
-}
-
-func PushTask(db *gorm.DB, task database.Task) error {
-	log.Print("Insert task:", task)
-	if err := db.Create(&task).Error; err != nil {
-		log.Print(err)
-		return errors.New("cannot insert into queue")
-	}
-	return nil
-}
-
-func PopTask(db *gorm.DB) (database.Task, error) {
-	task := database.Task{}
-	task.Submission = -1
-
-	err := db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
-		}
-		if err != nil {
-			log.Print(err)
-			return errors.New("connection to db failed")
-		}
-		if tx.Delete(&task).RowsAffected != 1 {
-			log.Print("Failed to delete task:", task.ID)
-			return errors.New("failed to delete task")
-		}
-		return nil
-	})
-	return task, err
 }
