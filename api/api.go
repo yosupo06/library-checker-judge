@@ -27,7 +27,7 @@ func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStat
 	if err := db.
 		Model(&database.Submission{}).
 		Joins("left join problems on submissions.problem_name = problems.name").
-		Select("problem_name, bool_or(submissions.testhash=problems.testhash) as latest_ac").
+		Select("problem_name, bool_or(submissions.test_cases_version=problems.test_cases_version) as latest_ac").
 		Where("status = 'AC' and user_name = ?", userName).
 		Group("problem_name").
 		Find(&results).Error; err != nil {
