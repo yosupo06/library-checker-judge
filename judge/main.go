@@ -108,13 +108,10 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 		return err
 	}
 
-	version := problem.Testhash
-
 	log.Println("Submission info:", subID, problem.Title)
 	submission.MaxTime = -1
 	submission.MaxMemory = -1
 	submission.PrevStatus = submission.Status
-	submission.Testhash = version
 	submission.Status = "Judging"
 
 	if err = database.UpdateSubmission(db, submission); err != nil {
@@ -143,12 +140,10 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 
 func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task, submission database.Submission, problem database.Problem) error {
 	subID := submission.ID
-	version := problem.Testhash
 
 	submission.MaxTime = -1
 	submission.MaxMemory = -1
 	submission.PrevStatus = submission.Status
-	submission.Testhash = version
 	submission.TestCasesVersion = problem.TestCasesVersion
 
 	log.Println("Fetch data")
@@ -164,7 +159,6 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	if err != nil {
 		return err
 	}
-	log.Print("Fetched :", version)
 
 	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, cgroupParent, &testCases)
 	if err != nil {

@@ -9,12 +9,13 @@ import (
 
 func createDummyProblem(t *testing.T, db *gorm.DB) {
 	problem := Problem{
-		Name:      "aplusb",
-		Title:     "Title",
-		SourceUrl: "url",
-		Statement: "statement",
-		Timelimit: 123,
-		Testhash:  "2345",
+		Name:             "aplusb",
+		Title:            "Title",
+		SourceUrl:        "url",
+		Statement:        "statement",
+		Timelimit:        123,
+		TestCasesVersion: "tversion123",
+		Version:          "version456",
 	}
 	if err := SaveProblem(db, problem); err != nil {
 		t.Fatal(err)
@@ -30,12 +31,13 @@ func TestProblemInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 	expect := Problem{
-		Name:      "aplusb",
-		Title:     "Title",
-		SourceUrl: "url",
-		Statement: "statement",
-		Timelimit: 123,
-		Testhash:  "2345",
+		Name:             "aplusb",
+		Title:            "Title",
+		SourceUrl:        "url",
+		Statement:        "statement",
+		Timelimit:        123,
+		TestCasesVersion: "tversion123",
+		Version:          "version456",
 	}
 	if *problem != expect {
 		t.Fatal(problem, "!=", expect)

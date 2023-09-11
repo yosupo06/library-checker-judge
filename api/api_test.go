@@ -69,12 +69,13 @@ func createTestDB(t *testing.T) *gorm.DB {
 	}
 
 	if err := database.SaveProblem(db, database.Problem{
-		Name:      "aplusb",
-		Title:     "A + B",
-		Statement: "Please calculate A + B",
-		Timelimit: 2000,
-		Testhash:  "dummy-initial-version",
-		SourceUrl: "https://github.com/yosupo06/library-checker-problems/tree/master/sample/aplusb",
+		Name:             "aplusb",
+		Title:            "A + B",
+		Statement:        "Please calculate A + B",
+		Timelimit:        2000,
+		TestCasesVersion: "dummy-testcase-version",
+		Version:          "dummy-version",
+		SourceUrl:        "https://github.com/yosupo06/library-checker-problems/tree/master/sample/aplusb",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -154,8 +155,11 @@ func TestProblemInfo(t *testing.T) {
 	if math.Abs(problem.TimeLimit-2.0) > 0.01 {
 		t.Fatal("Differ TimeLimit : ", problem.TimeLimit)
 	}
-	if problem.CaseVersion == "" {
-		t.Fatal("Case Version is empty")
+	if problem.TestcasesVersion == "" {
+		t.Fatal("Testcase Version is empty")
+	}
+	if problem.Version == "" {
+		t.Fatal("Version is empty")
 	}
 }
 

@@ -11,9 +11,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
@@ -28,7 +26,7 @@ func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStat
 	if err := db.
 		Model(&database.Submission{}).
 		Joins("left join problems on submissions.problem_name = problems.name").
-		Select("problem_name, bool_or(submissions.testhash=problems.testhash) as latest_ac").
+		Select("problem_name, bool_or(submissions.test_cases_version=problems.test_cases_version) as latest_ac").
 		Where("status = 'AC' and user_name = ?", userName).
 		Group("problem_name").
 		Find(&results).Error; err != nil {
@@ -44,31 +42,6 @@ func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStat
 		}
 	}
 	return stats, nil
-}
-
-func ToProtoSubmission(submission *database.Submission) (*pb.SubmissionOverview, error) {
-	overview := &pb.SubmissionOverview{
-		Id:             int32(submission.ID),
-		ProblemName:    submission.Problem.Name,
-		ProblemTitle:   submission.Problem.Title,
-		UserName:       submission.User.Name,
-		Lang:           submission.Lang,
-		IsLatest:       submission.TestCasesVersion == submission.Problem.TestCasesVersion,
-		Status:         submission.Status,
-		Hacked:         submission.Hacked,
-		Time:           float64(submission.MaxTime) / 1000.0,
-		Memory:         int64(submission.MaxMemory),
-		SubmissionTime: toProtoTimestamp(submission.SubmissionTime),
-	}
-	return overview, nil
-}
-
-func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {
-	if t.IsZero() {
-		return nil
-	} else {
-		return timestamppb.New(t)
-	}
 }
 
 func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
@@ -202,20 +175,13 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 }
 
 func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
-	problem, err := database.FetchProblem(s.db, in.Name)
+	p, err := database.FetchProblem(s.db, in.Name)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.ProblemInfoResponse{
-		Title:       problem.Title,
-		Statement:   problem.Statement,
-		TimeLimit:   float64(problem.Timelimit) / 1000.0,
-		CaseVersion: problem.Testhash,
-		SourceUrl:   problem.SourceUrl,
-		Version:     problem.Version,
-	}, nil
+	return toProtoProblemInfo(p), nil
 }
 
 func (s *server) ProblemList(ctx context.Context, in *pb.ProblemListRequest) (*pb.ProblemListResponse, error) {
@@ -324,7 +290,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 		return nil, errors.New("failed to fetch submission results")
 	}
 
-	overview, err := ToProtoSubmission(&sub)
+	overview, err := toProtoSubmission(&sub)
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -406,7 +372,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		Count: int32(count),
 	}
 	for _, sub := range submissions {
-		protoSub, err := ToProtoSubmission(&sub)
+		protoSub, err := toProtoSubmission(&sub)
 		if err != nil {
 			log.Print(err)
 			return nil, err
@@ -496,35 +462,4 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 	return &pb.ProblemCategoriesResponse{
 		Categories: result,
 	}, nil
-}
-
-func PushTask(db *gorm.DB, task database.Task) error {
-	log.Print("Insert task:", task)
-	if err := db.Create(&task).Error; err != nil {
-		log.Print(err)
-		return errors.New("cannot insert into queue")
-	}
-	return nil
-}
-
-func PopTask(db *gorm.DB) (database.Task, error) {
-	task := database.Task{}
-	task.Submission = -1
-
-	err := db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("available <= ?", time.Now()).Order("priority desc").First(&task).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
-		}
-		if err != nil {
-			log.Print(err)
-			return errors.New("connection to db failed")
-		}
-		if tx.Delete(&task).RowsAffected != 1 {
-			log.Print("Failed to delete task:", task.ID)
-			return errors.New("failed to delete task")
-		}
-		return nil
-	})
-	return task, err
 }
