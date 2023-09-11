@@ -96,7 +96,7 @@
 [[langs]]
     id = "csharp"
     name = "C#"
-    version = "dotnet 5.0"
+    version = "dotnet 7.0"
     source = "Program.cs"
     image_name = "library-checker-images-csharp"
     compile = ["sh", "-c", "cp -r /opt/C-Sharp C-Sharp && cp Program.cs C-Sharp/Program.cs && dotnet publish C-Sharp -c Release -r linux-x64 -o bin"]
