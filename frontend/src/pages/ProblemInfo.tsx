@@ -16,7 +16,6 @@ import library_checker_client, {
 } from "../api/client_wrapper";
 import { ProblemInfoResponse } from "../api/library_checker";
 import SourceEditor from "../components/SourceEditor";
-import KatexRender from "../components/katex/KatexRender";
 import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
@@ -167,8 +166,6 @@ const ProblemInfo: React.FC = () => {
         userId={auth?.state.user}
       />
       <Divider />
-
-      <KatexRender text={problemInfoQuery.data.statement} />
 
       <StatementOnHttp
         lang={lang?.state.lang ?? "en"}
