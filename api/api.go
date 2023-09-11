@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -44,31 +43,6 @@ func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStat
 		}
 	}
 	return stats, nil
-}
-
-func ToProtoSubmission(submission *database.Submission) (*pb.SubmissionOverview, error) {
-	overview := &pb.SubmissionOverview{
-		Id:             int32(submission.ID),
-		ProblemName:    submission.Problem.Name,
-		ProblemTitle:   submission.Problem.Title,
-		UserName:       submission.User.Name,
-		Lang:           submission.Lang,
-		IsLatest:       submission.TestCasesVersion == submission.Problem.TestCasesVersion,
-		Status:         submission.Status,
-		Hacked:         submission.Hacked,
-		Time:           float64(submission.MaxTime) / 1000.0,
-		Memory:         int64(submission.MaxMemory),
-		SubmissionTime: toProtoTimestamp(submission.SubmissionTime),
-	}
-	return overview, nil
-}
-
-func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {
-	if t.IsZero() {
-		return nil
-	} else {
-		return timestamppb.New(t)
-	}
 }
 
 func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
@@ -202,20 +176,13 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 }
 
 func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*pb.ProblemInfoResponse, error) {
-	problem, err := database.FetchProblem(s.db, in.Name)
+	p, err := database.FetchProblem(s.db, in.Name)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.ProblemInfoResponse{
-		Title:       problem.Title,
-		Statement:   problem.Statement,
-		TimeLimit:   float64(problem.Timelimit) / 1000.0,
-		CaseVersion: problem.Testhash,
-		SourceUrl:   problem.SourceUrl,
-		Version:     problem.Version,
-	}, nil
+	return toProtoProblemInfo(p), nil
 }
 
 func (s *server) ProblemList(ctx context.Context, in *pb.ProblemListRequest) (*pb.ProblemListResponse, error) {
@@ -324,7 +291,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 		return nil, errors.New("failed to fetch submission results")
 	}
 
-	overview, err := ToProtoSubmission(&sub)
+	overview, err := toProtoSubmission(&sub)
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -406,7 +373,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		Count: int32(count),
 	}
 	for _, sub := range submissions {
-		protoSub, err := ToProtoSubmission(&sub)
+		protoSub, err := toProtoSubmission(&sub)
 		if err != nil {
 			log.Print(err)
 			return nil, err

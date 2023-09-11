@@ -14,8 +14,6 @@ type Problem struct {
 	SourceUrl        string
 	Statement        string
 	Timelimit        int32
-	Testhash         string // deprecated
-	PublicFilesHash  string // deprecated
 	TestCasesVersion string
 	Version          string
 }

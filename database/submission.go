@@ -20,7 +20,6 @@ type Submission struct {
 	PrevStatus       string
 	Hacked           bool
 	Source           string
-	Testhash         string // deprecated
 	TestCasesVersion string
 	MaxTime          int32
 	MaxMemory        int64

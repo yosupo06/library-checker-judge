@@ -95,11 +95,9 @@ message ProblemInfoRequest {
 message ProblemInfoResponse {
     string title = 1; // "A + B"
     string source_url = 5;
-    string statement = 2;
     double time_limit = 3; // 2.0 = 2 seconds
-    string case_version = 4; // hash of testcases
     string version = 6; // problem version
-    string testcases_version = 7; // version of testcases
+    string testcases_version = 7; // testcases version
 }
 
 // --- Category ---
