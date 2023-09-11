@@ -168,8 +168,6 @@ const ProblemInfo: React.FC = () => {
       />
       <Divider />
 
-      <KatexRender text={problemInfoQuery.data.statement} />
-
       <StatementOnHttp
         lang={lang?.state.lang ?? "en"}
         baseUrl={
