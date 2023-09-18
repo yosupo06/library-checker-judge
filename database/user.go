@@ -14,7 +14,6 @@ type User struct {
 	Name        string `gorm:"primaryKey"`
 	Passhash    string
 	Admin       bool
-	Email       string
 	LibraryURL  string
 	IsDeveloper bool
 }
@@ -97,7 +96,6 @@ func UpdateUser(db *gorm.DB, user User) error {
 	result := db.Model(&User{}).Where("name = ?", name).Updates(
 		map[string]interface{}{
 			"admin":        user.Admin,
-			"email":        user.Email,
 			"library_url":  user.LibraryURL,
 			"is_developer": user.IsDeveloper,
 		})

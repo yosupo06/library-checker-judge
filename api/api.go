@@ -67,7 +67,6 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
 	name := ""
 	currentUserName := getCurrentUserName(ctx)
-	currentUser, _ := database.FetchUser(s.db, currentUserName)
 	myName := currentUserName
 	if in.Name != "" {
 		name = in.Name
@@ -88,13 +87,8 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 	respUser := &pb.User{
 		Name:        name,
 		IsAdmin:     user.Admin,
-		Email:       user.Email,
 		LibraryUrl:  user.LibraryURL,
 		IsDeveloper: user.IsDeveloper,
-	}
-
-	if in.Name != myName && (currentUser == nil || !currentUser.Admin) {
-		respUser.Email = ""
 	}
 
 	resp := &pb.UserInfoResponse{
@@ -154,7 +148,6 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 	}
 
 	userInfo := &NewUserInfo{
-		Email:      in.User.Email,
 		LibraryURL: in.User.LibraryUrl,
 	}
 	if err := validator.New().Struct(userInfo); err != nil {
@@ -164,7 +157,6 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 	if err := database.UpdateUser(s.db, database.User{
 		Name:        in.User.Name,
 		Admin:       in.User.IsAdmin,
-		Email:       userInfo.Email,
 		LibraryURL:  userInfo.LibraryURL,
 		IsDeveloper: in.User.IsDeveloper,
 	}); err != nil {
