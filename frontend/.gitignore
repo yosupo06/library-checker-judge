@@ -1,3 +1,4 @@
 /node_modules
 /dist
-/src/proto/
+/src/proto/*
+!/src/proto/.gitkeep
