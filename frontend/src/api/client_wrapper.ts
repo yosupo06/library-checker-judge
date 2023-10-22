@@ -4,7 +4,7 @@ import {
   UseQueryResult,
 } from "@tanstack/react-query";
 import { AuthState } from "../contexts/AuthContext";
-import { LibraryCheckerServiceClient } from "./library_checker.client";
+import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 import { RpcOptions } from "@protobuf-ts/runtime-rpc";
 import {
@@ -16,7 +16,7 @@ import {
   SubmissionInfoResponse,
   SubmissionListResponse,
   UserInfoResponse,
-} from "./library_checker";
+} from "../proto/library_checker";
 
 export const authMetadata = (state: AuthState): RpcOptions | undefined => {
   if (!state.token) {

@@ -14,7 +14,7 @@ import library_checker_client, {
   useLangList,
   useProblemInfo,
 } from "../api/client_wrapper";
-import { ProblemInfoResponse } from "../api/library_checker";
+import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
 import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn, Person } from "@mui/icons-material";

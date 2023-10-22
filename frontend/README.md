@@ -9,7 +9,8 @@
 ```sh
 npm install # or npm ci
 
-npx protoc --ts_out src/api/ --proto_path ../library-checker-judge/api/proto ../library-checker-judge/api/proto/library_checker.proto
+# generate API client code from protoc
+PROTO_PATH=../library-checker-judge/api/proto npm run protoc
 
 # access to the API server of local (you must launch api server in local)
 npm run dev
