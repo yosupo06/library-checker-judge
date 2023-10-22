@@ -50,7 +50,7 @@ jobs:
       - name: Generate protoc
         run: npm run protoc
         env:
-          PROTO_PATH: ../library-checker-judge/api/proto
+          PROTO_PATH: ./library-checker-judge/api/proto
 
       - name: Run npm build
         run: npm run build -- --mode ${{ (inputs.env == 'prod' && 'production') || 'staging' }}
