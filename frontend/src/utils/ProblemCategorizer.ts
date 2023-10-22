@@ -1,4 +1,4 @@
-import { Problem, ProblemCategory } from "../api/library_checker";
+import { Problem, ProblemCategory } from "../proto/library_checker";
 
 export type CategorisedProblems = {
   name: string;

@@ -7,7 +7,7 @@ import {
   useProblemList,
   useUserInfo,
 } from "../api/client_wrapper";
-import { SolvedStatus } from "../api/library_checker";
+import { SolvedStatus } from "../proto/library_checker";
 import ProblemList from "../components/ProblemList";
 import { AuthContext } from "../contexts/AuthContext";
 import {

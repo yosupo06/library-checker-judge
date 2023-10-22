@@ -5,7 +5,7 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
-import { Problem } from "../api/library_checker";
+import { Problem } from "../proto/library_checker";
 import { Link } from "react-router-dom";
 import { lightGreen, cyan } from "@mui/material/colors";
 import KatexTypography from "./katex/KatexTypography";

@@ -11,10 +11,10 @@ import "katex/dist/katex.min.css";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLangList } from "../api/client_wrapper";
-import { SubmissionOverview } from "../api/library_checker";
+import { SubmissionOverview } from "../proto/library_checker";
 import KatexTypography from "./katex/KatexTypography";
 import { styled } from "@mui/system";
-import { Timestamp } from "../api/google/protobuf/timestamp";
+import { Timestamp } from "../proto/google/protobuf/timestamp";
 
 interface Props {
   overviews: SubmissionOverview[];
