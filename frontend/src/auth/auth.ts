@@ -26,7 +26,7 @@ import { getApp, initializeApp } from "firebase/app";
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, getIdToken, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithRedirect, signOut } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth/cordova";
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CurrentUserInfoRequest } from "../api/library_checker";
+import { CurrentUserInfoRequest } from "../proto/library_checker";
 
 const config = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
