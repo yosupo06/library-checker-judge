@@ -2,65 +2,60 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"log"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 // User is db table
 type User struct {
 	Name        string `gorm:"primaryKey"`
+	UID         string
 	Passhash    string
-	Admin       bool
 	LibraryURL  string
 	IsDeveloper bool
 }
 
-func RegisterUser(db *gorm.DB, name string, password string, isAdmin bool) error {
-	type UserParam struct {
-		User     string `validate:"username"`
-		Password string `validate:"required"`
+func RegisterUser(db *gorm.DB, name string, uid string) error {
+	if uid == "" {
+		return errors.New("UID is empty")
 	}
 
-	userParam := &UserParam{
-		User:     name,
-		Password: password,
+	type Param struct {
+		name string `validate:"username"`
 	}
-	if err := validate.Struct(userParam); err != nil {
+	param := &Param{
+		name: name,
+	}
+	if err := validate.Struct(param); err != nil {
 		return err
 	}
 
-	passHash, err := generatePasswordHash(password)
-	if err != nil {
-		return err
-	}
 	user := User{
-		Name:     name,
-		Passhash: string(passHash),
-		Admin:    isAdmin,
+		Name: name,
+		UID:  uid,
 	}
 	if err := db.Create(&user).Error; err != nil {
-		return errors.New("this username is already registered")
+		return errors.New("this username / uid is already registered")
 	}
 	return nil
 }
 
-func VerifyUserPassword(db *gorm.DB, name string, password string) error {
-	user, err := FetchUser(db, name)
-	if user == nil {
-		return fmt.Errorf("User %s not found", name)
-	}
-	if err != nil {
-		return err
+func FetchUserFromUID(db *gorm.DB, uid string) (*User, error) {
+	if uid == "" {
+		return nil, errors.New("UID is empty")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Passhash), []byte(password)); err != nil {
-		return errors.New("password invalid")
+	log.Println("uid: ", uid)
+
+	user := User{}
+	if err := db.Where(&User{UID: uid}).Take(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return &user, nil
 }
 
 func FetchUser(db *gorm.DB, name string) (*User, error) {
@@ -95,7 +90,6 @@ func UpdateUser(db *gorm.DB, user User) error {
 	}
 	result := db.Model(&User{}).Where("name = ?", name).Updates(
 		map[string]interface{}{
-			"admin":        user.Admin,
 			"library_url":  user.LibraryURL,
 			"is_developer": user.IsDeveloper,
 		})
