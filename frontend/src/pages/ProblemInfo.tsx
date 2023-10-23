@@ -13,6 +13,7 @@ import library_checker_client, {
   authMetadata,
   useLangList,
   useProblemInfo,
+  useSubmitMutation,
 } from "../api/client_wrapper";
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
@@ -87,6 +88,12 @@ const ProblemInfo: React.FC = () => {
   const version = problemInfoQuery.data?.version ?? "";
   const submitProcessing = useRef(false);
 
+  const submitMutation = useSubmitMutation({
+    onSuccess: (resp) => {
+      navigate(`/submission/${resp.id}`);
+    }
+  })
+
   const solveHppQuery = useQuery(
     ["header", problemId],
     () =>
@@ -134,16 +141,10 @@ const ProblemInfo: React.FC = () => {
       console.log("Please select progLang");
       return;
     }
-    library_checker_client
-      .submit(
-        { lang: progLang, problem: problemId, source: source },
-        (auth && authMetadata(auth.state)) ?? undefined
-      )
-      .then((resp) => {
-        submitProcessing.current = false;
-        navigate(`/submission/${resp.response.id}`);
-      });
+
+    submitMutation.mutate({ lang: progLang, problem: problemId, source: source })
   };
+
 
   console.log(
     urlJoin(import.meta.env.VITE_PUBLIC_BUCKET_URL, `${problemId}/${version}/`)

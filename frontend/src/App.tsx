@@ -21,6 +21,7 @@ import Register from "./pages/Register";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import StatementViewer from "./pages/StatementViewer";
 import { Box } from "@mui/system";
+import { registerQueryClient } from "./auth/auth";
 const theme = createTheme({
   typography: {
     button: {
@@ -40,8 +41,6 @@ const theme = createTheme({
   },
 });
 
-const queryClient = new QueryClient();
-
 function App(): JSX.Element {
   const savedLangState = localStorage.getItem("lang");
   let initialLangState: LangState = {
@@ -59,60 +58,42 @@ function App(): JSX.Element {
     localStorage.setItem("lang", JSON.stringify(langState));
   }, [langState]);
 
-  const savedAuthState = localStorage.getItem("auth");
-  let initialAuthState = {
-    user: "",
-    token: "",
-  };
-  try {
-    if (savedAuthState) {
-      initialAuthState = JSON.parse(savedAuthState);
-    }
-  } catch (_) {
-    localStorage.removeItem("auth");
-  }
-  const [authState, authDispatch] = useReducer(AuthReducer, initialAuthState);
-  useEffect(() => {
-    localStorage.setItem("auth", JSON.stringify(authState));
-  }, [authState]);
-
+  const queryClient = new QueryClient();
+  registerQueryClient(queryClient)
+  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider
-          value={{ state: authState, dispatch: authDispatch }}
+        <LangContext.Provider
+          value={{ state: langState, dispatch: langDispatch }}
         >
-          <LangContext.Provider
-            value={{ state: langState, dispatch: langDispatch }}
-          >
-            <Router>
-              <NavBar />
-              <Toolbar />
-              <Box>
-                <Routes>
-                  <Route path="/" element={<Problems />} />
-                  <Route path="/problem/:problemId" element={<ProblemInfo />} />
-                  <Route path="/submissions" element={<Submissions />} />
-                  <Route
-                    path="/submission/:submissionId"
-                    element={<SubmissionInfo />}
-                  />
-                  <Route path="/ranking" element={<Ranking />} />
-                  <Route path="/help" element={<Help />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/user/:userId" element={<Profile />} />
-                  <Route
-                    path="/tool/statementviewer"
-                    element={<StatementViewer />}
-                  />
-                  <Route element={NotFound} />
-                </Routes>
-              </Box>
-            </Router>
-          </LangContext.Provider>
-        </AuthContext.Provider>
+          <Router>
+            <NavBar />
+            <Toolbar />
+            <Box>
+              <Routes>
+                <Route path="/" element={<Problems />} />
+                <Route path="/problem/:problemId" element={<ProblemInfo />} />
+                <Route path="/submissions" element={<Submissions />} />
+                <Route
+                  path="/submission/:submissionId"
+                  element={<SubmissionInfo />}
+                />
+                <Route path="/ranking" element={<Ranking />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/user/:userId" element={<Profile />} />
+                <Route
+                  path="/tool/statementviewer"
+                  element={<StatementViewer />}
+                />
+                <Route element={NotFound} />
+              </Routes>
+            </Box>
+          </Router>
+        </LangContext.Provider>
       </QueryClientProvider>
     </ThemeProvider>
   );

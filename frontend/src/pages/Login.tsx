@@ -10,45 +10,39 @@ import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import library_checker_client from "../api/client_wrapper";
 import { AuthContext } from "../contexts/AuthContext";
+import { useSignInMutation } from "../auth/auth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const auth = useContext(AuthContext);
-  const [userName, setUserName] = React.useState("");
+
+  const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [loginStatus, setLoginStatus] = React.useState<JSX.Element>(<Box />);
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const signInMutation = useSignInMutation()
+
+  const onSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginStatus(<CircularProgress />);
-    library_checker_client
-      .login({ name: userName, password: password }, {})
-      .then((resp) => {
-        auth?.dispatch({
-          type: "login",
-          payload: { token: resp.response.token, user: userName },
-        });
-        navigate(`/`);
-      })
-      .catch((reason) =>
-        setLoginStatus(
-          <Alert severity="error">
-            <AlertTitle>Login failed: {reason.message}</AlertTitle>
-          </Alert>
-        )
-      );
+    console.log(email, password)
+    signInMutation.mutate({
+      email: email,
+      password: password,
+    })
   };
+
+  console.log(signInMutation)
+
   return (
     <Container>
       <Typography variant="h2" paragraph={true}>
         Login
       </Typography>
-      <form onSubmit={(e) => handleSubmit(e)}>
+      <form onSubmit={(e) => onSignIn(e)}>
         <div>
           <TextField
             required
-            label="User Name"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div>
@@ -64,7 +58,6 @@ const Login: React.FC = () => {
           Login
         </Button>
       </form>
-      {loginStatus}
     </Container>
   );
 };
