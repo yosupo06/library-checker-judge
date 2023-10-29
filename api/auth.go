@@ -3,23 +3,49 @@ package main
 import (
 	"context"
 
+	"firebase.google.com/go/v4/auth"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/database"
-
-	pb "github.com/yosupo06/library-checker-judge/api/proto"
 )
+
+type AuthClient interface {
+	parseUID(ctx context.Context, token string) string
+}
+
+type FirebaseAuthClient struct {
+	client *auth.Client
+}
+
+func (c *FirebaseAuthClient) parseUID(ctx context.Context, token string) string {
+	if idToken, err := c.client.VerifyIDToken(ctx, token); err != nil {
+		return ""
+	} else {
+		return idToken.UID
+	}
+}
+
+func connectFirebaseAuth(ctx context.Context) (AuthClient, error) {
+	firebaseApp, err := createFirebaseApp(ctx)
+	if err != nil {
+		return nil, err
+	}
+	firebaseAuth, err := firebaseApp.Auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FirebaseAuthClient{
+		client: firebaseAuth,
+	}, nil
+}
 
 func (s *server) currentUserUID(ctx context.Context) string {
 	idTokenStr, err := grpc_auth.AuthFromMD(ctx, "bearer")
 	if err != nil {
 		return ""
 	}
-	if idToken, err := s.firebaseAuth.VerifyIDToken(ctx, idTokenStr); err != nil {
-		return ""
-	} else {
-		return idToken.UID
-	}
+	return s.authClient.parseUID(ctx, idTokenStr)
 }
 
 func (s *server) currentUser(ctx context.Context) *database.User {
@@ -41,16 +67,5 @@ func (s *server) currentUserName(ctx context.Context) string {
 		return user.Name
 	} else {
 		return ""
-	}
-}
-
-func toProtoUser(user *database.User) *pb.User {
-	if user == nil {
-		return nil
-	}
-	return &pb.User{
-		Name:        user.Name,
-		LibraryUrl:  user.LibraryURL,
-		IsDeveloper: user.IsDeveloper,
 	}
 }

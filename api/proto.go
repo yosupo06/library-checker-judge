@@ -42,3 +42,14 @@ func toProtoProblemInfo(p *database.Problem) *pb.ProblemInfoResponse {
 		TestcasesVersion: p.TestCasesVersion,
 	}
 }
+
+func toProtoUser(user *database.User) *pb.User {
+	if user == nil {
+		return nil
+	}
+	return &pb.User{
+		Name:        user.Name,
+		LibraryUrl:  user.LibraryURL,
+		IsDeveloper: user.IsDeveloper,
+	}
+}
