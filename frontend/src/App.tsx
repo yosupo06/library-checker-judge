@@ -22,6 +22,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import StatementViewer from "./pages/StatementViewer";
 import { Box } from "@mui/system";
 import { registerQueryClient } from "./auth/auth";
+import UserInfo from "./pages/UserInfo";
 const theme = createTheme({
   typography: {
     button: {
@@ -59,8 +60,8 @@ function App(): JSX.Element {
   }, [langState]);
 
   const queryClient = new QueryClient();
-  registerQueryClient(queryClient)
-  
+  registerQueryClient(queryClient);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -84,7 +85,8 @@ function App(): JSX.Element {
                 <Route path="/help" element={<Help />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/user/:userId" element={<Profile />} />
+                <Route path="/user/:userId" element={<UserInfo />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route
                   path="/tool/statementviewer"
                   element={<StatementViewer />}

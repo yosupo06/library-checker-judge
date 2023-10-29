@@ -96,8 +96,8 @@ const ToolsMenu: React.FC = () => {
 const UserMenu = () => {
   const navigate = useNavigate();
 
-  const signOutMutation = useSignOutMutation()
-  const currentUser = useCurrentUser()
+  const signOutMutation = useSignOutMutation();
+  const currentUser = useCurrentUser();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -143,7 +143,9 @@ const UserMenu = () => {
       onClose={handleClose}
     >
       <MenuItem>
-        <NavbarLink to={`/user/${currentUser.data.user.name}`}>Profile</NavbarLink>
+        <NavbarLink to={`/profile`}>
+          Profile
+        </NavbarLink>
       </MenuItem>
       <MenuItem onClick={handleLogout}>Logout</MenuItem>
     </Menu>,

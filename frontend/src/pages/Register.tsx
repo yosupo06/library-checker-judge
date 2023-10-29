@@ -8,41 +8,39 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import library_checker_client, { useCurrentUser, useRegister } from "../api/client_wrapper";
+import library_checker_client, {
+  useCurrentUser,
+  useRegister,
+} from "../api/client_wrapper";
 import { AuthContext } from "../contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useAuth, useCurrentAuthUser } from "../auth/auth";
+import { useCurrentAuthUser, useRegisterMutation } from "../auth/auth";
 import { Step, StepContent, StepLabel, Stepper } from "@mui/material";
 import { Link } from "react-router-dom";
 
-const RegisterAuth: React.FC<{
-}> = () => {
-  const auth = useAuth()
+const RegisterAuth: React.FC<{}> = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const currentAuthUser = useCurrentAuthUser();
 
-  const currentAuthUser = useCurrentAuthUser()
+  const mutation = useRegisterMutation()
 
-  const mutation = useMutation(() => {
-    return createUserWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    )
-  })
   const onRegister = (e: React.FormEvent) => {
-    e.preventDefault()
-    mutation.mutate()
-  }
+    e.preventDefault();
+    mutation.mutate({
+      email: email,
+      password: password,
+    });
+  };
 
   if (currentAuthUser.isLoading || currentAuthUser.isError) {
     return (
       <>
         <Typography>Loading</Typography>
       </>
-    )
+    );
   }
 
   if (currentAuthUser.data != null) {
@@ -50,7 +48,7 @@ const RegisterAuth: React.FC<{
       <>
         <Typography>Finished</Typography>
       </>
-    )
+    );
   }
 
   return (
@@ -82,18 +80,17 @@ const RegisterAuth: React.FC<{
         </Button>
       </form>
     </>
-  )
-}
+  );
+};
 
-const RegisterUserID: React.FC<{
-}> = () => {
-  const [userName, setUserName] = useState("")
+const RegisterUserID: React.FC<{}> = () => {
+  const [userName, setUserName] = useState("");
 
-  const mutation = useRegister()
+  const mutation = useRegister();
   const onRegister = (e: React.FormEvent) => {
-    e.preventDefault()
-    mutation.mutate(userName)
-  }
+    e.preventDefault();
+    mutation.mutate(userName);
+  };
 
   return (
     <>
@@ -115,18 +112,16 @@ const RegisterUserID: React.FC<{
         </Button>
       </form>
     </>
-  )
-}
-
-
+  );
+};
 
 const Register: React.FC = () => {
-  const currentAuthUser = useCurrentAuthUser()
-  const currentUser = useCurrentUser()
+  const currentAuthUser = useCurrentAuthUser();
+  const currentUser = useCurrentUser();
 
   let step = 0;
-  if (currentAuthUser.data != null) step = 1
-  if (currentUser.isSuccess && currentUser.data.user != null) step = 2
+  if (currentAuthUser.data != null) step = 1;
+  if (currentUser.isSuccess && currentUser.data.user != null) step = 2;
 
   return (
     <Container>
@@ -150,9 +145,7 @@ const Register: React.FC = () => {
         <Step key={"step3"}>
           <StepLabel>Finish</StepLabel>
           <StepContent>
-            <Link to="/">
-              Go to Top Page
-            </Link>
+            <Link to="/">Go to Top Page</Link>
           </StepContent>
         </Step>
       </Stepper>

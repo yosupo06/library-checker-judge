@@ -91,8 +91,8 @@ const ProblemInfo: React.FC = () => {
   const submitMutation = useSubmitMutation({
     onSuccess: (resp) => {
       navigate(`/submission/${resp.id}`);
-    }
-  })
+    },
+  });
 
   const solveHppQuery = useQuery(
     ["header", problemId],
@@ -142,9 +142,12 @@ const ProblemInfo: React.FC = () => {
       return;
     }
 
-    submitMutation.mutate({ lang: progLang, problem: problemId, source: source })
+    submitMutation.mutate({
+      lang: progLang,
+      problem: problemId,
+      source: source,
+    });
   };
-
 
   console.log(
     urlJoin(import.meta.env.VITE_PUBLIC_BUCKET_URL, `${problemId}/${version}/`)

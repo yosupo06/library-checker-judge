@@ -25,38 +25,50 @@ import {
 import { useCurrentAuthUser, useIdToken } from "../auth/auth";
 
 const useBearer = () => {
-  const idToken = useIdToken()  
+  const idToken = useIdToken();
   return useQuery({
     queryKey: ["api", "bearer", idToken.data],
     queryFn: () => {
-      return idToken.data ? {
-        meta: {
-          authorization: "bearer " + idToken.data,
-        },
-      } : null
+      return idToken.data
+        ? {
+            meta: {
+              authorization: "bearer " + idToken.data,
+            },
+          }
+        : null;
     },
-    enabled: !idToken.isLoading
-  })
-}
+    enabled: !idToken.isLoading,
+  });
+};
 
-const currentUserKey = ['api', 'currentUser']
+const currentUserKey = ["api", "currentUser"];
 export const useRegister = () => {
-  const bearer = useBearer()
-  const queryClient = useQueryClient()
-  return useMutation(async (name: string) => await client.register({
-      name: name
-    }, bearer.data ?? undefined), {
+  const bearer = useBearer();
+  const queryClient = useQueryClient();
+  return useMutation(
+    async (name: string) =>
+      await client.register(
+        {
+          name: name,
+        },
+        bearer.data ?? undefined
+      ),
+    {
       onSuccess: () => {
-        queryClient.invalidateQueries(currentUserKey)
-      }
-    })
-}
+        queryClient.invalidateQueries(currentUserKey);
+      },
+    }
+  );
+};
 
 export const useCurrentUser = () => {
-  const bearer = useBearer()
-  return useQuery(['api', 'currentUser', bearer.data],
-    async () => await client.currentUserInfo({}, bearer.data ?? undefined).response);
-}
+  const bearer = useBearer();
+  return useQuery(
+    ["api", "currentUser", bearer.data],
+    async () =>
+      await client.currentUserInfo({}, bearer.data ?? undefined).response
+  );
+};
 
 export const authMetadata = (state: AuthState): RpcOptions | undefined => {
   if (!state.token) {
@@ -168,13 +180,16 @@ export const useSubmissionInfo = (
     options
   );
 
-export const useSubmitMutation = (options?: Omit<
-  UseMutationOptions<SubmitResponse, unknown, SubmitRequest, unknown>,
-  'mutationFn'
->) => {
-  const bearer = useBearer()
+export const useSubmitMutation = (
+  options?: Omit<
+    UseMutationOptions<SubmitResponse, unknown, SubmitRequest, unknown>,
+    "mutationFn"
+  >
+) => {
+  const bearer = useBearer();
   return useMutation(
-    async (req: SubmitRequest) => await client.submit(req, bearer.data ?? undefined).response,
+    async (req: SubmitRequest) =>
+      await client.submit(req, bearer.data ?? undefined).response,
     options
-    )
+  );
 };

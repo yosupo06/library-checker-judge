@@ -10,7 +10,7 @@ import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import library_checker_client from "../api/client_wrapper";
 import { AuthContext } from "../contexts/AuthContext";
-import { useSignInMutation } from "../auth/auth";
+import { useSendPasswordResetEmailMutation, useSignInMutation } from "../auth/auth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -18,25 +18,26 @@ const Login: React.FC = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const signInMutation = useSignInMutation()
-
+  const signInMutation = useSignInMutation();
   const onSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(email, password)
     signInMutation.mutate({
       email: email,
       password: password,
-    })
+    });
   };
-
-  console.log(signInMutation)
 
   return (
     <Container>
       <Typography variant="h2" paragraph={true}>
         Login
       </Typography>
-      <form onSubmit={(e) => onSignIn(e)}>
+      <Alert severity="info">
+        <AlertTitle>Info</AlertTitle>
+        If you regesitered your account without an email, please attach <code>@dummy.yosupo.jp</code> at suffix. <br />
+        For example: <code>yosupo</code> → <code>yosupo@dummy.yosupo.jp</code>
+      </Alert>
+            <form onSubmit={(e) => onSignIn(e)}>
         <div>
           <TextField
             required
@@ -58,8 +59,43 @@ const Login: React.FC = () => {
           Login
         </Button>
       </form>
+      <PasswordReset />
     </Container>
   );
 };
 
 export default Login;
+
+
+const PasswordReset: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = React.useState("");
+
+  const passwordResetMutation = useSendPasswordResetEmailMutation();
+  const onPasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    passwordResetMutation.mutate(email);
+  };
+
+  return (
+    <Box>
+      <Typography variant="h3" paragraph={true}>
+        Password Reset
+      </Typography>
+      <form onSubmit={(e) => onPasswordReset(e)}>
+        <div>
+          <TextField
+            required
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <Button color="primary" type="submit">
+          Send email
+        </Button>
+      </form>
+    </Box>
+  );
+};
