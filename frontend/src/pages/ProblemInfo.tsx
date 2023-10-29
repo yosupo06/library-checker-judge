@@ -27,9 +27,8 @@ import urlJoin from "url-join";
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
   problemId: string;
-  userId: string | undefined;
 }> = (props) => {
-  const { problemInfo, problemId, userId } = props;
+  const { problemInfo, problemId } = props;
   const fastestParams = new URLSearchParams({
     problem: problemId,
     order: "+time",
@@ -38,19 +37,6 @@ const UsefulLinks: React.FC<{
 
   return (
     <Box>
-      {userId && (
-        <Button
-          variant="outlined"
-          startIcon={<Person />}
-          href={`/submissions/?${new URLSearchParams({
-            problem: problemId,
-            user: userId,
-            status: "AC",
-          }).toString()}`}
-        >
-          My Submissions
-        </Button>
-      )}
       <Button
         variant="outlined"
         startIcon={<FlashOn />}
@@ -161,11 +147,7 @@ const ProblemInfo: React.FC = () => {
         Time Limit: {problemInfoQuery.data.timeLimit} sec
       </Typography>
 
-      <UsefulLinks
-        problemId={problemId}
-        problemInfo={problemInfoQuery.data}
-        userId={auth?.state.user}
-      />
+      <UsefulLinks problemId={problemId} problemInfo={problemInfoQuery.data} />
       <Divider />
 
       <StatementOnHttp
