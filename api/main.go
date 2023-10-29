@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	firebase "firebase.google.com/go/v4"
-	"firebase.google.com/go/v4/auth"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
@@ -30,19 +29,19 @@ func getEnv(key, defaultValue string) string {
 
 type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
-	db           *gorm.DB
-	firebaseAuth *auth.Client
-	langs        []*pb.Lang
+	db         *gorm.DB
+	authClient AuthClient
+	langs      []*pb.Lang
 }
 
-func NewGRPCServer(db *gorm.DB, firebaseAuth *auth.Client, langsTomlPath string) *grpc.Server {
+func NewGRPCServer(db *gorm.DB, authClient AuthClient, langsTomlPath string) *grpc.Server {
 	// launch gRPC server
 	s := grpc.NewServer()
 
 	pb.RegisterLibraryCheckerServiceServer(s, &server{
-		db:           db,
-		firebaseAuth: firebaseAuth,
-		langs:        ReadLangs(langsTomlPath),
+		db:         db,
+		authClient: authClient,
+		langs:      ReadLangs(langsTomlPath),
 	})
 
 	return s
@@ -82,11 +81,7 @@ func main() {
 		getEnv("API_DB_LOG", "") != "")
 
 	// connect firebase
-	firebaseApp, err := createFirebaseApp(ctx)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	firebaseAuth, err := firebaseApp.Auth(ctx)
+	firebaseAuth, err := connectFirebaseAuth(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}

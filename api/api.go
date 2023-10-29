@@ -103,7 +103,12 @@ func (s *server) ProblemInfo(ctx context.Context, in *pb.ProblemInfoRequest) (*p
 	p, err := database.FetchProblem(s.db, in.Name)
 
 	if err != nil {
-		return nil, err
+		log.Println(err)
+		return nil, errors.New("failed to fetch problem")
+	}
+
+	if p == nil {
+		return nil, errors.New("problem not found")
 	}
 
 	return toProtoProblemInfo(p), nil
