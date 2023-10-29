@@ -9,15 +9,14 @@ import Select from "@mui/material/Select";
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
-import library_checker_client, {
-  authMetadata,
+import {
   useLangList,
   useProblemInfo,
+  useSubmitMutation,
 } from "../api/client_wrapper";
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
-import { AuthContext } from "../contexts/AuthContext";
-import { GitHub, FlashOn, Person } from "@mui/icons-material";
+import { GitHub, FlashOn } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -28,9 +27,8 @@ import urlJoin from "url-join";
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
   problemId: string;
-  userId: string | undefined;
 }> = (props) => {
-  const { problemInfo, problemId, userId } = props;
+  const { problemInfo, problemId } = props;
   const fastestParams = new URLSearchParams({
     problem: problemId,
     order: "+time",
@@ -39,19 +37,6 @@ const UsefulLinks: React.FC<{
 
   return (
     <Box>
-      {userId && (
-        <Button
-          variant="outlined"
-          startIcon={<Person />}
-          href={`/submissions/?${new URLSearchParams({
-            problem: problemId,
-            user: userId,
-            status: "AC",
-          }).toString()}`}
-        >
-          My Submissions
-        </Button>
-      )}
       <Button
         variant="outlined"
         startIcon={<FlashOn />}
@@ -72,7 +57,6 @@ const UsefulLinks: React.FC<{
 
 const ProblemInfo: React.FC = () => {
   const navigate = useNavigate();
-  const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
   const [progLang, setProgLang] = useLocalStorage("programming-lang", "");
   const lang = useContext(LangContext);
@@ -86,6 +70,12 @@ const ProblemInfo: React.FC = () => {
 
   const version = problemInfoQuery.data?.version ?? "";
   const submitProcessing = useRef(false);
+
+  const submitMutation = useSubmitMutation({
+    onSuccess: (resp) => {
+      navigate(`/submission/${resp.id}`);
+    },
+  });
 
   const solveHppQuery = useQuery(
     ["header", problemId],
@@ -134,15 +124,12 @@ const ProblemInfo: React.FC = () => {
       console.log("Please select progLang");
       return;
     }
-    library_checker_client
-      .submit(
-        { lang: progLang, problem: problemId, source: source },
-        (auth && authMetadata(auth.state)) ?? undefined
-      )
-      .then((resp) => {
-        submitProcessing.current = false;
-        navigate(`/submission/${resp.response.id}`);
-      });
+
+    submitMutation.mutate({
+      lang: progLang,
+      problem: problemId,
+      source: source,
+    });
   };
 
   console.log(
@@ -160,11 +147,7 @@ const ProblemInfo: React.FC = () => {
         Time Limit: {problemInfoQuery.data.timeLimit} sec
       </Typography>
 
-      <UsefulLinks
-        problemId={problemId}
-        problemInfo={problemInfoQuery.data}
-        userId={auth?.state.user}
-      />
+      <UsefulLinks problemId={problemId} problemInfo={problemInfoQuery.data} />
       <Divider />
 
       <StatementOnHttp

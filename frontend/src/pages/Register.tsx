@@ -1,56 +1,59 @@
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
-import AlertTitle from "@mui/material/AlertTitle";
-import React, { useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import library_checker_client from "../api/client_wrapper";
-import { AuthContext } from "../contexts/AuthContext";
+import React, { useState } from "react";
+import { useCurrentUser, useRegister } from "../api/client_wrapper";
+import { useCurrentAuthUser, useRegisterMutation } from "../auth/auth";
+import { Step, StepContent, StepLabel, Stepper } from "@mui/material";
+import { Link } from "react-router-dom";
 
-const Register: React.FC = () => {
-  const navigate = useNavigate();
-  const auth = useContext(AuthContext);
-  const [userName, setUserName] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [registerStatus, setRegisterStatus] = React.useState<JSX.Element>(
-    <Box />
-  );
-  const handleSubmit = (e: React.FormEvent) => {
+const RegisterAuth: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const currentAuthUser = useCurrentAuthUser();
+
+  const mutation = useRegisterMutation();
+
+  const onRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    setRegisterStatus(<CircularProgress />);
-    library_checker_client
-      .register({ name: userName, password: password }, {})
-      .then((resp) => {
-        auth?.dispatch({
-          type: "login",
-          payload: { token: resp.response.token, user: userName },
-        });
-        navigate(`/`);
-      })
-      .catch((reason) =>
-        setRegisterStatus(
-          <Alert severity="error">
-            <AlertTitle>Register failed: {reason.message}</AlertTitle>
-          </Alert>
-        )
-      );
+    mutation.mutate({
+      email: email,
+      password: password,
+    });
   };
+
+  if (currentAuthUser.isLoading || currentAuthUser.isError) {
+    return (
+      <>
+        <Typography>Loading</Typography>
+      </>
+    );
+  }
+
+  if (currentAuthUser.data != null) {
+    return (
+      <>
+        <Typography>Finished</Typography>
+      </>
+    );
+  }
+
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Register
-      </Typography>
-      <form onSubmit={(e) => handleSubmit(e)}>
+    <>
+      <Typography>Register email</Typography>
+      {mutation.isError && (
+        <Alert severity="error">{(mutation.error as Error).message}</Alert>
+      )}
+      <form onSubmit={onRegister}>
         <div>
           <TextField
             required
-            label="User Name"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div>
@@ -66,7 +69,76 @@ const Register: React.FC = () => {
           Register
         </Button>
       </form>
-      {registerStatus}
+    </>
+  );
+};
+
+const RegisterUserID: React.FC = () => {
+  const [userName, setUserName] = useState("");
+
+  const mutation = useRegister();
+  const onRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    mutation.mutate(userName);
+  };
+
+  return (
+    <>
+      <Typography>Register user ID</Typography>
+      {mutation.isError && (
+        <Alert severity="error">{(mutation.error as Error).message}</Alert>
+      )}
+      <form onSubmit={onRegister}>
+        <div>
+          <TextField
+            required
+            label="UserName"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+          />
+        </div>
+        <Button color="primary" type="submit">
+          Register
+        </Button>
+      </form>
+    </>
+  );
+};
+
+const Register: React.FC = () => {
+  const currentAuthUser = useCurrentAuthUser();
+  const currentUser = useCurrentUser();
+
+  let step = 0;
+  if (currentAuthUser.data != null) step = 1;
+  if (currentUser.isSuccess && currentUser.data.user != null) step = 2;
+
+  return (
+    <Container>
+      <Typography variant="h2" paragraph={true}>
+        Register
+      </Typography>
+
+      <Stepper activeStep={step} orientation="vertical">
+        <Step key={"step1"}>
+          <StepLabel>Register email & password</StepLabel>
+          <StepContent>
+            <RegisterAuth />
+          </StepContent>
+        </Step>
+        <Step key={"step2"}>
+          <StepLabel>Register user name</StepLabel>
+          <StepContent>
+            <RegisterUserID />
+          </StepContent>
+        </Step>
+        <Step key={"step3"}>
+          <StepLabel>Finish</StepLabel>
+          <StepContent>
+            <Link to="/">Go to Top Page</Link>
+          </StepContent>
+        </Step>
+      </Stepper>
     </Container>
   );
 };

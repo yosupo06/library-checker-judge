@@ -1,5 +1,8 @@
 import {
+  useMutation,
+  UseMutationOptions,
   useQuery,
+  useQueryClient,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
@@ -15,8 +18,57 @@ import {
   RankingResponse,
   SubmissionInfoResponse,
   SubmissionListResponse,
+  SubmitRequest,
+  SubmitResponse,
   UserInfoResponse,
 } from "../proto/library_checker";
+import { useIdToken } from "../auth/auth";
+
+const useBearer = () => {
+  const idToken = useIdToken();
+  return useQuery({
+    queryKey: ["api", "bearer", idToken.data],
+    queryFn: () => {
+      return idToken.data
+        ? {
+            meta: {
+              authorization: "bearer " + idToken.data,
+            },
+          }
+        : null;
+    },
+    enabled: !idToken.isLoading,
+  });
+};
+
+const currentUserKey = ["api", "currentUser"];
+export const useRegister = () => {
+  const bearer = useBearer();
+  const queryClient = useQueryClient();
+  return useMutation(
+    async (name: string) =>
+      await client.register(
+        {
+          name: name,
+        },
+        bearer.data ?? undefined
+      ),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(currentUserKey);
+      },
+    }
+  );
+};
+
+export const useCurrentUser = () => {
+  const bearer = useBearer();
+  return useQuery(
+    ["api", "currentUser", bearer.data],
+    async () =>
+      await client.currentUserInfo({}, bearer.data ?? undefined).response
+  );
+};
 
 export const authMetadata = (state: AuthState): RpcOptions | undefined => {
   if (!state.token) {
@@ -127,3 +179,17 @@ export const useSubmissionInfo = (
       ).response,
     options
   );
+
+export const useSubmitMutation = (
+  options?: Omit<
+    UseMutationOptions<SubmitResponse, unknown, SubmitRequest, unknown>,
+    "mutationFn"
+  >
+) => {
+  const bearer = useBearer();
+  return useMutation(
+    async (req: SubmitRequest) =>
+      await client.submit(req, bearer.data ?? undefined).response,
+    options
+  );
+};

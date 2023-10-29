@@ -13,8 +13,9 @@ import { LangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
 import { styled } from "@mui/system";
-import { useUserInfo } from "../../api/client_wrapper";
+import { useCurrentUser, useUserInfo } from "../../api/client_wrapper";
 import { Drawer, IconButton } from "@mui/material";
+import { useSignOutMutation } from "../../auth/auth";
 
 const NavbarLink = styled(Link)({
   color: "inherit",
@@ -94,7 +95,9 @@ const ToolsMenu: React.FC = () => {
 
 const UserMenu = () => {
   const navigate = useNavigate();
-  const auth = useContext(AuthContext);
+
+  const signOutMutation = useSignOutMutation();
+  const currentUser = useCurrentUser();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -107,11 +110,11 @@ const UserMenu = () => {
   };
 
   const handleLogout = () => {
-    auth?.dispatch({ type: "logout" });
+    signOutMutation.mutate();
     handleClose();
   };
 
-  if (!auth || !auth.state.user) {
+  if (!currentUser.isSuccess || currentUser.data.user == null) {
     return [
       <NavbarButton color="inherit" onClick={() => navigate("/register")}>
         Register
@@ -121,9 +124,10 @@ const UserMenu = () => {
       </NavbarButton>,
     ];
   }
+
   return [
     <NavbarButton color="inherit" onClick={handleClick}>
-      {auth.state.user}
+      {currentUser.data.user.name}
     </NavbarButton>,
     <Menu
       anchorEl={anchorEl}
@@ -139,7 +143,7 @@ const UserMenu = () => {
       onClose={handleClose}
     >
       <MenuItem>
-        <NavbarLink to={`/user/${auth.state.user}`}>Profile</NavbarLink>
+        <NavbarLink to={`/profile`}>Profile</NavbarLink>
       </MenuItem>
       <MenuItem onClick={handleLogout}>Logout</MenuItem>
     </Menu>,

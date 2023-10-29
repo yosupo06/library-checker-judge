@@ -1,54 +1,57 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import React, { useContext } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import library_checker_client from "../api/client_wrapper";
-import { AuthContext } from "../contexts/AuthContext";
+import {
+  useSendPasswordResetEmailMutation,
+  useSignInMutation,
+} from "../auth/auth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const auth = useContext(AuthContext);
-  const [userName, setUserName] = React.useState("");
+
+  const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [loginStatus, setLoginStatus] = React.useState<JSX.Element>(<Box />);
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const signInMutation = useSignInMutation();
+  const onSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginStatus(<CircularProgress />);
-    library_checker_client
-      .login({ name: userName, password: password }, {})
-      .then((resp) => {
-        auth?.dispatch({
-          type: "login",
-          payload: { token: resp.response.token, user: userName },
-        });
-        navigate(`/`);
-      })
-      .catch((reason) =>
-        setLoginStatus(
-          <Alert severity="error">
-            <AlertTitle>Login failed: {reason.message}</AlertTitle>
-          </Alert>
-        )
-      );
+    signInMutation.mutate(
+      {
+        email: email,
+        password: password,
+      },
+      {
+        onSuccess: () => navigate(`/`),
+      }
+    );
   };
+
   return (
     <Container>
       <Typography variant="h2" paragraph={true}>
         Login
       </Typography>
-      <form onSubmit={(e) => handleSubmit(e)}>
+      <Alert severity="info">
+        <AlertTitle>Info</AlertTitle>
+        If you regesitered your account without an email, please attach{" "}
+        <code>@dummy.judge.yosupo.jp</code> at suffix. <br />
+        For example: <code>yosupo</code> →{" "}
+        <code>yosupo@dummy.judge.yosupo.jp</code>
+      </Alert>
+      <form onSubmit={(e) => onSignIn(e)}>
         <div>
           <TextField
             required
-            label="User Name"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ width: 300 }}
           />
         </div>
         <div>
@@ -58,15 +61,47 @@ const Login: React.FC = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            style={{ width: 300 }}
           />
         </div>
         <Button color="primary" type="submit">
           Login
         </Button>
       </form>
-      {loginStatus}
+      <PasswordReset />
     </Container>
   );
 };
 
 export default Login;
+
+const PasswordReset: React.FC = () => {
+  const [email, setEmail] = React.useState("");
+
+  const passwordResetMutation = useSendPasswordResetEmailMutation();
+  const onPasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    passwordResetMutation.mutate(email);
+  };
+
+  return (
+    <Box>
+      <Typography variant="h3" paragraph={true}>
+        Password Reset
+      </Typography>
+      <form onSubmit={(e) => onPasswordReset(e)}>
+        <div>
+          <TextField
+            required
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <Button color="primary" type="submit">
+          Send email
+        </Button>
+      </form>
+    </Box>
+  );
+};
