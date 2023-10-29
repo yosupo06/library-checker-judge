@@ -25,7 +25,7 @@ const RegisterAuth: React.FC<{}> = () => {
 
   const currentAuthUser = useCurrentAuthUser();
 
-  const mutation = useRegisterMutation()
+  const mutation = useRegisterMutation();
 
   const onRegister = (e: React.FormEvent) => {
     e.preventDefault();

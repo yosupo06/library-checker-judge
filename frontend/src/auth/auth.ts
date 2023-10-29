@@ -35,7 +35,7 @@ import {
   sendEmailVerification,
   updateEmail,
   User,
-  updatePassword
+  updatePassword,
 } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth/cordova";
 import {
@@ -84,15 +84,19 @@ export const useIdToken = () => {
 };
 
 export const useRegisterMutation = () => {
-    return useMutation((args: { email: string; password: string }) => {
-        return createUserWithEmailAndPassword(auth, args.email, args.password).catch(error => {
-            if (error.code === 'auth/email-already-in-use') {
-                return signInWithEmailAndPassword(auth, args.email, args.password);
-            } else {
-                throw error
-            }         
-        });
+  return useMutation((args: { email: string; password: string }) => {
+    return createUserWithEmailAndPassword(
+      auth,
+      args.email,
+      args.password
+    ).catch((error) => {
+      if (error.code === "auth/email-already-in-use") {
+        return signInWithEmailAndPassword(auth, args.email, args.password);
+      } else {
+        throw error;
+      }
     });
+  });
 };
 
 export const useSignInMutation = () => {
@@ -108,23 +112,23 @@ export const useSignOutMutation = () => {
 };
 
 export const useUpdateEmailMutation = () => {
-    return useMutation(async (newEmail: string) => {
-        const user = auth.currentUser
-        if (!user) {
-            return Promise.reject()
-        }
-        await updateEmail(auth.currentUser, newEmail);
-      const user_2 = auth.currentUser;
-      if (!user_2) {
-        return Promise.reject();
-      } else {
-        return sendEmailVerification(auth.currentUser);
-      }
-    });
+  return useMutation(async (newEmail: string) => {
+    const user = auth.currentUser;
+    if (!user) {
+      return Promise.reject();
+    }
+    await updateEmail(auth.currentUser, newEmail);
+    const user_2 = auth.currentUser;
+    if (!user_2) {
+      return Promise.reject();
+    } else {
+      return sendEmailVerification(auth.currentUser);
+    }
+  });
 };
 
 export const useSendPasswordResetEmailMutation = () => {
   return useMutation((email: string) => {
-    return sendPasswordResetEmail(auth, email)
+    return sendPasswordResetEmail(auth, email);
   });
 };

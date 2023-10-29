@@ -143,9 +143,7 @@ const UserMenu = () => {
       onClose={handleClose}
     >
       <MenuItem>
-        <NavbarLink to={`/profile`}>
-          Profile
-        </NavbarLink>
+        <NavbarLink to={`/profile`}>Profile</NavbarLink>
       </MenuItem>
       <MenuItem onClick={handleLogout}>Logout</MenuItem>
     </Menu>,

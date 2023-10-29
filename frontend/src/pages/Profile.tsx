@@ -24,7 +24,7 @@ import { Container, FormLabel, Switch } from "@mui/material";
 import BuildIcon from "@mui/icons-material/Build";
 import { useCurrentAuthUser, useUpdateEmailMutation } from "../auth/auth";
 import { User } from "firebase/auth";
-import EmailIcon from '@mui/icons-material/Email';
+import EmailIcon from "@mui/icons-material/Email";
 
 const Profile: React.FC = () => {
   const currentAuthUser = useCurrentAuthUser();
@@ -51,7 +51,7 @@ const Profile: React.FC = () => {
   }
 
   const authUser = currentAuthUser.data;
-  const user = currentUser.data.user
+  const user = currentUser.data.user;
 
   if (!authUser || !user) {
     // TODO: jump to register page?
@@ -59,7 +59,7 @@ const Profile: React.FC = () => {
       <Box>
         <Typography>Please register</Typography>
       </Box>
-    );    
+    );
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,10 +70,7 @@ const Profile: React.FC = () => {
     newUser.isDeveloper = isDeveloper;
 
     library_checker_client
-      .changeUserInfo(
-        { user: newUser },
-        undefined
-      )
+      .changeUserInfo({ user: newUser }, undefined)
       .then(() => {
         history.go(0);
       });
@@ -110,7 +107,9 @@ const Profile: React.FC = () => {
                   <BuildIcon />
                 </Avatar>
               </ListItemAvatar>
-              <FormLabel id="is-developer-mode-switch">Developer Mode</FormLabel>
+              <FormLabel id="is-developer-mode-switch">
+                Developer Mode
+              </FormLabel>
               <Switch
                 aria-labelledby="is-developer-mode-switch"
                 checked={isDeveloper}
@@ -126,24 +125,22 @@ const Profile: React.FC = () => {
           </Button>
         </form>
       </Box>
-
     </Container>
   );
 };
 
 export default Profile;
 
-
-const AuthProfile: React.FC<{user: User}> = (props) => {
-  const { user } = props
+const AuthProfile: React.FC<{ user: User }> = (props) => {
+  const { user } = props;
 
   const [newEmail, setNewEmail] = useState(user.email ?? "");
 
-  const updateEmailMutation = useUpdateEmailMutation()
+  const updateEmailMutation = useUpdateEmailMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateEmailMutation.mutate(newEmail)
+    updateEmailMutation.mutate(newEmail);
   };
 
   return (
@@ -174,6 +171,5 @@ const AuthProfile: React.FC<{user: User}> = (props) => {
         </Button>
       </form>
     </Box>
-  )
-}
-
+  );
+};

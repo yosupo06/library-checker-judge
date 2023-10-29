@@ -10,7 +10,10 @@ import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import library_checker_client from "../api/client_wrapper";
 import { AuthContext } from "../contexts/AuthContext";
-import { useSendPasswordResetEmailMutation, useSignInMutation } from "../auth/auth";
+import {
+  useSendPasswordResetEmailMutation,
+  useSignInMutation,
+} from "../auth/auth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -21,10 +24,15 @@ const Login: React.FC = () => {
   const signInMutation = useSignInMutation();
   const onSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    signInMutation.mutate({
-      email: email,
-      password: password,
-    });
+    signInMutation.mutate(
+      {
+        email: email,
+        password: password,
+      },
+      {
+        onSuccess: () => navigate(`/`),
+      }
+    );
   };
 
   return (
@@ -34,10 +42,12 @@ const Login: React.FC = () => {
       </Typography>
       <Alert severity="info">
         <AlertTitle>Info</AlertTitle>
-        If you regesitered your account without an email, please attach <code>@dummy.judge.yosupo.jp</code> at suffix. <br />
-        For example: <code>yosupo</code> → <code>yosupo@dummy.judge.yosupo.jp</code>
+        If you regesitered your account without an email, please attach{" "}
+        <code>@dummy.judge.yosupo.jp</code> at suffix. <br />
+        For example: <code>yosupo</code> →{" "}
+        <code>yosupo@dummy.judge.yosupo.jp</code>
       </Alert>
-            <form onSubmit={(e) => onSignIn(e)}>
+      <form onSubmit={(e) => onSignIn(e)}>
         <div>
           <TextField
             required
@@ -67,7 +77,6 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
 
 const PasswordReset: React.FC = () => {
   const navigate = useNavigate();
