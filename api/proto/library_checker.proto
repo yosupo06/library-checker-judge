@@ -8,44 +8,41 @@ option go_package = "github.com/yosupo06/library-checker-judge/api/proto";
 
 service LibraryCheckerService {
     rpc Register (RegisterRequest) returns (RegisterResponse) {}
-    rpc Login (LoginRequest) returns (LoginResponse) {}
+    rpc CurrentUserInfo (CurrentUserInfoRequest) returns (CurrentUserInfoResponse) {}
     rpc UserInfo (UserInfoRequest) returns (UserInfoResponse) {}
-    rpc UserList (UserListRequest) returns (UserListResponse) {}
     rpc ChangeUserInfo (ChangeUserInfoRequest) returns (ChangeUserInfoResponse) {}
+
     rpc ProblemInfo (ProblemInfoRequest) returns (ProblemInfoResponse) {}
     rpc ProblemList (ProblemListRequest) returns (ProblemListResponse) {}
+    rpc ProblemCategories (ProblemCategoriesRequest) returns (ProblemCategoriesResponse) {}
+
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
-    rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
-    rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}
     rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
+    rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
+    rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}    
+    
     rpc LangList (LangListRequest) returns (LangListResponse) {}
     rpc Ranking (RankingRequest) returns (RankingResponse) {} // used by another product
-    rpc ProblemCategories (ProblemCategoriesRequest) returns (ProblemCategoriesResponse) {}
 }
 
-// --- Register, Login ---
+// --- Auth, User ---
 
 message RegisterRequest {
     string name = 1; // "newuser"
-    string password = 2; // "password"    
 }
 message RegisterResponse {
-    string token = 1; // JWT Token
-}
-
-message LoginRequest {
-    string name = 1; // "admin"
-    string password = 2; // "password"    
-}
-message LoginResponse {
-    string token = 1; // JWT Token
 }
 
 message User {
     string name = 1;
-    bool is_admin = 2;
     string library_url = 4;
     bool is_developer = 5;
+}
+
+message CurrentUserInfoRequest {
+}
+message CurrentUserInfoResponse {
+    User user = 2;
 }
 
 enum SolvedStatus {
@@ -61,12 +58,6 @@ message UserInfoResponse {
     bool is_admin = 1 [deprecated=true];
     User user = 2;
     map<string, SolvedStatus> solved_map = 3;
-}
-
-message UserListRequest {
-}
-message UserListResponse {
-    repeated User users = 2;
 }
 
 message ChangeUserInfoRequest {

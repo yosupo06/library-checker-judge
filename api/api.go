@@ -17,62 +17,30 @@ import (
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
-func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStatus, error) {
-	type Result struct {
-		ProblemName string
-		LatestAC    bool
-	}
-	var results = make([]Result, 0)
-	if err := db.
-		Model(&database.Submission{}).
-		Joins("left join problems on submissions.problem_name = problems.name").
-		Select("problem_name, bool_or(submissions.test_cases_version=problems.test_cases_version) as latest_ac").
-		Where("status = 'AC' and user_name = ?", userName).
-		Group("problem_name").
-		Find(&results).Error; err != nil {
-		log.Print(err)
-		return nil, errors.New("failed sql query")
-	}
-	stats := make(map[string]pb.SolvedStatus)
-	for _, result := range results {
-		if result.LatestAC {
-			stats[result.ProblemName] = pb.SolvedStatus_LATEST_AC
-		} else {
-			stats[result.ProblemName] = pb.SolvedStatus_AC
-		}
-	}
-	return stats, nil
-}
-
 func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	token, err := s.authTokenManager.Register(s.db, in.Name, in.Password)
-	if err != nil {
+	uid := s.currentUserUID(ctx)
+
+	if uid == "" {
+		return nil, errors.New("user id is empty")
+	}
+
+	if err := database.RegisterUser(s.db, in.Name, uid); err != nil {
 		return nil, err
 	}
-	return &pb.RegisterResponse{
-		Token: token,
-	}, nil
+
+	return &pb.RegisterResponse{}, nil
 }
 
-func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
-	token, err := s.authTokenManager.Login(s.db, in.Name, in.Password)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.LoginResponse{
-		Token: token,
+func (s *server) CurrentUserInfo(ctx context.Context, in *pb.CurrentUserInfoRequest) (*pb.CurrentUserInfoResponse, error) {
+	user := s.currentUser(ctx)
+
+	return &pb.CurrentUserInfoResponse{
+		User: toProtoUser(user),
 	}, nil
 }
 
 func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
-	name := ""
-	currentUserName := getCurrentUserName(ctx)
-	myName := currentUserName
-	if in.Name != "" {
-		name = in.Name
-	} else {
-		name = myName
-	}
+	name := in.Name
 	if name == "" {
 		return nil, errors.New("empty name")
 	}
@@ -84,16 +52,9 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 	if err != nil {
 		return nil, errors.New("failed to fetch statistics")
 	}
-	respUser := &pb.User{
-		Name:        name,
-		IsAdmin:     user.Admin,
-		LibraryUrl:  user.LibraryURL,
-		IsDeveloper: user.IsDeveloper,
-	}
 
 	resp := &pb.UserInfoResponse{
-		IsAdmin: user.Admin,
-		User:    respUser,
+		User: toProtoUser(user),
 	}
 	resp.SolvedMap = make(map[string]pb.SolvedStatus)
 	for key, value := range stats {
@@ -102,49 +63,22 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 	return resp, nil
 }
 
-func (s *server) UserList(ctx context.Context, in *pb.UserListRequest) (*pb.UserListResponse, error) {
-	currentUserName := getCurrentUserName(ctx)
-	currentUser, _ := database.FetchUser(s.db, currentUserName)
-	if currentUser.Name == "" {
-		return nil, errors.New("not login")
-	}
-	if currentUser == nil || !currentUser.Admin {
-		return nil, errors.New("must be admin")
-	}
-	users := []database.User{}
-	if err := s.db.Select("name, admin").Find(&users).Error; err != nil {
-		return nil, errors.New("failed to get users")
-	}
-	res := &pb.UserListResponse{}
-	for _, user := range users {
-		res.Users = append(res.Users, &pb.User{
-			Name:    user.Name,
-			IsAdmin: user.Admin,
-		})
-	}
-	return res, nil
-}
-
 func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoRequest) (*pb.ChangeUserInfoResponse, error) {
 	type NewUserInfo struct {
-		Email      string `validate:"omitempty,email,lt=50"`
 		LibraryURL string `validate:"omitempty,url,lt=200"`
 	}
-	name := in.User.Name
-	currentUserName := getCurrentUserName(ctx)
-	currentUser, _ := database.FetchUser(s.db, currentUserName)
 
-	if currentUser == nil || currentUser.Name == "" {
-		return nil, errors.New("not login")
-	}
+	name := in.User.Name
 	if name == "" {
 		return nil, errors.New("requested name is empty")
 	}
-	if name != currentUser.Name && !currentUser.Admin {
-		return nil, errors.New("permission denied")
+
+	currentUser := s.currentUser(ctx)
+	if currentUser == nil {
+		return nil, errors.New("not login")
 	}
-	if name == currentUser.Name && currentUser.Admin && !in.User.IsAdmin {
-		return nil, errors.New("cannot remove myself from admin group")
+	if name != currentUser.Name {
+		return nil, errors.New("permission denied")
 	}
 
 	userInfo := &NewUserInfo{
@@ -156,7 +90,6 @@ func (s *server) ChangeUserInfo(ctx context.Context, in *pb.ChangeUserInfoReques
 
 	if err := database.UpdateUser(s.db, database.User{
 		Name:        in.User.Name,
-		Admin:       in.User.IsAdmin,
 		LibraryURL:  userInfo.LibraryURL,
 		IsDeveloper: in.User.IsDeveloper,
 	}); err != nil {
@@ -215,7 +148,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 		log.Print(err)
 		return nil, errors.New("unknown problem")
 	}
-	currentUserName := getCurrentUserName(ctx)
+	currentUserName := s.currentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
 
 	name := ""
@@ -260,14 +193,11 @@ func canRejudge(currentUser database.User, submission *pb.SubmissionOverview) bo
 	if !submission.IsLatest && submission.Status == "AC" {
 		return true
 	}
-	if currentUser.Admin {
-		return true
-	}
 	return false
 }
 
 func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
-	currentUserName := getCurrentUserName(ctx)
+	currentUserName := s.currentUserName(ctx)
 	currentUser, _ := database.FetchUser(s.db, currentUserName)
 
 	var sub database.Submission
@@ -454,4 +384,31 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 	return &pb.ProblemCategoriesResponse{
 		Categories: result,
 	}, nil
+}
+
+func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStatus, error) {
+	type Result struct {
+		ProblemName string
+		LatestAC    bool
+	}
+	var results = make([]Result, 0)
+	if err := db.
+		Model(&database.Submission{}).
+		Joins("left join problems on submissions.problem_name = problems.name").
+		Select("problem_name, bool_or(submissions.test_cases_version=problems.test_cases_version) as latest_ac").
+		Where("status = 'AC' and user_name = ?", userName).
+		Group("problem_name").
+		Find(&results).Error; err != nil {
+		log.Print(err)
+		return nil, errors.New("failed sql query")
+	}
+	stats := make(map[string]pb.SolvedStatus)
+	for _, result := range results {
+		if result.LatestAC {
+			stats[result.ProblemName] = pb.SolvedStatus_LATEST_AC
+		} else {
+			stats[result.ProblemName] = pb.SolvedStatus_AC
+		}
+	}
+	return stats, nil
 }

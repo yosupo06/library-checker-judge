@@ -1,6 +1,29 @@
 version: '2'
 
 services:
+  api-grpcweb:
+    build:
+      dockerfile: Dockerfile.API
+    ports:
+      - 12380:12380
+    depends_on:
+      db:
+        condition: service_healthy
+      create-minio-bucket:
+        condition: service_completed_successfully
+    environment:
+      - API_DB_LOG=true
+      - PG_HOST=db
+      - PG_TABLE=librarychecker
+      - PG_USER=postgres
+      - PG_PASS=passwd
+      - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
+    healthcheck:
+        test: wget -q -O - localhost:12380/health || exit 1
+        timeout: 10s
+        interval: 1s
+        retries: 30
+
   db:
     image: postgres:11.3
     ports:
@@ -40,26 +63,14 @@ services:
       exit 0;
       "
 
-  api-grpcweb:
+  firebase:
     build:
-      dockerfile: Dockerfile.API
-      network: host
+      dockerfile: Dockerfile.Firebase
     ports:
-      - 12380:12380
-    depends_on:
-      db:
-        condition: service_healthy
-      create-minio-bucket:
-        condition: service_completed_successfully
-    environment:
-      - API_DB_LOG=true
-      - HMAC_KEY=dummy_secret
-      - PG_HOST=db
-      - PG_TABLE=librarychecker
-      - PG_USER=postgres
-      - PG_PASS=passwd
-    healthcheck:
-        test: wget -q -O - localhost:12380/health || exit 1
-        timeout: 10s
-        interval: 1s
-        retries: 30
+      - 4000:4000
+      - 9099:9099
+    volumes:
+      - ./firebase.json:/opt/firebase/firebase.json
+    working_dir: /opt/firebase
+    command: "firebase emulators:start --project library-checker-project"    
+    tty: true
