@@ -34,8 +34,8 @@ const Login: React.FC = () => {
       </Typography>
       <Alert severity="info">
         <AlertTitle>Info</AlertTitle>
-        If you regesitered your account without an email, please attach <code>@dummy.yosupo.jp</code> at suffix. <br />
-        For example: <code>yosupo</code> → <code>yosupo@dummy.yosupo.jp</code>
+        If you regesitered your account without an email, please attach <code>@dummy.judge.yosupo.jp</code> at suffix. <br />
+        For example: <code>yosupo</code> → <code>yosupo@dummy.judge.yosupo.jp</code>
       </Alert>
             <form onSubmit={(e) => onSignIn(e)}>
         <div>
@@ -44,6 +44,7 @@ const Login: React.FC = () => {
             label="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            style={{ width: 300 }}
           />
         </div>
         <div>
@@ -53,6 +54,7 @@ const Login: React.FC = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            style={{ width: 300 }}
           />
         </div>
         <Button color="primary" type="submit">
