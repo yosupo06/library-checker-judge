@@ -16,7 +16,7 @@ import {
 } from "../api/client_wrapper";
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
-import { GitHub, FlashOn, Person } from "@mui/icons-material";
+import { GitHub, FlashOn } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
