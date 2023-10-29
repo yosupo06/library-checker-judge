@@ -9,15 +9,13 @@ import Select from "@mui/material/Select";
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
-import library_checker_client, {
-  authMetadata,
+import {
   useLangList,
   useProblemInfo,
   useSubmitMutation,
 } from "../api/client_wrapper";
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
-import { AuthContext } from "../contexts/AuthContext";
 import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
@@ -73,7 +71,6 @@ const UsefulLinks: React.FC<{
 
 const ProblemInfo: React.FC = () => {
   const navigate = useNavigate();
-  const auth = useContext(AuthContext);
   const [source, setSource] = useState("");
   const [progLang, setProgLang] = useLocalStorage("programming-lang", "");
   const lang = useContext(LangContext);

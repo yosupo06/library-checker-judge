@@ -22,7 +22,7 @@ import {
   SubmitResponse,
   UserInfoResponse,
 } from "../proto/library_checker";
-import { useCurrentAuthUser, useIdToken } from "../auth/auth";
+import { useIdToken } from "../auth/auth";
 
 const useBearer = () => {
   const idToken = useIdToken();

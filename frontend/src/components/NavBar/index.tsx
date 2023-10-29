@@ -15,7 +15,7 @@ import flagUS from "./flag_us.svg";
 import { styled } from "@mui/system";
 import { useCurrentUser, useUserInfo } from "../../api/client_wrapper";
 import { Drawer, IconButton } from "@mui/material";
-import { useCurrentAuthUser, useSignOutMutation } from "../../auth/auth";
+import { useSignOutMutation } from "../../auth/auth";
 
 const NavbarLink = styled(Link)({
   color: "inherit",

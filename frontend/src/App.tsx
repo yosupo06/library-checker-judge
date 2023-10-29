@@ -12,7 +12,6 @@ import Ranking from "./pages/Ranking";
 import Profile from "./pages/Profile";
 import SubmissionInfo from "./pages/SubmissionInfo";
 import Submissions from "./pages/Submissions";
-import { AuthReducer, AuthContext } from "./contexts/AuthContext";
 import { LangReducer, LangContext, LangState } from "./contexts/LangContext";
 import CssBaseline from "@mui/material/CssBaseline";
 import { grey } from "@mui/material/colors";

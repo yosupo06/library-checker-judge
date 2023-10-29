@@ -1,15 +1,12 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import React, { useContext } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import library_checker_client from "../api/client_wrapper";
-import { AuthContext } from "../contexts/AuthContext";
 import {
   useSendPasswordResetEmailMutation,
   useSignInMutation,
@@ -79,8 +76,6 @@ const Login: React.FC = () => {
 export default Login;
 
 const PasswordReset: React.FC = () => {
-  const navigate = useNavigate();
-
   const [email, setEmail] = React.useState("");
 
   const passwordResetMutation = useSendPasswordResetEmailMutation();

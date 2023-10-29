@@ -1,51 +1,15 @@
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-import Paper from "@mui/material/Paper";
-import TablePagination from "@mui/material/TablePagination";
-import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import ListSubheader from "@mui/material/ListSubheader";
-import React, { useState } from "react";
-import { useLocation } from "react-use";
-import client, {
-  useLangList,
-  useProblemCategories,
-  useProblemList,
-  useSubmissionList,
-} from "../api/client_wrapper";
-import SubmissionTable from "../components/SubmissionTable";
-import { categoriseProblems } from "../utils/ProblemCategorizer";
-import { styled } from "@mui/system";
-import KatexTypography from "../components/katex/KatexTypography";
-import { Container } from "@mui/material";
-import { getApp, initializeApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import {
   connectAuthEmulator,
   createUserWithEmailAndPassword,
   getAuth,
-  getIdToken,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
-  signInWithRedirect,
   signOut,
   sendEmailVerification,
   updateEmail,
-  User,
-  updatePassword,
 } from "firebase/auth";
-import { GoogleAuthProvider } from "firebase/auth/cordova";
-import {
-  QueryClient,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { CurrentUserInfoRequest } from "../proto/library_checker";
-import { promises } from "dns";
+import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -70,7 +34,6 @@ export const registerQueryClient = (queryClient: QueryClient) => {
 };
 
 export const useCurrentAuthUser = () => {
-  const queryClient = useQueryClient();
   return useQuery(currentUserQueryKey, () => {
     return auth.currentUser;
   });

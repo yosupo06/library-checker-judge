@@ -1,25 +1,15 @@
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
-import AlertTitle from "@mui/material/AlertTitle";
-import React, { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import library_checker_client, {
-  useCurrentUser,
-  useRegister,
-} from "../api/client_wrapper";
-import { AuthContext } from "../contexts/AuthContext";
-import { useMutation } from "@tanstack/react-query";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import React, { useState } from "react";
+import { useCurrentUser, useRegister } from "../api/client_wrapper";
 import { useCurrentAuthUser, useRegisterMutation } from "../auth/auth";
 import { Step, StepContent, StepLabel, Stepper } from "@mui/material";
 import { Link } from "react-router-dom";
 
-const RegisterAuth: React.FC<{}> = () => {
+const RegisterAuth: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -83,7 +73,7 @@ const RegisterAuth: React.FC<{}> = () => {
   );
 };
 
-const RegisterUserID: React.FC<{}> = () => {
+const RegisterUserID: React.FC = () => {
   const [userName, setUserName] = useState("");
 
   const mutation = useRegister();
