@@ -24,23 +24,6 @@ import {
 } from "../proto/library_checker";
 import { useIdToken } from "../auth/auth";
 
-const useBearer = () => {
-  const idToken = useIdToken();
-  return useQuery({
-    queryKey: ["api", "bearer", idToken.data],
-    queryFn: () => {
-      return idToken.data
-        ? {
-            meta: {
-              authorization: "bearer " + idToken.data,
-            },
-          }
-        : null;
-    },
-    enabled: !idToken.isLoading,
-  });
-};
-
 const currentUserKey = ["api", "currentUser"];
 export const useRegister = () => {
   const bearer = useBearer();
@@ -68,18 +51,6 @@ export const useCurrentUser = () => {
     async () =>
       await client.currentUserInfo({}, bearer.data ?? undefined).response
   );
-};
-
-export const authMetadata = (state: AuthState): RpcOptions | undefined => {
-  if (!state.token) {
-    return undefined;
-  } else {
-    return {
-      meta: {
-        authorization: "bearer " + state.token,
-      },
-    };
-  }
 };
 
 const transport = new GrpcWebFetchTransport({
@@ -121,12 +92,15 @@ export const useUserInfo = (
     UseQueryOptions<UserInfoResponse, unknown, UserInfoResponse, string[]>,
     "queryKey" | "queryFn"
   >
-): UseQueryResult<UserInfoResponse> =>
-  useQuery(
-    ["userInfo", name],
-    async () => await client.userInfo({ name: name }, {}).response,
+): UseQueryResult<UserInfoResponse> => {
+  const bearer = useBearer();
+  return useQuery(
+    ["api", "userInfo", name, bearer.data?.meta.authorization ?? ""],
+    async () =>
+      await client.userInfo({ name: name }, bearer.data ?? undefined).response,
     options
   );
+};
 
 export const useSubmissionList = (
   problem: string,
@@ -192,4 +166,33 @@ export const useSubmitMutation = (
       await client.submit(req, bearer.data ?? undefined).response,
     options
   );
+};
+
+const useBearer = () => {
+  const idToken = useIdToken();
+  return useQuery({
+    queryKey: ["api", "bearer", idToken.data],
+    queryFn: () => {
+      return idToken.data
+        ? {
+            meta: {
+              authorization: "bearer " + idToken.data,
+            },
+          }
+        : null;
+    },
+    enabled: !idToken.isLoading,
+  });
+};
+
+export const authMetadata = (state: AuthState): RpcOptions | undefined => {
+  if (!state.token) {
+    return undefined;
+  } else {
+    return {
+      meta: {
+        authorization: "bearer " + state.token,
+      },
+    };
+  }
 };
