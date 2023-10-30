@@ -7,64 +7,48 @@ import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import React, { useContext, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { LinkProps, useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import {
+  useCurrentUser,
   useLangList,
   useProblemInfo,
   useSubmitMutation,
 } from "../api/client_wrapper";
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
-import { GitHub, FlashOn } from "@mui/icons-material";
+import { GitHub, FlashOn, Person } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { StatementOnHttp } from "../components/Statement";
 import { LangContext } from "../contexts/LangContext";
 import urlJoin from "url-join";
-
-const UsefulLinks: React.FC<{
-  problemInfo: ProblemInfoResponse;
-  problemId: string;
-}> = (props) => {
-  const { problemInfo, problemId } = props;
-  const fastestParams = new URLSearchParams({
-    problem: problemId,
-    order: "+time",
-    status: "AC",
-  });
-
-  return (
-    <Box>
-      <Button
-        variant="outlined"
-        startIcon={<FlashOn />}
-        href={`/submissions/?${fastestParams.toString()}`}
-      >
-        Fastest
-      </Button>
-      <Button
-        variant="outlined"
-        startIcon={<GitHub />}
-        href={problemInfo.sourceUrl}
-      >
-        Github
-      </Button>
-    </Box>
-  );
-};
+import NotFound from "./NotFound";
+import { Link as RouterLink } from "react-router-dom";
+import styled from "@emotion/styled";
 
 const ProblemInfo: React.FC = () => {
+  const { problemId } = useParams<"problemId">();
+  if (!problemId) {
+    return <NotFound />;
+  }
+
+  return (
+    <Container>
+      <ProblemInfoBody problemId={problemId} />
+    </Container>
+  );
+};
+export default ProblemInfo;
+
+const ProblemInfoBody: React.FC<{problemId: string}> = (props) => {
+  const { problemId } = props;
   const navigate = useNavigate();
   const [source, setSource] = useState("");
   const [progLang, setProgLang] = useLocalStorage("programming-lang", "");
   const lang = useContext(LangContext);
 
-  const { problemId } = useParams<"problemId">();
-  if (problemId === undefined) {
-    throw new Error(`problemId is not defined`);
-  }
   const problemInfoQuery = useProblemInfo(problemId);
   const langListQuery = useLangList();
 
@@ -139,7 +123,7 @@ const ProblemInfo: React.FC = () => {
   console.log("version", version);
 
   return (
-    <Container>
+    <Box>
       <KatexTypography variant="h2" paragraph={true}>
         {problemInfoQuery.data.title}
       </KatexTypography>
@@ -237,7 +221,59 @@ const ProblemInfo: React.FC = () => {
           Submit
         </Button>
       </form>
-    </Container>
+    </Box>
   );
 };
-export default ProblemInfo;
+
+
+const ButtonLink = styled(Button)<LinkProps>()
+
+const UsefulLinks: React.FC<{
+  problemInfo: ProblemInfoResponse;
+  problemId: string;
+}> = (props) => {
+  const { problemInfo, problemId } = props;
+
+  const currentUser = useCurrentUser();
+
+  const fastestParams = new URLSearchParams({
+    problem: problemId,
+    order: "+time",
+    status: "AC",
+  });
+
+  return (
+    <Box>
+      {currentUser.isSuccess && currentUser.data.user?.name && (
+        <ButtonLink
+          LinkComponent={RouterLink}
+          variant="outlined"
+          startIcon={<Person />}
+            to={`/submissions/?${new URLSearchParams({
+              problem: problemId,
+              user: currentUser.data.user?.name,
+              status: "AC",
+            }).toString()}`}
+        >
+          My Submission
+        </ButtonLink>
+      )}      
+      <ButtonLink
+        LinkComponent={RouterLink}
+        variant="outlined"
+        startIcon={<FlashOn />}
+        to={`/submissions/?${fastestParams.toString()}`}
+      >
+        Fastest
+      </ButtonLink>
+      <Button
+        variant="outlined"
+        startIcon={<GitHub />}
+        href={problemInfo.sourceUrl}
+      >
+        Github
+      </Button>
+    </Box>
+  );
+};
+
