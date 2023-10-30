@@ -42,7 +42,7 @@ const ProblemInfo: React.FC = () => {
 };
 export default ProblemInfo;
 
-const ProblemInfoBody: React.FC<{problemId: string}> = (props) => {
+const ProblemInfoBody: React.FC<{ problemId: string }> = (props) => {
   const { problemId } = props;
   const navigate = useNavigate();
   const [source, setSource] = useState("");
@@ -225,8 +225,7 @@ const ProblemInfoBody: React.FC<{problemId: string}> = (props) => {
   );
 };
 
-
-const ButtonLink = styled(Button)<LinkProps>()
+const ButtonLink = styled(Button)<LinkProps>();
 
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
@@ -249,15 +248,15 @@ const UsefulLinks: React.FC<{
           LinkComponent={RouterLink}
           variant="outlined"
           startIcon={<Person />}
-            to={`/submissions/?${new URLSearchParams({
-              problem: problemId,
-              user: currentUser.data.user?.name,
-              status: "AC",
-            }).toString()}`}
+          to={`/submissions/?${new URLSearchParams({
+            problem: problemId,
+            user: currentUser.data.user?.name,
+            status: "AC",
+          }).toString()}`}
         >
           My Submission
         </ButtonLink>
-      )}      
+      )}
       <ButtonLink
         LinkComponent={RouterLink}
         variant="outlined"
@@ -276,4 +275,3 @@ const UsefulLinks: React.FC<{
     </Box>
   );
 };
-
