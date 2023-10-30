@@ -12,7 +12,7 @@ import KatexTypography from "./katex/KatexTypography";
 import { styled } from "@mui/system";
 interface Props {
   problems: Problem[];
-  solvedStatus: {
+  solvedStatus?: {
     [problem: string]: "latest_ac" | "ac" | "unknown";
   };
 }
@@ -40,7 +40,9 @@ const ProblemList: React.FC<Props> = (props) => {
             <TableRow key={problem.name}>
               <TableCell
                 sx={{
-                  bgcolor: bgColorMap[solvedStatus[problem.name]],
+                  bgcolor: solvedStatus
+                    ? bgColorMap[solvedStatus[problem.name]]
+                    : undefined,
                 }}
               >
                 <NavbarLink to={`/problem/${problem.name}`}>
