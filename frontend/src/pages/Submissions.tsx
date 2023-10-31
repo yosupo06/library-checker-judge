@@ -18,7 +18,7 @@ import {
   useSubmissionList,
 } from "../api/client_wrapper";
 import SubmissionTable from "../components/SubmissionTable";
-import { categoriseProblems } from "../utils/ProblemCategorizer";
+import { categoriseProblems } from "../utils/problem.categorizer";
 import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Container } from "@mui/material";

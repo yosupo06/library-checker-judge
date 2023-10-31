@@ -15,7 +15,7 @@ import { RpcError } from "@protobuf-ts/runtime-rpc";
 import {
   CategorisedProblems,
   categoriseProblems,
-} from "../utils/ProblemCategorizer";
+} from "../utils/problem.categorizer";
 import { Alert, Container, Tab, Tabs } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 
