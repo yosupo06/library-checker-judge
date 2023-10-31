@@ -67,20 +67,26 @@ const ProblemInfo: React.FC = () => {
         {problemInfoQuery.data.title}
       </KatexTypography>
 
-      <ProblemInfoBody problemId={problemId} problemInfo={problemInfoQuery.data} />
+      <ProblemInfoBody
+        problemId={problemId}
+        problemInfo={problemInfoQuery.data}
+      />
     </Container>
   );
 };
 export default ProblemInfo;
 
 const ProblemInfoBody: React.FC<{
-  problemId: string,
-  problemInfo: ProblemInfoResponse,
+  problemId: string;
+  problemInfo: ProblemInfoResponse;
 }> = (props) => {
   const { problemId, problemInfo } = props;
 
   const baseUrl = new URL(
-    urlJoin(import.meta.env.VITE_PUBLIC_BUCKET_URL, `${problemId}/${problemInfo.version}/`)
+    urlJoin(
+      import.meta.env.VITE_PUBLIC_BUCKET_URL,
+      `${problemId}/${problemInfo.version}/`
+    )
   );
 
   const infoTomlQuery = useProblemInfoTomlQuery(baseUrl);
@@ -112,7 +118,7 @@ const ProblemInfoBody: React.FC<{
       <UsefulLinks problemId={problemId} problemInfo={problemInfo} />
       <Divider />
 
-      <StatementBody baseUrl={baseUrl} infoToml={infoTomlQuery.data}/>
+      <StatementBody baseUrl={baseUrl} infoToml={infoTomlQuery.data} />
 
       <Divider
         sx={{
