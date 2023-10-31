@@ -3,6 +3,19 @@ import { TagToken, Template, ParseStream } from "liquidjs";
 import { Lang } from "../contexts/LangContext";
 import { AnyJson } from "@iarna/toml";
 
+export const parseStatement = (
+  statement: string,
+  lang: Lang,
+  params: { [key in string]: AnyJson },
+  examples: { [name in string]: string }
+): Promise<string> => {
+  return engine.parseAndRender(statement, {
+    lang: lang,
+    params: params,
+    examples: examples,
+  });
+};
+
 const engine = new Liquid({
   tagDelimiterLeft: "@{",
   tagDelimiterRight: "}",
@@ -143,16 +156,3 @@ engine.registerTag("lang", {
     }
   },
 });
-
-export const parseStatement = (
-  statement: string,
-  lang: Lang,
-  params: { [key in string]: AnyJson },
-  examples: { [name in string]: string }
-): Promise<string> => {
-  return engine.parseAndRender(statement, {
-    lang: lang,
-    params: params,
-    examples: examples,
-  });
-};
