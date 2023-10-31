@@ -15,10 +15,9 @@ import {
 import KatexTypography from "../components/katex/KatexTypography";
 import SourceEditor from "../components/SourceEditor";
 import Statement from "../components/Statement";
-import { parse } from "@iarna/toml";
 import urlJoin from "url-join";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { ProblemInfoToml, parseProblemInfoToml } from "../utils/problem.info";
+import { parseProblemInfoToml } from "../utils/problem.info";
 
 type StatementData = {
   info: string;
