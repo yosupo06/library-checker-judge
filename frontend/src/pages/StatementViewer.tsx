@@ -18,6 +18,7 @@ import Statement from "../components/Statement";
 import { parse } from "@iarna/toml";
 import urlJoin from "url-join";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { ProblemInfoToml, parseProblemInfoToml } from "../utils/problem.info";
 
 type StatementData = {
   info: string;
@@ -265,12 +266,16 @@ const StatementViewerInternal: React.FC<Props> = (props) => {
 
   const infoToml = (() => {
     try {
-      return parse(info);
+      return parseProblemInfoToml(info);
     } catch (error) {
       console.log(error);
-      return {};
+      return {
+        tests: [],
+        params: {},
+      };
     }
   })();
+
   const editorSide = (
     <Container>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
