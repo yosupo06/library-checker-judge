@@ -59,7 +59,8 @@
     "prettier": "prettier --write \"src/**/*.{ts,js,tsx,jsx}\"",
     "prettier:check": "prettier --check \"src/**/*.{ts,js,tsx,jsx}\"",
     "protoc": "protoc --ts_out src/proto --proto_path ${PROTO_PATH} ${PROTO_PATH}/library_checker.proto",
-    "test": "vitest"
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "browserslist": {
     "production": [
@@ -75,5 +76,8 @@
   },
   "config": {
     "protocVersion": "24.3"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^0.34.6"
   }
 }

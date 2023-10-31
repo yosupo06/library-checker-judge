@@ -26,6 +26,9 @@ jobs:
         run: npm run protoc
         env:
           PROTO_PATH: ./library-checker-judge/api/proto
+      - name: Test
+        run: |
+          npm run coverage
       - name: Prettier
         run: |
           npm run prettier:check
