@@ -53,7 +53,7 @@ const Statement: React.FC<{
 
 export default Statement;
 
-export const useProblemInfoToml = (baseUrl: URL) => {
+export const useProblemInfoTomlQuery = (baseUrl: URL) => {
   const infoTomlQuery = useQuery(
     ["statement", baseUrl.href, "info.toml"],
     async () =>

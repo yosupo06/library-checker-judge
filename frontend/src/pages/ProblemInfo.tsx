@@ -22,7 +22,7 @@ import KatexTypography from "../components/katex/KatexTypography";
 import { Alert, Container } from "@mui/material";
 import Statement, {
   useExamples,
-  useProblemInfoToml,
+  useProblemInfoTomlQuery,
   useSolveHpp,
   useStatement,
 } from "../components/Statement";
@@ -41,20 +41,57 @@ const ProblemInfo: React.FC = () => {
     return <NotFound />;
   }
 
+  const problemInfoQuery = useProblemInfo(problemId);
+
+  if (problemInfoQuery.isLoading) {
+    return (
+      <Container>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (problemInfoQuery.isError) {
+    return (
+      <Container>
+        <Alert severity="error">
+          {(problemInfoQuery.error as RpcError).toString()}
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container>
-      <ProblemInfoBody problemId={problemId} />
+      <KatexTypography variant="h2" paragraph={true}>
+        {problemInfoQuery.data.title}
+      </KatexTypography>
+
+      <ProblemInfoBody
+        problemId={problemId}
+        problemInfo={problemInfoQuery.data}
+      />
     </Container>
   );
 };
 export default ProblemInfo;
 
-const ProblemInfoBody: React.FC<{ problemId: string }> = (props) => {
-  const { problemId } = props;
+const ProblemInfoBody: React.FC<{
+  problemId: string;
+  problemInfo: ProblemInfoResponse;
+}> = (props) => {
+  const { problemId, problemInfo } = props;
 
-  const problemInfoQuery = useProblemInfo(problemId);
+  const baseUrl = new URL(
+    urlJoin(
+      import.meta.env.VITE_PUBLIC_BUCKET_URL,
+      `${problemId}/${problemInfo.version}/`
+    )
+  );
 
-  if (problemInfoQuery.isLoading) {
+  const infoTomlQuery = useProblemInfoTomlQuery(baseUrl);
+
+  if (infoTomlQuery.isLoading) {
     return (
       <Box>
         <CircularProgress />
@@ -62,36 +99,26 @@ const ProblemInfoBody: React.FC<{ problemId: string }> = (props) => {
     );
   }
 
-  if (problemInfoQuery.isError) {
+  if (infoTomlQuery.isError) {
     return (
       <Box>
         <Alert severity="error">
-          {(problemInfoQuery.error as RpcError).toString()}
+          {(infoTomlQuery.error as RpcError).toString()}
         </Alert>
       </Box>
     );
   }
 
-  const version = problemInfoQuery.data.version;
-
-  const baseUrl = new URL(
-    urlJoin(import.meta.env.VITE_PUBLIC_BUCKET_URL, `${problemId}/${version}/`)
-  );
-
   return (
     <Box>
-      <KatexTypography variant="h2" paragraph={true}>
-        {problemInfoQuery.data.title}
-      </KatexTypography>
-
       <Typography variant="body1" paragraph={true}>
-        Time Limit: {problemInfoQuery.data.timeLimit} sec
+        Time Limit: {problemInfo.timeLimit} sec
       </Typography>
 
-      <UsefulLinks problemId={problemId} problemInfo={problemInfoQuery.data} />
+      <UsefulLinks problemId={problemId} problemInfo={problemInfo} />
       <Divider />
 
-      <StatementBody baseUrl={baseUrl} />
+      <StatementBody baseUrl={baseUrl} infoToml={infoTomlQuery.data} />
 
       <Divider
         sx={{
@@ -114,27 +141,21 @@ const ProblemInfoBody: React.FC<{ problemId: string }> = (props) => {
 
 export const StatementBody: React.FC<{
   baseUrl: URL;
+  infoToml: ProblemInfoToml;
 }> = (props) => {
-  const { baseUrl } = props;
+  const { baseUrl, infoToml } = props;
 
   const lang = useLang();
 
   const statement = useStatement(baseUrl);
-  const infoToml = useProblemInfoToml(baseUrl);
-  const info: ProblemInfoToml = infoToml.isSuccess
-    ? infoToml.data
-    : {
-        tests: [],
-        params: {},
-      };
 
-  const examples = useExamples(info, baseUrl);
+  const examples = useExamples(infoToml, baseUrl);
 
   return (
     <Statement
       lang={lang}
       data={{
-        info: info,
+        info: infoToml,
         statement: statement.isSuccess ? statement.data : "",
         examples: examples,
       }}
