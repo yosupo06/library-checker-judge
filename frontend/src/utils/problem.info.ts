@@ -1,4 +1,4 @@
-import { JsonMap, parse } from "@iarna/toml";
+import { AnyJson, JsonMap, parse } from "@iarna/toml";
 
 export type ProblemInfoToml = {
   title?: string;
@@ -16,7 +16,8 @@ export const parseProblemInfoToml = (toml: string): ProblemInfoToml => {
   const infoJsonMap = parse(toml);
 
   const tests = (() => {
-    const data = infoJsonMap["tests"];
+    const data = readField(infoJsonMap, "tests");
+    if (!data) return [];
     if (!Array.isArray(data)) return [];
     const tests: {
       name: string;
@@ -42,7 +43,8 @@ export const parseProblemInfoToml = (toml: string): ProblemInfoToml => {
   })();
 
   const params = (() => {
-    const data = infoJsonMap["params"];
+    const data = readField(infoJsonMap, "params");
+    if (!data) return {};
     const params: { [key: string]: number } = {};
     Object.entries(data).forEach(([key, value]) => {
       if (typeof value === "number") {
@@ -61,9 +63,13 @@ export const parseProblemInfoToml = (toml: string): ProblemInfoToml => {
   };
 };
 
-const readString = (data: JsonMap, key: string): string | undefined => {
+const readField = (data: JsonMap, key: string): AnyJson | undefined => {
   if (!(key in data)) return undefined;
-  const v = data[key];
+  return data[key];
+};
+
+const readString = (data: JsonMap, key: string): string | undefined => {
+  const v = readField(data, key);
   if (typeof v !== "string") {
     return undefined;
   }
@@ -71,8 +77,7 @@ const readString = (data: JsonMap, key: string): string | undefined => {
 };
 
 const readNumber = (data: JsonMap, key: string): number | undefined => {
-  if (!(key in data)) return undefined;
-  const v = data[key];
+  const v = readField(data, key);
   if (typeof v !== "number") {
     return undefined;
   }
