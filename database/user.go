@@ -40,8 +40,6 @@ func FetchUserFromUID(db *gorm.DB, uid string) (*User, error) {
 		return nil, errors.New("UID is empty")
 	}
 
-	log.Println("uid: ", uid)
-
 	user := User{}
 	if err := db.Where(&User{UID: uid}).Take(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
@@ -83,9 +81,12 @@ func UpdateUser(db *gorm.DB, user User) error {
 		return errors.New("User name is empty")
 	}
 
+	// TODO skip user name validation for exising user (with invalid user name)
+	user.Name = ""
 	if err := validate.Struct(user); err != nil {
 		return err
 	}
+	user.Name = name
 
 	result := db.Model(&User{}).Where("name = ?", name).Updates(
 		map[string]interface{}{
