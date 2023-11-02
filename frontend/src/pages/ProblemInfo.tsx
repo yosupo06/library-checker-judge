@@ -17,7 +17,7 @@ import {
 } from "../api/client_wrapper";
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
-import { GitHub, FlashOn, Person } from "@mui/icons-material";
+import { GitHub, FlashOn, Person, Forum } from "@mui/icons-material";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Alert, Container } from "@mui/material";
 import Statement, {
@@ -115,7 +115,11 @@ const ProblemInfoBody: React.FC<{
         Time Limit: {problemInfo.timeLimit} sec
       </Typography>
 
-      <UsefulLinks problemId={problemId} problemInfo={problemInfo} />
+      <UsefulLinks
+        problemId={problemId}
+        problemInfo={problemInfo}
+        infoToml={infoTomlQuery.data}
+      />
       <Divider />
 
       <StatementBody baseUrl={baseUrl} infoToml={infoTomlQuery.data} />
@@ -166,10 +170,11 @@ export const StatementBody: React.FC<{
 const UsefulLinks: React.FC<{
   problemInfo: ProblemInfoResponse;
   problemId: string;
+  infoToml: ProblemInfoToml;
 }> = (props) => {
   const ButtonLink = styled(Button)<LinkProps>();
 
-  const { problemInfo, problemId } = props;
+  const { problemInfo, problemId, infoToml } = props;
 
   const currentUser = useCurrentUser();
 
@@ -209,6 +214,9 @@ const UsefulLinks: React.FC<{
         href={problemInfo.sourceUrl}
       >
         Github
+      </Button>
+      <Button variant="outlined" startIcon={<Forum />} href={infoToml.forum}>
+        Forum
       </Button>
     </Box>
   );
