@@ -6,7 +6,10 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-const userNameRegexString = `^[A-Za-z0-9-_]+$`
+const (
+	maxUserNameLength   = 30
+	userNameRegexString = `^[A-Za-z0-9-_]+$`
+)
 
 var (
 	userNameRegex = regexp.MustCompile(userNameRegexString)
@@ -20,5 +23,11 @@ func init() {
 }
 
 func userNameValidator(fl validator.FieldLevel) bool {
-	return userNameRegex.MatchString(fl.Field().String())
+	name := fl.Field().String()
+
+	if maxUserNameLength < len(name) {
+		return false
+	}
+
+	return userNameRegex.MatchString(name)
 }

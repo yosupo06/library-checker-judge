@@ -1,25 +1,26 @@
 package database
 
 import (
+	"strings"
 	"testing"
 )
 
 func TestUserNameValidate(t *testing.T) {
-	type UserNameParam struct {
-		UserName string `validate:"username"`
+	type Param struct {
+		Name string `validate:"username"`
 	}
 
 	for _, name := range []string{"a", "Bb", "1234", "a_a"} {
-		if err := validate.Struct(&UserNameParam{
-			UserName: name,
+		if err := validate.Struct(&Param{
+			Name: name,
 		}); err != nil {
 			t.Fatalf("%v should be valid user name: %v", name, err)
 		}
 	}
 
-	for _, name := range []string{"a a", "", "@", " "} {
-		if err := validate.Struct(&UserNameParam{
-			UserName: name,
+	for _, name := range []string{"a a", "", "@", " ", strings.Repeat("a", 1000)} {
+		if err := validate.Struct(&Param{
+			Name: name,
 		}); err == nil {
 			t.Fatalf("%v should not be valid user name", name)
 		}
@@ -31,7 +32,7 @@ func TestLibraryURLValidate(t *testing.T) {
 		LibraryURL string `validate:"libraryURL"`
 	}
 
-	for _, url := range []string{"https://judge.yosupo.com", ""} {
+	for _, url := range []string{"https://judge.yosupo.com", "", "https://" + strings.Repeat("a", 10) + ".com"} {
 		if err := validate.Struct(&Param{
 			LibraryURL: url,
 		}); err != nil {
@@ -39,11 +40,11 @@ func TestLibraryURLValidate(t *testing.T) {
 		}
 	}
 
-	for _, url := range []string{"a a", "@", " "} {
+	for _, url := range []string{"a a", "@", " ", "https://" + strings.Repeat("a", 1000) + ".com"} {
 		if err := validate.Struct(&Param{
 			LibraryURL: url,
 		}); err == nil {
-			t.Fatalf("%v should not be valid user name", url)
+			t.Fatalf("%v should not be valid library URL", url)
 		}
 	}
 }
