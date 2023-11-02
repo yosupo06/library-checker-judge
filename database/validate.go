@@ -16,6 +16,7 @@ var validate = validator.New()
 
 func init() {
 	validate.RegisterValidation("username", userNameValidator)
+	validate.RegisterAlias("libraryURL", "omitempty,url,lt=200")
 }
 
 func userNameValidator(fl validator.FieldLevel) bool {

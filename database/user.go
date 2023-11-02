@@ -9,10 +9,10 @@ import (
 
 // User is db table
 type User struct {
-	Name        string `gorm:"primaryKey"`
+	Name        string `gorm:"primaryKey" validate:"username"`
 	UID         string
 	Passhash    string
-	LibraryURL  string
+	LibraryURL  string `validate:"libraryURL"`
 	IsDeveloper bool
 }
 
@@ -21,20 +21,14 @@ func RegisterUser(db *gorm.DB, name string, uid string) error {
 		return errors.New("UID is empty")
 	}
 
-	type Param struct {
-		name string `validate:"username"`
-	}
-	param := &Param{
-		name: name,
-	}
-	if err := validate.Struct(param); err != nil {
-		return err
-	}
-
 	user := User{
 		Name: name,
 		UID:  uid,
 	}
+	if err := validate.Struct(user); err != nil {
+		return err
+	}
+
 	if err := db.Create(&user).Error; err != nil {
 		return errors.New("this username / uid is already registered")
 	}
@@ -88,6 +82,11 @@ func UpdateUser(db *gorm.DB, user User) error {
 	if name == "" {
 		return errors.New("User name is empty")
 	}
+
+	if err := validate.Struct(user); err != nil {
+		return err
+	}
+
 	result := db.Model(&User{}).Where("name = ?", name).Updates(
 		map[string]interface{}{
 			"library_url":  user.LibraryURL,

@@ -25,3 +25,25 @@ func TestUserNameValidate(t *testing.T) {
 		}
 	}
 }
+
+func TestLibraryURLValidate(t *testing.T) {
+	type Param struct {
+		LibraryURL string `validate:"libraryURL"`
+	}
+
+	for _, url := range []string{"https://judge.yosupo.com", ""} {
+		if err := validate.Struct(&Param{
+			LibraryURL: url,
+		}); err != nil {
+			t.Fatalf("%v should be valid library URL: %v", url, err)
+		}
+	}
+
+	for _, url := range []string{"a a", "@", " "} {
+		if err := validate.Struct(&Param{
+			LibraryURL: url,
+		}); err == nil {
+			t.Fatalf("%v should not be valid user name", url)
+		}
+	}
+}
