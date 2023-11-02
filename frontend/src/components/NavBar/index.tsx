@@ -22,7 +22,7 @@ const NavBar: React.FC = () => {
   const title = (
     <>
       <ButtonLink
-        LinkComponent={Link} 
+        LinkComponent={Link}
         color="inherit"
         to="/"
         sx={{
@@ -78,7 +78,7 @@ const NavBar: React.FC = () => {
       </Drawer>
     </>
   );
-}
+};
 
 export default NavBar;
 
@@ -117,7 +117,7 @@ const NavBarElements: React.FC = () => {
 };
 
 const LangSelect = () => {
-  const lang = useLangContext()
+  const lang = useLangContext();
 
   return (
     <Select
@@ -143,7 +143,6 @@ const LangSelect = () => {
     </Select>
   );
 };
-
 
 const NavbarLink = styled(Link)({
   color: "inherit",
