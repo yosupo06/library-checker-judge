@@ -29,6 +29,8 @@ export const LangContext = React.createContext<{
   dispatch: React.Dispatch<LangAction>;
 } | null>(null);
 
+export const useLangContext = () => useContext(LangContext);
+
 export const useLang = (): Lang => {
   const lang = useContext(LangContext);
   return lang?.state.lang || "en";
