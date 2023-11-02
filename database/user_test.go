@@ -38,14 +38,15 @@ func TestFetchUserFromUID(t *testing.T) {
 	}
 }
 
-func TestUpdateUser(t *testing.T) {
-	const libraryURL = "https://judge.yosupo.com"
+func TestUpdateUserWithUID(t *testing.T) {
+	const libraryURL = "https://library.yosupo.com"
 
 	db := createTestDB(t)
 
 	if err := RegisterUser(db, "name", "id"); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := UpdateUser(db, User{
 		Name:       "name",
 		UID:        "id",
@@ -53,8 +54,73 @@ func TestUpdateUser(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if user, err := FetchUser(db, "name"); err != nil || user.UID != "id" || user.LibraryURL != libraryURL {
+		t.Fatal(err, user)
+	}
+}
 
-	if user, err := FetchUser(db, "name"); err != nil || user.LibraryURL != libraryURL {
+func TestUpdateUserWithoutUID(t *testing.T) {
+	const libraryURL = "https://library.yosupo.com"
+
+	db := createTestDB(t)
+
+	if err := RegisterUser(db, "name", "id"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := UpdateUser(db, User{
+		Name:       "name",
+		LibraryURL: libraryURL,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if user, err := FetchUser(db, "name"); err != nil || user.UID != "id" || user.LibraryURL != libraryURL {
+		t.Fatal(err, user)
+	}
+}
+
+func TestUpdateUser(t *testing.T) {
+	const libraryURL1 = "https://library1.yosupo.com"
+	const libraryURL2 = "https://library2.yosupo.com"
+
+	db := createTestDB(t)
+
+	if err := RegisterUser(db, "name1", "id1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := RegisterUser(db, "name2", "id2"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := UpdateUser(db, User{
+		Name:       "name1",
+		LibraryURL: libraryURL1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if user, err := FetchUser(db, "name1"); err != nil || user.LibraryURL != libraryURL1 {
+		t.Fatal(err, user)
+	}
+	if user, err := FetchUser(db, "name2"); err != nil || user.LibraryURL != "" {
+		t.Fatal(err, user)
+	}
+
+	if err := UpdateUser(db, User{
+		Name:       "name1",
+		LibraryURL: "",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := UpdateUser(db, User{
+		Name:       "name2",
+		LibraryURL: libraryURL2,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if user, err := FetchUser(db, "name1"); err != nil || user.LibraryURL != "" {
+		t.Fatal(err, user)
+	}
+	if user, err := FetchUser(db, "name2"); err != nil || user.LibraryURL != libraryURL2 {
 		t.Fatal(err, user)
 	}
 }
@@ -69,7 +135,6 @@ func TestUpdateUserWithInvalidURL(t *testing.T) {
 	}
 	if err := UpdateUser(db, User{
 		Name:       "name",
-		UID:        "id",
 		LibraryURL: libraryURL,
 	}); err == nil {
 		t.Fatal("UpdateUser is succeeded with invalid URL")

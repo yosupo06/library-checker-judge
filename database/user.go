@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"log"
 
 	"gorm.io/gorm"
 )
@@ -82,20 +81,19 @@ func UpdateUser(db *gorm.DB, user User) error {
 	}
 
 	// TODO skip user name validation for exising user (with invalid user name)
-	user.Name = ""
+	user.Name = "dummy"
 	if err := validate.Struct(user); err != nil {
 		return err
 	}
 	user.Name = name
 
-	result := db.Model(&User{}).Where("name = ?", name).Updates(
+	result := db.Model(&user).Updates(
 		map[string]interface{}{
 			"library_url":  user.LibraryURL,
 			"is_developer": user.IsDeveloper,
 		})
 	if err := result.Error; err != nil {
-		log.Print(err)
-		return errors.New("failed to update user")
+		return err
 	}
 	if result.RowsAffected == 0 {
 		return errors.New("User not found")
