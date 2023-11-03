@@ -9,7 +9,7 @@ import (
 // User is db table
 type User struct {
 	Name        string `gorm:"primaryKey" validate:"username"`
-	UID         string
+	UID         string `gorm:"not null;unique"`
 	Passhash    string
 	LibraryURL  string `validate:"libraryURL"`
 	IsDeveloper bool
