@@ -21,7 +21,7 @@ func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Regi
 	uid := s.currentUserUID(ctx)
 
 	if uid == "" {
-		return nil, errors.New("user id is empty")
+		return nil, errors.New("uid is empty")
 	}
 
 	if err := database.RegisterUser(s.db, in.Name, uid); err != nil {
@@ -37,6 +37,24 @@ func (s *server) CurrentUserInfo(ctx context.Context, in *pb.CurrentUserInfoRequ
 	return &pb.CurrentUserInfoResponse{
 		User: toProtoUser(user),
 	}, nil
+}
+
+func (s *server) ChangeCurrentUserInfo(ctx context.Context, in *pb.ChangeCurrentUserInfoRequest) (*pb.ChangeCurrentUserInfoResponse, error) {
+	uid := s.currentUserUID(ctx)
+	if uid == "" {
+		return nil, errors.New("login required")
+	}
+
+	if err := database.UpdateUser(s.db, database.User{
+		Name:        in.User.Name,
+		UID:         uid,
+		LibraryURL:  in.User.LibraryUrl,
+		IsDeveloper: in.User.IsDeveloper,
+	}); err != nil {
+		return nil, err
+	}
+
+	return &pb.ChangeCurrentUserInfoResponse{}, nil
 }
 
 func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {

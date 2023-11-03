@@ -9,6 +9,7 @@ option go_package = "github.com/yosupo06/library-checker-judge/api/proto";
 service LibraryCheckerService {
     rpc Register (RegisterRequest) returns (RegisterResponse) {}
     rpc CurrentUserInfo (CurrentUserInfoRequest) returns (CurrentUserInfoResponse) {}
+    rpc ChangeCurrentUserInfo (ChangeCurrentUserInfoRequest) returns (ChangeCurrentUserInfoResponse) {}
     rpc UserInfo (UserInfoRequest) returns (UserInfoResponse) {}
     rpc ChangeUserInfo (ChangeUserInfoRequest) returns (ChangeUserInfoResponse) {}
 
@@ -33,8 +34,8 @@ message RegisterRequest {
 message RegisterResponse {
 }
 
-message User {
-    string name = 1;
+message User {    
+    string name = 1;    
     string library_url = 4;
     bool is_developer = 5;
 }
@@ -43,6 +44,12 @@ message CurrentUserInfoRequest {
 }
 message CurrentUserInfoResponse {
     User user = 2;
+}
+
+message ChangeCurrentUserInfoRequest {
+    User user = 1;
+}
+message ChangeCurrentUserInfoResponse {
 }
 
 enum SolvedStatus {
