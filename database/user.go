@@ -10,7 +10,6 @@ import (
 type User struct {
 	Name        string `gorm:"primaryKey" validate:"username"`
 	UID         string `gorm:"not null;unique"`
-	Passhash    string
 	LibraryURL  string `validate:"libraryURL"`
 	IsDeveloper bool
 }
@@ -34,6 +33,38 @@ func RegisterUser(db *gorm.DB, name string, uid string) error {
 	return nil
 }
 
+func UpdateUser(db *gorm.DB, user User) error {
+	if user.Name == "" || user.UID == "" {
+		return errors.New("username / uid is empty")
+	}
+
+	return db.Transaction(func(tx *gorm.DB) error {
+		if user2, err := FetchUserFromUID(tx, user.UID); err != nil || user2 == nil || user2.Name != user.Name {
+			if err != nil {
+				return err
+			} else if user2 == nil {
+				return errors.New("user not found")
+			} else {
+				return errors.New("username is differ")
+			}
+		}
+
+		// TODO skip user name validation for exising user (with invalid user name)
+		name := user.Name
+		user.Name = "dummy"
+		if err := validate.Struct(user); err != nil {
+			return err
+		}
+		user.Name = name
+
+		if err := db.Save(&user).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func FetchUserFromUID(db *gorm.DB, uid string) (*User, error) {
 	if uid == "" {
 		return nil, errors.New("UID is empty")
@@ -49,54 +80,17 @@ func FetchUserFromUID(db *gorm.DB, uid string) (*User, error) {
 	return &user, nil
 }
 
-func FetchUser(db *gorm.DB, name string) (*User, error) {
+func FetchUserFromName(db *gorm.DB, name string) (*User, error) {
 	if name == "" {
 		return nil, errors.New("User name is empty")
 	}
 
-	user := User{
-		Name: name,
-	}
-	if err := db.Take(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+	user := User{}
+	if err := db.Where(&User{Name: name}).Take(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
 
 	return &user, nil
-}
-
-func SaveUser(db *gorm.DB, user User) error {
-	if err := db.Save(&user).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func UpdateUser(db *gorm.DB, user User) error {
-	name := user.Name
-	if name == "" {
-		return errors.New("User name is empty")
-	}
-
-	// TODO skip user name validation for exising user (with invalid user name)
-	user.Name = "dummy"
-	if err := validate.Struct(user); err != nil {
-		return err
-	}
-	user.Name = name
-
-	result := db.Model(&user).Updates(
-		map[string]interface{}{
-			"library_url":  user.LibraryURL,
-			"is_developer": user.IsDeveloper,
-		})
-	if err := result.Error; err != nil {
-		return err
-	}
-	if result.RowsAffected == 0 {
-		return errors.New("User not found")
-	}
-	return nil
 }

@@ -11,10 +11,7 @@ func TestSubmission(t *testing.T) {
 
 	createDummyProblem(t, db)
 
-	user := User{
-		Name: "user1",
-	}
-	if err := SaveUser(db, user); err != nil {
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,10 +41,7 @@ func TestSubmissionResult(t *testing.T) {
 
 	createDummyProblem(t, db)
 
-	user := User{
-		Name: "user1",
-	}
-	if err := SaveUser(db, user); err != nil {
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -88,10 +82,7 @@ func TestSubmissionResultEmpty(t *testing.T) {
 
 	createDummyProblem(t, db)
 
-	user := User{
-		Name: "user1",
-	}
-	if err := SaveUser(db, user); err != nil {
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,5 +102,4 @@ func TestSubmissionResultEmpty(t *testing.T) {
 	if len(actual) != 0 {
 		t.Fatal(actual, "is not empty")
 	}
-
 }
