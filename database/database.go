@@ -1,13 +1,10 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
@@ -64,12 +61,4 @@ func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB 
 	}
 	log.Fatalf("cannot connect db %d times", MAX_TRY_TIMES)
 	return nil
-}
-
-func generatePasswordHash(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 10)
-	if err != nil {
-		return "", errors.New("bcrypt broken")
-	}
-	return string(hash), nil
 }

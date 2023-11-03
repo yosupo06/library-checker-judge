@@ -44,7 +44,7 @@ func (s *server) UserInfo(ctx context.Context, in *pb.UserInfoRequest) (*pb.User
 	if name == "" {
 		return nil, errors.New("empty name")
 	}
-	user, err := database.FetchUser(s.db, name)
+	user, err := database.FetchUserFromName(s.db, name)
 	if user == nil || err != nil {
 		return nil, errors.New("invalid user name")
 	}
@@ -154,7 +154,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 		return nil, errors.New("unknown problem")
 	}
 	currentUserName := s.currentUserName(ctx)
-	currentUser, _ := database.FetchUser(s.db, currentUserName)
+	currentUser, _ := database.FetchUserFromName(s.db, currentUserName)
 
 	name := ""
 	if currentUser != nil {
@@ -203,7 +203,7 @@ func canRejudge(currentUser database.User, submission *pb.SubmissionOverview) bo
 
 func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoRequest) (*pb.SubmissionInfoResponse, error) {
 	currentUserName := s.currentUserName(ctx)
-	currentUser, _ := database.FetchUser(s.db, currentUserName)
+	currentUser, _ := database.FetchUserFromName(s.db, currentUserName)
 
 	var sub database.Submission
 	sub, err := database.FetchSubmission(s.db, in.Id)
