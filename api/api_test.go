@@ -16,8 +16,58 @@ import (
 	"github.com/yosupo06/library-checker-judge/database"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"gorm.io/gorm"
 )
+
+func TestRegister(t *testing.T) {
+	const token = "token"
+	const name = "name"
+
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		authClient.registerUID(token, "uid")
+	})
+
+	if _, err := client.Register(contextWithToken(context.Background(), token), &pb.RegisterRequest{
+		Name: name,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestChangeCurrentUserInfo(t *testing.T) {
+	const token = "token"
+	const name = "name"
+	const libraryURL = "https://library.yosupo.jp"
+
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		authClient.registerUID(token, "uid")
+	})
+
+	if _, err := client.Register(contextWithToken(context.Background(), token), &pb.RegisterRequest{
+		Name: name,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := client.ChangeCurrentUserInfo(contextWithToken(context.Background(), token), &pb.ChangeCurrentUserInfoRequest{
+		User: &pb.User{
+			Name:       "name",
+			LibraryUrl: libraryURL,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := client.CurrentUserInfo(contextWithToken(context.Background(), token), &pb.CurrentUserInfoRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.User.LibraryUrl != libraryURL {
+		t.Fatal("library URL is differ:", resp.User.LibraryUrl)
+	}
+}
 
 func TestProblemInfo(t *testing.T) {
 	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
@@ -166,7 +216,9 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 	db := createTestDB(t)
 
 	// connect authClient
-	authClient := &DummyAuthClient{}
+	authClient := &DummyAuthClient{
+		tokenToUID: map[string]string{},
+	}
 
 	s := NewGRPCServer(db, authClient, "../langs/langs.toml")
 	go func() {
@@ -247,8 +299,12 @@ func (c *DummyAuthClient) parseUID(ctx context.Context, token string) string {
 	return c.tokenToUID[token]
 }
 
-func (c *DummyAuthClient) registerUID(ctx context.Context, token string, uid string) {
+func (c *DummyAuthClient) registerUID(token string, uid string) {
 	c.tokenToUID[token] = uid
+}
+
+func contextWithToken(ctx context.Context, token string) context.Context {
+	return metadata.NewOutgoingContext(ctx, metadata.Pairs("authorization", "bearer "+token))
 }
 
 var DUMMY_PROBLEM = database.Problem{
