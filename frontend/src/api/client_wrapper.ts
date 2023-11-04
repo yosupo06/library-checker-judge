@@ -11,6 +11,7 @@ import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 import { RpcOptions } from "@protobuf-ts/runtime-rpc";
 import {
+  ChangeCurrentUserInfoRequest,
   LangListResponse,
   ProblemCategoriesResponse,
   ProblemInfoResponse,
@@ -25,6 +26,15 @@ import {
 import { useIdToken } from "../auth/auth";
 
 const currentUserKey = ["api", "currentUser"];
+export const useCurrentUser = () => {
+  const bearer = useBearer();
+  return useQuery({
+    queryKey: ["api", "currentUser", bearer.data],
+    queryFn: async () =>
+      await client.currentUserInfo({}, bearer.data ?? undefined).response,
+    enabled: !bearer.isLoading,
+  });
+};
 export const useRegister = () => {
   const bearer = useBearer();
   const queryClient = useQueryClient();
@@ -43,13 +53,18 @@ export const useRegister = () => {
     }
   );
 };
-
-export const useCurrentUser = () => {
+export const useChangeCurrentUserInfoMutation = () => {
   const bearer = useBearer();
-  return useQuery(
-    ["api", "currentUser", bearer.data],
-    async () =>
-      await client.currentUserInfo({}, bearer.data ?? undefined).response
+  const queryClient = useQueryClient();
+  return useMutation(
+    async (req: ChangeCurrentUserInfoRequest) =>
+      await client.changeCurrentUserInfo(req, bearer.data ?? undefined)
+        .response,
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(currentUserKey);
+      },
+    }
   );
 };
 

@@ -9,35 +9,50 @@ import ListItem from "@mui/material/ListItem";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
 import React, { useState } from "react";
-import library_checker_client, { useCurrentUser } from "../api/client_wrapper";
+import {
+  useChangeCurrentUserInfoMutation,
+  useCurrentUser,
+} from "../api/client_wrapper";
 import { LibraryBooks } from "@mui/icons-material";
-import { Container, FormLabel, Switch } from "@mui/material";
+import { Alert, Container, Divider, FormLabel, Switch } from "@mui/material";
 import BuildIcon from "@mui/icons-material/Build";
 import { useCurrentAuthUser, useUpdateEmailMutation } from "../auth/auth";
-import { User } from "firebase/auth";
+import { User as AuthUser } from "firebase/auth";
 import EmailIcon from "@mui/icons-material/Email";
+import { Navigate } from "react-router-dom";
+import { RpcError } from "@protobuf-ts/runtime-rpc";
+import { User } from "../proto/library_checker";
 
 const Profile: React.FC = () => {
   const currentAuthUser = useCurrentAuthUser();
   const currentUser = useCurrentUser();
 
-  const [libraryURL, setLibraryURL] = useState("");
-  const [isDeveloper, setIsDeveloper] = useState(false);
-
   if (currentAuthUser.isLoading || currentUser.isLoading) {
     return (
-      <Box>
+      <Container>
         <CircularProgress />
-      </Box>
+      </Container>
     );
   }
 
   if (currentAuthUser.isError || currentUser.isError) {
-    // TODO: 500
     return (
-      <Box>
-        <Typography>Error</Typography>
-      </Box>
+      <>
+        {currentAuthUser.isError && (
+          <Container>
+            <Alert severity="error">
+              {(currentAuthUser.error as RpcError).toString()}
+            </Alert>
+          </Container>
+        )}
+        {currentUser.isError && (
+          <Container>
+            <Alert severity="error">
+              {(currentUser.error as RpcError).toString()}
+            </Alert>
+          </Container>
+        )}
+      </>
     );
   }
 
@@ -45,99 +60,46 @@ const Profile: React.FC = () => {
   const user = currentUser.data.user;
 
   if (!authUser || !user) {
-    // TODO: jump to register page?
-    return (
-      <Box>
-        <Typography>Please register</Typography>
-      </Box>
-    );
+    return <Navigate to={`/register`} />;
   }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const newUser = user;
-    newUser.libraryUrl = libraryURL;
-    newUser.isDeveloper = isDeveloper;
-
-    library_checker_client
-      .changeUserInfo({ user: newUser }, undefined)
-      .then(() => {
-        history.go(0);
-      });
-  };
 
   return (
     <Container>
       <Typography variant="h2">Profile: {user.name}</Typography>
-      <AuthProfile user={authUser} />
-      <Box>
-        <Typography variant="h4">Setting</Typography>
-        <form onSubmit={(e) => handleSubmit(e)}>
-          <List>
-            <ListItem>
-              <ListItemAvatar>
-                <Avatar>
-                  <LibraryBooks />
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                secondary={
-                  <TextField
-                    label="Library URL"
-                    value={libraryURL}
-                    onChange={(e) => setLibraryURL(e.target.value)}
-                    helperText="Please input URL for your published library"
-                  />
-                }
-              />
-            </ListItem>
-            <ListItem>
-              <ListItemAvatar>
-                <Avatar>
-                  <BuildIcon />
-                </Avatar>
-              </ListItemAvatar>
-              <FormLabel id="is-developer-mode-switch">
-                Developer Mode
-              </FormLabel>
-              <Switch
-                aria-labelledby="is-developer-mode-switch"
-                checked={isDeveloper}
-                onChange={(e) => {
-                  console.log(e.target.value, e.target.checked);
-                  setIsDeveloper(e.target.checked);
-                }}
-              />
-            </ListItem>
-          </List>
-          <Button color="primary" type="submit">
-            Change
-          </Button>
-        </form>
-      </Box>
+      <GeneralSetting user={user} />
+      <Divider
+        sx={{
+          margin: 1,
+        }}
+      />
+      <EmailSetting user={authUser} />
     </Container>
   );
 };
-
 export default Profile;
 
-const AuthProfile: React.FC<{ user: User }> = (props) => {
+const EmailSetting: React.FC<{ user: AuthUser }> = (props) => {
   const { user } = props;
 
   const [newEmail, setNewEmail] = useState(user.email ?? "");
 
-  const updateEmailMutation = useUpdateEmailMutation();
+  const mutation = useUpdateEmailMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateEmailMutation.mutate(newEmail);
+    mutation.mutate(newEmail);
   };
 
   return (
     <Box>
-      <Typography variant="h4">Auth info</Typography>
-      <form onSubmit={(e) => handleSubmit(e)}>
+      <Typography variant="h4">Email</Typography>
+      {mutation.isSuccess && (
+        <Alert severity="success">Verification email has been sent</Alert>
+      )}
+      {mutation.isError && (
+        <Alert severity="error">{(mutation.error as RpcError).message}</Alert>
+      )}
+      <form onSubmit={handleSubmit}>
         <List>
           <ListItem>
             <ListItemAvatar>
@@ -146,19 +108,95 @@ const AuthProfile: React.FC<{ user: User }> = (props) => {
               </Avatar>
             </ListItemAvatar>
             <ListItemText
+              primary={
+                <>
+                  <TextField
+                    label="Email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                  />
+                </>
+              }
               secondary={
-                <TextField
-                  label="Email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  helperText="Please input URL for your published library"
-                />
+                <>
+                  {user.emailVerified && "verified"}
+                  {!user.emailVerified && "unverified"}
+                </>
               }
             />
           </ListItem>
         </List>
         <Button color="primary" type="submit">
-          Update email
+          Update
+        </Button>
+      </form>
+    </Box>
+  );
+};
+
+const GeneralSetting: React.FC<{ user: User }> = (props) => {
+  const { user } = props;
+
+  const [libraryURL, setLibraryURL] = useState(user.libraryUrl);
+  const [isDeveloper, setIsDeveloper] = useState(user.isDeveloper);
+
+  const mutation = useChangeCurrentUserInfoMutation();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    mutation.mutate({
+      user: {
+        name: user.name,
+        libraryUrl: libraryURL,
+        isDeveloper: isDeveloper,
+      },
+    });
+  };
+
+  return (
+    <Box>
+      <Typography variant="h4">General</Typography>
+      {mutation.isSuccess && <Alert severity="success">Updated</Alert>}
+      {mutation.isError && (
+        <Alert severity="error">{(mutation.error as RpcError).message}</Alert>
+      )}
+      <form onSubmit={handleSubmit}>
+        <List>
+          <ListItem>
+            <ListItemAvatar>
+              <Avatar>
+                <LibraryBooks />
+              </Avatar>
+            </ListItemAvatar>
+            <ListItemText
+              primary={
+                <TextField
+                  label="Library URL"
+                  value={libraryURL}
+                  onChange={(e) => setLibraryURL(e.target.value)}
+                  helperText="Please input URL for your published library"
+                />
+              }
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemAvatar>
+              <Avatar>
+                <BuildIcon />
+              </Avatar>
+            </ListItemAvatar>
+            <FormLabel id="is-developer-mode-switch">Developer Mode</FormLabel>
+            <Switch
+              aria-labelledby="is-developer-mode-switch"
+              checked={isDeveloper}
+              onChange={(e) => {
+                setIsDeveloper(e.target.checked);
+              }}
+            />
+          </ListItem>
+        </List>
+        <Button color="primary" type="submit">
+          Update
         </Button>
       </form>
     </Box>
