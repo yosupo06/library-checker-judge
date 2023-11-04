@@ -34,15 +34,17 @@ export const registerQueryClient = (queryClient: QueryClient) => {
 };
 
 export const useCurrentAuthUser = () => {
-  return useQuery(currentUserQueryKey, () => {
-    return auth.currentUser;
-  });
+  return useQuery(currentUserQueryKey, () =>
+    auth.authStateReady().then(() => auth.currentUser)
+  );
 };
 
 export const useIdToken = () => {
   const currentAuthUser = useCurrentAuthUser();
-  return useQuery(["auth", "idToken", currentAuthUser.data?.email], () => {
-    return currentAuthUser.data?.getIdToken() ?? Promise.resolve(null);
+  return useQuery({
+    queryKey: ["auth", "idToken", currentAuthUser.data?.email],
+    queryFn: () => currentAuthUser.data?.getIdToken() ?? Promise.resolve(null),
+    enabled: !currentAuthUser.isLoading,
   });
 };
 
