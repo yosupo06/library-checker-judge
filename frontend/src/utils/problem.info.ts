@@ -9,7 +9,7 @@ export type ProblemInfoToml = {
     name: string;
     number: number;
   }[];
-  params: { [key: string]: number };
+  params: { [key: string]: bigint };
 };
 
 export const parseProblemInfoToml = (toml: string): ProblemInfoToml => {
@@ -45,9 +45,12 @@ export const parseProblemInfoToml = (toml: string): ProblemInfoToml => {
   const params = (() => {
     const data = readField(infoJsonMap, "params");
     if (!data) return {};
-    const params: { [key: string]: number } = {};
+    const params: { [key: string]: bigint } = {};
     Object.entries(data).forEach(([key, value]) => {
       if (typeof value === "number") {
+        params[key] = BigInt(value);
+      }
+      if (typeof value === "bigint") {
         params[key] = value;
       }
     });

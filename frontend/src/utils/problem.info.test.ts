@@ -22,6 +22,7 @@ function = true
 
 [params]
 A_AND_B_MAX = 1_000_000_000
+LONG_LONG_PARAM = 1_000_000_000_000_000_000
 `;
 
 it("parse", () => {
@@ -42,7 +43,8 @@ it("parse", () => {
     },
   ]);
   expect(data.params).toStrictEqual({
-    A_AND_B_MAX: 1_000_000_000,
+    A_AND_B_MAX: 1_000_000_000n,
+    LONG_LONG_PARAM: 1_000_000_000_000_000_000n,
   });
 });
 
