@@ -25,14 +25,7 @@ const Statement: React.FC<{
   useEffect(() => {
     const { info, statement, examples } = props.data;
 
-    const rawParams = info.params || null;
-    const rawParamIsMap =
-      rawParams instanceof Object &&
-      !(rawParams instanceof Date) &&
-      !(rawParams instanceof Array);
-
-    const params = rawParamIsMap ? rawParams : {};
-    parseStatement(statement, props.lang, params, examples)
+    parseStatement(statement, props.lang, info.params ?? {}, examples)
       .then((parsedStatement) => {
         return unified()
           .use(remarkParse)

@@ -1,12 +1,11 @@
 import { Liquid } from "liquidjs";
 import { TagToken, Template, ParseStream } from "liquidjs";
 import { Lang } from "../contexts/LangContext";
-import { AnyJson } from "@iarna/toml";
 
 export const parseStatement = (
   statement: string,
   lang: Lang,
-  params: { [key in string]: AnyJson },
+  params: { [key in string]: bigint },
   examples: { [name in string]: string }
 ): Promise<string> => {
   return engine.parseAndRender(statement, {
