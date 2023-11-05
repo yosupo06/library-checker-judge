@@ -1,9 +1,7 @@
 import React from "react";
 import { Alert, Box, CircularProgress } from "@mui/material";
 import { Lang } from "../contexts/LangContext";
-import {
-  StatementData, useStatementParser
-} from "../utils/statement.parser";
+import { StatementData, useStatementParser } from "../utils/statement.parser";
 import KatexRender from "../components/katex/KatexRender";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { ProblemInfoToml, parseProblemInfoToml } from "../utils/problem.info";
