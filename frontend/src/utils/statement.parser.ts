@@ -1,8 +1,38 @@
 import { Liquid } from "liquidjs";
 import { TagToken, Template, ParseStream } from "liquidjs";
 import { Lang } from "../contexts/LangContext";
+import { ProblemInfoToml } from "./problem.info";
+import { useQuery } from "@tanstack/react-query";
+import { unified } from "unified";
+import remarkRehype from "remark-rehype";
+import remarkParse from "remark-parse";
+import rehypeStringify from "rehype-stringify";
 
-export const parseStatement = (
+export type StatementData = {
+  info: ProblemInfoToml;
+  statement: string;
+  examples: { [name: string]: string };
+};
+
+export const useStatementParser = (lang: Lang, data: StatementData) => {
+  return useQuery({
+    queryKey: ["statement", "parser", lang, data],
+    queryKeyHashFn: (key) =>
+      JSON.stringify(key, (_, v) => (typeof v === "bigint" ? v.toString() : v)),
+    queryFn: () =>
+      parseStatement(data.statement, lang, data.info.params, data.examples)
+        .then((parsedStatement) =>
+          unified()
+            .use(remarkParse)
+            .use(remarkRehype)
+            .use(rehypeStringify)
+            .process(parsedStatement)
+        )
+        .then((statement) => String(statement)),
+  });
+};
+
+const parseStatement = (
   statement: string,
   lang: Lang,
   params: { [key in string]: bigint },
