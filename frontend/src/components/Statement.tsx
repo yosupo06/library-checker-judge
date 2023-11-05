@@ -1,45 +1,38 @@
-import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import React from "react";
+import { Alert, Box, CircularProgress } from "@mui/material";
 import { Lang } from "../contexts/LangContext";
-import { parseStatement } from "../utils/statement.parser";
-import { unified } from "unified";
-import remarkRehype from "remark-rehype";
-import remarkParse from "remark-parse";
-import rehypeStringify from "rehype-stringify";
+import { StatementData, useStatementParser } from "../utils/statement.parser";
 import KatexRender from "../components/katex/KatexRender";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { ProblemInfoToml, parseProblemInfoToml } from "../utils/problem.info";
-
-export type StatementData = {
-  info: ProblemInfoToml;
-  statement: string;
-  examples: { [name: string]: string };
-};
 
 const Statement: React.FC<{
   lang: Lang;
   data: StatementData;
 }> = (props) => {
-  const [statement, setStatement] = useState("");
+  const statement = useStatementParser(props.lang, props.data);
 
-  useEffect(() => {
-    const { info, statement, examples } = props.data;
+  if (statement.isLoading) {
+    return (
+      <Box>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-    parseStatement(statement, props.lang, info.params ?? {}, examples)
-      .then((parsedStatement) => {
-        return unified()
-          .use(remarkParse)
-          .use(remarkRehype)
-          .use(rehypeStringify)
-          .process(parsedStatement);
-      })
-      .then((newStatement) => setStatement(String(newStatement)))
-      .catch((err) => console.log(err));
-  }, [props]);
+  if (statement.isError) {
+    return (
+      <>
+        <Box>
+          <Alert severity="error">{(statement.error as Error).message}</Alert>
+        </Box>
+      </>
+    );
+  }
 
   return (
     <Box>
-      <KatexRender text={String(statement)} />
+      <KatexRender text={statement.data} />
     </Box>
   );
 };

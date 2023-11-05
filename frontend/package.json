@@ -24,7 +24,7 @@
     "@uiw/react-md-editor": "^3.17.0",
     "@vitejs/plugin-react": "^4.0.0",
     "customize-cra": "^1.0.0",
-    "eslint": "^8.39.0",
+    "eslint": "^8.53.0",
     "eslint-plugin-unused-imports": "^2.0.0",
     "firebase": "^10.4.0",
     "google-protobuf": "^3.19.1",
