@@ -45,8 +45,8 @@ const parseCustomTag = (lang: Lang, data: StatementData): Promise<string> => {
 const engine = new Liquid({
   tagDelimiterLeft: "@{",
   tagDelimiterRight: "}",
-  outputDelimiterLeft: "!WEDONTUSETHIS",
-  outputDelimiterRight: "WEDONTUSETHIS!",
+  outputDelimiterLeft: "!WEDONTUSETHISFUNCTION!",
+  outputDelimiterRight: "!WEDONTUSETHISFUNCTION!",
 });
 
 const keywordsDict: { [key: string]: { [lang in Lang]: string } } = {
