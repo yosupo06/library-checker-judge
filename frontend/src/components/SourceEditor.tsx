@@ -42,6 +42,9 @@ const editorMode = (lang?: string) => {
   if (lang.startsWith("lisp")) {
     return "plaintext";
   }
+  if (lang.startsWith("markdown")) {
+    return "markdown";
+  }
   return "plaintext";
 };
 
