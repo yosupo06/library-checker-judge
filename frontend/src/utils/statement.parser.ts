@@ -76,11 +76,11 @@ export const paramToStr = (value: bigint) => {
   if (value == 0n) return "0";
 
   if (value % 100_000n == 0n) {
-    var rem_value = value
-    var k = 0
+    let rem_value = value;
+    let k = 0;
     while (rem_value % 10n == 0n) {
-      rem_value /= 10n
-      k++
+      rem_value /= 10n;
+      k++;
     }
 
     if (rem_value == 1n) {
