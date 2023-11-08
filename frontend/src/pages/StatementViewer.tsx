@@ -1,5 +1,5 @@
 import Typography from "@mui/material/Typography";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -18,15 +18,16 @@ import Statement from "../components/Statement";
 import urlJoin from "url-join";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { parseProblemInfoToml } from "../utils/problem.info";
+import { StatementData } from "../utils/statement.parser";
 
-type StatementData = {
+type RawStatementData = {
   info: string;
   statement: string;
   examples: { [name: string]: string };
 };
 
 const StatementViewer: React.FC = () => {
-  const [data, setData] = useState<StatementData | null>({
+  const [data, setData] = useState<RawStatementData>({
     info: "",
     statement: "",
     examples: {},
@@ -39,7 +40,7 @@ const StatementViewer: React.FC = () => {
           Statement Viewer
         </Typography>
 
-        <DataLoader updateData={(newData) => setData(newData)} />
+        <DataLoader setData={setData} />
       </Container>
 
       <Box>
@@ -49,7 +50,7 @@ const StatementViewer: React.FC = () => {
           }}
         />
 
-        {data && <StatementViewerInternal data={data} />}
+        <StatementViewerInternal data={data} setData={setData} />
       </Box>
     </Box>
   );
@@ -58,17 +59,22 @@ const StatementViewer: React.FC = () => {
 export default StatementViewer;
 
 const DataLoader: React.FC<{
-  updateData: (data: StatementData) => void;
+  setData: (f: (data: RawStatementData) => RawStatementData) => void;
 }> = (props) => {
-  const [data, setData] = useState<StatementData>({
-    info: "",
-    statement: "",
-    examples: {},
-  });
+  const { setData } = props;
+  return (
+    <>
+      <FileLoader setData={setData} />
+      <Divider sx={{ margin: 3 }} />
+      <GithubDataLoader setData={setData} />
+    </>
+  );
+};
 
-  useEffect(() => {
-    props.updateData(data);
-  }, [data]);
+const FileLoader: React.FC<{
+  setData: (f: (data: RawStatementData) => RawStatementData) => void;
+}> = (props) => {
+  const { setData } = props;
 
   const setFiles = (files: File[]) => {
     const taskFile = files.find((e) =>
@@ -146,30 +152,20 @@ const DataLoader: React.FC<{
           /path/to/library-checker-problems/sample/aplusb)
         </FormHelperText>
       </FormControl>
-      <Divider sx={{ margin: 3 }} />
-      <GithubDataLoader updateData={setData} />
     </>
   );
 };
 
 const GithubDataLoader: React.FC<{
-  updateData: (data: StatementData) => void;
+  setData: (f: (data: RawStatementData) => RawStatementData) => void;
 }> = (props) => {
-  const [data, setData] = useState<StatementData>({
-    info: "",
-    statement: "",
-    examples: {},
-  });
+  const { setData } = props;
 
   type Form = {
     ref: string;
     problem: string;
   };
   const { register, handleSubmit } = useForm<Form>();
-
-  useEffect(() => {
-    props.updateData(data);
-  }, [data]);
 
   const onSubmit: SubmitHandler<Form> = (data) => {
     const { ref, problem } = data;
@@ -246,49 +242,64 @@ const GithubDataLoader: React.FC<{
   );
 };
 
-interface Props {
-  data: StatementData;
-}
+const StatementViewerInternal: React.FC<{
+  data: RawStatementData;
+  setData: (d: RawStatementData) => void;
+}> = (props) => {
+  const { data, setData } = props;
 
-const StatementViewerInternal: React.FC<Props> = (props) => {
-  const [editorTabIndex, setEditorTabIndex] = useState(0);
-  const [viewerTabIndex, setViewerTabIndex] = useState(0);
-  const [info, setInfo] = useState(props.data.info);
-  const [statement, setStatement] = useState(props.data.statement);
+  return (
+    <Stack
+      direction="row"
+      divider={<Divider orientation="vertical" flexItem />}
+      spacing={2}
+    >
+      <EditorSide data={data} setData={setData} />
+      <ViewerSide
+        data={{
+          info: parseProblemInfoToml(data.info),
+          statement: data.statement,
+          examples: data.examples,
+        }}
+      />
+    </Stack>
+  );
+};
 
-  useEffect(() => {
-    setInfo(props.data.info);
-  }, [props.data.info]);
-  useEffect(() => {
-    setStatement(props.data.statement);
-  }, [props.data.statement]);
+const EditorSide: React.FC<{
+  data: RawStatementData;
+  setData: (d: RawStatementData) => void;
+}> = (props) => {
+  const { data, setData } = props;
 
-  const infoToml = (() => {
-    try {
-      return parseProblemInfoToml(info);
-    } catch (error) {
-      console.log(error);
-      return {
-        tests: [],
-        params: {},
-      };
-    }
-  })();
+  const setInfo = (info: string) => {
+    setData({
+      ...data,
+      info: info,
+    });
+  };
+  const setStatement = (statement: string) => {
+    setData({
+      ...data,
+      statement: statement,
+    });
+  };
 
-  const editorSide = (
+  const [tabIndex, setTabIndex] = useState(0);
+
+  return (
     <Container>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
-          value={editorTabIndex}
-          onChange={(event, newValue) => setEditorTabIndex(newValue)}
-          aria-label="basic tabs example"
+          value={tabIndex}
+          onChange={(_, newValue) => setTabIndex(newValue)}
         >
           <Tab label="task.md" />
           <Tab label="info.toml" />
         </Tabs>
       </Box>
 
-      {editorTabIndex === 0 && (
+      {tabIndex === 0 && (
         <Box sx={{ p: 3 }}>
           <Typography variant="h4" paragraph={true}>
             task.md
@@ -300,18 +311,16 @@ const StatementViewerInternal: React.FC<Props> = (props) => {
             }}
           >
             <SourceEditor
-              value={statement}
-              language="plaintext" // todo: markdown?
-              onChange={(e) => {
-                setStatement(e);
-              }}
+              value={data.statement}
+              language="markdown"
+              onChange={setStatement}
               readOnly={false}
               autoHeight={false}
             />
           </Box>
         </Box>
       )}
-      {editorTabIndex === 1 && (
+      {tabIndex === 1 && (
         <Box sx={{ p: 3 }}>
           <Typography variant="h4" paragraph={true}>
             info.toml
@@ -323,11 +332,9 @@ const StatementViewerInternal: React.FC<Props> = (props) => {
             }}
           >
             <SourceEditor
-              value={info}
+              value={data.info}
               language="plaintext"
-              onChange={(e) => {
-                setInfo(e);
-              }}
+              onChange={setInfo}
               readOnly={false}
               autoHeight={false}
             />
@@ -336,59 +343,40 @@ const StatementViewerInternal: React.FC<Props> = (props) => {
       )}
     </Container>
   );
+};
 
-  const viewerSide = (
+const ViewerSide: React.FC<{
+  data: StatementData;
+}> = (props) => {
+  const { data } = props;
+  const [tabIndex, setTabIndex] = useState(0);
+
+  return (
     <Container>
       <KatexTypography variant="h2" paragraph={true}>
-        {infoToml?.title ?? "<title not found>"}
+        {data.info.title ?? "<title not found>"}
       </KatexTypography>
 
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
-          value={viewerTabIndex}
-          onChange={(_, newValue) => setViewerTabIndex(newValue)}
-          aria-label="basic tabs example"
+          value={tabIndex}
+          onChange={(_, newValue) => setTabIndex(newValue)}
         >
           <Tab label="Statement(en)" />
           <Tab label="Statement(ja)" />
         </Tabs>
       </Box>
 
-      {viewerTabIndex === 0 && (
+      {tabIndex === 0 && (
         <Box sx={{ p: 3 }}>
-          <Statement
-            lang="en"
-            data={{
-              info: infoToml,
-              statement: statement,
-              examples: props.data.examples,
-            }}
-          />
+          <Statement lang="en" data={data} />
         </Box>
       )}
-      {viewerTabIndex === 1 && (
+      {tabIndex === 1 && (
         <Box sx={{ p: 3 }}>
-          <Statement
-            lang="ja"
-            data={{
-              info: infoToml,
-              statement: statement,
-              examples: props.data.examples,
-            }}
-          />
+          <Statement lang="ja" data={data} />
         </Box>
       )}
     </Container>
-  );
-
-  return (
-    <Stack
-      direction="row"
-      divider={<Divider orientation="vertical" flexItem />}
-      spacing={2}
-    >
-      {editorSide}
-      {viewerSide}
-    </Stack>
   );
 };
