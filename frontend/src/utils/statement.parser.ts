@@ -1,4 +1,4 @@
-import { Liquid } from "liquidjs";
+import { Context, Liquid } from "liquidjs";
 import { TagToken, Template, ParseStream } from "liquidjs";
 import { Lang } from "../contexts/LangContext";
 import { ProblemInfoToml } from "./problem.info";
@@ -20,34 +20,33 @@ export const useStatementParser = (lang: Lang, data: StatementData) => {
     queryKeyHashFn: (key) =>
       JSON.stringify(key, (_, v) => (typeof v === "bigint" ? v.toString() : v)),
     queryFn: () =>
-      parseStatement(data.statement, lang, data.info.params, data.examples)
-        .then((parsedStatement) =>
-          unified()
-            .use(remarkParse)
-            .use(remarkRehype)
-            .use(rehypeStringify)
-            .process(parsedStatement)
-        )
+      parseCustomTag(lang, data)
+        .then(parseMarkdown)
         .then((statement) => String(statement)),
   });
 };
 
-const parseStatement = (
-  statement: string,
-  lang: Lang,
-  params: { [key in string]: bigint },
-  examples: { [name in string]: string }
-): Promise<string> => {
-  return engine.parseAndRender(statement, {
+const parseMarkdown = (mdStatement: string) =>
+  unified()
+    .use(remarkParse)
+    .use(remarkRehype)
+    .use(rehypeStringify)
+    .process(mdStatement);
+
+const parseCustomTag = (lang: Lang, data: StatementData): Promise<string> => {
+  return engine.parseAndRender(data.statement, {
     lang: lang,
-    params: params,
-    examples: examples,
+    data: data,
+    params: data.info.params,
+    examples: data.examples,
   });
 };
 
 const engine = new Liquid({
   tagDelimiterLeft: "@{",
   tagDelimiterRight: "}",
+  outputDelimiterLeft: "!WEDONTUSETHIS",
+  outputDelimiterRight: "WEDONTUSETHIS!",
 });
 
 const keywordsDict: { [key: string]: { [lang in Lang]: string } } = {
@@ -73,34 +72,47 @@ const keywordsDict: { [key: string]: { [lang in Lang]: string } } = {
   },
 };
 
-const numberParamToStr = (value: number) => {
-  if (Number.isInteger(value)) {
-    if (value != 0 && value % 1000000 == 0) {
-      const k = Math.floor(Math.log10(Math.abs(value)));
-      if (value === 10 ** k) {
-        return `10^{${k}}`;
-      }
+export const paramToStr = (value: bigint) => {
+  if (value == 0n) return "0";
+
+  if (value % 100_000n == 0n) {
+    var rem_value = value
+    var k = 0
+    while (rem_value % 10n == 0n) {
+      rem_value /= 10n
+      k++
+    }
+
+    if (rem_value == 1n) {
+      return `10^{${k}}`;
+    } else {
+      return `${rem_value} \\times 10^{${k}}`;
     }
   }
+
   return value.toString();
 };
 
-const paramToStr = (value: unknown) => {
-  if (typeof value === "number") {
-    return numberParamToStr(value);
-  } else {
-    return String(value);
+const getLang = (context: Context) => {
+  const lang = context.getSync(["lang"]);
+
+  if (typeof lang === "string") {
+    if (lang == "en") return "en";
+    if (lang == "ja") return "ja";
   }
+  return "en";
 };
+const getStatementData = (context: Context) =>
+  context.getSync(["data"]) as StatementData;
 
 engine.registerTag("keyword", {
   parse(tagToken) {
     this.value = tagToken.args.substring(1);
   },
   render(context, emitter) {
-    const targetLang = context.get(["lang"]) as unknown as Lang;
+    const lang = getLang(context);
     if (this.value in keywordsDict) {
-      emitter.write(keywordsDict[this.value][targetLang]);
+      emitter.write(keywordsDict[this.value][lang]);
     }
   },
 });
@@ -110,7 +122,7 @@ engine.registerTag("param", {
     this.value = tagToken.args.substring(1);
   },
   render(context, emitter) {
-    const params = context.get(["params"]) as { [key: string]: object };
+    const params = getStatementData(context).info.params;
     emitter.write(paramToStr(params[this.value]));
   },
 });
@@ -121,7 +133,8 @@ engine.registerTag("example", {
     this.exampleCounter = 1;
   },
   render(context, emitter) {
-    const examples = context.get(["examples"]) as { [key: string]: object };
+    const examples = getStatementData(context).examples;
+
     const inName = this.value + ".in";
     const outName = this.value + ".out";
 
@@ -173,7 +186,7 @@ engine.registerTag("lang", {
     stream.start();
   },
   *render(context, emitter) {
-    const targetLang = context.get(["lang"]);
+    const targetLang = getLang(context);
     for (const section of this.sections) {
       if (section.lang === targetLang) {
         yield this.liquid.renderer.renderTemplates(
