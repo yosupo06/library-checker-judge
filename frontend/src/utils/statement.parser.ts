@@ -76,17 +76,26 @@ export const paramToStr = (value: bigint) => {
   if (value == 0n) return "0";
 
   if (value % 100_000n == 0n) {
-    let rem_value = value;
-    let k = 0;
-    while (rem_value % 10n == 0n) {
-      rem_value /= 10n;
+    let k = 5n;
+    while (value % 10n ** (k + 1n) == 0n) {
       k++;
     }
 
-    if (rem_value == 1n) {
+    if (value == 10n ** k) {
       return `10^{${k}}`;
     } else {
-      return `${rem_value} \\times 10^{${k}}`;
+      return `${value / 10n ** k} \\times 10^{${k}}`;
+    }
+  }
+
+  if (value % (1n << 10n) == 0n) {
+    let k = 10n;
+    while (value % (1n << (k + 1n)) == 0n) {
+      k++;
+    }
+
+    if (value == 1n << k) {
+      return `2^{${k}}`;
     }
   }
 
