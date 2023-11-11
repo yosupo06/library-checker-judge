@@ -77,17 +77,16 @@ export const paramToStr = (value: bigint) => {
 
   if (value % 100_000n == 0n) {
     let k = 5n;
-    while (value % (10n ** (k + 1n)) == 0n) {
+    while (value % 10n ** (k + 1n) == 0n) {
       k++;
     }
 
-    if (value == (10n ** k)) {
+    if (value == 10n ** k) {
       return `10^{${k}}`;
     } else {
-      return `${value / (10n ** k)} \\times 10^{${k}}`;
+      return `${value / 10n ** k} \\times 10^{${k}}`;
     }
   }
-
 
   if (value % (1n << 10n) == 0n) {
     let k = 10n;
@@ -95,7 +94,7 @@ export const paramToStr = (value: bigint) => {
       k++;
     }
 
-    if (value == (1n << k)) {
+    if (value == 1n << k) {
       return `2^{${k}}`;
     }
   }
