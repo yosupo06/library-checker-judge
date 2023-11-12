@@ -7,7 +7,7 @@
 [[langs]]
     id = "cpp-func"
     name = "C++20(Function)"
-    version = "g++(12.1) + ac-library 1.4"
+    version = "g++(13.2) + ac-library 1.4"
     source = "main.cpp"    
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
@@ -16,7 +16,7 @@
 [[langs]]
     id = "cpp"
     name = "C++20"
-    version = "g++(12.1)"
+    version = "g++(13.2)"
     source = "main.cpp"    
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
@@ -24,7 +24,7 @@
 [[langs]]
     id = "cpp-acl"
     name = "C++20(ACL)"
-    version = "g++(12.1 + ac-library 1.4)"
+    version = "g++(13.2) + ac-library 1.5.1"
     source = "main.cpp"    
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
@@ -32,7 +32,7 @@
 [[langs]]
     id = "cpp17"
     name = "C++17"
-    version = "g++(12.1)"
+    version = "g++(13.2)"
     source = "main.cpp"    
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++17", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
@@ -40,7 +40,7 @@
 [[langs]]
     id = "cpp14"
     name = "C++14"
-    version = "g++(12.1)"
+    version = "g++(13.2)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
