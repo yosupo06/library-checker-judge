@@ -104,7 +104,7 @@ build {
     ]
   }
 
-  # prepare systemctl files
+  # prepare prepare-docker files
   provisioner "file" {
     source = "prepare-docker.service"
     destination = "/tmp/prepare-docker.service"
@@ -118,6 +118,22 @@ build {
       "sudo mkdir -p /usr/local/lib/systemd/system/",
       "sudo cp /tmp/prepare-docker.service /usr/local/lib/systemd/system/prepare-docker.service",
       "sudo cp /tmp/prepare-docker.sh /root/prepare-docker.sh",
+    ]
+  }
+
+  # prepare prepare-cgroup files
+  provisioner "file" {
+    source = "prepare-cgroup.service"
+    destination = "/tmp/prepare-cgroup.service"
+  }
+  provisioner "file" {
+    source = "prepare-cgroup.sh"
+    destination = "/tmp/prepare-cgroup.sh"
+  }
+  provisioner "shell" {
+    inline = [
+      "sudo cp /tmp/prepare-cgroup.service /usr/local/lib/systemd/system/prepare-cgroup.service",
+      "sudo cp /tmp/prepare-cgroup.sh /root/prepare-cgroup.sh",
     ]
   }
 
