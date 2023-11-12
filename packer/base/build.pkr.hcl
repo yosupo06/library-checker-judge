@@ -79,6 +79,13 @@ build {
     ]
   }
 
+  # fetch hello-world
+  provisioner "shell" {
+    inline = [
+      "sudo docker pull hello-world",
+    ]
+  }
+
   # prepare docker-base
   provisioner "shell" {
     inline = [

@@ -11,5 +11,9 @@ mkdir /sys/fs/cgroup/judge.slice/
 
 
 echo '0,1' > /sys/fs/cgroup/judge.slice/cpuset.cpus
-# somehow it breaks docker
-# echo 'root' > /sys/fs/cgroup/judge.slice/cpuset.cpus.partition
+echo 'isolated' > /sys/fs/cgroup/judge.slice/cpuset.cpus.partition
+
+# we have to launch docker once and re-set cpusets
+# ref: https://github.com/yosupo06/library-checker-judge/issues/346
+docker run --cgroup-parent judge.slice hello-world && true
+echo '0,1' > /sys/fs/cgroup/judge.slice/cpuset.cpus
