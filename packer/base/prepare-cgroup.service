@@ -1,0 +1,12 @@
+[Unit]
+Description = Prepare cgroup
+Requires = docker.service
+After = docker.service
+
+[Service]
+Type = oneshot
+ExecStart = /root/prepare-cgroup.sh
+RemainAfterExit = yes
+
+[Install]
+WantedBy = multi-user.target
