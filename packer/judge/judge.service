@@ -1,7 +1,7 @@
 [Unit]
-Description = Library-Checker Judge
-Requires = prepare-cgroup.service
-After = prepare-cgroup.service
+Description = library checker judge
+Requires = docker.service
+After = docker.service
 
 [Service]
 Environment=LIBRARY_CHECKER_JUDGE=true

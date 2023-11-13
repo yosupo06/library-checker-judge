@@ -11,4 +11,5 @@ mkdir /sys/fs/cgroup/judge.slice/
 
 
 echo '0,1' > /sys/fs/cgroup/judge.slice/cpuset.cpus
-echo 'isolated' > /sys/fs/cgroup/judge.slice/cpuset.cpus.partition
+# somehow it breaks docker
+# echo 'root' > /sys/fs/cgroup/judge.slice/cpuset.cpus.partition
