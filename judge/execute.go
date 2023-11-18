@@ -583,19 +583,25 @@ func readCGroupTasksFromFile(filePath string) ([]string, error) {
 	return strings.Split(strings.TrimSpace(string(bytes)), "\n"), nil
 }
 
-func (c *containerInfo) readCGroupTasks() ([]string, error) {
+func (c *containerInfo) cgroupDirs() []string {
 	cgroupParent := c.cgroupParent
 	if cgroupParent == "" {
 		cgroupParent = "system.slice"
 	}
-	filePathV1 := "/sys/fs/cgroup/cpu/docker/" + c.containerID + "/tasks"
-	filePathV2 := "/sys/fs/cgroup/" + cgroupParent + "/docker-" + c.containerID + ".scope/container/cgroup.procs"
 
-	if result, err := readCGroupTasksFromFile(filePathV1); err == nil {
-		return result, nil
+	return []string{
+		// cgroup-v2 cgroupdriver=systemd
+		path.Join("/sys/fs/cgroup", cgroupParent, "docker-"+c.containerID+".scope", "container"),
+		// cgroup-v2 cgroupdriver=cgroupfs
+		path.Join("/sys/fs/cgroup", cgroupParent, c.containerID),
 	}
-	if result, err := readCGroupTasksFromFile(filePathV2); err == nil {
-		return result, nil
+}
+
+func (c *containerInfo) readCGroupTasks() ([]string, error) {
+	for _, dir := range c.cgroupDirs() {
+		if result, err := readCGroupTasksFromFile(path.Join(dir, "cgroup.procs")); err == nil {
+			return result, nil
+		}
 	}
 
 	return []string{}, errors.New("failed to load cgroup tasks")
@@ -615,18 +621,10 @@ func readUsedMemoryFromFile(filePath string) (int64, error) {
 }
 
 func (c *containerInfo) readUsedMemory() (int64, error) {
-	cgroupParent := c.cgroupParent
-	if cgroupParent == "" {
-		cgroupParent = "system.slice"
-	}
-	filePathV1 := "/sys/fs/cgroup/memory/docker/" + c.containerID + "/memory.max_usage_in_bytes"
-	filePathV2 := "/sys/fs/cgroup/" + cgroupParent + "/docker-" + c.containerID + ".scope/container/memory.current"
-
-	if result, err := readUsedMemoryFromFile(filePathV1); err == nil {
-		return result, nil
-	}
-	if result, err := readUsedMemoryFromFile(filePathV2); err == nil {
-		return result, nil
+	for _, dir := range c.cgroupDirs() {
+		if result, err := readUsedMemoryFromFile(path.Join(dir, "memory.current")); err == nil {
+			return result, nil
+		}
 	}
 
 	return 0, errors.New("failed to load memory usage")
