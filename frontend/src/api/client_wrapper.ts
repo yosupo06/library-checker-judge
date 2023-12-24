@@ -17,6 +17,7 @@ import {
   ProblemInfoResponse,
   ProblemListResponse,
   RankingResponse,
+  RejudgeRequest,
   SubmissionInfoResponse,
   SubmissionListResponse,
   SubmitRequest,
@@ -146,7 +147,6 @@ export const useSubmissionList = (
 
 export const useSubmissionInfo = (
   id: number,
-  state?: AuthState,
   options?: Omit<
     UseQueryOptions<
       SubmissionInfoResponse,
@@ -156,18 +156,20 @@ export const useSubmissionInfo = (
     >,
     "queryKey" | "queryFn"
   >
-): UseQueryResult<SubmissionInfoResponse> =>
-  useQuery(
-    ["submissionInfo2", String(id)],
+): UseQueryResult<SubmissionInfoResponse> => {
+  const bearer = useBearer();
+  return useQuery(
+    ["submissionInfo", String(id)],
     async () =>
       await client.submissionInfo(
         {
           id: id,
         },
-        state ? authMetadata(state) : undefined
+        bearer.data ?? undefined
       ).response,
     options
   );
+};
 
 export const useSubmitMutation = (
   options?: Omit<
@@ -180,6 +182,14 @@ export const useSubmitMutation = (
     async (req: SubmitRequest) =>
       await client.submit(req, bearer.data ?? undefined).response,
     options
+  );
+};
+
+export const useRejudgeMutation = () => {
+  const bearer = useBearer();
+  return useMutation(
+    async (req: RejudgeRequest) =>
+      await client.rejudge(req, bearer.data ?? undefined).response
   );
 };
 
