@@ -6,7 +6,6 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
-import { AuthState } from "../contexts/AuthContext";
 import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 import { RpcOptions } from "@protobuf-ts/runtime-rpc";
@@ -208,16 +207,4 @@ const useBearer = () => {
     },
     enabled: !idToken.isLoading,
   });
-};
-
-export const authMetadata = (state: AuthState): RpcOptions | undefined => {
-  if (!state.token) {
-    return undefined;
-  } else {
-    return {
-      meta: {
-        authorization: "bearer " + state.token,
-      },
-    };
-  }
 };
