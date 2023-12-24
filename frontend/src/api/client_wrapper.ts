@@ -8,7 +8,6 @@ import {
 } from "@tanstack/react-query";
 import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
-import { RpcOptions } from "@protobuf-ts/runtime-rpc";
 import {
   ChangeCurrentUserInfoRequest,
   LangListResponse,
