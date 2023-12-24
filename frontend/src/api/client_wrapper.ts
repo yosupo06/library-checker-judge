@@ -6,10 +6,8 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
-import { AuthState } from "../contexts/AuthContext";
 import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
-import { RpcOptions } from "@protobuf-ts/runtime-rpc";
 import {
   ChangeCurrentUserInfoRequest,
   LangListResponse,
@@ -17,6 +15,7 @@ import {
   ProblemInfoResponse,
   ProblemListResponse,
   RankingResponse,
+  RejudgeRequest,
   SubmissionInfoResponse,
   SubmissionListResponse,
   SubmitRequest,
@@ -146,7 +145,6 @@ export const useSubmissionList = (
 
 export const useSubmissionInfo = (
   id: number,
-  state?: AuthState,
   options?: Omit<
     UseQueryOptions<
       SubmissionInfoResponse,
@@ -156,18 +154,20 @@ export const useSubmissionInfo = (
     >,
     "queryKey" | "queryFn"
   >
-): UseQueryResult<SubmissionInfoResponse> =>
-  useQuery(
-    ["submissionInfo2", String(id)],
+): UseQueryResult<SubmissionInfoResponse> => {
+  const bearer = useBearer();
+  return useQuery(
+    ["submissionInfo", String(id)],
     async () =>
       await client.submissionInfo(
         {
           id: id,
         },
-        state ? authMetadata(state) : undefined
+        bearer.data ?? undefined
       ).response,
     options
   );
+};
 
 export const useSubmitMutation = (
   options?: Omit<
@@ -180,6 +180,14 @@ export const useSubmitMutation = (
     async (req: SubmitRequest) =>
       await client.submit(req, bearer.data ?? undefined).response,
     options
+  );
+};
+
+export const useRejudgeMutation = () => {
+  const bearer = useBearer();
+  return useMutation(
+    async (req: RejudgeRequest) =>
+      await client.rejudge(req, bearer.data ?? undefined).response
   );
 };
 
@@ -198,16 +206,4 @@ const useBearer = () => {
     },
     enabled: !idToken.isLoading,
   });
-};
-
-export const authMetadata = (state: AuthState): RpcOptions | undefined => {
-  if (!state.token) {
-    return undefined;
-  } else {
-    return {
-      meta: {
-        authorization: "bearer " + state.token,
-      },
-    };
-  }
 };
