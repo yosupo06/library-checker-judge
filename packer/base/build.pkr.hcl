@@ -1,6 +1,14 @@
 variable "env" {
   type = string
-  default = "test"
+}
+
+packer {
+  required_plugins {
+    googlecompute = {
+      version = ">= 1.1.4"
+      source  = "github.com/hashicorp/googlecompute"
+    }
+  }
 }
 
 source "googlecompute" "judge" {
@@ -11,8 +19,8 @@ source "googlecompute" "judge" {
   disk_size = 50
   ssh_username = "ubuntu"
   temporary_key_pair_type = "ed25519"
-  image_name = "v1-${var.env}-base-image-{{timestamp}}"
-  image_family = "v1-${var.env}-base-image"
+  image_name = "v2-${var.env}-base-image-{{timestamp}}"
+  image_family = "v2-${var.env}-base-image"
   preemptible = true
 }
 

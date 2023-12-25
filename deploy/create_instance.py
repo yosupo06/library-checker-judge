@@ -23,7 +23,7 @@ def create_instance(name: str, zone: str, env: str, preemptible: bool):
     args += ['--machine-type', 'c2-standard-4']
     args += ['--boot-disk-size', '50GB']
     args += ['--boot-disk-type', 'pd-ssd']
-    args += ['--image-family', 'v1-{}-base-image'.format(env)]
+    args += ['--image-family', 'v2-{}-base-image'.format(env)]
     args += ['--service-account', 'gce-judge@library-checker-project.iam.gserviceaccount.com']
     args += ['--scopes', 'default,cloud-platform']
     if preemptible:
