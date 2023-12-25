@@ -7,7 +7,7 @@ import (
 )
 
 func TestSubmission(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	createDummyProblem(t, db)
 
@@ -37,7 +37,7 @@ func TestSubmission(t *testing.T) {
 }
 
 func TestSubmissionResult(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	createDummyProblem(t, db)
 
@@ -78,7 +78,7 @@ func TestSubmissionResult(t *testing.T) {
 }
 
 func TestSubmissionResultEmpty(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	createDummyProblem(t, db)
 

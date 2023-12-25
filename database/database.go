@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -61,4 +64,44 @@ func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB 
 	}
 	log.Fatalf("cannot connect db %d times", MAX_TRY_TIMES)
 	return nil
+}
+
+func CreateTestDB(t *testing.T) *gorm.DB {
+	dbName := uuid.New().String()
+	t.Log("create DB: ", dbName)
+
+	createCmd := exec.Command("createdb",
+		"-h", "localhost",
+		"-U", "postgres",
+		"-p", "5432",
+		dbName)
+	createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+	if err := createCmd.Run(); err != nil {
+		t.Fatal("createdb failed: ", err.Error())
+	}
+
+	db := Connect("localhost", "5432", dbName, "postgres", "passwd", os.Getenv("API_DB_LOG") != "")
+
+	t.Cleanup(func() {
+		db2, err := db.DB()
+		if err != nil {
+			t.Fatal("db.DB() failed:", err)
+		}
+		if err := db2.Close(); err != nil {
+			t.Fatal("db.Close() failed:", err)
+		}
+		createCmd := exec.Command("dropdb",
+			"-h", "localhost",
+			"-U", "postgres",
+			"-p", "5432",
+			dbName)
+		createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+		createCmd.Stderr = os.Stderr
+		createCmd.Stdin = os.Stdin
+		if err := createCmd.Run(); err != nil {
+			t.Fatal("dropdb failed:", err)
+		}
+	})
+
+	return db
 }

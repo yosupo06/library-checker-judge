@@ -23,7 +23,7 @@ func createDummyProblem(t *testing.T, db *gorm.DB) {
 }
 
 func TestProblemInfo(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 	createDummyProblem(t, db)
 
 	problem, err := FetchProblem(db, "aplusb")
@@ -49,7 +49,7 @@ func TestProblemInfo(t *testing.T) {
 }
 
 func TestProblemCategory(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	categories := []ProblemCategory{
 		{
