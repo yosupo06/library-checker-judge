@@ -36,6 +36,19 @@ func TestSubmission(t *testing.T) {
 	}
 }
 
+func TestFetchInvalidSubmission(t *testing.T) {
+	db := CreateTestDB(t)
+
+	sub, err := FetchSubmission(db, 123)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sub != nil {
+		t.Fatal("result should be null", sub)
+	}
+}
+
 func TestSubmissionResult(t *testing.T) {
 	db := CreateTestDB(t)
 

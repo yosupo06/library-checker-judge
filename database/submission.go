@@ -42,30 +42,20 @@ type SubmissionTestcaseResult struct {
 	CheckerOut []byte
 }
 
-func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
+func FetchSubmission(db *gorm.DB, id int32) (*Submission, error) {
 	sub := Submission{
 		ID: id,
 	}
 	if err := db.
 		Preload("User").
 		Preload("Problem").
-		Take(&sub).Error; err != nil {
-		return Submission{}, err
+		Take(&sub).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
 	}
-	/*
-		problem := Problem{
-			Name: name,
-		}
 
-		if err := db.Take(&problem).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		} else if err != nil {
-			return nil, err
-		}
-
-		return &problem, nil*/
-
-	return sub, nil
+	return &sub, nil
 }
 
 // save submission and return id
