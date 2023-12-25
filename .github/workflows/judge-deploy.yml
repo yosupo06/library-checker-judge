@@ -56,6 +56,7 @@ jobs:
           --service-account gce-judge@library-checker-project.iam.gserviceaccount.com
           --scopes default,cloud-platform
           --boot-disk-size 50GB
+          --network-interface=no-address
           --metadata env=${{ inputs.env }}
 
       - name: Update instance group
