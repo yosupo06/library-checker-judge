@@ -104,9 +104,7 @@ const SubmissionTable: React.FC<Props> = (props) => {
               </TableCell>
               <TableCell>
                 {row.status}
-                {row.isLatest && row.status === "AC" && (
-                  <DoneOutline style={{ color: green[500], height: "15px" }} />
-                )}
+                {row.isLatest && row.status === "AC" && <CheckMark />}
               </TableCell>
               <TableCell>{Math.round(row.time * 1000)} ms</TableCell>
               <TableCell>
@@ -121,6 +119,15 @@ const SubmissionTable: React.FC<Props> = (props) => {
       </Table>
     </TableContainer>
   );
+};
+
+const CheckMark: React.FC = () => {
+  const today = new Date();
+
+  if (today.getMonth() == 11 && today.getDate() == 25) {
+    return <big>🎄</big>;
+  }
+  return <DoneOutline style={{ color: green[500], height: "15px" }} />;
 };
 
 export default SubmissionTable;
