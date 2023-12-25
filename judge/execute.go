@@ -46,12 +46,7 @@ func CreateVolume() (Volume, error) {
 }
 
 func (v *Volume) CopyFile(srcPath string, dstPath string) error {
-	// Somehow `docker cp` may be the root cause of weird error: https://github.com/yosupo06/library-checker-judge/issues/343
 	log.Printf("Copy file to %v:%v", v.Name, dstPath)
-	inFile, err := os.Open(srcPath)
-	if err != nil {
-		return err
-	}
 
 	task := TaskInfo{
 		VolumeMountInfo: []VolumeMountInfo{
@@ -60,12 +55,18 @@ func (v *Volume) CopyFile(srcPath string, dstPath string) error {
 				Volume: v,
 			},
 		},
-		Name:     "ubuntu",
-		Argments: []string{"sh", "-c", fmt.Sprintf("cat > %s", path.Join("/workdir", dstPath))},
-		Stdin:    inFile,
+		Name: "ubuntu",
 	}
-	if _, err := task.Run(); err != nil {
-		log.Println("copy file failed:", err.Error())
+	ci, err := task.create()
+	if err != nil {
+		return err
+	}
+
+	if err := ci.CopyFile(srcPath, path.Join("/workdir", dstPath)); err != nil {
+		return err
+	}
+
+	if err := ci.Remove(); err != nil {
 		return err
 	}
 	return nil
@@ -581,6 +582,18 @@ func readCGroupTasksFromFile(filePath string) ([]string, error) {
 	}
 
 	return strings.Split(strings.TrimSpace(string(bytes)), "\n"), nil
+}
+
+func (c *containerInfo) CopyFile(src string, dst string) error {
+	args := []string{"cp", src, c.containerID + ":" + dst}
+
+	cmd := exec.Command("docker", args...)
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *containerInfo) cgroupDirs() []string {
