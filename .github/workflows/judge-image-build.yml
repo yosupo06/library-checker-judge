@@ -9,16 +9,14 @@ on:
       build-base:
         type: boolean
         default: true
-      test-created-image:
-        type: boolean
-        default: true
 
 concurrency:
   group: ${{ inputs.env }}-judge-image-build
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build-judge-image:
+  base:
+    if: ${{ inputs.build-base }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,51 +24,54 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
-    - id: auth
-      uses: google-github-actions/auth@v0
+    - uses: google-github-actions/auth@v0
       with:
         workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
         service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
     
-    - id: build-base-image
-      if: ${{ inputs.build-base }}
-      name: Build base image
+    - name: Packer init
+      run: packer init build.pkr.hcl
+      working-directory: ./packer/base
+    - name: Build image
       run: packer build -var 'env=${{ inputs.env }}-test' .
       working-directory: ./packer/base
+    - name:	Test image
+      run: ./test_on_gce.py --zone asia-northeast1-a --env ${{inputs.env}}-test
+      working-directory: ./deploy
+    - name: Deploy image
+      run: >
+        gcloud compute images create v2-${{ inputs.env }}-base-image-$(date +'%Y-%m-%d-%H-%M-%S')
+        --source-image-family v2-${{ inputs.env }}-test-base-image
+        --family v2-${{ inputs.env }}-base-image
 
-    - id: gen-protoc
-      name: Generate protoc
+
+  judge:
+    if: ${{ !cancelled() && !failure() }}
+    needs: [base]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: google-github-actions/setup-gcloud@v0
+    - uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+        service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
+        token_format: access_token
+    
+    - name: Generate protoc
       run: ./api/gen_protoc.sh
-
-    - id: build-judge
-      name: Build judge
+    - name: Build judge
       run: go build .
       working-directory: ./judge
 
-    - id: build-judge-image
-      name: Build judge image
-      run: packer build -var 'env=${{ inputs.env }}-test' .
+    - name: Packer init
+      run: packer init build.pkr.hcl
       working-directory: ./packer/judge
-
-    - id: setup-cloud-sdk
-      name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v0
-
-    - id: test-on-gce
-      if: ${{ inputs.test-created-image }}
-      name:	Run test_on_gce.py
-      run: ./test_on_gce.py --zone asia-northeast1-a --env ${{ inputs.env }}-test
-      working-directory: ./deploy
-
-    - id: instance-name
-      name: Generate instance template name
-      run: echo "::set-output name=name::${{ inputs.env }}-judge-image-$(date +'%Y-%m-%d-%H-%M-%S')"
-
-    - id: copy-judge-image
-      name: Copy judge image
-      run: >
-        gcloud compute images create ${{ steps.instance-name.outputs.name }}
-        --source-image-family v1-${{ inputs.env }}-test-judge-image
-        --family v1-${{ inputs.env }}-judge-image
+    - name: Build image
+      run: packer build -var 'env=${{ inputs.env }}' .
+      working-directory: ./packer/judge
