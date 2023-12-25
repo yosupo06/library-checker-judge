@@ -105,7 +105,8 @@ const SubmissionTable: React.FC<Props> = (props) => {
               <TableCell>
                 {row.status}
                 {row.isLatest && row.status === "AC" && (
-                  <DoneOutline style={{ color: green[500], height: "15px" }} />
+//                  <DoneOutline style={{ color: green[500], height: "15px" }} />
+                  "🎄"
                 )}
               </TableCell>
               <TableCell>{Math.round(row.time * 1000)} ms</TableCell>
