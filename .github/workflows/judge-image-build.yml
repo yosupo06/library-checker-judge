@@ -24,12 +24,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: google-github-actions/setup-gcloud@v2
     - uses: google-github-actions/auth@v2
       with:
         workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
         service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
+    - uses: google-github-actions/setup-gcloud@v2
     
     - name: Packer init
       run: packer init build.pkr.hcl
@@ -46,7 +46,6 @@ jobs:
         --source-image-family v2-${{ inputs.env }}-test-base-image
         --family v2-${{ inputs.env }}-base-image
 
-
   judge:
     if: ${{ !cancelled() && !failure() }}
     needs: [base]
@@ -57,12 +56,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: google-github-actions/setup-gcloud@v2
     - uses: google-github-actions/auth@v2
       with:
         workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
         service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
         token_format: access_token
+    - uses: google-github-actions/setup-gcloud@v2
     
     - name: Generate protoc
       run: ./api/gen_protoc.sh
