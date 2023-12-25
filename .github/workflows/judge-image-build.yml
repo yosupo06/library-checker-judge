@@ -46,7 +46,6 @@ jobs:
         --source-image-family v2-${{ inputs.env }}-test-base-image
         --family v2-${{ inputs.env }}-base-image
 
-
   judge:
     if: ${{ !cancelled() && !failure() }}
     needs: [base]
