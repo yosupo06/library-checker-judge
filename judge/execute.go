@@ -19,6 +19,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const (
+	MAX_STDERR_LENGTH = 1 << 10
+)
+
 type Volume struct {
 	Name string
 }
@@ -122,7 +126,6 @@ type TaskInfo struct {
 
 	Stdin  io.Reader
 	Stdout io.Writer
-	Stderr io.Writer
 }
 
 type TaskInfoOption func(*TaskInfo) error
@@ -190,13 +193,6 @@ func WithStdout(stdout io.Writer) TaskInfoOption {
 	}
 }
 
-func WithStderr(stderr io.Writer) TaskInfoOption {
-	return func(ti *TaskInfo) error {
-		ti.Stderr = stderr
-		return nil
-	}
-}
-
 func WithVolume(volume *Volume, containerPath string) TaskInfoOption {
 	return func(ti *TaskInfo) error {
 		ti.VolumeMountInfo = append(ti.VolumeMountInfo, VolumeMountInfo{
@@ -236,6 +232,7 @@ type TaskResult struct {
 	Time     time.Duration
 	Memory   int64
 	TLE      bool
+	Stderr   []byte
 }
 
 func (t *TaskInfo) Run() (result TaskResult, err error) {
@@ -363,7 +360,8 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 
 	cmd.Stdin = t.Stdin
 	cmd.Stdout = t.Stdout
-	cmd.Stderr = t.Stderr
+	stderr := NewLimitedWriter(MAX_STDERR_LENGTH)
+	cmd.Stderr = stderr
 
 	monitorBuilder := t.monitorBuilder
 	if monitorBuilder == nil {
@@ -422,6 +420,7 @@ func (t *TaskInfo) start(c containerInfo) (TaskResult, error) {
 		Memory:   cm.maxUsedMemory(),
 		TLE:      tle,
 		ExitCode: exitCode,
+		Stderr:   stderr.Bytes(),
 	}, nil
 }
 

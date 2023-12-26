@@ -1,10 +1,5 @@
 package main
 
-import (
-	"bytes"
-	"errors"
-)
-
 // Writer that stores string at most N bytes
 type LimitedWriter struct {
 	N        int
@@ -12,18 +7,19 @@ type LimitedWriter struct {
 	overflow bool
 }
 
-func NewLimitedWriter(n int) (*LimitedWriter, error) {
-	if n <= 20 {
-		return nil, errors.New("n is too small")
-	}
+const (
+	STRIPPED_MESSAGE = " ... stripped"
+)
+
+func NewLimitedWriter(n int) *LimitedWriter {
 	return &LimitedWriter{
 		N: n,
-	}, nil
+	}
 }
 
 func (w *LimitedWriter) Write(b []byte) (n int, err error) {
 	blen := len(b)
-	cap := w.N - 20 - len(w.data)
+	cap := w.N - len(w.data)
 
 	add := blen
 	if cap < add {
@@ -35,10 +31,12 @@ func (w *LimitedWriter) Write(b []byte) (n int, err error) {
 }
 
 func (w *LimitedWriter) Bytes() []byte {
-	var buf bytes.Buffer
-	buf.Write(w.data)
+	d := w.data
 	if w.overflow {
-		buf.Write([]byte(" ... stripped"))
+		l := len([]byte(STRIPPED_MESSAGE))
+		if l > w.N {
+			copy(w.data[w.N-l:], []byte(STRIPPED_MESSAGE))
+		}
 	}
-	return buf.Bytes()
+	return d
 }

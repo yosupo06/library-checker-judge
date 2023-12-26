@@ -8,10 +8,7 @@ import (
 func TestOutputStripper(t *testing.T) {
 	shortStr := []byte("short string")
 
-	os, err := NewLimitedWriter(100)
-	if err != nil {
-		t.Fatal(err)
-	}
+	os := NewLimitedWriter(100)
 	if _, err := os.Write(shortStr); err != nil {
 		t.Fatal("outputStripper Error ", err)
 	}
@@ -28,10 +25,7 @@ func TestOutputStripperLong(t *testing.T) {
 		longStr = append(longStr, longStrBase...)
 	}
 
-	os, err := NewLimitedWriter(100)
-	if err != nil {
-		t.Fatal(err)
-	}
+	os := NewLimitedWriter(100)
 	if _, err := os.Write(longStr); err != nil {
 		t.Fatal("outputStripper Error ", err)
 	}
