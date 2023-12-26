@@ -5,12 +5,9 @@ import (
 	"log"
 	"math"
 	"net"
-	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
@@ -213,7 +210,7 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 	}
 
 	// connect database
-	db := createTestDB(t)
+	db := database.CreateTestDB(t)
 
 	// connect authClient
 	authClient := &DummyAuthClient{
@@ -249,46 +246,6 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 
 func createTestAPIClient(t *testing.T) pb.LibraryCheckerServiceClient {
 	return createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {})
-}
-
-func createTestDB(t *testing.T) *gorm.DB {
-	dbName := uuid.New().String()
-	t.Log("create DB:", dbName)
-
-	createCmd := exec.Command("createdb",
-		"-h", "localhost",
-		"-U", "postgres",
-		"-p", "5432",
-		dbName)
-	createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
-	if err := createCmd.Run(); err != nil {
-		t.Fatal("createdb failed: ", err.Error())
-	}
-
-	db := database.Connect("localhost", "5432", dbName, "postgres", "passwd", getEnv("API_DB_LOG", "") != "")
-
-	t.Cleanup(func() {
-		db2, err := db.DB()
-		if err != nil {
-			t.Fatal("db.DB() failed:", err)
-		}
-		if err := db2.Close(); err != nil {
-			t.Fatal("db.Close() failed:", err)
-		}
-		createCmd := exec.Command("dropdb",
-			"-h", "localhost",
-			"-U", "postgres",
-			"-p", "5432",
-			dbName)
-		createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
-		createCmd.Stderr = os.Stderr
-		createCmd.Stdin = os.Stdin
-		if err := createCmd.Run(); err != nil {
-			t.Fatal("dropdb failed:", err)
-		}
-	})
-
-	return db
 }
 
 type DummyAuthClient struct {

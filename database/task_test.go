@@ -28,7 +28,7 @@ func TestCanTouch(t *testing.T) {
 }
 
 func TestTask(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := PushTask(db, 123, 1); err != nil {
 		t.Fatal(err)
@@ -60,7 +60,7 @@ func TestTask(t *testing.T) {
 }
 
 func TestTaskSamePriority(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := PushTask(db, 123, 10); err != nil {
 		t.Fatal(err)

@@ -5,7 +5,7 @@ import (
 )
 
 func TestRegisterUser(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := RegisterUser(db, "name", "id"); err != nil {
 		t.Fatal(err)
@@ -17,7 +17,7 @@ func TestRegisterUser(t *testing.T) {
 }
 
 func TestRegisterExistingUser(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := RegisterUser(db, "name", "id"); err != nil {
 		t.Fatal(err)
@@ -37,7 +37,7 @@ func TestRegisterExistingUser(t *testing.T) {
 }
 
 func TestRegisterInvalidUser(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := RegisterUser(db, "", "id"); err == nil {
 		t.Fatal("register user is succeeded with empty name")
@@ -59,7 +59,7 @@ func TestRegisterInvalidUser(t *testing.T) {
 }
 
 func TestFetchUserFromUID(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := RegisterUser(db, "name", "id"); err != nil {
 		t.Fatal(err)
@@ -74,7 +74,7 @@ func TestUpdateUser(t *testing.T) {
 	const libraryURL1 = "https://library1.yosupo.com"
 	const libraryURL2 = "https://library2.yosupo.com"
 
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := RegisterUser(db, "name1", "id1"); err != nil {
 		t.Fatal(err)
@@ -122,7 +122,7 @@ func TestUpdateUser(t *testing.T) {
 func TestUpdateUserWithInvalidURL(t *testing.T) {
 	const libraryURL = "invalid-url"
 
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if err := RegisterUser(db, "name", "id"); err != nil {
 		t.Fatal(err)

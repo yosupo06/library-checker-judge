@@ -3,7 +3,7 @@ package database
 import "testing"
 
 func TestMetadata(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	if _, err := FetchMetadata(db, "key1"); err == nil {
 		t.Fatal("fetch succeeded")

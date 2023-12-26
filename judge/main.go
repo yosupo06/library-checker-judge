@@ -114,7 +114,7 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 	submission.PrevStatus = submission.Status
 	submission.Status = "Judging"
 
-	if err = database.UpdateSubmission(db, submission); err != nil {
+	if err = database.UpdateSubmission(db, *submission); err != nil {
 		return err
 	}
 	if err = database.ClearTestcaseResult(db, subID); err != nil {
@@ -124,10 +124,10 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 		return err
 	}
 
-	if err := judgeSubmission(db, judgedir, judgeName, task, submission, *problem); err != nil {
+	if err := judgeSubmission(db, judgedir, judgeName, task, *submission, *problem); err != nil {
 		// error detected, try to change status into IE
 		submission.Status = "IE"
-		if err2 := database.UpdateSubmission(db, submission); err2 != nil {
+		if err2 := database.UpdateSubmission(db, *submission); err2 != nil {
 			log.Println("deep error:", err2)
 		}
 		if err2 := database.FinishTask(db, task.ID); err2 != nil {

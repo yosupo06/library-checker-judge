@@ -7,7 +7,7 @@ import (
 )
 
 func TestSubmission(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	createDummyProblem(t, db)
 
@@ -36,8 +36,21 @@ func TestSubmission(t *testing.T) {
 	}
 }
 
+func TestFetchInvalidSubmission(t *testing.T) {
+	db := CreateTestDB(t)
+
+	sub, err := FetchSubmission(db, 123)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sub != nil {
+		t.Fatal("result should be null", sub)
+	}
+}
+
 func TestSubmissionResult(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	createDummyProblem(t, db)
 
@@ -78,7 +91,7 @@ func TestSubmissionResult(t *testing.T) {
 }
 
 func TestSubmissionResultEmpty(t *testing.T) {
-	db := createTestDB(t)
+	db := CreateTestDB(t)
 
 	createDummyProblem(t, db)
 
