@@ -198,13 +198,13 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 	}
 	tmpSourceFile.Close()
 
-	result, compileError, err := judge.CompileSource(tmpSourceFile.Name())
+	result, err := judge.CompileSource(tmpSourceFile.Name())
 	if err != nil {
 		return err
 	}
 	if result.ExitCode != 0 {
 		submission.Status = "CE"
-		submission.CompileError = compileError
+		submission.CompileError = result.Stderr
 		if err = database.UpdateSubmission(db, submission); err != nil {
 			return err
 		}

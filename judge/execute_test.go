@@ -100,8 +100,7 @@ func TestStdout(t *testing.T) {
 }
 
 func TestStderr(t *testing.T) {
-	output := new(bytes.Buffer)
-	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "echo dummy >&2"), WithStderr(output))
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "echo dummy >&2"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,8 +117,8 @@ func TestStderr(t *testing.T) {
 		t.Errorf("Invalid exit code (not 0): %v", result.ExitCode)
 	}
 
-	if strings.TrimSpace(output.String()) != "dummy" {
-		t.Errorf("Invalid Stdout: %s", output.String())
+	if strings.TrimSpace(string(result.Stderr)) != "dummy" {
+		t.Errorf("Invalid Stdout: %s", result.Stderr)
 	}
 }
 
@@ -219,7 +218,7 @@ func TestVolume(t *testing.T) {
 }
 
 func TestNetworkDisable(t *testing.T) {
-	task, err := NewTaskInfo("ibmcom/ping", WithArguments("ping", "-c", "5", "google.com"), WithStderr(os.Stderr))
+	task, err := NewTaskInfo("ibmcom/ping", WithArguments("ping", "-c", "5", "google.com"))
 	if err != nil {
 		t.Fatal(err)
 	}

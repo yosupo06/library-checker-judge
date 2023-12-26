@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	COMPILE_TIMEOUT    = 30 * time.Second
-	MAX_MESSAGE_LENGTH = 1 << 10
+	COMPILE_TIMEOUT = 30 * time.Second
 )
 
 type Judge struct {
@@ -100,7 +99,6 @@ func (j *Judge) CompileChecker() (TaskResult, error) {
 		WithVolume(&volume, "/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),
 		WithStdin(os.Stdout),
-		WithStderr(os.Stderr),
 	)...)
 	if err != nil {
 		return TaskResult{}, err
@@ -113,16 +111,16 @@ func (j *Judge) CompileChecker() (TaskResult, error) {
 	return result, err
 }
 
-func (j *Judge) CompileSource(sourcePath string) (TaskResult, []byte, error) {
+func (j *Judge) CompileSource(sourcePath string) (TaskResult, error) {
 	// create dir for source
 	volume, err := CreateVolume()
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 	j.sourceVolume = &volume
 
 	if err := volume.CopyFile(sourcePath, j.lang.Source); err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 
 	for _, key := range j.lang.AdditionalFiles {
@@ -131,48 +129,39 @@ func (j *Judge) CompileSource(sourcePath string) (TaskResult, []byte, error) {
 			continue
 		}
 		if err := volume.CopyFile(j.caseDir.PublicFilePath(key), path.Base(key)); err != nil {
-			return TaskResult{}, nil, err
+			return TaskResult{}, err
 		}
 	}
 
-	ceWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
-	if err != nil {
-		return TaskResult{}, nil, err
-	}
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
 		j.defaultOptions(),
 		WithArguments(j.lang.Compile...),
 		WithWorkDir("/workdir"),
 		WithVolume(&volume, "/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),
-		WithStderr(ceWriter),
 	)...)
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 	result, err := taskInfo.Run()
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 
-	return result, ceWriter.Bytes(), nil
+	return result, nil
 }
 
-func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, []byte, error) {
+func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, error) {
 	caseVolume, err := CreateVolume()
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 	defer caseVolume.Remove()
 
 	if err := caseVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in"); err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 
-	stderrWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
-	if err != nil {
-		return TaskResult{}, nil, err
-	}
 	// TODO: volume read only
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
 		j.defaultOptions(),
@@ -181,20 +170,19 @@ func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, [
 		WithVolume(j.sourceVolume, "/workdir"),
 		WithVolume(&caseVolume, "/casedir"),
 		WithTimeout(time.Duration(j.tl*1000*1000*1000)*time.Nanosecond),
-		WithStderr(stderrWriter),
 	)...)
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 
 	result, err := taskInfo.Run()
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 
 	outFile, err := os.Create(outFilePath)
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 	defer outFile.Close()
 
@@ -206,15 +194,15 @@ func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, [
 		WithStdout(outFile),
 	)...)
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 
 	_, err = genOutputFileTaskInfo.Run()
 	if err != nil {
-		return TaskResult{}, nil, err
+		return TaskResult{}, err
 	}
 
-	return result, stderrWriter.Bytes(), err
+	return result, err
 }
 
 func (j *Judge) TestCase(caseName string) (CaseResult, error) {
@@ -225,16 +213,12 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 	}
 	defer os.Remove(outFile.Name())
 
-	result, stderr, err := j.createOutput(caseName, outFile.Name())
-	if err != nil {
-		return CaseResult{}, err
-	}
-	checkerOutWriter, err := NewLimitedWriter(MAX_MESSAGE_LENGTH)
+	result, err := j.createOutput(caseName, outFile.Name())
 	if err != nil {
 		return CaseResult{}, err
 	}
 
-	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: stderr, CheckerOut: []byte{}}
+	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: result.Stderr, CheckerOut: []byte{}}
 	if result.TLE {
 		//timeout
 		baseResult.Status = "TLE"
@@ -264,7 +248,6 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 		WithWorkDir("/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),
 		WithVolume(j.checkerVolume, "/workdir"),
-		WithStderr(checkerOutWriter),
 	)...)
 	if err != nil {
 		return CaseResult{}, err
@@ -275,7 +258,7 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 		return CaseResult{}, err
 	}
 
-	baseResult.CheckerOut = checkerOutWriter.Bytes()
+	baseResult.CheckerOut = checkerResult.Stderr
 
 	if checkerResult.TLE {
 		baseResult.Status = "ITLE"
