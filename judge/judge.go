@@ -14,11 +14,23 @@ const (
 	COMPILE_TIMEOUT = 30 * time.Second
 )
 
+var DEFAULT_OPTIONS []TaskInfoOption
+
+func init() {
+	DEFAULT_OPTIONS = []TaskInfoOption{
+		WithPidsLimit(100),
+		WithStackLimitKB(-1),
+		WithMemoryLimitMB(1024),
+	}
+	if c := os.Getenv("CGROUP_PARENT"); c != "" {
+		DEFAULT_OPTIONS = append(DEFAULT_OPTIONS, WithCgroupParent(c))
+	}
+}
+
 type Judge struct {
-	dir          string
-	tl           float64
-	lang         Lang
-	cgroupParent string
+	dir  string
+	tl   float64
+	lang Lang
 
 	checkerVolume *Volume
 	sourceVolume  *Volume
@@ -26,7 +38,7 @@ type Judge struct {
 	caseDir *TestCaseDir
 }
 
-func NewJudge(judgedir string, lang Lang, tl float64, cgroupParent string, caseDir *TestCaseDir) (*Judge, error) {
+func NewJudge(judgedir string, lang Lang, tl float64, caseDir *TestCaseDir) (*Judge, error) {
 	tempdir, err := ioutil.TempDir(judgedir, "judge")
 	if err != nil {
 		return nil, err
@@ -34,24 +46,11 @@ func NewJudge(judgedir string, lang Lang, tl float64, cgroupParent string, caseD
 	log.Println("create judge dir:", tempdir)
 
 	return &Judge{
-		dir:          tempdir,
-		tl:           tl,
-		lang:         lang,
-		cgroupParent: cgroupParent,
-		caseDir:      caseDir,
+		dir:     tempdir,
+		tl:      tl,
+		lang:    lang,
+		caseDir: caseDir,
 	}, nil
-}
-
-func (j *Judge) defaultOptions() []TaskInfoOption {
-	options := []TaskInfoOption{
-		WithPidsLimit(100),
-		WithStackLimitKB(-1),
-		WithMemoryLimitMB(1024),
-	}
-	if j.cgroupParent != "" {
-		options = append(options, WithCgroupParent(j.cgroupParent))
-	}
-	return options
 }
 
 func (j *Judge) Close() error {
@@ -72,83 +71,33 @@ func (j *Judge) Close() error {
 }
 
 func (j *Judge) CompileChecker() (TaskResult, error) {
-	volume, err := CreateVolume()
-	if err != nil {
-		return TaskResult{}, err
-	}
-	j.checkerVolume = &volume
-
-	if err := volume.CopyFile(j.caseDir.CheckerPath(), "checker.cpp"); err != nil {
-		return TaskResult{}, err
-	}
-
+	paths := []string{}
+	paths = append(paths, j.caseDir.CheckerPath())
 	includeFilePaths, err := j.caseDir.IncludeFilePaths()
 	if err != nil {
 		return TaskResult{}, err
 	}
-	for _, filePath := range includeFilePaths {
-		if err := volume.CopyFile(filePath, path.Base(filePath)); err != nil {
-			return TaskResult{}, err
-		}
-	}
-
-	taskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
-		j.defaultOptions(),
-		WithArguments(langs["checker"].Compile...),
-		WithWorkDir("/workdir"),
-		WithVolume(&volume, "/workdir"),
-		WithTimeout(COMPILE_TIMEOUT),
-		WithStdin(os.Stdout),
-	)...)
+	paths = append(paths, includeFilePaths...)
+	v, t, err := compile(paths, langs["checker"].ImageName, langs["checker"].Compile)
 	if err != nil {
 		return TaskResult{}, err
 	}
-	result, err := taskInfo.Run()
-	if err != nil {
-		return TaskResult{}, err
-	}
-
-	return result, err
+	j.checkerVolume = &v
+	return t, err
 }
 
 func (j *Judge) CompileSource(sourcePath string) (TaskResult, error) {
-	// create dir for source
-	volume, err := CreateVolume()
-	if err != nil {
-		return TaskResult{}, err
-	}
-	j.sourceVolume = &volume
-
-	if err := volume.CopyFile(sourcePath, j.lang.Source); err != nil {
-		return TaskResult{}, err
-	}
-
+	paths := []string{}
+	paths = append(paths, sourcePath)
 	for _, key := range j.lang.AdditionalFiles {
-		filePath := j.caseDir.PublicFilePath(key)
-		if _, err := os.Stat(filePath); err != nil {
-			continue
-		}
-		if err := volume.CopyFile(j.caseDir.PublicFilePath(key), path.Base(key)); err != nil {
-			return TaskResult{}, err
-		}
+		paths = append(paths, j.caseDir.PublicFilePath(key))
 	}
-
-	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
-		j.defaultOptions(),
-		WithArguments(j.lang.Compile...),
-		WithWorkDir("/workdir"),
-		WithVolume(&volume, "/workdir"),
-		WithTimeout(COMPILE_TIMEOUT),
-	)...)
+	v, t, err := compile(paths, j.lang.ImageName, j.lang.Compile)
 	if err != nil {
 		return TaskResult{}, err
 	}
-	result, err := taskInfo.Run()
-	if err != nil {
-		return TaskResult{}, err
-	}
-
-	return result, nil
+	j.sourceVolume = &v
+	return t, err
 }
 
 func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, error) {
@@ -164,7 +113,7 @@ func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, e
 
 	// TODO: volume read only
 	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
-		j.defaultOptions(),
+		DEFAULT_OPTIONS,
 		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...)...),
 		WithWorkDir("/workdir"),
 		WithVolume(j.sourceVolume, "/workdir"),
@@ -187,7 +136,7 @@ func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, e
 	defer outFile.Close()
 
 	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
-		j.defaultOptions(),
+		DEFAULT_OPTIONS,
 		WithArguments("cat", "/casedir/actual.out"),
 		WithTimeout(COMPILE_TIMEOUT),
 		WithVolume(&caseVolume, "/casedir"),
@@ -243,7 +192,7 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 
 	// run checker
 	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
-		j.defaultOptions(),
+		DEFAULT_OPTIONS,
 		WithArguments(langs["checker"].Exec...),
 		WithWorkDir("/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),
@@ -304,4 +253,38 @@ func AggregateResults(results []CaseResult) CaseResult {
 		}
 	}
 	return ans
+}
+
+func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t TaskResult, err error) {
+	log.Println("Compile:", srcPaths, imageName, cmd)
+	v, err = CreateVolume()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			if err := v.Remove(); err != nil {
+				log.Println("Volume remove failed:", err)
+			}
+		}
+	}()
+
+	for _, p := range srcPaths {
+		if err = v.CopyFile(p, path.Base(p)); err != nil {
+			return
+		}
+	}
+
+	ti, err := NewTaskInfo(imageName, append(
+		DEFAULT_OPTIONS,
+		WithArguments(cmd...),
+		WithWorkDir("/workdir"),
+		WithVolume(&v, "/workdir"),
+		WithTimeout(COMPILE_TIMEOUT),
+	)...)
+	if err != nil {
+		return
+	}
+	t, err = ti.Run()
+	return
 }

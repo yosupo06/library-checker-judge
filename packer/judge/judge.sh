@@ -26,5 +26,4 @@ PG_TABLE=$(gcloud secrets versions access latest --secret=$ENV-pg-table)
 -pguser=$PG_USER \
 -pgpass=$PG_PASS \
 -pgtable=$PG_TABLE \
--cgroup-parent=judge.slice \
 -prod
