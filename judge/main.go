@@ -211,6 +211,10 @@ func initSubmission(db *gorm.DB, name string, id int32, enqueue time.Time) (*dat
 		return nil, fmt.Errorf("failed to lock submission: %d", id)
 	}
 
+	if err := database.ClearTestcaseResult(db, id); err != nil {
+		return nil, err
+	}
+
 	s, err := database.FetchSubmission(db, id)
 	if err != nil {
 		return nil, err
