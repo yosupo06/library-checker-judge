@@ -76,7 +76,7 @@ func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath st
 	}
 	defer src.Close()
 
-	srcFile := toRealFile(src, t)
+	srcFile := toRealFile(src, langs[lang].Source, t)
 	defer os.Remove(srcFile)
 
 	caseDir := generateTestCaseDir(t, lang, inFilePath, outFilePath)
@@ -248,7 +248,7 @@ func TestAplusbCE(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-	srcPath := toRealFile(src, t)
+	srcPath := toRealFile(src, langs["cpp"].Source, t)
 
 	judge, err := NewJudge("", langs["cpp"], 2.0, &caseDir)
 	if err != nil {

@@ -3,15 +3,25 @@ package main
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"testing"
 	"time"
 )
 
-func toRealFile(src io.Reader, t *testing.T) string {
-	outFile, err := ioutil.TempFile("", "test-")
+func toRealFile(src io.Reader, name string, t *testing.T) string {
+	tmpDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	outFile, err := os.Create(path.Join(tmpDir, name))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +197,7 @@ func TestVolume(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	file := toRealFile(bytes.NewBufferString("dummy"), t)
+	file := toRealFile(bytes.NewBufferString("dummy"), "dummy", t)
 	defer os.Remove(file)
 
 	if err := volume.CopyFile(file, "test.txt"); err != nil {
@@ -246,7 +256,7 @@ func TestForkBomb(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	file := toRealFile(src, t)
+	file := toRealFile(src, "fork_bomb.sh", t)
 	defer os.Remove(file)
 
 	if err := volume.CopyFile(file, "fork_bomb.sh"); err != nil {
@@ -277,7 +287,7 @@ func TestUseManyStack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	file := toRealFile(src, t)
+	file := toRealFile(src, "use_many_stack.cpp", t)
 	defer os.Remove(file)
 
 	if err := volume.CopyFile(file, "use_many_stack.cpp"); err != nil {
