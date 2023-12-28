@@ -81,7 +81,7 @@ func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath st
 
 	caseDir := generateTestCaseDir(t, lang, inFilePath, outFilePath)
 
-	judge, err := NewJudge("", langs[lang], 2.0, &caseDir)
+	judge, err := NewJudge(langs[lang], 2.0, &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
@@ -250,7 +250,7 @@ func TestAplusbCE(t *testing.T) {
 	}
 	srcPath := toRealFile(src, langs["cpp"].Source, t)
 
-	judge, err := NewJudge("", langs["cpp"], 2.0, &caseDir)
+	judge, err := NewJudge(langs["cpp"], 2.0, &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
