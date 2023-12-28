@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"time"
 
 	"gorm.io/gorm"
@@ -15,7 +16,6 @@ import (
 )
 
 var testCaseFetcher TestCaseFetcher
-var cgroupParent string
 
 func main() {
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
@@ -34,11 +34,7 @@ func main() {
 	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
 	minioPublicBucket := flag.String("miniopublicbucket", "testcase-public", "minio public bucket")
 
-	tmpCgroupParent := flag.String("cgroup-parent", "", "cgroup parent")
-
 	flag.Parse()
-
-	cgroupParent = *tmpCgroupParent
 
 	judgeName, err := os.Hostname()
 	if err != nil {
@@ -160,7 +156,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 		return err
 	}
 
-	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, cgroupParent, &testCases)
+	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, &testCases)
 	if err != nil {
 		return err
 	}
@@ -187,11 +183,15 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 		return database.FinishTask(db, task.ID)
 	}
 
-	tmpSourceFile, err := os.CreateTemp("", "output-")
+	tmpSourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmpSourceFile.Name())
+	defer os.RemoveAll(tmpSourceDir)
+	tmpSourceFile, err := os.Create(path.Join(tmpSourceDir, langs[submission.Lang].Source))
+	if err != nil {
+		return err
+	}
 
 	if _, err := tmpSourceFile.WriteString(submission.Source); err != nil {
 		return err
