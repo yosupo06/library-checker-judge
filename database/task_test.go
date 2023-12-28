@@ -2,30 +2,7 @@ package database
 
 import (
 	"testing"
-	"time"
 )
-
-func TestCanTouch(t *testing.T) {
-	now := time.Now()
-	if !canTouch(Task{
-		Available: now,
-		JudgeName: "judge1",
-	}, now.Add(time.Second), "judge2") {
-		t.Fatal("expected true")
-	}
-	if canTouch(Task{
-		Available: now,
-		JudgeName: "judge1",
-	}, now.Add(-time.Second), "judge2") {
-		t.Fatal("expected false")
-	}
-	if !canTouch(Task{
-		Available: now,
-		JudgeName: "judge1",
-	}, now.Add(-time.Second), "judge1") {
-		t.Fatal("expected true")
-	}
-}
 
 func TestTask(t *testing.T) {
 	db := CreateTestDB(t)

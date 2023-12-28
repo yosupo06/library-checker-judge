@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -14,6 +15,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/database"
 )
+
+const POOLING_PERIOD = 3 * time.Second
 
 var testCaseFetcher TestCaseFetcher
 
@@ -71,89 +74,62 @@ func main() {
 	for {
 		task, err := database.PopTask(db, judgeName)
 		if err != nil {
-			time.Sleep(3 * time.Second)
 			log.Print("PopJudgeTask error: ", err)
+			time.Sleep(POOLING_PERIOD)
 			continue
 		}
 		if task == nil {
-			time.Sleep(3 * time.Second)
+			time.Sleep(POOLING_PERIOD)
 			continue
 		}
 
-		log.Println("Start Task:", task.Submission)
-		err = execTask(db, judgeName, *task)
+		log.Println("Start task:", task)
+		err = judgeSubmissionTask(db, judgeName, task.Submission, task.Enqueue)
 		if err != nil {
 			log.Println(err.Error())
 			continue
 		}
+		database.FinishTask(db, task.ID)
 	}
 }
 
-func execTask(db *gorm.DB, judgeName string, task database.Task) error {
-	subID := task.Submission
-	submission, err := database.FetchSubmission(db, subID)
+func judgeSubmissionTask(db *gorm.DB, judgeName string, id int32, enqueue time.Time) (err error) {
+	log.Println("Start judge submission:", id)
+
+	s, err := initSubmission(db, judgeName, id, enqueue)
 	if err != nil {
 		return err
 	}
-	problem, err := database.FetchProblem(db, submission.ProblemName)
-	if problem == nil {
-		return fmt.Errorf("somehow problem is not found: %s", submission.ProblemName)
-	}
-	if err != nil {
-		return err
+	if s == nil {
+		return nil
 	}
 
-	log.Println("Submission info:", subID, problem.Title)
-	submission.MaxTime = -1
-	submission.MaxMemory = -1
-	submission.PrevStatus = submission.Status
-	submission.Status = "Judging"
-
-	if err = database.UpdateSubmission(db, *submission); err != nil {
-		return err
-	}
-	if err = database.ClearTestcaseResult(db, subID); err != nil {
-		return err
-	}
-	if err = database.TouchTask(db, task.ID, judgeName); err != nil {
-		return err
-	}
-
-	if err := judgeSubmission(db, judgeName, task, *submission, *problem); err != nil {
-		// error detected, try to change status into IE
-		submission.Status = "IE"
-		if err2 := finishSubmission(db, judgeName, submission, task.ID); err2 != nil {
-			log.Println("deep error:", err2)
+	defer func() {
+		if err != nil {
+			if err2 := updateSubmission(db, judgeName, s, "IE"); err2 != nil {
+				log.Println("Deep error:", err2)
+			}
 		}
-		return err
-	}
-	return nil
-}
-
-func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submission database.Submission, problem database.Problem) error {
-	subID := submission.ID
-	taskID := task.ID
-
-	initSubmission(&submission, problem)
+	}()
 
 	log.Println("Fetch data")
-	if err := updateSubmission(db, judgeName, &submission, "Fetching", taskID); err != nil {
+	if err := updateSubmission(db, judgeName, s, "Fetching"); err != nil {
 		return err
 	}
 
-	testCases, err := testCaseFetcher.Fetch(submission.Problem)
+	testCases, err := testCaseFetcher.Fetch(s.Problem)
 	if err != nil {
 		return err
 	}
 
-	judge, err := NewJudge(langs[submission.Lang], float64(problem.Timelimit)/1000, &testCases)
+	judge, err := NewJudge(langs[s.Lang], float64(s.Problem.Timelimit)/1000, &testCases)
 	if err != nil {
 		return err
 	}
 	defer judge.Close()
 
 	log.Println("Compile checker")
-	if err := updateSubmission(db, judgeName, &submission, "Compiling", taskID); err != nil {
+	if err := updateSubmission(db, judgeName, s, "Compiling"); err != nil {
 		return err
 	}
 
@@ -162,8 +138,7 @@ func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submissi
 		return err
 	}
 	if taskResult.ExitCode != 0 {
-		submission.Status = "ICE"
-		return finishSubmission(db, judgeName, &submission, taskID)
+		return finishSubmission(db, judgeName, s, "ICE")
 	}
 
 	// write source to tempfile
@@ -172,11 +147,11 @@ func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submissi
 		return err
 	}
 	defer os.RemoveAll(tmpSourceDir)
-	tmpSourceFile, err := os.Create(path.Join(tmpSourceDir, langs[submission.Lang].Source))
+	tmpSourceFile, err := os.Create(path.Join(tmpSourceDir, langs[s.Lang].Source))
 	if err != nil {
 		return err
 	}
-	if _, err := tmpSourceFile.WriteString(submission.Source); err != nil {
+	if _, err := tmpSourceFile.WriteString(s.Source); err != nil {
 		return err
 	}
 	tmpSourceFile.Close()
@@ -187,9 +162,8 @@ func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submissi
 		return err
 	}
 	if result.ExitCode != 0 {
-		submission.Status = "CE"
-		submission.CompileError = result.Stderr
-		return finishSubmission(db, judgeName, &submission, taskID)
+		s.CompileError = result.Stderr
+		return finishSubmission(db, judgeName, s, "CE")
 	}
 
 	log.Println("Start executing")
@@ -200,7 +174,7 @@ func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submissi
 	caseNum := len(cases)
 	caseResults := []CaseResult{}
 	for idx, caseName := range cases {
-		if err := updateSubmission(db, judgeName, &submission, fmt.Sprintf("%d/%d", idx, caseNum), taskID); err != nil {
+		if err := updateSubmission(db, judgeName, s, fmt.Sprintf("%d/%d", idx, caseNum)); err != nil {
 			return err
 		}
 
@@ -211,7 +185,7 @@ func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submissi
 		caseResults = append(caseResults, caseResult)
 
 		if err := database.SaveTestcaseResult(db, database.SubmissionTestcaseResult{
-			Submission: subID,
+			Submission: id,
 			Testcase:   caseName,
 			Status:     caseResult.Status,
 			Time:       int32(caseResult.Time.Milliseconds()),
@@ -225,32 +199,59 @@ func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submissi
 
 	caseResult := AggregateResults(caseResults)
 
-	submission.Status = caseResult.Status
-	submission.MaxTime = int32(caseResult.Time.Milliseconds())
-	submission.MaxMemory = caseResult.Memory
-	return finishSubmission(db, judgeName, &submission, taskID)
+	s.MaxTime = int32(caseResult.Time.Milliseconds())
+	s.MaxMemory = caseResult.Memory
+	return finishSubmission(db, judgeName, s, caseResult.Status)
 }
 
-func initSubmission(s *database.Submission, p database.Problem) {
+func initSubmission(db *gorm.DB, name string, id int32, enqueue time.Time) (*database.Submission, error) {
+	if ok, err := database.TryLockSubmission(db, id, name); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, fmt.Errorf("failed to lock submission: %d", id)
+	}
+
+	s, err := database.FetchSubmission(db, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.JudgedTime.After(enqueue) {
+		log.Println("Already judged:", id)
+		return nil, err
+	}
+
 	s.MaxTime = -1
 	s.MaxMemory = -1
 	s.PrevStatus = s.Status
 	s.Status = "-"
-	s.TestCasesVersion = p.TestCasesVersion
+	s.TestCasesVersion = s.Problem.TestCasesVersion
 	s.CompileError = []byte{}
+
+	return s, database.UpdateSubmission(db, *s)
 }
 
-func updateSubmission(db *gorm.DB, judgeName string, s *database.Submission, status string, taskID int32) error {
+func updateSubmission(db *gorm.DB, judgeName string, s *database.Submission, status string) error {
+	if err := lockSubmission(db, s.ID, judgeName); err != nil {
+		return err
+	}
 	s.Status = status
-	if err := database.UpdateSubmission(db, *s); err != nil {
-		return err
-	}
-	return database.TouchTask(db, taskID, judgeName)
+	return database.UpdateSubmission(db, *s)
 }
 
-func finishSubmission(db *gorm.DB, judgeName string, s *database.Submission, taskID int32) error {
-	if err := database.UpdateSubmission(db, *s); err != nil {
+func finishSubmission(db *gorm.DB, judgeName string, s *database.Submission, status string) error {
+	s.JudgedTime = time.Now()
+	if err := updateSubmission(db, judgeName, s, status); err != nil {
 		return err
 	}
-	return database.FinishTask(db, taskID)
+	return database.UnlockSubmission(db, s.ID, judgeName)
+}
+
+func lockSubmission(db *gorm.DB, id int32, name string) error {
+	if ok, err := database.TryLockSubmission(db, id, name); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("lock failed")
+	}
+	return nil
 }

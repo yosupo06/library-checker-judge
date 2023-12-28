@@ -1,5 +1,5 @@
 [Unit]
-Description = Prepare docker directoly
+Description = Prepare docker directory
 
 [Service]
 Type = oneshot

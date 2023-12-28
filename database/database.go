@@ -54,6 +54,7 @@ func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB 
 		db.AutoMigrate(User{})
 		db.AutoMigrate(Submission{})
 		db.AutoMigrate(SubmissionTestcaseResult{})
+		db.AutoMigrate(SubmissionLock{})
 		db.AutoMigrate(Task{})
 		db.AutoMigrate(Metadata{})
 
