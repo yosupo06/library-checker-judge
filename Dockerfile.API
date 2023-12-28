@@ -10,7 +10,8 @@ COPY ./database/go.sum /go/src/github.com/yosupo06/library-checker-judge/databas
 
 RUN go mod download
 
-COPY . /go/src/github.com/yosupo06/library-checker-judge/
+COPY ./api/. /go/src/github.com/yosupo06/library-checker-judge/api/
+COPY ./database/. /go/src/github.com/yosupo06/library-checker-judge/database/
 
 RUN CGO_ENABLED=0 GOOS=linux go build .
 
