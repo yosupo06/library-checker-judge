@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -12,6 +11,7 @@ import (
 
 const (
 	COMPILE_TIMEOUT = 30 * time.Second
+	CHECKER_TIMEOUT = 30 * time.Second
 )
 
 var DEFAULT_OPTIONS []TaskInfoOption
@@ -28,7 +28,6 @@ func init() {
 }
 
 type Judge struct {
-	dir  string
 	tl   float64
 	lang Lang
 
@@ -38,15 +37,8 @@ type Judge struct {
 	caseDir *TestCaseDir
 }
 
-func NewJudge(judgedir string, lang Lang, tl float64, caseDir *TestCaseDir) (*Judge, error) {
-	tempdir, err := ioutil.TempDir(judgedir, "judge")
-	if err != nil {
-		return nil, err
-	}
-	log.Println("create judge dir:", tempdir)
-
+func NewJudge(lang Lang, tl float64, caseDir *TestCaseDir) (*Judge, error) {
 	return &Judge{
-		dir:     tempdir,
 		tl:      tl,
 		lang:    lang,
 		caseDir: caseDir,
@@ -54,9 +46,6 @@ func NewJudge(judgedir string, lang Lang, tl float64, caseDir *TestCaseDir) (*Ju
 }
 
 func (j *Judge) Close() error {
-	if err := os.RemoveAll(j.dir); err != nil {
-		return err
-	}
 	if j.checkerVolume != nil {
 		if err := j.checkerVolume.Remove(); err != nil {
 			return err
@@ -100,72 +89,17 @@ func (j *Judge) CompileSource(sourcePath string) (TaskResult, error) {
 	return t, err
 }
 
-func (j *Judge) createOutput(caseName string, outFilePath string) (TaskResult, error) {
-	caseVolume, err := CreateVolume()
-	if err != nil {
-		return TaskResult{}, err
-	}
-	defer caseVolume.Remove()
-
-	if err := caseVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in"); err != nil {
-		return TaskResult{}, err
-	}
-
-	// TODO: volume read only
-	taskInfo, err := NewTaskInfo(j.lang.ImageName, append(
-		DEFAULT_OPTIONS,
-		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, j.lang.Exec...)...),
-		WithWorkDir("/workdir"),
-		WithVolume(j.sourceVolume, "/workdir"),
-		WithVolume(&caseVolume, "/casedir"),
-		WithTimeout(time.Duration(j.tl*1000*1000*1000)*time.Nanosecond),
-	)...)
-	if err != nil {
-		return TaskResult{}, err
-	}
-
-	result, err := taskInfo.Run()
-	if err != nil {
-		return TaskResult{}, err
-	}
-
-	outFile, err := os.Create(outFilePath)
-	if err != nil {
-		return TaskResult{}, err
-	}
-	defer outFile.Close()
-
-	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
-		DEFAULT_OPTIONS,
-		WithArguments("cat", "/casedir/actual.out"),
-		WithTimeout(COMPILE_TIMEOUT),
-		WithVolume(&caseVolume, "/casedir"),
-		WithStdout(outFile),
-	)...)
-	if err != nil {
-		return TaskResult{}, err
-	}
-
-	_, err = genOutputFileTaskInfo.Run()
-	if err != nil {
-		return TaskResult{}, err
-	}
-
-	return result, err
-}
-
 func (j *Judge) TestCase(caseName string) (CaseResult, error) {
-	log.Println("start to judge case:", caseName)
-	outFile, err := ioutil.TempFile(j.dir, "output-")
-	if err != nil {
-		return CaseResult{}, err
-	}
-	defer os.Remove(outFile.Name())
+	log.Println("Start to judge case:", caseName)
 
-	result, err := j.createOutput(caseName, outFile.Name())
+	inFilePath := j.caseDir.InFilePath(caseName)
+	expectFilePath := j.caseDir.OutFilePath(caseName)
+
+	outFile, result, err := runSource(*j.sourceVolume, j.lang, j.tl, inFilePath)
 	if err != nil {
 		return CaseResult{}, err
 	}
+	defer os.ReadDir(outFile.Name())
 
 	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: result.Stderr, CheckerOut: []byte{}}
 	if result.TLE {
@@ -180,33 +114,10 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 		return baseResult, nil
 	}
 
-	if err := j.checkerVolume.CopyFile(j.caseDir.InFilePath(caseName), "input.in"); err != nil {
-		return CaseResult{}, err
-	}
-	if err := j.checkerVolume.CopyFile(j.caseDir.OutFilePath(caseName), "expect.out"); err != nil {
-		return CaseResult{}, err
-	}
-	if err := j.checkerVolume.CopyFile(outFile.Name(), "actual.out"); err != nil {
-		return CaseResult{}, err
-	}
-
-	// run checker
-	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
-		DEFAULT_OPTIONS,
-		WithArguments(langs["checker"].Exec...),
-		WithWorkDir("/workdir"),
-		WithTimeout(COMPILE_TIMEOUT),
-		WithVolume(j.checkerVolume, "/workdir"),
-	)...)
+	checkerResult, err := runChecker(j.checkerVolume, inFilePath, expectFilePath, outFile.Name())
 	if err != nil {
 		return CaseResult{}, err
 	}
-
-	checkerResult, err := checkerTaskInfo.Run()
-	if err != nil {
-		return CaseResult{}, err
-	}
-
 	baseResult.CheckerOut = checkerResult.Stderr
 
 	if checkerResult.TLE {
@@ -287,4 +198,88 @@ func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t Tas
 	}
 	t, err = ti.Run()
 	return
+}
+
+func runSource(volume Volume, lang Lang, timeLimit float64, inFilePath string) (*os.File, TaskResult, error) {
+	caseVolume, err := CreateVolume()
+	if err != nil {
+		return nil, TaskResult{}, err
+	}
+	defer func() {
+		if err := caseVolume.Remove(); err != nil {
+			log.Println("Failed to remove caseVolume:", err)
+		}
+	}()
+
+	if err := caseVolume.CopyFile(inFilePath, "input.in"); err != nil {
+		return nil, TaskResult{}, err
+	}
+
+	// TODO: make volume read only
+	taskInfo, err := NewTaskInfo(lang.ImageName, append(
+		DEFAULT_OPTIONS,
+		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, lang.Exec...)...),
+		WithWorkDir("/workdir"),
+		WithVolume(&volume, "/workdir"),
+		WithVolume(&caseVolume, "/casedir"),
+		WithTimeout(time.Duration(timeLimit*1000*1000*1000)*time.Nanosecond),
+	)...)
+	if err != nil {
+		return nil, TaskResult{}, err
+	}
+
+	result, err := taskInfo.Run()
+	if err != nil {
+		return nil, TaskResult{}, err
+	}
+
+	outFile, err := os.CreateTemp("", "")
+	if err != nil {
+		return nil, TaskResult{}, err
+	}
+	defer outFile.Close()
+
+	// TODO: find faster way to copy actual.out
+	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
+		DEFAULT_OPTIONS,
+		WithArguments("cat", "/casedir/actual.out"),
+		WithTimeout(COMPILE_TIMEOUT),
+		WithVolume(&caseVolume, "/casedir"),
+		WithStdout(outFile),
+	)...)
+	if err != nil {
+		return nil, TaskResult{}, err
+	}
+
+	if _, err := genOutputFileTaskInfo.Run(); err != nil {
+		return nil, TaskResult{}, err
+	}
+
+	return outFile, result, err
+}
+
+func runChecker(volume *Volume, inFilePath, expectFilePath, actualFilePath string) (TaskResult, error) {
+	if err := volume.CopyFile(inFilePath, "input.in"); err != nil {
+		return TaskResult{}, err
+	}
+	if err := volume.CopyFile(expectFilePath, "expect.out"); err != nil {
+		return TaskResult{}, err
+	}
+	if err := volume.CopyFile(actualFilePath, "actual.out"); err != nil {
+		return TaskResult{}, err
+	}
+
+	// TODO: make volume read only?
+	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
+		DEFAULT_OPTIONS,
+		WithArguments(langs["checker"].Exec...),
+		WithWorkDir("/workdir"),
+		WithTimeout(CHECKER_TIMEOUT),
+		WithVolume(volume, "/workdir"),
+	)...)
+	if err != nil {
+		return TaskResult{}, err
+	}
+
+	return checkerTaskInfo.Run()
 }

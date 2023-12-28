@@ -19,7 +19,6 @@ var testCaseFetcher TestCaseFetcher
 
 func main() {
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
-	judgedir := flag.String("judgedir", "", "temporary directory of judge")
 
 	prod := flag.Bool("prod", false, "production mode")
 
@@ -82,7 +81,7 @@ func main() {
 		}
 
 		log.Println("Start Judge:", task.Submission)
-		err = execTask(db, *judgedir, judgeName, *task)
+		err = execTask(db, judgeName, *task)
 		if err != nil {
 			log.Println(err.Error())
 			continue
@@ -90,7 +89,7 @@ func main() {
 	}
 }
 
-func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error {
+func execTask(db *gorm.DB, judgeName string, task database.Task) error {
 	subID := task.Submission
 	submission, err := database.FetchSubmission(db, subID)
 	if err != nil {
@@ -120,7 +119,7 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 		return err
 	}
 
-	if err := judgeSubmission(db, judgedir, judgeName, task, *submission, *problem); err != nil {
+	if err := judgeSubmission(db, judgeName, task, *submission, *problem); err != nil {
 		// error detected, try to change status into IE
 		submission.Status = "IE"
 		if err2 := database.UpdateSubmission(db, *submission); err2 != nil {
@@ -134,7 +133,7 @@ func execTask(db *gorm.DB, judgedir, judgeName string, task database.Task) error
 	return nil
 }
 
-func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task, submission database.Submission, problem database.Problem) error {
+func judgeSubmission(db *gorm.DB, judgeName string, task database.Task, submission database.Submission, problem database.Problem) error {
 	subID := submission.ID
 
 	submission.MaxTime = -1
@@ -156,7 +155,7 @@ func judgeSubmission(db *gorm.DB, judgedir, judgeName string, task database.Task
 		return err
 	}
 
-	judge, err := NewJudge(judgedir, langs[submission.Lang], float64(problem.Timelimit)/1000, &testCases)
+	judge, err := NewJudge(langs[submission.Lang], float64(problem.Timelimit)/1000, &testCases)
 	if err != nil {
 		return err
 	}
