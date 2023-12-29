@@ -65,15 +65,9 @@ func (v *Volume) CopyFile(srcPath string, dstPath string) error {
 	if err != nil {
 		return err
 	}
+	defer ci.Remove()
 
-	if err := ci.CopyFile(srcPath, path.Join("/workdir", dstPath)); err != nil {
-		return err
-	}
-
-	if err := ci.Remove(); err != nil {
-		return err
-	}
-	return nil
+	return ci.CopyFile(srcPath, path.Join("/workdir", dstPath))
 }
 
 func (v *Volume) Remove() error {
@@ -83,7 +77,6 @@ func (v *Volume) Remove() error {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Println("failed to remove volume:", err)
 		return err
 	}
 
@@ -567,7 +560,6 @@ func (c *containerInfo) Remove() error {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Println("failed to remove container:", err)
 		return err
 	}
 

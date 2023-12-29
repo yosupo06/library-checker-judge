@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 	"path"
@@ -181,7 +182,13 @@ func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t Tas
 	}()
 
 	for _, p := range srcPaths {
-		if err = v.CopyFile(p, path.Base(p)); err != nil {
+		if _, err = os.Stat(p); err == nil {
+			if err = v.CopyFile(p, path.Base(p)); err != nil {
+				return
+			}
+		} else if errors.Is(err, os.ErrNotExist) {
+			log.Println(p, "is not found, skip")
+		} else {
 			return
 		}
 	}
