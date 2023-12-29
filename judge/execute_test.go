@@ -314,6 +314,23 @@ func TestUseManyStack(t *testing.T) {
 	}
 	t.Logf("task result: %v\n", result)
 	if result.ExitCode != 0 {
-		t.Error("exec failed")
+		t.Fatal("exec failed")
+	}
+}
+
+func TestInvalidFileCopy(t *testing.T) {
+	volume, err := CreateVolume()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := volume.CopyFile("/path/to/invalid/path", "dummy.cpp"); err == nil {
+		t.Fatal("copy file succeeded")
+	} else {
+		t.Log(err)
+	}
+
+	if err := volume.Remove(); err != nil {
+		t.Fatal(err)
 	}
 }
