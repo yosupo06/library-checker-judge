@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/yosupo06/library-checker-judge/database"
@@ -32,12 +33,8 @@ func main() {
 		pgUser,
 		pgPass,
 		false)
-	db.AutoMigrate(database.Problem{})
-	db.AutoMigrate(database.User{})
-	db.AutoMigrate(database.Submission{})
-	db.AutoMigrate(database.SubmissionTestcaseResult{})
-	db.AutoMigrate(database.SubmissionLock{})
-	db.AutoMigrate(database.Task{})
-	db.AutoMigrate(database.Metadata{})
 
+	if err := database.AutoMigrate(db); err != nil {
+		slog.Error("Migration failed:", err)
+	}
 }
