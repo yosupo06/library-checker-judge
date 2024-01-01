@@ -33,8 +33,7 @@ jobs:
         working-directory: ./terraform
 
       - id: tf-output
-        run: terraform output >> $GITHUB_OUTPUT
+        run: terraform output --json
         working-directory: ./terraform
 
-      - run: echo ${{steps.tf-output.outputs.gh_provider_id}}
-      - run: echo ${{steps.tf-output.outputs.db_migrator_sa_email}}
+      - run: echo ${{ fromJson(steps.tf-output.outputs.stdout).db_migrator_sa_email.value }}
