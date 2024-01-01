@@ -27,6 +27,8 @@ jobs:
           token_format: access_token
 
       - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - run: terraform init
         working-directory: ./terraform
