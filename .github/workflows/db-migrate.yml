@@ -32,3 +32,6 @@ jobs:
 
       - run: terraform init
         working-directory: ./terraform
+        
+      - run: terraform output
+        working-directory: ./terraform        
