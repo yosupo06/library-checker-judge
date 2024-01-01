@@ -1,0 +1,22 @@
+name: Problems-Deploy
+
+on:
+  push:
+    branches:
+      - feature/terraform
+
+jobs:
+  problems-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: projects/dev-library-checker-project/locations/global/workloadIdentityPools/gh-pool
+          service_account: db-migrator@dev-library-checker-project.iam.gserviceaccount.com
+          token_format: access_token
