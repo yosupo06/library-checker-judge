@@ -1,14 +1,14 @@
 version: '2'
 
 services:
-  api-grpcweb:
+  api:
     build:
       dockerfile: Dockerfile.API
     ports:
       - 12380:12380
     depends_on:
-      db:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
       create-minio-bucket:
         condition: service_completed_successfully
     environment:
@@ -36,6 +36,17 @@ services:
         timeout: 10s
         interval: 1s
         retries: 30
+  db-init:
+    build:
+      dockerfile: Dockerfile.MIGRATOR
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - POSTGRE_HOST=db
+      - POSTGRE_TABLE=librarychecker
+      - POSTGRE_USER=postgres
+      - POSTGRE_PASS=passwd
 
   minio:
     image: minio/minio
