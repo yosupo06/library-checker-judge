@@ -50,13 +50,6 @@ func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB 
 		if err != nil {
 			log.Fatal("db.DB() failed")
 		}
-		db.AutoMigrate(Problem{})
-		db.AutoMigrate(User{})
-		db.AutoMigrate(Submission{})
-		db.AutoMigrate(SubmissionTestcaseResult{})
-		db.AutoMigrate(SubmissionLock{})
-		db.AutoMigrate(Task{})
-		db.AutoMigrate(Metadata{})
 
 		sqlDB.SetMaxOpenConns(10)
 		sqlDB.SetConnMaxLifetime(time.Hour)
