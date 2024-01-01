@@ -55,7 +55,6 @@ resource "google_iam_workload_identity_pool_provider" "gh" {
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }
-  attribute_condition = "assertion.repository_owner == \"${local.github_repo_owner}\""
 }
 
 // Cloud SQL
@@ -133,10 +132,11 @@ resource "google_service_account" "db_migrator" {
 resource "google_service_account_iam_member" "db_migrator" {
   service_account_id = google_service_account.db_migrator.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principal://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/subject/${local.github_repo_owner}/${local.github_repo_judge}"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/attribute.repository/${local.github_repo_owner}/${local.github_repo_judge}"
 }
 resource "google_project_iam_member" "db_migrator_sa_role" {
   for_each = toset([
+    "roles/iam.workloadIdentityUser",
     "roles/secretmanager.viewer",
     "roles/cloudsql.instanceUser",
   ])
