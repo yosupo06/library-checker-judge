@@ -32,5 +32,9 @@ jobs:
       - run: terraform init
         working-directory: ./terraform
 
-      - run: terraform output >> $GITHUB_OUTPUT
+      - id: tf-output
+        run: terraform output >> $GITHUB_OUTPUT
         working-directory: ./terraform
+
+      - run: echo ${{steps.tf-output.outputs.gh_provider_id}}
+      - run: echo ${{steps.tf-output.outputs.db_migrator_sa_email}}
