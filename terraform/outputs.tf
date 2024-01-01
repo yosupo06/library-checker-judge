@@ -1,5 +1,5 @@
-output "gh_workload_identity_pool_id" {
-    value = google_iam_workload_identity_pool.gh.name
+output "gh_provider_id" {
+    value = google_iam_workload_identity_pool_provider.gh.name
 }
 
 output "db_migrator_sa_email" {

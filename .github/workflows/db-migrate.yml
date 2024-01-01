@@ -17,6 +17,6 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/737166896319/locations/global/workloadIdentityPools/gh-pool
+          workload_identity_provider: projects/737166896319/locations/global/workloadIdentityPools/gh-pool/providers/gh-provider-id
           service_account: db-migrator@dev-library-checker-project.iam.gserviceaccount.com
           token_format: access_token
