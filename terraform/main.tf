@@ -137,8 +137,8 @@ resource "google_service_account_iam_member" "db_migrator" {
 resource "google_project_iam_member" "db_migrator_sa_role" {
   for_each = toset([
     "roles/iam.workloadIdentityUser",
-    "roles/secretmanager.viewer",
     "roles/cloudsql.instanceUser",
+    "roles/secretmanager.secretAccessor",
   ])
   project = var.gcp_project_id
   role    = each.key
