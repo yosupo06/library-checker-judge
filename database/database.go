@@ -50,13 +50,6 @@ func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB 
 		if err != nil {
 			log.Fatal("db.DB() failed")
 		}
-		db.AutoMigrate(Problem{})
-		db.AutoMigrate(User{})
-		db.AutoMigrate(Submission{})
-		db.AutoMigrate(SubmissionTestcaseResult{})
-		db.AutoMigrate(SubmissionLock{})
-		db.AutoMigrate(Task{})
-		db.AutoMigrate(Metadata{})
 
 		sqlDB.SetMaxOpenConns(10)
 		sqlDB.SetConnMaxLifetime(time.Hour)
@@ -82,6 +75,9 @@ func CreateTestDB(t *testing.T) *gorm.DB {
 	}
 
 	db := Connect("localhost", "5432", dbName, "postgres", "passwd", os.Getenv("API_DB_LOG") != "")
+	if err := AutoMigrate(db); err != nil {
+		t.Fatal("Migration failed:", err)
+	}
 
 	t.Cleanup(func() {
 		db2, err := db.DB()
@@ -105,4 +101,29 @@ func CreateTestDB(t *testing.T) *gorm.DB {
 	})
 
 	return db
+}
+
+func AutoMigrate(db *gorm.DB) error {
+	if err := db.AutoMigrate(Problem{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(User{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(Submission{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(SubmissionTestcaseResult{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(SubmissionLock{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(Task{}); err != nil {
+		return err
+	}
+	if err := db.AutoMigrate(Metadata{}); err != nil {
+		return err
+	}
+	return nil
 }
