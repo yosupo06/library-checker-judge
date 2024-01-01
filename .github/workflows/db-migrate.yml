@@ -10,7 +10,7 @@ env:
   TF_WORKSPACE: "dev-library-checker"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
   CONFIG_DIRECTORY: "./terraform"
-  
+
 jobs:
   problems-deploy:
     runs-on: ubuntu-latest
@@ -26,22 +26,7 @@ jobs:
           service_account: db-migrator@dev-library-checker-project.iam.gserviceaccount.com
           token_format: access_token
 
-      - name: Upload Configuration
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.0.0
-        id: plan-upload
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          directory: ${{ env.CONFIG_DIRECTORY }}
-          speculative: true
-      - name: Create Plan Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
-        id: plan-run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
-          plan_only: true          
-      - name: Get Plan Output
-        uses: hashicorp/tfc-workflows-github/actions/plan-output@v1.0.0
-        id: plan-output
-        with:
-          plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
+      - uses: hashicorp/setup-terraform@v3
+
+      - run: terraform init
+        working-directory: ./terraform
