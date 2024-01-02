@@ -6,6 +6,10 @@ output "storage_editor_sa_email" {
     value = google_service_account.storage_editor.email
 }
 
+output "db_migrator_sa_email" {
+    value = google_service_account.db_migrator.email
+}
+
 output "main_db_connection_name" {
     value = google_sql_database_instance.main.connection_name
 }

@@ -152,6 +152,25 @@ resource "google_secret_manager_secret" "discord_announcement_webhook" {
   }
 }
 
+resource "google_service_account" "db_migrator" {
+  account_id   = "db-migrator"
+  display_name = "DB migrator"
+}
+resource "google_service_account_iam_member" "db_migrator" {
+  service_account_id = google_service_account.uploader.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/attribute.repository/${local.github_repo_owner}/${local.github_repo_judge}"
+}
+resource "google_project_iam_member" "db_migrator_sa_role" {
+  for_each = toset([
+    "roles/cloudsql.client",
+    "roles/secretmanager.secretAccessor",
+  ])
+  project = var.gcp_project_id
+  role    = each.key
+  member  = "serviceAccount:${google_service_account.db_migrator.email}"
+}
+
 resource "google_service_account" "storage_editor" {
   account_id   = "storage-editor"
   display_name = "Storage editor"
