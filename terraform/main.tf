@@ -190,7 +190,7 @@ resource "google_project_iam_member" "storage_editor_sa_role" {
   ])
   project = var.gcp_project_id
   role    = each.key
-  member  = "serviceAccount:${google_service_account.uploader.email}"
+  member  = "serviceAccount:${google_service_account.storage_editor.email}"
 }
 
 

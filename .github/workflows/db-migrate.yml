@@ -3,7 +3,7 @@ name: DB migrate
 on:
   push:
     branches:
-      - feature/terraform
+      - master
 
 env:
   TF_CLOUD_ORGANIZATION: "yosupo06-org"

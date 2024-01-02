@@ -1,0 +1,54 @@
+name: API Image build
+
+on:
+  push:
+    branches:
+      - feature/terraform
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "dev-library-checker"
+
+jobs:
+  api-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+    - run: terraform init
+      working-directory: ./terraform
+    - id: tf-output
+      run: terraform output --json
+      working-directory: ./terraform
+
+    - id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+        service_account: ${{ fromJson(steps.tf-output.outputs.stdout).api_deployer_email.value }}
+        token_format: access_token
+    
+    - uses: docker/login-action@v3
+      with:
+        registry: asia.gcr.io
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
+
+    - id: gen-protoc
+      name: Generate protoc
+      run: ./api/gen_protoc.sh
+
+    - id: build-docker
+      name: Build docker image
+      run: docker build -t ${{ fromJson(steps.tf-output.outputs.stdout).api_repo.value }} -f Dockerfile.API .
+
+    - id: push-docker
+      name: Push docker image
+      run: docker push ${{ fromJson(steps.tf-output.outputs.stdout).api_repo.value }}
