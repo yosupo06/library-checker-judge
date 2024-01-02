@@ -31,6 +31,10 @@ concurrency:
   group: ${{ inputs.env }}-problems-deploy
   cancel-in-progress: true
 
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"  
+
 jobs:
   problems-deploy:
     runs-on: ubuntu-latest
