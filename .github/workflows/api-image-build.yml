@@ -38,7 +38,7 @@ jobs:
     - uses: docker/login-action@v3
       with:
         # TODO: stop to use magic constant
-        registry: asia-northeast1.gcr.io
+        registry: asia-northeast1-docker.pkg.dev
         username: oauth2accesstoken
         password: ${{ steps.auth.outputs.access_token }}
 
