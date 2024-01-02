@@ -77,8 +77,8 @@ resource "google_secret_manager_secret_version" "postgres_password" {
   secret_data = random_password.postgres.result
 }
 
-resource "google_sql_database_instance" "main_test" {
-  name             = "main-test"
+resource "google_sql_database_instance" "main" {
+  name             = "main"
   region           = "asia-northeast1"
   database_version = "POSTGRES_15"
   root_password = random_password.postgres.result
@@ -97,7 +97,7 @@ resource "google_sql_database_instance" "main_test" {
 
 resource "google_sql_database" "main" {
   name     = "librarychecker"
-  instance = google_sql_database_instance.main_test.name
+  instance = google_sql_database_instance.main.name
 }
 
 
@@ -120,26 +120,65 @@ resource "google_sql_user" "iam_service_account_user" {
   # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
   # from the service account email due to length limits on database usernames.
   name     = trimsuffix(google_service_account.db_owner.email, ".gserviceaccount.com")
-  instance = google_sql_database_instance.main_test.name
+  instance = google_sql_database_instance.main.name
   type     = "CLOUD_IAM_SERVICE_ACCOUNT"
 }
 
 
-resource "google_service_account" "db_migrator" {
-  account_id   = "db-migrator"
-  display_name = "DB migrator"
+resource "google_service_account" "uploader" {
+  account_id   = "uploader"
+  display_name = "Uploader"
 }
-resource "google_service_account_iam_member" "db_migrator" {
-  service_account_id = google_service_account.db_migrator.name
+resource "google_service_account_iam_member" "uploader" {
+  service_account_id = google_service_account.uploader.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/attribute.repository/${local.github_repo_owner}/${local.github_repo_judge}"
 }
-resource "google_project_iam_member" "db_migrator_sa_role" {
+resource "google_project_iam_member" "uploader_sa_role" {
   for_each = toset([
     "roles/cloudsql.client",
     "roles/secretmanager.secretAccessor",
   ])
   project = var.gcp_project_id
   role    = each.key
-  member  = "serviceAccount:${google_service_account.db_migrator.email}"
+  member  = "serviceAccount:${google_service_account.uploader.email}"
+}
+
+resource "google_secret_manager_secret" "discord_announcement_webhook" {
+  secret_id = "discord-announcement-webhook"
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_service_account" "storage_editor" {
+  account_id   = "storage-editor"
+  display_name = "Storage editor"
+}
+resource "google_project_iam_member" "storage_editor_sa_role" {
+  for_each = toset([
+    "roles/storage.objectUser",
+  ])
+  project = var.gcp_project_id
+  role    = each.key
+  member  = "serviceAccount:${google_service_account.uploader.email}"
+}
+
+
+
+resource "google_storage_hmac_key" "main" {
+  service_account_email = google_service_account.storage_editor.email
+}
+resource "google_secret_manager_secret" "storage_hmac_key" {
+  secret_id = "storage-hmac-key"
+
+  replication {
+    auto {}
+  }
+}
+resource "google_secret_manager_secret_version" "storage_hmac_key" {
+  secret = google_secret_manager_secret.storage_hmac_key.id
+
+  secret_data = google_storage_hmac_key.main.secret
 }

@@ -281,7 +281,7 @@ func main() {
 
 	pgHost := flag.String("pghost", "localhost", "postgre host")
 	pgUser := flag.String("pguser", "postgres", "postgre user")
-	pgPass := flag.String("pgpass", "passwd", "postgre password")
+	pgPass := flag.String("pgpass", "", "postgre password")
 	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
 
 	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
