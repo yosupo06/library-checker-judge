@@ -42,14 +42,9 @@ jobs:
         username: oauth2accesstoken
         password: ${{ steps.auth.outputs.access_token }}
 
-    - id: gen-protoc
-      name: Generate protoc
-      run: ./api/gen_protoc.sh
+    - run: ./api/gen_protoc.sh
 
-    - id: build-docker
-      name: Build docker image
+    - name: Build docker image
       run: docker build -t ${{ fromJson(steps.tf-output.outputs.stdout).api_repo.value }} -f Dockerfile.API .
-
-    - id: push-docker
-      name: Push docker image
+    - name: Push docker image
       run: docker push ${{ fromJson(steps.tf-output.outputs.stdout).api_repo.value }}
