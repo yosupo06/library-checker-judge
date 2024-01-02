@@ -9,6 +9,9 @@ output "db_migrator_sa_email" {
 output "uploader_sa_email" {
     value = google_service_account.uploader.email
 }
+output "uploader_sa_db_name" {
+    value = google_sql_user.uploader.name
+}
 
 output "main_db_connection_name" {
     value = google_sql_database_instance.main.connection_name

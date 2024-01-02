@@ -137,6 +137,7 @@ resource "google_service_account_iam_member" "uploader" {
 resource "google_project_iam_member" "uploader_sa_role" {
   for_each = toset([
     "roles/cloudsql.client",
+    "roles/cloudsql.instanceUser",
     "roles/secretmanager.secretAccessor",
   ])
   project = var.gcp_project_id

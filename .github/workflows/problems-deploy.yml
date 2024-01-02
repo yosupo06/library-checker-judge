@@ -93,7 +93,7 @@ jobs:
           ./cloud-sql-proxy --auto-iam-authn ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
           python3 upload.py
         env:
-          PG_USER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_email.value }}"
+          PG_USER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_db_name.value }}"
           PG_TABLE: librarychecker
           MINIO_HOST: storage.googleapis.com
           MINIO_ID: "${{ fromJson(steps.tf-output.outputs.stdout).storage_hmac_id.value }}"
