@@ -45,6 +45,6 @@ jobs:
     - run: ./api/gen_protoc.sh
 
     - name: Build docker image
-      run: docker build -t ${{ fromJson(steps.tf-output.outputs.stdout).api_repo.value }} -f Dockerfile.API .
+      run: docker build -t ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }} -f Dockerfile.API .
     - name: Push docker image
-      run: docker push ${{ fromJson(steps.tf-output.outputs.stdout).api_repo.value }}
+      run: docker push ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }}
