@@ -157,7 +157,7 @@ resource "google_service_account" "db_migrator" {
   display_name = "DB migrator"
 }
 resource "google_service_account_iam_member" "db_migrator" {
-  service_account_id = google_service_account.uploader.name
+  service_account_id = google_service_account.db_migrator.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/attribute.repository/${local.github_repo_owner}/${local.github_repo_judge}"
 }
