@@ -96,7 +96,7 @@ resource "google_sql_database_instance" "main_test" {
 }
 
 resource "google_sql_database" "main" {
-  name     = "library_checker"
+  name     = "librarychecker"
   instance = google_sql_database_instance.main_test.name
 }
 
