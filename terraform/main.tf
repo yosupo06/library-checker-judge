@@ -143,6 +143,14 @@ resource "google_project_iam_member" "uploader_sa_role" {
   role    = each.key
   member  = "serviceAccount:${google_service_account.uploader.email}"
 }
+resource "google_sql_user" "uploader" {
+  # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
+  # from the service account email due to length limits on database usernames.
+  name     = trimsuffix(google_service_account.uploader.email, ".gserviceaccount.com")
+  instance = google_sql_database_instance.main.name
+  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
+}
+
 
 resource "google_secret_manager_secret" "discord_announcement_webhook" {
   secret_id = "discord-announcement-webhook"

@@ -90,7 +90,7 @@ jobs:
         name: Deploy Problems
         working-directory: ./uploader
         run: >
-          ./cloud-sql-proxy --auto-iam-authn library-checker-project:asia-northeast1:library-checker-sql &
+          ./cloud-sql-proxy --auto-iam-authn ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
           python3 upload.py
         env:
           PG_USER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_email.value }}"
