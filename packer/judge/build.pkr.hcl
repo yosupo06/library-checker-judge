@@ -12,7 +12,7 @@ variable "minio_host" {
 
 locals {
   parsed_judge_service = templatefile("judge.service.pkrtpl", {
-    minio_host = minio_host
+    minio_host = var.minio_host
   })
 }
 
