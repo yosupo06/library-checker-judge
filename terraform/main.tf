@@ -242,6 +242,10 @@ resource "google_compute_instance_template" "judge" {
     email  = google_service_account.judge.email
     scopes = ["cloud-platform"]
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "google_compute_region_instance_group_manager" "judge" {
