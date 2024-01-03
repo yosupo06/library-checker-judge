@@ -61,7 +61,8 @@ build {
     inline = [
       "sudo cp /tmp/judge /root/judge",
       "sudo cp /tmp/langs.toml /root/langs.toml",
-      "sudo cat >/usr/local/lib/systemd/system/judge.service <<'STR'\n${local.parsed_judge_service}"
+      "cat > /tmp/judge.service <<'STR'\n${local.parsed_judge_service}",
+      "sudo cp /tmp/judge.service /usr/local/lib/systemd/system/judge.service",
     ]
   }
   provisioner "shell" {
