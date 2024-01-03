@@ -14,6 +14,10 @@ concurrency:
   group: ${{ inputs.env }}-judge-image-build
   cancel-in-progress: false
 
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"  
+  
 jobs:
   base:
     if: ${{ inputs.build-base }}
@@ -24,11 +28,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+    - run: terraform init
+      working-directory: ./terraform
+    - id: tf-output
+      run: terraform output --json
+      working-directory: ./terraform
+
     - uses: google-github-actions/auth@v2
       with:
-        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-        service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
+        workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+        service_account: ${{ fromJson(steps.tf-output.outputs.stdout).judge_deployer_sa_email.value }}
         token_format: access_token
+
     - uses: google-github-actions/setup-gcloud@v2
     
     - name: Packer init
@@ -56,11 +71,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+    - run: terraform init
+      working-directory: ./terraform
+    - id: tf-output
+      run: terraform output --json
+      working-directory: ./terraform
+
     - uses: google-github-actions/auth@v2
       with:
-        workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-        service_account: gce-judge-deployer@library-checker-project.iam.gserviceaccount.com
+        workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+        service_account: ${{ fromJson(steps.tf-output.outputs.stdout).judge_deployer_sa_email.value }}
         token_format: access_token
+
     - uses: google-github-actions/setup-gcloud@v2
     
     - name: Generate protoc
