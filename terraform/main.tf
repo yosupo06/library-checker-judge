@@ -200,22 +200,24 @@ data "google_compute_image" "judge" {
   depends_on  = [google_compute_image.judge_dummy]
 }
 
+data "google_compute_network" "judge" {
+  name = "default"
+}
+resource "google_compute_subnetwork" "judge" {
+  provider = google
 
-#     - name: Create instance template
-#       run: >
-#         gcloud compute instance-templates create ${{ steps.instance-template-name.outputs.name }}
-#         --preemptible
-#         --machine-type c2-standard-4
-#         --image-family v2-${{ inputs.env }}-judge-image
-#         --service-account gce-judge@library-checker-project.iam.gserviceaccount.com
-#         --scopes default,cloud-platform
-#         --boot-disk-size 50GB
-#         --network-interface=no-address
-#         --metadata env=${{ inputs.env }}
+  name                     = "judge"
+  ip_cidr_range            = "10.0.0.0/22"
+  region                   = "asia-northeast1"
+  role                     = "ACTIVE"
+  network                  = data.google_compute_network.judge.id
+  private_ip_google_access = true
+}
 
 resource "google_compute_instance_template" "judge" {
-  name        = "judge-template"
+  name_prefix = "judge-template-"
   description = "This template is used to create judge server."
+  region = "asia-northeast1"
 
   machine_type   = "c2-standard-4"
   can_ip_forward = false
@@ -229,9 +231,8 @@ resource "google_compute_instance_template" "judge" {
     disk_size_gb = 50
   }
 
-  // make no public address
   network_interface {
-    network = "default"
+    subnetwork = google_compute_subnetwork.judge.name
   }
 
   metadata = {

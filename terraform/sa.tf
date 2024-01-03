@@ -68,6 +68,14 @@ locals {
         "roles/secretmanager.secretAccessor",
       ]
     },
+    {
+      account = google_service_account.judge
+      roles = [
+        "roles/cloudsql.client",
+        "roles/cloudsql.instanceUser",
+        "roles/secretmanager.secretAccessor",
+      ]
+    },
   ]
 }
 

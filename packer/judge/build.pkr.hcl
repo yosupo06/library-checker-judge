@@ -6,6 +6,16 @@ variable "image_family" {
   type = string
 }
 
+variable "minio_host" {
+  type = string
+}
+
+locals {
+  parsed_judge_service = templatefile("judge.service.pkrtpl", {
+    minio_host = minio_host
+  })
+}
+
 packer {
   required_plugins {
     googlecompute = {
@@ -47,23 +57,13 @@ build {
     source = "../../langs/langs.toml"
     destination = "/tmp/langs.toml"
   }
-  provisioner "file" {
-    source = "judge.service"
-    destination = "/tmp/judge.service"
-  }
-  provisioner "file" {
-    source = "judge.sh"
-    destination = "/tmp/judge.sh"
-  }
   provisioner "shell" {
     inline = [
       "sudo cp /tmp/judge /root/judge",
       "sudo cp /tmp/langs.toml /root/langs.toml",
-      "sudo cp /tmp/judge.service /usr/local/lib/systemd/system/judge.service",
-      "sudo cp /tmp/judge.sh /root/judge.sh",
+      "cat >/usr/local/lib/systemd/system/judge.service <<'STR'\n${local.parsed_judge_service}"
     ]
   }
-
   provisioner "shell" {
     inline = [
       "sudo systemctl daemon-reload",

@@ -6,7 +6,8 @@ After = docker.service
 [Service]
 Environment=LIBRARY_CHECKER_JUDGE=true
 Environment=CGROUP_PARENT=judge.slice
-ExecStart = /root/judge.sh
+Environment=MINIO_HOST=${minio_host}
+ExecStart = /root/judge
 
 Restart = always
 Type = simple
