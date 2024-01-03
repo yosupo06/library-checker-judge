@@ -16,6 +16,9 @@ output "uploader_sa_db_name" {
 output "api_deployer_sa_email" {
     value = google_service_account.api_deployer.email
 }
+output "judge_deployer_sa_email" {
+    value = google_service_account.judge_deployer.email
+}
 
 output "main_db_connection_name" {
     value = google_sql_database_instance.main.connection_name

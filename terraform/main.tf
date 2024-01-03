@@ -11,7 +11,7 @@ terraform {
       source  = "kreuzwerker/docker"
       version = "~>3.0.2"
     }
-  }  
+  }
 }
 
 locals {
@@ -24,27 +24,6 @@ provider "google" {
   region  = "global"
 }
 data "google_client_config" "default" {}
-
-// Cloud Storage
-resource "google_storage_bucket" "public" {
-  name                        = "v2-${var.env}-library-checker-data-public"
-  location                    = "asia-northeast1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = "true"
-}
-resource "google_storage_bucket_iam_member" "public" {
-  bucket = google_storage_bucket.public.name
-  role   = "roles/storage.objectViewer"
-  member = "allUsers"
-}
-resource "google_storage_bucket" "private" {
-  name                        = "v2-${var.env}-library-checker-data-private"
-  location                    = "asia-northeast1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = "true"
-
-  public_access_prevention = "enforced"
-}
 
 // Workload Identity
 resource "google_iam_workload_identity_pool" "gh" {
@@ -107,50 +86,6 @@ resource "google_sql_database" "main" {
   instance = google_sql_database_instance.main.name
 }
 
-
-resource "google_service_account" "db_owner" {
-  account_id   = "db-owner-sa"
-  display_name = "Service Account for DB owner"
-}
-
-
-resource "google_project_iam_member" "db_owner_sa_role" {
-  for_each = toset([
-    "roles/cloudsql.instanceUser",
-  ])
-  project = var.gcp_project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.db_owner.email}"
-}
-
-resource "google_sql_user" "iam_service_account_user" {
-  # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
-  # from the service account email due to length limits on database usernames.
-  name     = trimsuffix(google_service_account.db_owner.email, ".gserviceaccount.com")
-  instance = google_sql_database_instance.main.name
-  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
-}
-
-
-resource "google_service_account" "uploader" {
-  account_id   = "uploader"
-  display_name = "Uploader"
-}
-resource "google_service_account_iam_member" "uploader" {
-  service_account_id = google_service_account.uploader.name
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/attribute.repository/${local.github_repo_owner}/${local.github_repo_judge}"
-}
-resource "google_project_iam_member" "uploader_sa_role" {
-  for_each = toset([
-    "roles/cloudsql.client",
-    "roles/cloudsql.instanceUser",
-    "roles/secretmanager.secretAccessor",
-  ])
-  project = var.gcp_project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.uploader.email}"
-}
 resource "google_sql_user" "uploader" {
   # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
   # from the service account email due to length limits on database usernames.
@@ -168,63 +103,6 @@ resource "google_secret_manager_secret" "discord_announcement_webhook" {
   }
 }
 
-resource "google_service_account" "db_migrator" {
-  account_id   = "db-migrator"
-  display_name = "DB migrator"
-}
-resource "google_service_account_iam_member" "db_migrator" {
-  service_account_id = google_service_account.db_migrator.name
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/attribute.repository/${local.github_repo_owner}/${local.github_repo_judge}"
-}
-resource "google_project_iam_member" "db_migrator_sa_role" {
-  for_each = toset([
-    "roles/cloudsql.client",
-    "roles/secretmanager.secretAccessor",
-  ])
-  project = var.gcp_project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.db_migrator.email}"
-}
-
-resource "google_service_account" "storage_editor" {
-  account_id   = "storage-editor"
-  display_name = "Storage editor"
-}
-resource "google_project_iam_member" "storage_editor_sa_role" {
-  for_each = toset([
-    "roles/storage.objectUser",
-  ])
-  project = var.gcp_project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.storage_editor.email}"
-}
-
-
-
-resource "google_storage_hmac_key" "main" {
-  service_account_email = google_service_account.storage_editor.email
-}
-resource "google_secret_manager_secret" "storage_hmac_key" {
-  secret_id = "storage-hmac-key"
-
-  replication {
-    auto {}
-  }
-}
-resource "google_secret_manager_secret_version" "storage_hmac_key" {
-  secret = google_secret_manager_secret.storage_hmac_key.id
-
-  secret_data = google_storage_hmac_key.main.secret
-}
-
-// Artifact registry
-// 
-
-
-
-// Cloud Run
-
 resource "google_artifact_registry_repository" "main" {
   location      = "asia-northeast1"
   repository_id = "main"
@@ -236,21 +114,6 @@ resource "google_artifact_registry_repository" "main" {
   }
 }
 
-
-resource "google_service_account" "api" {
-  account_id   = "api-sa"
-  display_name = "Service Account for API"
-}
-resource "google_project_iam_member" "api_sa_role" {
-  for_each = toset([
-    "roles/cloudsql.client",
-    "roles/cloudsql.instanceUser",
-    "roles/secretmanager.secretAccessor",
-  ])
-  project = var.gcp_project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.api.email}"
-}
 
 
 
@@ -292,15 +155,15 @@ resource "google_cloud_run_v2_service" "api" {
       }
       env {
         name  = "PG_USER"
-        value = "postgres"        
+        value = "postgres"
       }
       env {
-        name  = "PG_PASS"
+        name = "PG_PASS"
         value_source {
           secret_key_ref {
-            secret = google_secret_manager_secret.postgres_password.secret_id
+            secret  = google_secret_manager_secret.postgres_password.secret_id
             version = "latest"
-          }          
+          }
         }
       }
       volume_mounts {
@@ -313,27 +176,9 @@ resource "google_cloud_run_v2_service" "api" {
   }
 }
 resource "google_cloud_run_v2_service_iam_member" "member" {
-  project = google_cloud_run_v2_service.api.project
+  project  = google_cloud_run_v2_service.api.project
   location = google_cloud_run_v2_service.api.location
-  name = google_cloud_run_v2_service.api.name
-  role = "roles/run.invoker"
-  member = "allUsers"
-}
-
-resource "google_service_account" "api_deployer" {
-  account_id   = "api-deployer-sa"
-  display_name = "Service Account for API deployer"
-}
-resource "google_service_account_iam_member" "api_deployer" {
-  service_account_id = google_service_account.api_deployer.name
-  role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gh.name}/attribute.repository/${local.github_repo_owner}/${local.github_repo_judge}"
-}
-resource "google_project_iam_member" "api_deployer_sa_role" {
-  for_each = toset([
-    "roles/artifactregistry.writer",
-  ])
-  project = var.gcp_project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.api_deployer.email}"
+  name     = google_cloud_run_v2_service.api.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }
