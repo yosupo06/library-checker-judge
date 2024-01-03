@@ -2,6 +2,10 @@ variable "env" {
   type = string
 }
 
+variable "image_name" {
+  type = string
+}
+
 packer {
   required_plugins {
     googlecompute = {
@@ -19,8 +23,7 @@ source "googlecompute" "judge" {
   disk_size = 50
   ssh_username = "ubuntu"
   temporary_key_pair_type = "ed25519"
-  image_name = "v2-${var.env}-base-image-{{timestamp}}"
-  image_family = "v2-${var.env}-base-image"
+  image_name = "${var.image_name}"
   preemptible = true
 }
 

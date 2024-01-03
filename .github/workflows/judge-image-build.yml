@@ -46,20 +46,19 @@ jobs:
 
     - uses: google-github-actions/setup-gcloud@v2
     
-    - name: Packer init
-      run: packer init build.pkr.hcl
+    - run: packer init build.pkr.hcl
       working-directory: ./packer/base
+    - id: image-name
+      run: echo "name=v3-tmp-base-image-$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
     - name: Build image
-      run: packer build -var 'env=${{ inputs.env }}-test' .
+      run: packer build -var 'env=${{ inputs.env }}' -var 'image_name=${{ steps.image-name.outputs.name }}' .
       working-directory: ./packer/base
-    - name:	Test image
-      run: ./test_on_gce.py --zone asia-northeast1-a --env ${{inputs.env}}-test
-      working-directory: ./deploy
+    # TODO: test
     - name: Deploy image
       run: >
-        gcloud compute images create v2-${{ inputs.env }}-base-image-$(date +'%Y-%m-%d-%H-%M-%S')
-        --source-image-family v2-${{ inputs.env }}-test-base-image
-        --family v2-${{ inputs.env }}-base-image
+        gcloud compute images create v3-${{ inputs.env }}-base-image-$(date +'%Y-%m-%d-%H-%M-%S')
+        --source-image ${{ steps.image-name.outputs.name }}
+        --family v3-${{ inputs.env }}-base-image
 
   judge:
     if: ${{ !cancelled() && !failure() }}
@@ -89,14 +88,11 @@ jobs:
 
     - uses: google-github-actions/setup-gcloud@v2
     
-    - name: Generate protoc
-      run: ./api/gen_protoc.sh
-    - name: Build judge
-      run: go build .
+    - run: ./api/gen_protoc.sh
+    - run: go build .
       working-directory: ./judge
 
-    - name: Packer init
-      run: packer init build.pkr.hcl
+    - run: packer init build.pkr.hcl
       working-directory: ./packer/judge
     - name: Build image
       run: packer build -var 'env=${{ inputs.env }}' .
