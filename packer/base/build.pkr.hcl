@@ -12,7 +12,7 @@ packer {
 }
 
 source "googlecompute" "judge" {
-  project_id = "library-checker-project"
+  project_id = "${var.env}-library-checker-project"
   source_image_family = "ubuntu-2204-lts"
   zone = "asia-northeast1-b"
   machine_type = "c2-standard-4"
