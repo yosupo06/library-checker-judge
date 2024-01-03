@@ -22,12 +22,24 @@ resource "google_service_account" "api" {
   account_id   = "api-sa"
   display_name = "Service Account for API"
 }
+resource "google_service_account" "judge" {
+  account_id   = "judge-sa"
+  display_name = "Service Account for Judge"
+}
 
 locals {
   accounts = [
     {
       account = google_service_account.api_deployer
       roles   = ["roles/artifactregistry.writer"]
+    },
+    {
+      account = google_service_account.judge_deployer
+      roles = [
+        "roles/compute.instanceAdmin",
+        "roles/compute.storageAdmin",
+        "roles/iam.serviceAccountUser",
+      ]
     },
     {
       account = google_service_account.uploader
@@ -59,7 +71,7 @@ locals {
   ]
 }
 
-resource "google_project_iam_member" "api_sa_role" {
+resource "google_project_iam_member" "sa_role" {
   for_each = {
     for elem in flatten([
       for account in local.accounts : [

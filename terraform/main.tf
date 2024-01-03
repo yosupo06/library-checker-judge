@@ -17,6 +17,8 @@ terraform {
 locals {
   github_repo_owner = "yosupo06"
   github_repo_judge = "library-checker-judge"
+
+  judge_image_family = "v3-judge-image"
 }
 
 provider "google" {
@@ -181,4 +183,74 @@ resource "google_cloud_run_v2_service_iam_member" "member" {
   name     = google_cloud_run_v2_service.api.name
   role     = "roles/run.invoker"
   member   = "allUsers"
+}
+
+// Instance template
+
+resource "google_compute_image" "judge_dummy" {
+  name   = "v3-judge-image-0000"
+  family = local.judge_image_family
+
+  source_image = "projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20231213a"
+}
+
+data "google_compute_image" "judge" {
+  family      = local.judge_image_family
+  most_recent = true
+  depends_on  = [google_compute_image.judge_dummy]
+}
+
+
+#     - name: Create instance template
+#       run: >
+#         gcloud compute instance-templates create ${{ steps.instance-template-name.outputs.name }}
+#         --preemptible
+#         --machine-type c2-standard-4
+#         --image-family v2-${{ inputs.env }}-judge-image
+#         --service-account gce-judge@library-checker-project.iam.gserviceaccount.com
+#         --scopes default,cloud-platform
+#         --boot-disk-size 50GB
+#         --network-interface=no-address
+#         --metadata env=${{ inputs.env }}
+
+resource "google_compute_instance_template" "judge" {
+  name        = "judge-template"
+  description = "This template is used to create judge server."
+
+  machine_type   = "c2-standard-4"
+  can_ip_forward = false
+
+  // Create a new boot disk from an image
+  disk {
+    source_image = data.google_compute_image.judge.self_link
+    auto_delete  = true
+    boot         = true
+    disk_type    = "pd-standard"
+    disk_size_gb = 50
+  }
+
+  // make no public address
+  network_interface {
+    network = "default"
+  }
+
+  metadata = {
+    env = var.env
+  }
+
+  service_account {
+    email  = google_service_account.judge.email
+    scopes = ["cloud-platform"]
+  }
+}
+
+resource "google_compute_region_instance_group_manager" "judge" {
+  name = "judge"
+
+  base_instance_name = "judge"
+  region             = "asia-northeast1"
+
+  version {
+    instance_template = google_compute_instance_template.judge.self_link_unique
+  }
 }
