@@ -95,5 +95,10 @@ jobs:
     - run: packer init build.pkr.hcl
       working-directory: ./packer/judge
     - name: Build image
-      run: packer build -var 'env=${{ inputs.env }}' -var 'image_family=${{ fromJson(steps.tf-output.outputs.stdout).judge_image_family.value }}' .
+      run: >
+        packer build
+        -var 'env=${{ inputs.env }}'
+        -var 'image_family=${{ fromJson(steps.tf-output.outputs.stdout).judge_image_family.value }}'
+        -var 'minio_host=storage.googleapis.com'
+        .
       working-directory: ./packer/judge
