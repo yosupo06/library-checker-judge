@@ -65,10 +65,4 @@ build {
       "sudo cp /tmp/judge.service /usr/local/lib/systemd/system/judge.service",
     ]
   }
-  provisioner "shell" {
-    inline = [
-      "sudo systemctl daemon-reload",
-      "sudo systemctl enable judge",
-    ]
-  }
 }
