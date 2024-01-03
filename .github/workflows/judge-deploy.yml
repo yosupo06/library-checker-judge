@@ -26,6 +26,7 @@ jobs:
     with:
       env: ${{ inputs.env }}
       build-base: ${{ inputs.build-base }}
+    secrets: inherit
 
   # deploy:
   #   needs: [image-build]
