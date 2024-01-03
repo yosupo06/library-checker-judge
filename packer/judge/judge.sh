@@ -13,7 +13,6 @@ MINIO_PUBLIC_BUCKET=$(gcloud secrets versions access latest --secret=$ENV-minio-
 PG_HOST=$(gcloud secrets versions access latest --secret=pg-private-ip)
 PG_USER=$(gcloud secrets versions access latest --secret=$ENV-pg-user)
 PG_PASS=$(gcloud secrets versions access latest --secret=$ENV-pg-pass)
-PG_TABLE=$(gcloud secrets versions access latest --secret=$ENV-pg-table)
 
 /root/judge \
 -langs=/root/langs.toml \
@@ -23,7 +22,7 @@ PG_TABLE=$(gcloud secrets versions access latest --secret=$ENV-pg-table)
 -miniobucket=$MINIO_BUCKET \
 -miniopublicbucket=$MINIO_PUBLIC_BUCKET \
 -pghost=$PG_HOST \
--pguser=$PG_USER \
+-pguser=postgres \
 -pgpass=$PG_PASS \
--pgtable=$PG_TABLE \
+-pgtable=librarychecker \
 -prod
