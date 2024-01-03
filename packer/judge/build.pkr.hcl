@@ -41,12 +41,6 @@ source "googlecompute" "judge" {
 build {
   sources = ["sources.googlecompute.judge"]
 
-  provisioner "shell-local" {
-    inline = [
-      "cat > judge.service <<'STR'\n${local.parsed_judge_service}",
-    ]
-  }
-
   # wait for cloud-init
   provisioner "shell" {
     inline = [
@@ -64,7 +58,7 @@ build {
     destination = "/tmp/langs.toml"
   }
   provisioner "file" {
-    source = "judge.service"
+    content = local.parsed_judge_service
     destination = "/tmp/judge.service"
   }
   provisioner "shell" {
