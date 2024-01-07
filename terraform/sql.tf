@@ -48,11 +48,11 @@ resource "google_sql_database" "main" {
 }
 
 resource "google_sql_user" "main" {
-    for_each = toset([
-        google_service_account.uploader.email,
-        google_service_account.judge.email,
-        google_service_account.api.email,
-    ])
+    for_each = {
+        (google_service_account.uploader.account_id) : google_service_account.uploader.email,
+        (google_service_account.judge.account_id) : google_service_account.judge.email,
+        (google_service_account.api.account_id) : google_service_account.api.email,
+    }
     # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
     # from the service account email due to length limits on database usernames.
     name     = trimsuffix(each.value, ".gserviceaccount.com")

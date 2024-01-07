@@ -10,11 +10,11 @@ output "uploader_sa_email" {
     value = google_service_account.uploader.email
 }
 output "uploader_sa_db_name" {
-    value = google_sql_user.main[google_service_account.uploader.email].name
+    value = google_sql_user.main[google_service_account.uploader.account_id].name
 }
 
 output "judge_sa_db_name" {
-    value = google_sql_user.main[google_service_account.judge.email].name
+    value = google_sql_user.main[google_service_account.judge.account_id].name
 }
 
 output "api_deployer_sa_email" {
