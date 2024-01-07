@@ -60,7 +60,7 @@ jobs:
 
       - run: >
           ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
-          psql -h localhost -U postgres -d librarychecker GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO PUBLIC;
+          echo 'GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO PUBLIC;' | psql -h localhost -U postgres -d librarychecker
         working-directory: ./migrator
 
       - run: >
