@@ -60,6 +60,8 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
