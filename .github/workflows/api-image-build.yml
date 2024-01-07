@@ -47,13 +47,13 @@ jobs:
     - uses: docker/metadata-action@v4
       id: meta
       with:
-	      images: ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }}
-	      tags: |
+        images: ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }}
+        tags: |
           type=sha
 
     - uses: docker/build-push-action@v5
       with:
         push: true
         file: Dockerfile.API
-	      tags: ${{ steps.meta.outputs.tags }}
-	      labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
