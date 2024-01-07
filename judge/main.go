@@ -42,7 +42,7 @@ func main() {
 	minioID := getEnv("MINIO_ID", "minio")
 	minioKey := getEnv("MINIO_KEY", "miniopass")
 	minioBucket := getEnv("MINIO_BUCKET", "testcase")
-	minioPublicBucket := getEnv("MINIO_BUCKET", "testcase-public")
+	minioPublicBucket := getEnv("MINIO_PUBLIC_BUCKET", "testcase-public")
 
 	flag.Parse()
 

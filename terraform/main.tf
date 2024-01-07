@@ -122,6 +122,11 @@ resource "google_compute_region_instance_group_manager" "judge" {
   base_instance_name = "judge"
   region             = "asia-northeast1"
 
+  update_policy {
+    type = "PROACTIVE"
+    minimal_action = "REPLACE"
+    max_unavailable_fixed = 3
+  }
   version {
     instance_template = google_compute_instance_template.judge.self_link_unique
   }
