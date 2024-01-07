@@ -44,7 +44,16 @@ jobs:
 
     - run: ./api/gen_protoc.sh
 
-    - name: Build docker image
-      run: docker build -t ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }} -f Dockerfile.API .
-    - name: Push docker image
-      run: docker push ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }}
+    - uses: docker/metadata-action@v4
+      id: meta
+      with:
+	      images: ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }}
+	      tags: |
+          type=sha
+
+    - uses: docker/build-push-action@v5
+      with:
+        push: true
+        file: Dockerfile.API
+	      tags: ${{ steps.meta.outputs.tags }}
+	      labels: ${{ steps.meta.outputs.labels }}
