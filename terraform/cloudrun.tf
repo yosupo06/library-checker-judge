@@ -16,7 +16,7 @@ resource "google_cloud_run_v2_service" "api" {
     }
 
     containers {
-      image = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/api"
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
       env {
         name  = "PG_HOST"
         value = "/cloudsql/${google_sql_database_instance.main.connection_name}"
@@ -54,4 +54,3 @@ resource "google_cloud_run_v2_service_iam_member" "member" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
-

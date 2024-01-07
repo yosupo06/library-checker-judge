@@ -6,12 +6,6 @@ terraform {
       tags = ["library-checker"]
     }
   }
-  required_providers {
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "~>3.0.2"
-    }
-  }
 }
 
 locals {
@@ -25,7 +19,6 @@ provider "google" {
   project = var.gcp_project_id
   region  = "global"
 }
-data "google_client_config" "default" {}
 
 // Workload Identity
 resource "google_iam_workload_identity_pool" "gh" {
