@@ -34,6 +34,7 @@ locals {
       roles   = [
         "roles/artifactregistry.writer",
         "roles/run.developer",
+        "roles/iam.serviceAccountUser",
       ]
     },
     {
