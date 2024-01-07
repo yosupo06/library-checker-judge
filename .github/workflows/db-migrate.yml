@@ -48,7 +48,7 @@ jobs:
         uses: google-github-actions/get-secretmanager-secrets@v2
         with:
           secrets: |-
-            pg-pass:dev-library-checker-project/database-postgres-password/latest
+            pg-pass:${{ inputs.env }}-library-checker-project/database-postgres-password/latest
 
       - run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.2/cloud-sql-proxy.linux.amd64
