@@ -137,6 +137,7 @@ func (t *TestCaseFetcher) Fetch(problem database.Problem) (TestCaseDir, error) {
 			return TestCaseDir{}, err
 		}
 
+		log.Printf("Download public files: %s//%s", t.minioPublicBucket, publicObjectPath)
 		for object := range t.minioClient.ListObjects(t.minioPublicBucket, publicObjectPath, true, nil) {
 			key := strings.TrimPrefix(object.Key, publicObjectPath)
 			dstPath := path.Join(dataPath, "public", key)
