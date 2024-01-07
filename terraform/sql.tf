@@ -23,15 +23,21 @@ resource "google_sql_database_instance" "main" {
   region           = "asia-northeast1"
   database_version = "POSTGRES_15"
   root_password    = random_password.postgres.result
+
+  depends_on = [ google_service_networking_connection.main ]
   settings {
     tier = "db-f1-micro"
+    ip_configuration {
+      ipv4_enabled = true
+      private_network = google_compute_network.main.id
+    }
     database_flags {
       name  = "cloudsql.iam_authentication"
       value = "on"
     }
     backup_configuration {
       enabled = true
-    }
+    }    
   }
   deletion_protection = false
 }
@@ -41,15 +47,15 @@ resource "google_sql_database" "main" {
   instance = google_sql_database_instance.main.name
 }
 
-# Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
-# from the service account email due to length limits on database usernames.
-resource "google_sql_user" "uploader" {
-  name     = trimsuffix(google_service_account.uploader.email, ".gserviceaccount.com")
-  instance = google_sql_database_instance.main.name
-  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
-}
-resource "google_sql_user" "judge" {
-  name     = trimsuffix(google_service_account.judge.email, ".gserviceaccount.com")
-  instance = google_sql_database_instance.main.name
-  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
+resource "google_sql_user" "main" {
+    for_each = toset([
+        google_service_account.uploader.email,
+        google_service_account.judge.email,
+        google_service_account.api.email,
+    ])
+    # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
+    # from the service account email due to length limits on database usernames.
+    name     = trimsuffix(each.value, ".gserviceaccount.com")
+    instance = google_sql_database_instance.main.name
+    type     = "CLOUD_IAM_SERVICE_ACCOUNT"
 }

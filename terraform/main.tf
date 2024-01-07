@@ -66,75 +66,6 @@ resource "google_artifact_registry_repository" "main" {
   }
 }
 
-
-
-
-resource "google_sql_user" "api" {
-  # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
-  # from the service account email due to length limits on database usernames.
-  name     = trimsuffix(google_service_account.api.email, ".gserviceaccount.com")
-  instance = google_sql_database_instance.main.name
-  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
-}
-
-
-resource "google_cloud_run_v2_service" "api" {
-  name     = "api"
-  location = "asia-northeast1"
-  ingress  = "INGRESS_TRAFFIC_ALL"
-
-  template {
-    scaling {
-      max_instance_count = 2
-    }
-
-    volumes {
-      name = "cloudsql"
-      cloud_sql_instance {
-        instances = [google_sql_database_instance.main.connection_name]
-      }
-    }
-
-    containers {
-      image = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/api"
-      env {
-        name  = "PG_HOST"
-        value = "/cloudsql/${google_sql_database_instance.main.connection_name}"
-      }
-      env {
-        name  = "PG_TABLE"
-        value = "librarychecker"
-      }
-      env {
-        name  = "PG_USER"
-        value = "postgres"
-      }
-      env {
-        name = "PG_PASS"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.postgres_password.secret_id
-            version = "latest"
-          }
-        }
-      }
-      volume_mounts {
-        name       = "cloudsql"
-        mount_path = "/cloudsql"
-      }
-    }
-
-    service_account = google_service_account.api.email
-  }
-}
-resource "google_cloud_run_v2_service_iam_member" "member" {
-  project  = google_cloud_run_v2_service.api.project
-  location = google_cloud_run_v2_service.api.location
-  name     = google_cloud_run_v2_service.api.name
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
-
 // Instance template
 
 resource "google_compute_image" "judge_dummy" {
@@ -148,20 +79,6 @@ data "google_compute_image" "judge" {
   family      = local.judge_image_family
   most_recent = true
   depends_on  = [google_compute_image.judge_dummy]
-}
-
-data "google_compute_network" "judge" {
-  name = "default"
-}
-resource "google_compute_subnetwork" "judge" {
-  provider = google
-
-  name                     = "judge"
-  ip_cidr_range            = "10.0.0.0/22"
-  region                   = "asia-northeast1"
-  role                     = "ACTIVE"
-  network                  = data.google_compute_network.judge.id
-  private_ip_google_access = true
 }
 
 resource "google_compute_instance_template" "judge" {
@@ -182,7 +99,7 @@ resource "google_compute_instance_template" "judge" {
   }
 
   network_interface {
-    subnetwork = google_compute_subnetwork.judge.name
+    subnetwork = google_compute_subnetwork.main.name
   }
 
   metadata = {

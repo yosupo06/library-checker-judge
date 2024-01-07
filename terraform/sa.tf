@@ -39,6 +39,7 @@ locals {
         "roles/compute.instanceAdmin",
         "roles/compute.storageAdmin",
         "roles/iam.serviceAccountUser",
+        "roles/secretmanager.secretAccessor",
       ]
     },
     {
@@ -58,7 +59,7 @@ locals {
     },
     {
       account = google_service_account.storage_editor
-      roles   = ["roles/storage.objectUser"]
+      roles   = ["roles/storage.objectAdmin"]
     },
     {
       account = google_service_account.api

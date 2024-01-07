@@ -2,7 +2,7 @@
 Description = Cloud SQL proxy
 
 [Service]
-ExecStart = /root/cloud-sql-proxy --auto-iam-authn ${db_connection_name}
+ExecStart = /root/cloud-sql-proxy --private-ip --auto-iam-authn ${db_connection_name}
 
 Restart = always
 Type = simple

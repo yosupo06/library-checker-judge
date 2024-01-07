@@ -13,8 +13,8 @@ Environment=MINIO_ID=${minio_id}
 Environment=MINIO_KEY=${minio_key}
 Environment=MINIO_BUCKET=${minio_bucket}
 Environment=MINIO_PUBLICK_BUCKET=${minio_public_bucket}
-Environment=PG_USER=${pg_user}
-ExecStart = /root/judge.sh
+Environment=PGUSER=${pg_user}
+ExecStart = /root/judge --langs /root/langs.toml
 
 Restart = always
 Type = simple
