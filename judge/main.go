@@ -20,21 +20,29 @@ const POOLING_PERIOD = 3 * time.Second
 
 var testCaseFetcher TestCaseFetcher
 
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
 func main() {
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
 
 	prod := flag.Bool("prod", false, "production mode")
 
-	pgHost := flag.String("pghost", "localhost", "postgre host")
-	pgUser := flag.String("pguser", "postgres", "postgre user")
-	pgPass := flag.String("pgpass", "passwd", "postgre password")
-	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
+	pgHost := getEnv("PGHOST", "localhost")
+	pgUser := getEnv("PGUSER", "postgres")
+	pgPass := getEnv("PGPASSWORD", "")
+	pgTable := getEnv("PGTABLE", "librarychecker")
 
-	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
-	minioID := flag.String("minioid", "minio", "minio ID")
-	minioKey := flag.String("miniokey", "miniopass", "minio access key")
-	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
-	minioPublicBucket := flag.String("miniopublicbucket", "testcase-public", "minio public bucket")
+	minioHost := getEnv("MINIO_HOST", "localhost:9000")
+	minioID := getEnv("MINIO_ID", "minio")
+	minioKey := getEnv("MINIO_KEY", "miniopass")
+	minioBucket := getEnv("MINIO_BUCKET", "testcase")
+	minioPublicBucket := getEnv("MINIO_BUCKET", "testcase-public")
 
 	flag.Parse()
 
@@ -48,21 +56,21 @@ func main() {
 
 	// connect db
 	db := database.Connect(
-		*pgHost,
+		pgHost,
 		"5432",
-		*pgTable,
-		*pgUser,
-		*pgPass,
+		pgTable,
+		pgUser,
+		pgPass,
 		false)
 
 	ReadLangs(*langsTomlPath)
 
 	testCaseFetcher, err = NewTestCaseFetcher(
-		*minioHost,
-		*minioID,
-		*minioKey,
-		*minioBucket,
-		*minioPublicBucket,
+		minioHost,
+		minioID,
+		minioKey,
+		minioBucket,
+		minioPublicBucket,
 		*prod,
 	)
 	if err != nil {

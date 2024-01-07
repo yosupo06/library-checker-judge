@@ -2,18 +2,6 @@
 
 set -ev
 
-ENV=$(curl -X GET -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/env")
-
-MINIO_HOST=$(gcloud secrets versions access latest --secret=minio-host)
-MINIO_ID=$(gcloud secrets versions access latest --secret=minio-id)
-MINIO_KEY=$(gcloud secrets versions access latest --secret=minio-secret)
-MINIO_BUCKET=$(gcloud secrets versions access latest --secret=$ENV-minio-bucket)
-MINIO_PUBLIC_BUCKET=$(gcloud secrets versions access latest --secret=$ENV-minio-public-bucket)
-
-PG_HOST=$(gcloud secrets versions access latest --secret=pg-private-ip)
-PG_USER=$(gcloud secrets versions access latest --secret=$ENV-pg-user)
-PG_PASS=$(gcloud secrets versions access latest --secret=$ENV-pg-pass)
-
 /root/judge \
 -langs=/root/langs.toml \
 -miniohost=$MINIO_HOST \
@@ -21,8 +9,5 @@ PG_PASS=$(gcloud secrets versions access latest --secret=$ENV-pg-pass)
 -miniokey=$MINIO_KEY \
 -miniobucket=$MINIO_BUCKET \
 -miniopublicbucket=$MINIO_PUBLIC_BUCKET \
--pghost=$PG_HOST \
--pguser=postgres \
--pgpass=$PG_PASS \
--pgtable=librarychecker \
+-pguser=$PG_USER \
 -prod
