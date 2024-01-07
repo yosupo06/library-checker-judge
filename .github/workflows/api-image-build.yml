@@ -52,9 +52,13 @@ jobs:
           type=sha
 
     - uses: docker/build-push-action@v5
+      id: build
       with:
         context: .
         push: true
         file: Dockerfile.API
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Deploy api service to Cloud Run
+      run: gcloud run deploy api --image=${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }}@${{ steps.build.outputs.digest }}
