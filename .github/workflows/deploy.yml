@@ -27,18 +27,21 @@ env:
 jobs:
   db-migrate:
     uses: ./.github/workflows/db-migrate.yml
+    secrets: inherit
     with:
       env: ${{ inputs.env }}
 
   api-deploy:
     needs: db-migrate
     uses: ./.github/workflows/api-deploy.yml
+    secrets: inherit
     with:
       env: ${{ inputs.env }}
 
   problems-deploy:
     needs: api-deploy
     uses: ./.github/workflows/problems-deploy.yml
+    secrets: inherit
     with:
       env: ${{ inputs.env }}
       problems-branch: ${{ inputs.problems-branch }}
@@ -46,6 +49,7 @@ jobs:
   judge-deploy:
     needs: problems-deploy
     uses: ./.github/workflows/judge-image-build.yml
+    secrets: inherit
     with:
       env: ${{ inputs.env }}
 
