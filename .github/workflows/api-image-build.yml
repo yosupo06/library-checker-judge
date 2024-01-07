@@ -49,7 +49,7 @@ jobs:
       with:
         images: ${{ fromJson(steps.tf-output.outputs.stdout).api_image.value }}
         tags: |
-          type=raw,pattern={{date 'YYYY-MM-DD-hhmmss'}}
+          type=raw,value={{date 'YYYY-MM-DDThh:mm:ssZ'}}
 
     - uses: docker/build-push-action@v5
       id: build
