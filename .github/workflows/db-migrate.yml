@@ -1,13 +1,21 @@
 name: DB migrate
 
 on:
-  push:
-    branches:
-      - master
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        default: dev
+        description: environment of deploy
 
 env:
   TF_CLOUD_ORGANIZATION: "yosupo06-org"
-  TF_WORKSPACE: "dev-library-checker"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
 
 jobs:
   migrate:

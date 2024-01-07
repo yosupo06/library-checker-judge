@@ -20,8 +20,18 @@ on:
         default: master
         description: branch of library-checker-problems
 
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
+
 jobs:
+  db-migrate:
+    uses: ./.github/workflows/db-migrate.yml
+    with:
+      env: ${{ inputs.env }}
+
   api-deploy:
+    needs: db-migrate
     uses: ./.github/workflows/api-deploy.yml
     with:
       env: ${{ inputs.env }}
@@ -35,6 +45,21 @@ jobs:
 
   judge-deploy:
     needs: problems-deploy
-    uses: ./.github/workflows/judge-deploy.yml
+    uses: ./.github/workflows/judge-image-build.yml
     with:
       env: ${{ inputs.env }}
+
+  terraform-apply:
+    needs: judge-deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - run: terraform apply --auto-approve
+        working-directory: ./terraform
