@@ -53,6 +53,7 @@ jobs:
 
     - uses: docker/build-push-action@v5
       with:
+        context: .
         push: true
         file: Dockerfile.API
         tags: ${{ steps.meta.outputs.tags }}
