@@ -34,28 +34,32 @@ jobs:
           path: library-checker-judge
           ref: ${{ inputs.judge-branch }}
 
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - id: tf-output
+        run: terraform output --json
+        working-directory: ./terraform
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+          service_account: ${{ fromJson(steps.tf-output.outputs.stdout).frontend_sa_email.value }}
+          token_format: access_token
+
       - uses: actions/setup-node@v4
         with:
           node-version: "18"
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-          service_account: app-engine-deployer@library-checker-project.iam.gserviceaccount.com
-          token_format: access_token
 
-      - name: Run npm ci
-        run: npm ci
+      - run: npm ci
+      - run: npm install -g firebase-tools
 
-      - name: Generate protoc
-        run: npm run protoc
+      - run: npm run protoc
         env:
           PROTO_PATH: ./library-checker-judge/api/proto
+      - run: npm run build -- --mode ${{ (inputs.env == 'prod' && 'production') || 'staging' }}
 
-      - name: Run npm build
-        run: npm run build -- --mode ${{ (inputs.env == 'prod' && 'production') || 'staging' }}
-
-      - name: Deploy app.yaml
-        run: gcloud app deploy --quiet app-${{ inputs.env }}.yaml
-
-      - name: Deploy dispatch.yaml
-        run: gcloud app deploy --quiet dispatch.yaml
+      - run: firebase use ${{ inputs.env }}
+      - run: firebase deploy
