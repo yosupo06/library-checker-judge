@@ -62,6 +62,8 @@ jobs:
           ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
           psql -h localhost -U postgres -d librarychecker -c "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO PUBLIC;"
         working-directory: ./migrator
+        env:
+          PGPASSWORD: "${{ steps.secrets.outputs.pg-pass }}"
 
       - run: >
           ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
