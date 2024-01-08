@@ -15,8 +15,8 @@ locals {
   judge_image_family = "v3-judge-image"
 
   api_domain = {
-    "dev": "v2.api.dev.judge.yosupo.jp",
-    "prod": "v2.api.judge.yosupo.jp",
+    "dev" : "v2.api.dev.judge.yosupo.jp",
+    "prod" : "v2.api.judge.yosupo.jp",
   }
 }
 
@@ -24,26 +24,6 @@ provider "google" {
   project = var.gcp_project_id
   region  = "global"
 }
-
-// Workload Identity
-resource "google_iam_workload_identity_pool" "gh" {
-  workload_identity_pool_id = "gh-pool"
-  description               = "Workload Identity Pool for Github Actions"
-}
-resource "google_iam_workload_identity_pool_provider" "gh" {
-  workload_identity_pool_id          = google_iam_workload_identity_pool.gh.workload_identity_pool_id
-  workload_identity_pool_provider_id = "gh-provider-id"
-  attribute_mapping = {
-    "google.subject"             = "assertion.sub",
-    "attribute.repository"       = "assertion.repository",
-    "attribute.repository_owner" = "assertion.repository_owner",
-  }
-  oidc {
-    issuer_uri = "https://token.actions.githubusercontent.com"
-  }
-}
-
-
 
 resource "google_secret_manager_secret" "discord_announcement_webhook" {
   secret_id = "discord-announcement-webhook"
@@ -82,7 +62,7 @@ data "google_compute_image" "judge" {
 resource "google_compute_instance_template" "judge" {
   name_prefix = "judge-template-"
   description = "This template is used to create judge server."
-  region = "asia-northeast1"
+  region      = "asia-northeast1"
 
   machine_type   = "c2-standard-4"
   can_ip_forward = false
@@ -98,6 +78,11 @@ resource "google_compute_instance_template" "judge" {
 
   network_interface {
     subnetwork = google_compute_subnetwork.main.name
+  }
+
+  scheduling {
+    preemptible       = true
+    automatic_restart = false
   }
 
   metadata = {
@@ -121,8 +106,8 @@ resource "google_compute_region_instance_group_manager" "judge" {
   region             = "asia-northeast1"
 
   update_policy {
-    type = "PROACTIVE"
-    minimal_action = "REPLACE"
+    type                  = "PROACTIVE"
+    minimal_action        = "REPLACE"
     max_unavailable_fixed = 3
   }
   version {

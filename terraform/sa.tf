@@ -104,7 +104,26 @@ resource "google_project_iam_member" "sa_role" {
   member  = "serviceAccount:${each.value.email}"
 }
 
-resource "google_service_account_iam_member" "judge_workload_identity" {
+// Workload Identity
+resource "google_iam_workload_identity_pool" "gh" {
+  workload_identity_pool_id = "gh-pool"
+  description               = "Workload Identity Pool for Github Actions"
+}
+resource "google_iam_workload_identity_pool_provider" "gh" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.gh.workload_identity_pool_id
+  workload_identity_pool_provider_id = "gh-provider-id"
+  attribute_mapping = {
+    "google.subject"             = "assertion.sub",
+    "attribute.repository"       = "assertion.repository",
+    "attribute.repository_owner" = "assertion.repository_owner",
+  }
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+
+
+resource "google_service_account_iam_member" "workload_identity" {
   for_each = {
     for account in [
       google_service_account.api_deployer,
