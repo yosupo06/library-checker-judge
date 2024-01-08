@@ -31,6 +31,10 @@ concurrency:
   group: ${{ inputs.env }}-problems-deploy
   cancel-in-progress: true
 
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"  
+
 jobs:
   problems-deploy:
     runs-on: ubuntu-latest
@@ -39,40 +43,37 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: yosupo06/library-checker-problems
           path: library-checker-problems
           ref: ${{ inputs.problems-branch }}
+      - run: pip3 install -r ./library-checker-problems/requirements.txt
 
-      - id: gen-protoc
-        name: Generate protoc
-        run: ./api/gen_protoc.sh
-
-      - id: pip-setup
-        run: pip3 install -r ./library-checker-problems/requirements.txt
-
-      - id: auth
-        uses: google-github-actions/auth@v0
+      - uses: hashicorp/setup-terraform@v3
         with:
-          workload_identity_provider: projects/190778459730/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-          service_account: problems-deployer@library-checker-project.iam.gserviceaccount.com
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - id: tf-output
+        run: terraform output --json
+        working-directory: ./terraform
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+          service_account: ${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_email.value }}
           token_format: access_token
+
+      - run: ./api/gen_protoc.sh
 
       - id: secrets
         uses: google-github-actions/get-secretmanager-secrets@v1
         with:
           secrets: |-
-            pg-user:library-checker-project/${{ inputs.env }}-pg-user/latest
-            pg-pass:library-checker-project/${{ inputs.env }}-pg-pass/latest
-            pg-table:library-checker-project/${{ inputs.env }}-pg-table/latest
-            minio-host:library-checker-project/minio-host/latest
-            minio-id:library-checker-project/minio-id/latest
-            minio-secret:library-checker-project/minio-secret/latest
-            minio-bucket:library-checker-project/${{ inputs.env }}-minio-bucket/latest
-            minio-public-bucket:library-checker-project/${{ inputs.env }}-minio-public-bucket/latest
-            discord-webhook:library-checker-project/${{ inputs.env }}-discord-announcement-webhook/latest
+            minio-secret:${{ inputs.env }}-library-checker-project/storage-hmac-key/latest
+            discord-webhook:${{ inputs.env }}-library-checker-project/discord-announcement-webhook/latest
 
       - id: build-uploader
         name: Build Uploader
@@ -89,16 +90,15 @@ jobs:
         name: Deploy Problems
         working-directory: ./uploader
         run: >
-          ./cloud-sql-proxy library-checker-project:asia-northeast1:library-checker-sql &
+          ./cloud-sql-proxy --auto-iam-authn ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
           python3 upload.py
         env:
-          PG_USER: "${{ steps.secrets.outputs.pg-user }}"
-          PG_PASS: "${{ steps.secrets.outputs.pg-pass }}"
-          PG_TABLE: "${{ steps.secrets.outputs.pg-table }}"
-          MINIO_HOST: "${{ steps.secrets.outputs.minio-host }}"
-          MINIO_ID: "${{ steps.secrets.outputs.minio-id }}"
+          PG_USER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_db_name.value }}"
+          PG_TABLE: librarychecker
+          MINIO_HOST: storage.googleapis.com
+          MINIO_ID: "${{ fromJson(steps.tf-output.outputs.stdout).storage_hmac_id.value }}"
           MINIO_SECRET: "${{ steps.secrets.outputs.minio-secret }}"
-          MINIO_BUCKET: "${{ steps.secrets.outputs.minio-bucket }}"
-          MINIO_PUBLIC_BUCKET: "${{ steps.secrets.outputs.minio-public-bucket }}"
+          MINIO_BUCKET: "${{ fromJson(steps.tf-output.outputs.stdout).private_bucket_name.value }}"
+          MINIO_PUBLIC_BUCKET: "${{ fromJson(steps.tf-output.outputs.stdout).public_bucket_name.value }}"
           DISCORD_WEBHOOK: "${{ steps.secrets.outputs.discord-webhook }}"
-          FORCE_UPLOAD: "${{ inputs.force }}"
+          FORCE_UPLOAD: "${{ inputs.force }}" 

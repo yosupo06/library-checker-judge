@@ -1,0 +1,78 @@
+name: DB migrate
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        default: dev
+        description: environment of deploy
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '^1.21'
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - id: tf-output
+        run: terraform output --json
+        working-directory: ./terraform
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+          service_account: ${{ fromJson(steps.tf-output.outputs.stdout).db_migrator_sa_email.value }}
+          token_format: access_token
+
+      - id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@v2
+        with:
+          secrets: |-
+            pg-pass:${{ inputs.env }}-library-checker-project/database-postgres-password/latest
+
+      - run: |
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.2/cloud-sql-proxy.linux.amd64
+          chmod +x ./cloud-sql-proxy
+        working-directory: ./migrator
+
+      - run: go build .
+        working-directory: ./migrator
+
+      - run: |
+          ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
+          sleep 5
+          psql -h localhost -U postgres -d librarychecker -c "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO PUBLIC;"
+        working-directory: ./migrator
+        env:
+          PGPASSWORD: "${{ steps.secrets.outputs.pg-pass }}"
+
+      - run: |
+          ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
+          sleep 5
+          ./migrator
+        working-directory: ./migrator
+        env:
+          POSTGRE_HOST: localhost
+          POSTGRE_USER: postgres
+          POSTGRE_PASS: "${{ steps.secrets.outputs.pg-pass }}"
+          POSTGRE_TABLE: librarychecker

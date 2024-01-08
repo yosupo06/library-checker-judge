@@ -20,9 +20,16 @@ const (
 )
 
 func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB {
-	connStr := fmt.Sprintf(
-		"host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
-		host, port, dbname, user, pass)
+	connStr := ""
+	if pass != "" {
+		connStr = fmt.Sprintf(
+			"host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
+			host, port, dbname, user, pass)
+	} else {
+		connStr = fmt.Sprintf(
+			"host=%s port=%s dbname=%s user=%s sslmode=disable",
+			host, port, dbname, user)
+	}
 	log.Printf("try to connect db, host=%s port=%s dbname=%s user=%s", host, port, dbname, user)
 	for i := 0; i < MAX_TRY_TIMES; i++ {
 		newLogger := logger.New(
