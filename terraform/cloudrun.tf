@@ -46,6 +46,12 @@ resource "google_cloud_run_v2_service" "api" {
 
     service_account = google_service_account.api.email
   }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].containers[0].image,
+    ]
+  }
 }
 resource "google_cloud_run_v2_service_iam_member" "member" {
   project  = google_cloud_run_v2_service.api.project
@@ -53,4 +59,17 @@ resource "google_cloud_run_v2_service_iam_member" "member" {
   name     = google_cloud_run_v2_service.api.name
   role     = "roles/run.invoker"
   member   = "allUsers"
+}
+
+resource "google_cloud_run_domain_mapping" "default" {
+  location = "asia-northeast1"
+  name     = local.api_domain[var.env]
+
+  metadata {
+    namespace = var.gcp_project_id
+  }
+
+  spec {
+    route_name = google_cloud_run_v2_service.api.name
+  }
 }

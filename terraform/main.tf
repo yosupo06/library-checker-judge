@@ -13,6 +13,11 @@ locals {
   github_repo_judge = "library-checker-judge"
 
   judge_image_family = "v3-judge-image"
+
+  api_domain = {
+    "dev": "v2.api.dev.judge.yosupo.jp",
+    "prod": "v2.api.judge.yosupo.jp",
+  }
 }
 
 provider "google" {
