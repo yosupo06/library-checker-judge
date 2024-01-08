@@ -4,6 +4,13 @@ resource "google_storage_bucket" "public" {
   location                    = "asia-northeast1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = "true"
+
+  cors {
+    origin = ["*"]
+    method = ["GET"]
+    response_header = ["Content-Type", "Access-Control-Allow-Origin"]
+    max_age_seconds = 3600
+  }
 }
 resource "google_storage_bucket_iam_member" "public" {
   bucket = google_storage_bucket.public.name
