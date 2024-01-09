@@ -1,0 +1,13 @@
+name: Prod-Problems-Deploy
+
+on:
+  repository_dispatch:
+    types: [prod-frontend-deploy]
+  workflow_call:
+
+jobs:
+  problems-deploy:
+    uses: ./.github/workflows/frontend-deploy.yml
+    secrets: inherit
+    with:
+      env: prod

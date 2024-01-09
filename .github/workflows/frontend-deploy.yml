@@ -1,9 +1,24 @@
 name: Frontend deploy
 
 on:
-  push:
-    branches:
-        - patch/terraform
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+      frontend-branch:
+        type: string
+        default: master
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        default: dev
+        description: environment of deploy
+      frontend-branch:
+        type: string
+        default: master
+        description: branch of library-checker-frontend
 
 concurrency:
   group: dev-frontend-deploy
@@ -25,7 +40,7 @@ jobs:
         with:
           repository: yosupo06/library-checker-frontend
           path: library-checker-frontend
-          ref: patch/terraform
+          ref: ${{ inputs.frontend-branch }}
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -52,10 +67,10 @@ jobs:
         env:
           PROTO_PATH: ../api/proto
         working-directory: ./library-checker-frontend
-      - run: npm run build -- --mode staging
+      - run: npm run build -- --mode ${{ (inputs.env == 'prod' && 'production') || 'staging' }}
         working-directory: ./library-checker-frontend
 
-      - run: firebase use dev
+      - run: firebase use ${{ inputs.env }}
         working-directory: ./library-checker-frontend
       - run: firebase deploy
         working-directory: ./library-checker-frontend
