@@ -140,9 +140,9 @@ resource "google_service_account_iam_member" "workload_identity" {
     for account in [
       google_service_account.api_deployer,
       google_service_account.judge_deployer,
+      google_service_account.frontend_deployer,
       google_service_account.uploader,
       google_service_account.db_migrator,
-      google_service_account.frontend_deployer,
     ] : account.account_id => account.name
   }
   service_account_id = each.value
