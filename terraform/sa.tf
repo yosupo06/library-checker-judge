@@ -6,6 +6,10 @@ resource "google_service_account" "judge_deployer" {
   account_id   = "judge-deployer-sa"
   display_name = "Service Account for Judge deployer"
 }
+resource "google_service_account" "frontend_deployer" {
+  account_id   = "frontend-deployer"
+  display_name = "Service Account for Frontend deployer"
+}
 resource "google_service_account" "uploader" {
   account_id   = "uploader"
   display_name = "Uploader"
@@ -44,6 +48,14 @@ locals {
         "roles/compute.storageAdmin",
         "roles/iam.serviceAccountUser",
         "roles/secretmanager.secretAccessor",
+      ]
+    },
+    {
+      account = google_service_account.frontend_deployer
+      roles = [
+        "roles/firebaseauth.admin",
+        "roles/firebasehosting.admin",
+        "roles/serviceusage.apiKeysViewer",
       ]
     },
     {
@@ -130,6 +142,7 @@ resource "google_service_account_iam_member" "workload_identity" {
       google_service_account.judge_deployer,
       google_service_account.uploader,
       google_service_account.db_migrator,
+      google_service_account.frontend_deployer,
     ] : account.account_id => account.name
   }
   service_account_id = each.value

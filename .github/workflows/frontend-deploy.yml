@@ -1,0 +1,60 @@
+name: Frontend deploy
+
+on:
+  push:
+    branches:
+        - patch/terraform
+
+concurrency:
+  group: dev-frontend-deploy
+  cancel-in-progress: true
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "dev-library-checker"  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: yosupo06/library-checker-frontend
+          path: library-checker-frontend
+          ref: patch/terraform
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - id: tf-output
+        run: terraform output --json
+        working-directory: ./terraform
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+          service_account: ${{ fromJson(steps.tf-output.outputs.stdout).frontend_sa_email.value }}
+          token_format: access_token
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: npm install -g firebase-tools
+
+      - run: npm ci
+        working-directory: ./library-checker-frontend
+      - run: npm run protoc
+        env:
+          PROTO_PATH: ../api/proto
+        working-directory: ./library-checker-frontend
+      - run: npm run build -- --mode staging
+        working-directory: ./library-checker-frontend
+
+      - run: firebase use dev
+      - run: firebase deploy
