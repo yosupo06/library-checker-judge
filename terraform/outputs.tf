@@ -23,6 +23,9 @@ output "api_deployer_sa_email" {
 output "judge_deployer_sa_email" {
     value = google_service_account.judge_deployer.email
 }
+output "frontend_deployer_sa_email" {
+    value = google_service_account.frontend_deployer.email
+}
 
 output "main_db_connection_name" {
     value = google_sql_database_instance.main.connection_name

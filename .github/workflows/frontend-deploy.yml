@@ -1,0 +1,76 @@
+name: Frontend deploy
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+      frontend-branch:
+        type: string
+        default: master
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        default: dev
+        description: environment of deploy
+      frontend-branch:
+        type: string
+        default: master
+        description: branch of library-checker-frontend
+
+concurrency:
+  group: dev-frontend-deploy
+  cancel-in-progress: true
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: yosupo06/library-checker-frontend
+          path: library-checker-frontend
+          ref: ${{ inputs.frontend-branch }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - id: tf-output
+        run: terraform output --json
+        working-directory: ./terraform
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+          service_account: ${{ fromJson(steps.tf-output.outputs.stdout).frontend_deployer_sa_email.value }}
+          token_format: access_token
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: npm install -g firebase-tools
+
+      - run: npm ci
+        working-directory: ./library-checker-frontend
+      - run: npm run protoc
+        env:
+          PROTO_PATH: ../api/proto
+        working-directory: ./library-checker-frontend
+      - run: npm run build -- --mode ${{ (inputs.env == 'prod' && 'production') || 'staging' }}
+        working-directory: ./library-checker-frontend
+
+      - run: firebase use ${{ inputs.env }}
+        working-directory: ./library-checker-frontend
+      - run: firebase deploy
+        working-directory: ./library-checker-frontend
