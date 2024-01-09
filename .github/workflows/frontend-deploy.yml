@@ -56,4 +56,6 @@ jobs:
         working-directory: ./library-checker-frontend
 
       - run: firebase use dev
+        working-directory: ./library-checker-frontend
       - run: firebase deploy
+        working-directory: ./library-checker-frontend
