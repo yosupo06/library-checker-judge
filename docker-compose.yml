@@ -83,5 +83,5 @@ services:
     volumes:
       - ./firebase.json:/opt/firebase/firebase.json
     working_dir: /opt/firebase
-    command: "firebase emulators:start --project library-checker-project"    
+    command: firebase emulators:start --project dev-library-checker-project
     tty: true

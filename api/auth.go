@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	_ "github.com/lib/pq"
@@ -25,12 +26,8 @@ func (c *FirebaseAuthClient) parseUID(ctx context.Context, token string) string 
 	}
 }
 
-func connectFirebaseAuth(ctx context.Context) (AuthClient, error) {
-	firebaseApp, err := createFirebaseApp(ctx)
-	if err != nil {
-		return nil, err
-	}
-	firebaseAuth, err := firebaseApp.Auth(ctx)
+func connectFirebaseAuth(ctx context.Context, app *firebase.App) (AuthClient, error) {
+	firebaseAuth, err := app.Auth(ctx)
 	if err != nil {
 		return nil, err
 	}

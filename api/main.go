@@ -47,9 +47,9 @@ func NewGRPCServer(db *gorm.DB, authClient AuthClient, langsTomlPath string) *gr
 	return s
 }
 
-func createFirebaseApp(ctx context.Context) (*firebase.App, error) {
+func createFirebaseApp(ctx context.Context, projectID string) (*firebase.App, error) {
 	return firebase.NewApp(ctx, &firebase.Config{
-		ProjectID: "library-checker-project",
+		ProjectID: projectID,
 	})
 }
 
@@ -66,6 +66,11 @@ func main() {
 	portArg := flag.Int("port", -1, "port number")
 	flag.Parse()
 
+	firebaseProject := os.Getenv("FIREBASE_PROJECT")
+	if firebaseProject == "" {
+		log.Fatalln("Must be specify FIREBASE_PROJECT")
+	}
+
 	port := getEnv("PORT", "12380")
 	if *portArg != -1 {
 		port = strconv.Itoa(*portArg)
@@ -81,7 +86,11 @@ func main() {
 		getEnv("API_DB_LOG", "") != "")
 
 	// connect firebase
-	firebaseAuth, err := connectFirebaseAuth(ctx)
+	firebaseApp, err := createFirebaseApp(ctx, firebaseProject)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	firebaseAuth, err := connectFirebaseAuth(ctx, firebaseApp)
 	if err != nil {
 		log.Fatalln(err)
 	}
