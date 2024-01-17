@@ -24,6 +24,7 @@ provider "google" {
   project = var.gcp_project_id
   region  = "global"
 }
+data "google_project" "main" {}
 
 resource "google_secret_manager_secret" "discord_announcement_webhook" {
   secret_id = "discord-announcement-webhook"
@@ -46,5 +47,19 @@ resource "google_artifact_registry_repository" "main" {
 
 resource "google_firebase_project" "main" {
   provider = google-beta
-  project  = var.gcp_project_id
+  project  = data.google_project.main.project_id
+}
+
+resource "google_identity_platform_config" "default" {
+  project = data.google_project.main.project_id
+  sign_in {
+    email {
+        enabled = true
+    }
+  }
+  authorized_domains = [
+    "localhost",
+    "judge.yosupo.jp",
+    "dev.judge.yosupo.jp",
+  ]
 }

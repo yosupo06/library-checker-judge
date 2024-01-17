@@ -38,6 +38,10 @@ resource "google_cloud_run_v2_service" "api" {
           }
         }
       }
+      env {
+        name  = "FIREBASE_PROJECT"
+        value = "${data.google_project.main.project_id}"
+      }
       volume_mounts {
         name       = "cloudsql"
         mount_path = "/cloudsql"
