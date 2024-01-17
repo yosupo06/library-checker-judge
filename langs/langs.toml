@@ -120,7 +120,7 @@
 [[langs]]
     id = "crystal"
     name = "Crystal"
-    version = "crystal 0.33.0"
+    version = "crystal 1.9.1"
     source = "main.cr"
     image_name = "library-checker-images-crystal"
     compile = ["crystal", "build", "--release", "--no-debug", "--no-color", "-o", "./a.out", "./main.cr"]
