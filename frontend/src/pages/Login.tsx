@@ -39,7 +39,7 @@ const Login: React.FC = () => {
       </Typography>
       <Alert severity="info">
         <AlertTitle>Info</AlertTitle>
-        If you regesitered your account without an email, please attach{" "}
+        If you registered your account without an email, please attach{" "}
         <code>@dummy.judge.yosupo.jp</code> at suffix. <br />
         For example: <code>yosupo</code> →{" "}
         <code>yosupo@dummy.judge.yosupo.jp</code>
