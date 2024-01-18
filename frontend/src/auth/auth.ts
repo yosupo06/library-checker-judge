@@ -6,8 +6,6 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
-  sendEmailVerification,
-  updateEmail,
   verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
