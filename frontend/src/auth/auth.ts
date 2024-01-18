@@ -6,8 +6,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
-  sendEmailVerification,
-  updateEmail,
+  verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { QueryClient, useMutation, useQuery } from "@tanstack/react-query";
 
@@ -82,13 +81,7 @@ export const useUpdateEmailMutation = () => {
     if (!user) {
       return Promise.reject();
     }
-    await updateEmail(auth.currentUser, newEmail);
-    const user_2 = auth.currentUser;
-    if (!user_2) {
-      return Promise.reject();
-    } else {
-      return sendEmailVerification(auth.currentUser);
-    }
+    await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
   });
 };
 
