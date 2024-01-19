@@ -28,6 +28,10 @@ resource "google_compute_instance_template" "judge" {
     disk_size_gb = 50
   }
 
+  labels = {
+    app = "judge"
+  }
+
   network_interface {
     subnetwork = google_compute_subnetwork.main.name
   }
@@ -39,6 +43,7 @@ resource "google_compute_instance_template" "judge" {
 
   metadata = {
     env = var.env
+    enable-osconfig = "TRUE"
   }
 
   service_account {
