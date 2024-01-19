@@ -94,6 +94,8 @@ locals {
         "roles/cloudsql.client",
         "roles/cloudsql.instanceUser",
         "roles/secretmanager.secretAccessor",
+        "roles/monitoring.metricWriter",
+        "roles/logging.logWriter",
       ]
     },
   ]
