@@ -25,6 +25,22 @@ resource "google_compute_firewall" "allow_ssh" {
   }
   source_ranges = ["0.0.0.0/0"]
 }
+resource "google_compute_firewall" "allow_internal" {
+  name = "main-allow-internal"
+  network = google_compute_network.main.name
+  allow {
+    protocol = "icmp"
+  }
+  allow {
+    protocol = "tcp"
+    ports = ["0-65535"]
+  }
+  allow {
+    protocol = "udp"
+    ports = ["0-65535"]
+  }
+  source_ranges = ["10.128.0.0/9"]
+}
 
 resource "google_compute_global_address" "private" {
   name          = "private-ip-address"
