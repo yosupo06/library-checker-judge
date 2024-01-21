@@ -61,14 +61,6 @@ jobs:
       - run: |
           ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
           sleep 5
-          psql -h localhost -U postgres -d librarychecker -c "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO PUBLIC;"
-        working-directory: ./migrator
-        env:
-          PGPASSWORD: "${{ steps.secrets.outputs.pg-pass }}"
-
-      - run: |
-          ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
-          sleep 5
           ./migrator
         working-directory: ./migrator
         env:
@@ -76,3 +68,12 @@ jobs:
           POSTGRE_USER: postgres
           POSTGRE_PASS: "${{ steps.secrets.outputs.pg-pass }}"
           POSTGRE_TABLE: librarychecker
+
+      - run: |
+          ./cloud-sql-proxy ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
+          sleep 5
+          psql -h localhost -U postgres -d librarychecker -c "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO PUBLIC;"
+        working-directory: ./migrator
+        env:
+          PGPASSWORD: "${{ steps.secrets.outputs.pg-pass }}"
+
