@@ -266,7 +266,6 @@ func contextWithToken(ctx context.Context, token string) context.Context {
 var DUMMY_PROBLEM = database.Problem{
 	Name:             "aplusb",
 	Title:            "A + B",
-	Statement:        "Please calculate A + B",
 	Timelimit:        2000,
 	TestCasesVersion: "dummy-testcase-version",
 	Version:          "dummy-version",

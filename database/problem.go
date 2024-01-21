@@ -12,7 +12,6 @@ type Problem struct {
 	Name             string `gorm:"primaryKey"`
 	Title            string
 	SourceUrl        string
-	Statement        string
 	Timelimit        int32
 	TestCasesVersion string
 	Version          string
