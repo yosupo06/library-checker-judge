@@ -76,12 +76,13 @@ services:
 
   firebase:
     build:
-      dockerfile: Dockerfile.Firebase
+      dockerfile: firebase/Dockerfile
     ports:
       - 4000:4000
       - 9099:9099
+      - 8085:8085
     volumes:
-      - ./firebase.json:/opt/firebase/firebase.json
+      - ./firebase/firebase.json:/opt/firebase/firebase.json
     working_dir: /opt/firebase
     command: firebase emulators:start --project dev-library-checker-project
     tty: true
