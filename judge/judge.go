@@ -96,11 +96,11 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 	inFilePath := j.caseDir.InFilePath(caseName)
 	expectFilePath := j.caseDir.OutFilePath(caseName)
 
-	outFile, result, err := runSource(*j.sourceVolume, j.lang, j.tl, inFilePath)
+	outFilePath, result, err := runSource(*j.sourceVolume, j.lang, j.tl, inFilePath)
 	if err != nil {
 		return CaseResult{}, err
 	}
-	defer os.ReadDir(outFile.Name())
+	defer os.Remove(outFilePath)
 
 	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: result.Stderr, CheckerOut: []byte{}}
 	if result.TLE {
@@ -115,7 +115,7 @@ func (j *Judge) TestCase(caseName string) (CaseResult, error) {
 		return baseResult, nil
 	}
 
-	checkerResult, err := runChecker(j.checkerVolume, inFilePath, expectFilePath, outFile.Name())
+	checkerResult, err := runChecker(j.checkerVolume, inFilePath, expectFilePath, outFilePath)
 	if err != nil {
 		return CaseResult{}, err
 	}
@@ -207,10 +207,10 @@ func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t Tas
 	return
 }
 
-func runSource(volume Volume, lang Lang, timeLimit float64, inFilePath string) (*os.File, TaskResult, error) {
+func runSource(volume Volume, lang Lang, timeLimit float64, inFilePath string) (string, TaskResult, error) {
 	caseVolume, err := CreateVolume()
 	if err != nil {
-		return nil, TaskResult{}, err
+		return "", TaskResult{}, err
 	}
 	defer func() {
 		if err := caseVolume.Remove(); err != nil {
@@ -219,7 +219,7 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inFilePath string) (
 	}()
 
 	if err := caseVolume.CopyFile(inFilePath, "input.in"); err != nil {
-		return nil, TaskResult{}, err
+		return "", TaskResult{}, err
 	}
 
 	// TODO: make volume read only
@@ -232,17 +232,17 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inFilePath string) (
 		WithTimeout(time.Duration(timeLimit*1000*1000*1000)*time.Nanosecond),
 	)...)
 	if err != nil {
-		return nil, TaskResult{}, err
+		return "", TaskResult{}, err
 	}
 
 	result, err := taskInfo.Run()
 	if err != nil {
-		return nil, TaskResult{}, err
+		return "", TaskResult{}, err
 	}
 
 	outFile, err := os.CreateTemp("", "")
 	if err != nil {
-		return nil, TaskResult{}, err
+		return "", TaskResult{}, err
 	}
 	defer outFile.Close()
 
@@ -255,14 +255,14 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inFilePath string) (
 		WithStdout(outFile),
 	)...)
 	if err != nil {
-		return nil, TaskResult{}, err
+		return "", TaskResult{}, err
 	}
 
 	if _, err := genOutputFileTaskInfo.Run(); err != nil {
-		return nil, TaskResult{}, err
+		return "", TaskResult{}, err
 	}
 
-	return outFile, result, err
+	return outFile.Name(), result, err
 }
 
 func runChecker(volume *Volume, inFilePath, expectFilePath, actualFilePath string) (TaskResult, error) {
