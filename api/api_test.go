@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	clientutil "github.com/yosupo06/library-checker-judge/api/clientutil"
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
 	"google.golang.org/grpc"
@@ -224,7 +223,7 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 		}
 	}()
 
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithPerRPCCredentials(&clientutil.LoginCreds{}), grpc.WithTransportCredentials(insecure.NewCredentials())}
+	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.DialContext(
 		context.Background(),
 		"localhost:50053",
