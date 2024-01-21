@@ -26,29 +26,7 @@ resource "google_cloud_run_v2_service" "api" {
         value = "postgres"
       }
       env {
-        name = "PGPASS"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.postgres_password.secret_id
-            version = "latest"
-          }
-        }
-      }
-
-      env {
-        name  = "PG_HOST"
-        value = "/cloudsql/${google_sql_database_instance.main.connection_name}"
-      }
-      env {
-        name  = "PG_TABLE"
-        value = "librarychecker"
-      }
-      env {
-        name  = "PG_USER"
-        value = "postgres"
-      }
-      env {
-        name = "PG_PASS"
+        name = "PGPASSWORD"
         value_source {
           secret_key_ref {
             secret  = google_secret_manager_secret.postgres_password.secret_id
