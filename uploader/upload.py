@@ -9,8 +9,6 @@ if __name__ == "__main__":
 
     tomls = sorted(list(filter(lambda p: not p.match('test/**/info.toml'), Path('../library-checker-problems/').glob('**/info.toml'))))
 
-    PG_USER = environ["PG_USER"]
-    PG_TABLE = environ["PG_TABLE"]
     MINIO_HOST = environ["MINIO_HOST"]
     MINIO_ID = environ["MINIO_ID"]
     MINIO_SECRET = environ["MINIO_SECRET"]
@@ -21,8 +19,6 @@ if __name__ == "__main__":
 
     subprocess.run(
         ["./uploader"] +
-        ["-pguser", PG_USER] +
-        ["-pgtable", PG_TABLE] +
         ["-miniohost", MINIO_HOST] +
         ["-minioid", MINIO_ID] +
         ["-miniokey", MINIO_SECRET] +

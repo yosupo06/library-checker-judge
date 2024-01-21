@@ -13,10 +13,7 @@ services:
         condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
-      - PG_HOST=db
-      - PG_TABLE=librarychecker
-      - PG_USER=postgres
-      - PG_PASS=passwd
+      - PGHOST=db
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
     healthcheck:
         test: wget -q -O - localhost:12380/health || exit 1
@@ -30,7 +27,7 @@ services:
       - 5432:5432
     environment:
       - POSTGRES_DB=librarychecker
-      - POSTGRES_PASSWORD=passwd
+      - POSTGRES_PASSWORD=lcdummypassword
     healthcheck:
         test: [ "CMD", "pg_isready", "-q", "-d", "librarychecker", "-U", "postgres" ]
         timeout: 10s
@@ -43,10 +40,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      - POSTGRE_HOST=db
-      - POSTGRE_TABLE=librarychecker
-      - POSTGRE_USER=postgres
-      - POSTGRE_PASS=passwd
+      - PGHOST=db
 
   minio:
     image: minio/minio

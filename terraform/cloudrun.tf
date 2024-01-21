@@ -18,6 +18,24 @@ resource "google_cloud_run_v2_service" "api" {
     containers {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
       env {
+        name  = "PGHOST"
+        value = "/cloudsql/${google_sql_database_instance.main.connection_name}"
+      }
+      env {
+        name  = "PGUSER"
+        value = "postgres"
+      }
+      env {
+        name = "PGPASS"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.postgres_password.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
         name  = "PG_HOST"
         value = "/cloudsql/${google_sql_database_instance.main.connection_name}"
       }

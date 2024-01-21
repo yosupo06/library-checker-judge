@@ -30,4 +30,4 @@ COPY ./langs/langs.toml .
 COPY --from=grpc_health_probe_getter /tmp/grpc_health_probe /bin/grpc_health_probe
 
 ENV FIREBASE_PROJECT=dev-library-checker-project
-ENTRYPOINT ["./api.sh", "--langs=./langs.toml"]
+ENTRYPOINT ["./api", "--langs=./langs.toml"]

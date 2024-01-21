@@ -279,11 +279,6 @@ func (p *problem) uploadFiles(mc *minio.Client, bucket string) error {
 func main() {
 	dir := flag.String("dir", "../../library-checker-problems", "directory of library-checker-problems")
 
-	pgHost := flag.String("pghost", "localhost", "postgre host")
-	pgUser := flag.String("pguser", "postgres", "postgre user")
-	pgPass := flag.String("pgpass", "", "postgre password")
-	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
-
 	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
 	minioID := flag.String("minioid", "minio", "minio ID")
 	minioKey := flag.String("miniokey", "miniopass", "minio access key")
@@ -310,14 +305,7 @@ func main() {
 		dc = c
 	}
 
-	// connect db
-	db := database.Connect(
-		*pgHost,
-		"5432",
-		*pgTable,
-		*pgUser,
-		*pgPass,
-		false)
+	db := database.Connect(database.GetDSNFromEnv(), false)
 
 	// connect minio
 	mc, err := minio.New(
