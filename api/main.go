@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -57,35 +56,15 @@ func main() {
 	ctx := context.Background()
 
 	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
-
-	pgHost := flag.String("pghost", "127.0.0.1", "postgre host")
-	pgUser := flag.String("pguser", "postgres", "postgre user")
-	pgPass := flag.String("pgpass", "passwd", "postgre password")
-	pgTable := flag.String("pgtable", "librarychecker", "postgre table name")
-
-	portArg := flag.Int("port", -1, "port number")
 	flag.Parse()
 
+	db := database.Connect(database.GetDSNFromEnv(), getEnv("API_DB_LOG", "") != "")
+
+	// connect firebase
 	firebaseProject := os.Getenv("FIREBASE_PROJECT")
 	if firebaseProject == "" {
 		log.Fatalln("Must be specify FIREBASE_PROJECT")
 	}
-
-	port := getEnv("PORT", "12380")
-	if *portArg != -1 {
-		port = strconv.Itoa(*portArg)
-	}
-
-	// connect db
-	db := database.Connect(
-		*pgHost,
-		getEnv("POSTGRE_PORT", "5432"),
-		*pgTable,
-		*pgUser,
-		*pgPass,
-		getEnv("API_DB_LOG", "") != "")
-
-	// connect firebase
 	firebaseApp, err := createFirebaseApp(ctx, firebaseProject)
 	if err != nil {
 		log.Fatalln(err)
@@ -95,9 +74,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	s := NewGRPCServer(db, firebaseAuth, *langsTomlPath)
-
+	// launch api service
+	port := getEnv("PORT", "12380")
 	log.Println("launch gRPCWeb server port:", port)
+	s := NewGRPCServer(db, firebaseAuth, *langsTomlPath)
 	wrappedGrpc := grpcweb.WrapServer(s, grpcweb.WithOriginFunc(func(origin string) bool { return true }))
 	http.HandleFunc("/health", func(resp http.ResponseWriter, req *http.Request) {
 		io.WriteString(resp, "SERVING")

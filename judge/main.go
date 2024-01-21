@@ -33,11 +33,6 @@ func main() {
 
 	prod := flag.Bool("prod", false, "production mode")
 
-	pgHost := getEnv("PGHOST", "localhost")
-	pgUser := getEnv("PGUSER", "postgres")
-	pgPass := getEnv("PGPASSWORD", "")
-	pgTable := getEnv("PGTABLE", "librarychecker")
-
 	minioHost := getEnv("MINIO_HOST", "localhost:9000")
 	minioID := getEnv("MINIO_ID", "minio")
 	minioKey := getEnv("MINIO_KEY", "miniopass")
@@ -55,13 +50,7 @@ func main() {
 	log.Print("JudgeName: ", judgeName)
 
 	// connect db
-	db := database.Connect(
-		pgHost,
-		"5432",
-		pgTable,
-		pgUser,
-		pgPass,
-		false)
+	db := database.Connect(database.GetDSNFromEnv(), false)
 
 	ReadLangs(*langsTomlPath)
 

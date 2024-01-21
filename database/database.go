@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"testing"
 	"time"
 
@@ -19,18 +20,51 @@ const (
 	MAX_TRY_TIMES = 3
 )
 
-func Connect(host, port, dbname, user, pass string, enableLogger bool) *gorm.DB {
-	connStr := ""
-	if pass != "" {
-		connStr = fmt.Sprintf(
-			"host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
-			host, port, dbname, user, pass)
-	} else {
-		connStr = fmt.Sprintf(
-			"host=%s port=%s dbname=%s user=%s sslmode=disable",
-			host, port, dbname, user)
+type DSN struct {
+	Host     string
+	Port     int
+	Database string
+	User     string
+	Password string
+}
+
+var DEFAULT_DSN = DSN{
+	Host:     "localhost",
+	Port:     5432,
+	Database: "librarychecker",
+	User:     "postgres",
+	Password: "lcdummypassword",
+}
+
+func GetDSNFromEnv() DSN {
+	dsn := DEFAULT_DSN
+	if host := os.Getenv("PGHOST"); host != "" {
+		dsn.Host = host
 	}
-	log.Printf("try to connect db, host=%s port=%s dbname=%s user=%s", host, port, dbname, user)
+	if portStr := os.Getenv("PGPORT"); portStr != "" {
+		if port, err := strconv.Atoi(portStr); err != nil {
+			log.Println("Parse PGPORT failed:", portStr)
+		} else {
+			dsn.Port = port
+		}
+	}
+	if database := os.Getenv("PGDATABASE"); database != "" {
+		dsn.Database = database
+	}
+	if user := os.Getenv("PGUSER"); user != "" {
+		dsn.User = user
+	}
+	if password := os.Getenv("PGPASSWORD"); password != "" {
+		dsn.Password = password
+	}
+	return dsn
+}
+
+func Connect(dsn DSN, enableLogger bool) *gorm.DB {
+	connStr := fmt.Sprintf(
+		"host=%s port=%d dbname=%s user=%s password=%s sslmode=disable",
+		dsn.Host, dsn.Port, dsn.Database, dsn.User, dsn.Password)
+	log.Printf("try to connect db, host=%s port=%d dbname=%s user=%s", dsn.Host, dsn.Port, dsn.Database, dsn.User)
 	for i := 0; i < MAX_TRY_TIMES; i++ {
 		newLogger := logger.New(
 			log.New(os.Stdout, "\r\n", log.LstdFlags),
@@ -71,17 +105,21 @@ func CreateTestDB(t *testing.T) *gorm.DB {
 	dbName := uuid.New().String()
 	t.Log("create DB: ", dbName)
 
+	dsn := GetDSNFromEnv()
+	dsn.Database = dbName
+
 	createCmd := exec.Command("createdb",
-		"-h", "localhost",
-		"-U", "postgres",
-		"-p", "5432",
+		"-h", dsn.Host,
+		"-U", dsn.User,
+		"-p", strconv.Itoa(dsn.Port),
 		dbName)
-	createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+	createCmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSWORD=%s", dsn.Password))
 	if err := createCmd.Run(); err != nil {
-		t.Fatal("createdb failed: ", err.Error())
+		t.Fatal("createdb failed: ", err)
 	}
 
-	db := Connect("localhost", "5432", dbName, "postgres", "passwd", os.Getenv("API_DB_LOG") != "")
+	db := Connect(dsn, os.Getenv("API_DB_LOG") != "")
+
 	if err := AutoMigrate(db); err != nil {
 		t.Fatal("Migration failed:", err)
 	}
@@ -95,11 +133,11 @@ func CreateTestDB(t *testing.T) *gorm.DB {
 			t.Fatal("db.Close() failed:", err)
 		}
 		createCmd := exec.Command("dropdb",
-			"-h", "localhost",
-			"-U", "postgres",
-			"-p", "5432",
+			"-h", dsn.Host,
+			"-U", dsn.User,
+			"-p", strconv.Itoa(dsn.Port),
 			dbName)
-		createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+		createCmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSWORD=%s", dsn.Password))
 		createCmd.Stderr = os.Stderr
 		createCmd.Stdin = os.Stdin
 		if err := createCmd.Run(); err != nil {
