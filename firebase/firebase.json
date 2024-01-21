@@ -12,6 +12,10 @@
       "host": "0.0.0.0",
       "port": 4500
     },
+    "pubsub": {
+      "host": "0.0.0.0",
+      "port": 8085
+    },
     "ui": {
       "enabled": true,
       "host": "0.0.0.0",
