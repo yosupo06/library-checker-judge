@@ -105,19 +105,20 @@ func CreateTestDB(t *testing.T) *gorm.DB {
 	dbName := uuid.New().String()
 	t.Log("create DB: ", dbName)
 
+	dsn := GetDSNFromEnv()
+	dsn.Database = dbName
+
 	createCmd := exec.Command("createdb",
-		"-h", "localhost",
-		"-U", "postgres",
-		"-p", "5432",
+		"-h", dsn.Host,
+		"-U", dsn.User,
+		"-p", strconv.Itoa(dsn.Port),
 		dbName)
-	createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+	createCmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSWORD=%s", dsn.Password))
 	if err := createCmd.Run(); err != nil {
-		t.Fatal("createdb failed: ", err.Error())
+		t.Fatal("createdb failed: ", err)
 	}
 
-	db := Connect(DSN{
-		Database: dbName,
-	}, os.Getenv("API_DB_LOG") != "")
+	db := Connect(dsn, os.Getenv("API_DB_LOG") != "")
 
 	if err := AutoMigrate(db); err != nil {
 		t.Fatal("Migration failed:", err)
@@ -132,11 +133,11 @@ func CreateTestDB(t *testing.T) *gorm.DB {
 			t.Fatal("db.Close() failed:", err)
 		}
 		createCmd := exec.Command("dropdb",
-			"-h", "localhost",
-			"-U", "postgres",
-			"-p", "5432",
+			"-h", dsn.Host,
+			"-U", dsn.User,
+			"-p", strconv.Itoa(dsn.Port),
 			dbName)
-		createCmd.Env = append(os.Environ(), "PGPASSWORD=passwd")
+		createCmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSWORD=%s", dsn.Password))
 		createCmd.Stderr = os.Stderr
 		createCmd.Stdin = os.Stdin
 		if err := createCmd.Run(); err != nil {
