@@ -38,6 +38,9 @@ output "public_bucket_name" {
 output "private_bucket_name" {
     value = google_storage_bucket.private.name
 }
+output "internal_bucket_name" {
+    value = google_storage_bucket.internal["us-east1"].name
+}
 
 output "storage_hmac_id" {
     value = google_storage_hmac_key.main.access_id
