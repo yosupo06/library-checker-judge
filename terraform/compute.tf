@@ -33,7 +33,7 @@ resource "google_compute_instance_template" "judge" {
   }
 
   network_interface {
-    subnetwork = google_compute_subnetwork.main.name
+    subnetwork = google_compute_subnetwork.main["asia-northeast1"].name
   }
 
   scheduling {

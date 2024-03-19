@@ -7,10 +7,22 @@ resource "google_compute_network" "main" {
   auto_create_subnetworks = false
 }
 
+resource "google_compute_subnetwork" "main_old" {
+  name                     = "main-old"
+  ip_cidr_range            = "10.1.0.0/16"
+  region                   = "asia-northeast1"
+  role                     = "ACTIVE"
+  network                  = google_compute_network.main.id
+  private_ip_google_access = true
+}
+
 resource "google_compute_subnetwork" "main" {
+  for_each = toset([
+    "asia-northeast1",
+  ])
   name                     = "main"
   ip_cidr_range            = "10.0.0.0/16"
-  region                   = "asia-northeast1"
+  region                   = each.key
   role                     = "ACTIVE"
   network                  = google_compute_network.main.id
   private_ip_google_access = true
