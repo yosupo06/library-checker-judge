@@ -33,7 +33,7 @@ resource "google_compute_instance_template" "judge" {
   }
 
   network_interface {
-    subnetwork = google_compute_subnetwork.main.name
+    subnetwork = google_compute_subnetwork.main_old.name
   }
 
   scheduling {
@@ -56,6 +56,7 @@ resource "google_compute_instance_template" "judge" {
   }
 }
 
+/*
 resource "google_compute_region_instance_group_manager" "judge" {
   name = "judge"
 
@@ -71,3 +72,4 @@ resource "google_compute_region_instance_group_manager" "judge" {
     instance_template = google_compute_instance_template.judge.self_link_unique
   }
 }
+*/
