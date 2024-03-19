@@ -5,7 +5,7 @@
 ```
 gcloud auth application-default login
 cd packer
-packer build -var 'env=test' . # for testing
+packer build -var 'env=dev' . # for testing
 packer build -var 'env=prod' . # for production
 ```
 

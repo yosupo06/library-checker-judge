@@ -20,6 +20,7 @@ source "googlecompute" "judge" {
   source_image_family = "ubuntu-2204-lts"
   zone = "us-east1-b"
   network = "main"
+  subnetwork = "main"
   machine_type = "c2-standard-4"
   disk_size = 50
   ssh_username = "ubuntu"
