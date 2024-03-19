@@ -16,7 +16,7 @@ resource "google_compute_instance_template" "judge" {
   description = "This template is used to create judge server."
   region      = local.internal_region
 
-  machine_type   = "c2-standard-4"
+  machine_type   = local.judge_instance_type
   can_ip_forward = false
 
   // Create a new boot disk from an image
@@ -24,7 +24,7 @@ resource "google_compute_instance_template" "judge" {
     source_image = data.google_compute_image.judge.self_link
     auto_delete  = true
     boot         = true
-    disk_type    = "pd-standard"
+    disk_type    = "pd-balanced"
     disk_size_gb = 50
   }
 

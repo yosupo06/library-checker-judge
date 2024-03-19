@@ -13,6 +13,7 @@ locals {
   github_repo_judge = "library-checker-judge"
 
   judge_image_family = "v3-judge-image"
+  judge_instance_type = "c3-standard-4"
 
   api_domain = {
     "dev" : "v2.api.dev.judge.yosupo.jp",
