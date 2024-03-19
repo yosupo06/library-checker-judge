@@ -18,6 +18,8 @@ locals {
     "dev" : "v2.api.dev.judge.yosupo.jp",
     "prod" : "v2.api.judge.yosupo.jp",
   }
+
+  internal_region = "us-east1"
 }
 
 provider "google" {

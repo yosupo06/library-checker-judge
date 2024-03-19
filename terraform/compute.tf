@@ -33,7 +33,7 @@ resource "google_compute_instance_template" "judge" {
   }
 
   network_interface {
-    subnetwork = google_compute_subnetwork.main["asia-northeast1"].name
+    subnetwork = google_compute_subnetwork.main[local.internal_region].name
   }
 
   scheduling {
@@ -57,10 +57,14 @@ resource "google_compute_instance_template" "judge" {
 }
 
 resource "google_compute_region_instance_group_manager" "judge" {
-  name = "judge"
+  for_each = toset([
+    local.internal_region,
+  ])
+
+  name = "judge-${each.key}"
 
   base_instance_name = "judge"
-  region             = "asia-northeast1"
+  region             = each.key
 
   update_policy {
     type                  = "PROACTIVE"
