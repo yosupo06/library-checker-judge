@@ -14,7 +14,7 @@ data "google_compute_image" "judge" {
 resource "google_compute_instance_template" "judge" {
   name_prefix = "judge-template-"
   description = "This template is used to create judge server."
-  region      = "asia-northeast1"
+  region      = local.internal_region
 
   machine_type   = "c2-standard-4"
   can_ip_forward = false
