@@ -34,9 +34,8 @@ output "main_db_connection_name" {
 output "public_bucket_name" {
     value = google_storage_bucket.public.name
 }
-
-output "private_bucket_name" {
-    value = google_storage_bucket.private.name
+output "internal_bucket_name" {
+    value = google_storage_bucket.internal[local.internal_region].name
 }
 
 output "storage_hmac_id" {
