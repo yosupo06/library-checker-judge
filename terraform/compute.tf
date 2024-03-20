@@ -54,6 +54,10 @@ resource "google_compute_instance_template" "judge" {
   lifecycle {
     create_before_destroy = true
   }
+
+  advanced_machine_features {
+    threads_per_core = 1
+  }
 }
 
 resource "google_compute_region_instance_group_manager" "judge" {

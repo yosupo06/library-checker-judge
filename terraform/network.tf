@@ -5,7 +5,9 @@ resource "google_compute_network" "main" {
 
 resource "google_compute_subnetwork" "main" {
   for_each = {
-    (local.internal_region): "10.2.0.0/16",
+    "asia-east1": "10.0.0.0/16",
+    "asia-northeast1": "10.1.0.0/16",
+    "us-east1": "10.2.0.0/16",
   }
   name                     = "main"
   ip_cidr_range            = each.value
