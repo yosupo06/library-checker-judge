@@ -13,9 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - id: gen-protoc
-      name: Generate protoc
-      run: ./api/gen_protoc.sh
+    - run: ./gen_protoc.sh
 
     - id: run-docker-compose
       name: Run docker compose
