@@ -10,7 +10,7 @@ const JudgeStatusList = (): JSX.Element => {
   const judge_status = [
     {
       name: "AC",
-      text: "Accepted (Green check: in the latest testcase)",
+      text: "Accepted (Green check: with the latest testcases)",
     },
     {
       name: "WA",
@@ -30,7 +30,7 @@ const JudgeStatusList = (): JSX.Element => {
     },
     {
       name: "Fail",
-      text: "An author's solution is wrong",
+      text: "The author's solution is wrong",
     },
     {
       name: "CE",
@@ -42,7 +42,11 @@ const JudgeStatusList = (): JSX.Element => {
     },
     {
       name: "IE",
-      text: "Judge Server is broken 😢",
+      text: "Judge Server is broken 😢, please report this to the admin",
+    },
+    {
+      name: "ICE",
+      text: "Internal Compiler Error 😢, please report this to the admin",
     },
   ];
 
