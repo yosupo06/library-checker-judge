@@ -197,7 +197,7 @@ const UsefulLinks: React.FC<{
             status: "AC",
           }).toString()}`}
         >
-          My Submission
+          My Submissions
         </ButtonLink>
       )}
       <ButtonLink
@@ -213,7 +213,7 @@ const UsefulLinks: React.FC<{
         startIcon={<GitHub />}
         href={problemInfo.sourceUrl}
       >
-        Github
+        GitHub
       </Button>
       <Button variant="outlined" startIcon={<Forum />} href={infoToml.forum}>
         Forum
