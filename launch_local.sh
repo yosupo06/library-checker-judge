@@ -2,7 +2,7 @@ set -e
 
 docker --version
 
-./api/gen_protoc.sh
+./gen_protoc.sh
 
 docker compose down -v
 docker compose up -d --build --wait

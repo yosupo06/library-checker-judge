@@ -34,7 +34,7 @@ message RegisterRequest {
 message RegisterResponse {
 }
 
-message User {    
+message User {
     string name = 1;    
     string library_url = 4;
     bool is_developer = 5;
