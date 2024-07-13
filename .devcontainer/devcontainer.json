@@ -2,12 +2,14 @@
 	"image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu-22.04",
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:2": {},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
 		"ghcr.io/devcontainers/features/terraform:1": {}
 	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"HashiCorp.terraform"
+				"HashiCorp.terraform",
+				"GitHub.vscode-github-actions"
 			]
 		}
 	}
