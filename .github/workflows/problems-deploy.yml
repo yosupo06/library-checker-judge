@@ -66,7 +66,7 @@ jobs:
           service_account: ${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_email.value }}
           token_format: access_token
 
-      - run: ./api/gen_protoc.sh
+      - run: ./gen_protoc.sh
 
       - id: secrets
         uses: google-github-actions/get-secretmanager-secrets@v1

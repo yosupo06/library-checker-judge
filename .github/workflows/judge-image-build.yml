@@ -94,7 +94,8 @@ jobs:
 
     - uses: google-github-actions/setup-gcloud@v2
     
-    - run: ./api/gen_protoc.sh
+    - run: ./gen_protoc.sh
+    
     - run: go build .
       working-directory: ./judge
 
