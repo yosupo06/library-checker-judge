@@ -26,7 +26,7 @@ resource "google_sql_database_instance" "main" {
 
   depends_on = [google_service_networking_connection.main]
   settings {
-    tier = "db-f1-micro"
+    tier = var.env == "prod" ? "db-g1-small" : "db-f1-micro"
     ip_configuration {
       ipv4_enabled    = true
       private_network = google_compute_network.main.id
@@ -37,6 +37,9 @@ resource "google_sql_database_instance" "main" {
     }
     backup_configuration {
       enabled = true
+    }
+    insights_config {
+      query_insights_enabled = true
     }
   }
   deletion_protection = false
