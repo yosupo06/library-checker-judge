@@ -8,8 +8,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func toProtoSubmission(s *database.Submission) (*pb.SubmissionOverview, error) {
-	overview := &pb.SubmissionOverview{
+func toProtoSubmissionOverview(s database.SubmissionOverView) pb.SubmissionOverview {
+	return pb.SubmissionOverview{
 		Id:             int32(s.ID),
 		ProblemName:    s.Problem.Name,
 		ProblemTitle:   s.Problem.Title,
@@ -17,12 +17,10 @@ func toProtoSubmission(s *database.Submission) (*pb.SubmissionOverview, error) {
 		Lang:           s.Lang,
 		IsLatest:       s.TestCasesVersion == s.Problem.TestCasesVersion,
 		Status:         s.Status,
-		Hacked:         s.Hacked,
 		Time:           float64(s.MaxTime) / 1000.0,
 		Memory:         int64(s.MaxMemory),
 		SubmissionTime: toProtoTimestamp(s.SubmissionTime),
 	}
-	return overview, nil
 }
 
 func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {

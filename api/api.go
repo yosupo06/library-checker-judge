@@ -235,20 +235,15 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 		return nil, errors.New("failed to fetch submission results")
 	}
 
-	overview, err := toProtoSubmission(sub)
-	if err != nil {
-		log.Print(err)
-		return nil, err
-	}
+	overview := toProtoSubmissionOverview(database.ToSubmissionOverView(*sub))
 
 	rej := false
-
 	if currentUser != nil {
-		rej = canRejudge(*currentUser, overview)
+		rej = canRejudge(*currentUser, &overview)
 	}
 
 	res := &pb.SubmissionInfoResponse{
-		Overview:     overview,
+		Overview:     &overview,
 		Source:       sub.Source,
 		CompileError: sub.CompileError,
 		CanRejudge:   rej,
@@ -280,49 +275,29 @@ func (s *server) pushTask(ctx context.Context, subID, priority int32) error {
 
 func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListRequest) (*pb.SubmissionListResponse, error) {
 	if 1000 < in.Limit {
-		in.Limit = 1000
+		return nil, errors.New("limit must not greater than 1000")
 	}
 
-	filter := &database.Submission{
-		ProblemName: in.Problem,
-		Status:      in.Status,
-		Lang:        in.Lang,
-		UserName:    sql.NullString{String: in.User, Valid: (in.User != "")},
-		Hacked:      in.Hacked,
-	}
-
-	count := int64(0)
-	if err := s.db.Model(&database.Submission{}).Where(filter).Count(&count).Error; err != nil {
-		return nil, errors.New("count query failed")
-	}
-	order := ""
+	var order []database.SubmissionOrder
 	if in.Order == "" || in.Order == "-id" {
-		order = "id desc"
+		order = []database.SubmissionOrder{database.ID_DESC}
 	} else if in.Order == "+time" {
-		order = "max_time asc"
+		order = []database.SubmissionOrder{database.MAX_TIME_ASC, database.ID_DESC}
 	} else {
 		return nil, errors.New("unknown sort order")
 	}
 
-	var submissions = make([]database.Submission, 0)
-	if err := s.db.Where(filter).Limit(int(in.Limit)).Offset(int(in.Skip)).
-		Preload("User").
-		Preload("Problem").
-		Order(order).
-		Find(&submissions).Error; err != nil {
-		return nil, errors.New("select query failed")
+	list, count, err := database.FetchSubmissionList(s.db, in.Problem, in.Status, in.Lang, in.User, order, int(in.Skip), int(in.Limit))
+	if err != nil {
+		return nil, err
 	}
 
 	res := pb.SubmissionListResponse{
 		Count: int32(count),
 	}
-	for _, sub := range submissions {
-		protoSub, err := toProtoSubmission(&sub)
-		if err != nil {
-			log.Print(err)
-			return nil, err
-		}
-		res.Submissions = append(res.Submissions, protoSub)
+	for _, sub := range list {
+		protoSub := toProtoSubmissionOverview(sub)
+		res.Submissions = append(res.Submissions, &protoSub)
 	}
 	return &res, nil
 }

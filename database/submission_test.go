@@ -118,6 +118,102 @@ func TestSubmissionResultEmpty(t *testing.T) {
 	}
 }
 
+func TestSubmissionList(t *testing.T) {
+	db := CreateTestDB(t)
+
+	createDummyProblem(t, db)
+
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := SaveSubmission(db, Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: true, String: "user1"},
+		MaxTime:     1234,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := SaveSubmission(db, Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: false},
+		MaxTime:     123,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	{
+		subs, count, err := FetchSubmissionList(db, "", "", "", "", []SubmissionOrder{ID_DESC}, 0, 1)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if count != 2 {
+			t.Fatal("count is not 2: ", count)
+		}
+
+		if len(subs) != 1 {
+			t.Fatal("len(subs) is not 1: ", len(subs))
+		}
+	}
+	{
+		// problem filter
+		subs, count, err := FetchSubmissionList(db, "aplusb", "", "", "", []SubmissionOrder{ID_DESC}, 0, 1)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if count != 2 {
+			t.Fatal("count is not 2: ", count)
+		}
+
+		if len(subs) != 1 {
+			t.Fatal("len(subs) is not 1: ", len(subs))
+		}
+		if subs[0].Problem.Name != "aplusb" {
+			t.Fatal("subs[0].Problem.Name is not aplusb: ", subs[0])
+		}
+	}
+	{
+		// invalid problem filter
+		subs, count, err := FetchSubmissionList(db, "aplusb-dummy", "", "", "", []SubmissionOrder{ID_DESC}, 0, 1)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if count != 0 {
+			t.Fatal("count is not 0: ", count)
+		}
+
+		if len(subs) != 0 {
+			t.Fatal("len(subs) is not 0: ", len(subs))
+		}
+	}
+	{
+		// sort
+		subs, count, err := FetchSubmissionList(db, "", "", "", "", []SubmissionOrder{MAX_TIME_ASC}, 0, 1)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if count != 2 {
+			t.Fatal("count is not 2: ", count)
+		}
+
+		if len(subs) != 1 {
+			t.Fatal("len(subs) is not : ", len(subs))
+		}
+		if subs[0].MaxTime != 123 {
+			t.Fatal("subs[0].MaxTime is not 123: ", subs[0])
+		}
+	}
+}
+
 func TestSubmissionLock(t *testing.T) {
 	db := CreateTestDB(t)
 
