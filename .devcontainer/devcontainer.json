@@ -10,6 +10,10 @@
 	"remoteEnv": {
 		"PROBLEMS_PATH": "/home/vscode/library-checker-problems"
 	},
+	"forwardPorts": [
+		12380, // API
+		9000 // minio
+	],
 	"customizations": {
 		"vscode": {
 			"extensions": [
