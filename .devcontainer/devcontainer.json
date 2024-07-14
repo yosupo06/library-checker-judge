@@ -10,12 +10,17 @@
 	"remoteEnv": {
 		"PROBLEMS_PATH": "/home/vscode/library-checker-problems"
 	},
+	"forwardPorts": [
+		12380, // API
+		9000 // minio
+	],
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"HashiCorp.terraform",
 				"GitHub.vscode-github-actions",
-				"ckolkman.vscode-postgres"
+				"ckolkman.vscode-postgres",
+				"zxh404.vscode-proto3"
 			]
 		}
 	}
