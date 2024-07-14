@@ -139,7 +139,6 @@ engine.registerTag("param", {
 engine.registerTag("example", {
   parse(tagToken) {
     this.value = tagToken.args.substring(1);
-    this.exampleCounter = 1;
   },
   render(context, emitter) {
     const examples = getStatementData(context).examples;
@@ -147,8 +146,14 @@ engine.registerTag("example", {
     const inName = this.value + ".in";
     const outName = this.value + ".out";
 
-    emitter.write(`### #${this.exampleCounter}\n`);
-    this.exampleCounter++;
+    const scope = context.environments as {
+      exampleCounter: number | undefined;
+    };
+    if (typeof scope.exampleCounter !== "number") {
+      scope.exampleCounter = 0;
+    }
+    scope.exampleCounter += 1;
+    emitter.write(`### #${scope.exampleCounter}\n`);
 
     emitter.write("```\n");
     if (inName in examples) {
