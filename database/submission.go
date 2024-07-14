@@ -147,22 +147,7 @@ func FetchTestcaseResults(db *gorm.DB, id int32) ([]SubmissionTestcaseResult, er
 	return cases, nil
 }
 
-func FetchSubmissionList(db *gorm.DB, problem, status, lang, user string, order []SubmissionOrder, offset, limit int) ([]SubmissionOverView, int64, error) {
-	filter := &Submission{
-		ProblemName: problem,
-		Status:      status,
-		Lang:        lang,
-		UserName:    sql.NullString{String: user, Valid: (user != "")},
-	}
-
-	count := int64(0)
-	if err := db.Model(&Submission{}).Where(filter).Count(&count).Error; err != nil {
-		return nil, 0, errors.New("count query failed")
-	}
-
-	query := db.Model(&Submission{}).Where(filter).Limit(limit).Offset(offset).
-		Preload("User").
-		Preload("Problem")
+func applyOrder(query *gorm.DB, order []SubmissionOrder) *gorm.DB {
 	for _, o := range order {
 		switch o {
 		case ID_DESC:
@@ -171,9 +156,37 @@ func FetchSubmissionList(db *gorm.DB, problem, status, lang, user string, order 
 			query.Order("max_time asc")
 		}
 	}
+	return query
+}
+
+func FetchSubmissionList(db *gorm.DB, problem, status, lang, user string, dedupUser bool, order []SubmissionOrder, offset, limit int) ([]SubmissionOverView, int64, error) {
+	filter := &Submission{
+		ProblemName: problem,
+		Status:      status,
+		Lang:        lang,
+		UserName:    sql.NullString{String: user, Valid: (user != "")},
+	}
+
+	query := db.Model(&Submission{}).Where(filter)
+	query.Session(&gorm.Session{})
+
+	if dedupUser {
+		query.Order("user_name desc")
+		query = applyOrder(query, order)
+		query = db.Model(&Submission{}).Where("id IN (?)", query.Select("DISTINCT ON (user_name) id"))
+	}
+
+	count := int64(0)
+	if err := query.Count(&count).Error; err != nil {
+		return nil, 0, errors.New("count query failed")
+	}
+
+	query = applyOrder(query, order)
 
 	var submissions = make([]SubmissionOverView, 0)
-	if err := query.Find(&submissions).Error; err != nil {
+	if err := query.Limit(limit).Offset(offset).
+		Preload("User").Preload("Problem").
+		Find(&submissions).Error; err != nil {
 		return nil, 0, err
 	}
 
