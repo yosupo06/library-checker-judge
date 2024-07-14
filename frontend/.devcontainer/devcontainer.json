@@ -1,0 +1,15 @@
+{
+	"image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu-22.04",
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {},
+		"ghcr.io/devcontainers/features/node:1": {}
+	},
+	"postCreateCommand": "./.devcontainer/postCreateCommand.sh",
+	"forwardPorts": [
+		5173
+	],
+	"remoteEnv": {
+		"PROTO_PATH": "/home/vscode/library-checker-judge/api/proto"
+	},
+	"customizations": {}
+}
