@@ -30,6 +30,44 @@ type Submission struct {
 	JudgedTime       time.Time
 }
 
+// SubmissionOverview is smart select table
+type SubmissionOverView struct {
+	ID               int32
+	SubmissionTime   time.Time
+	ProblemName      string
+	Problem          Problem
+	Lang             string
+	Status           string
+	TestCasesVersion string
+	MaxTime          int32
+	MaxMemory        int64
+	UserName         sql.NullString
+	User             User
+}
+
+func ToSubmissionOverView(s Submission) SubmissionOverView {
+	return SubmissionOverView{
+		ID:               s.ID,
+		SubmissionTime:   s.SubmissionTime,
+		ProblemName:      s.ProblemName,
+		Problem:          s.Problem,
+		Lang:             s.Lang,
+		Status:           s.Status,
+		TestCasesVersion: s.TestCasesVersion,
+		MaxTime:          s.MaxTime,
+		MaxMemory:        s.MaxMemory,
+		UserName:         s.UserName,
+		User:             s.User,
+	}
+}
+
+type SubmissionOrder int
+
+const (
+	ID_DESC SubmissionOrder = iota
+	MAX_TIME_ASC
+)
+
 // SubmissionTestcaseResult is db table
 type SubmissionTestcaseResult struct {
 	Submission int32  `gorm:"primaryKey"` // TODO: should be foreign key
@@ -107,6 +145,39 @@ func FetchTestcaseResults(db *gorm.DB, id int32) ([]SubmissionTestcaseResult, er
 	})
 
 	return cases, nil
+}
+
+func FetchSubmissionList(db *gorm.DB, problem, status, lang, user string, order []SubmissionOrder, offset, limit int) ([]SubmissionOverView, int64, error) {
+	filter := &Submission{
+		ProblemName: problem,
+		Status:      status,
+		Lang:        lang,
+		UserName:    sql.NullString{String: user, Valid: (user != "")},
+	}
+
+	count := int64(0)
+	if err := db.Model(&Submission{}).Where(filter).Count(&count).Error; err != nil {
+		return nil, 0, errors.New("count query failed")
+	}
+
+	query := db.Model(&Submission{}).Where(filter).Limit(limit).Offset(offset).
+		Preload("User").
+		Preload("Problem")
+	for _, o := range order {
+		switch o {
+		case ID_DESC:
+			query.Order("id desc")
+		case MAX_TIME_ASC:
+			query.Order("max_time asc")
+		}
+	}
+
+	var submissions = make([]SubmissionOverView, 0)
+	if err := query.Find(&submissions).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return submissions, count, nil
 }
 
 const LOCK_TIME = time.Minute

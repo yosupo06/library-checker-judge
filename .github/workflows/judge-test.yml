@@ -36,4 +36,3 @@ jobs:
       name: Test judge
       run: go test -v .
       working-directory: ./judge
-
