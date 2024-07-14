@@ -13,7 +13,7 @@ export interface LangAction {
 
 export const LangReducer: React.Reducer<LangState, LangAction> = (
   state,
-  action
+  action,
 ) => {
   console.log(state, action);
   switch (action.type) {

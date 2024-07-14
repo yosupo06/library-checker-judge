@@ -43,13 +43,13 @@ export const useRegister = () => {
         {
           name: name,
         },
-        bearer.data ?? undefined
+        bearer.data ?? undefined,
       ),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(currentUserKey);
       },
-    }
+    },
   );
 };
 export const useChangeCurrentUserInfoMutation = () => {
@@ -63,7 +63,7 @@ export const useChangeCurrentUserInfoMutation = () => {
       onSuccess: () => {
         queryClient.invalidateQueries(currentUserKey);
       },
-    }
+    },
   );
 };
 
@@ -80,24 +80,24 @@ export const useRanking = (): UseQueryResult<RankingResponse> =>
   useQuery(["ranking"], async () => await client.ranking({}, {}).response);
 
 export const useProblemInfo = (
-  name: string
+  name: string,
 ): UseQueryResult<ProblemInfoResponse> =>
   useQuery(
     ["problemInfo", name],
-    async () => await client.problemInfo({ name: name }, {}).response
+    async () => await client.problemInfo({ name: name }, {}).response,
   );
 
 export const useProblemList = (): UseQueryResult<ProblemListResponse> =>
   useQuery(
     ["problemList"],
-    async () => await client.problemList({}, {}).response
+    async () => await client.problemList({}, {}).response,
   );
 
 export const useProblemCategories =
   (): UseQueryResult<ProblemCategoriesResponse> =>
     useQuery(
       ["problemCategories"],
-      async () => await client.problemCategories({}, {}).response
+      async () => await client.problemCategories({}, {}).response,
     );
 
 export const useUserInfo = (
@@ -105,14 +105,14 @@ export const useUserInfo = (
   options?: Omit<
     UseQueryOptions<UserInfoResponse, unknown, UserInfoResponse, string[]>,
     "queryKey" | "queryFn"
-  >
+  >,
 ): UseQueryResult<UserInfoResponse> => {
   const bearer = useBearer();
   return useQuery(
     ["api", "userInfo", name, bearer.data?.meta.authorization ?? ""],
     async () =>
       await client.userInfo({ name: name }, bearer.data ?? undefined).response,
-    options
+    options,
   );
 };
 
@@ -123,7 +123,7 @@ export const useSubmissionList = (
   lang: string,
   order: string,
   skip: number,
-  limit: number
+  limit: number,
 ): UseQueryResult<SubmissionListResponse> =>
   useQuery(
     ["submissionList", problem, user, status, lang, order, skip, limit],
@@ -132,6 +132,7 @@ export const useSubmissionList = (
         {
           problem: problem,
           user: user,
+          dedupUser: false,
           status: status,
           lang: lang,
           order: order,
@@ -139,8 +140,8 @@ export const useSubmissionList = (
           limit: limit,
           hacked: false,
         },
-        {}
-      ).response
+        {},
+      ).response,
   );
 
 export const useSubmissionInfo = (
@@ -153,7 +154,7 @@ export const useSubmissionInfo = (
       string[]
     >,
     "queryKey" | "queryFn"
-  >
+  >,
 ): UseQueryResult<SubmissionInfoResponse> => {
   const bearer = useBearer();
   return useQuery(
@@ -163,9 +164,9 @@ export const useSubmissionInfo = (
         {
           id: id,
         },
-        bearer.data ?? undefined
+        bearer.data ?? undefined,
       ).response,
-    options
+    options,
   );
 };
 
@@ -173,13 +174,13 @@ export const useSubmitMutation = (
   options?: Omit<
     UseMutationOptions<SubmitResponse, unknown, SubmitRequest, unknown>,
     "mutationFn"
-  >
+  >,
 ) => {
   const bearer = useBearer();
   return useMutation(
     async (req: SubmitRequest) =>
       await client.submit(req, bearer.data ?? undefined).response,
-    options
+    options,
   );
 };
 
@@ -187,7 +188,7 @@ export const useRejudgeMutation = () => {
   const bearer = useBearer();
   return useMutation(
     async (req: RejudgeRequest) =>
-      await client.rejudge(req, bearer.data ?? undefined).response
+      await client.rejudge(req, bearer.data ?? undefined).response,
   );
 };
 

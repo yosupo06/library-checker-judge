@@ -46,7 +46,7 @@ const Submissions: React.FC = () => {
 
   const [page, setPage] = React.useState(parseInt(params.get("page") ?? "0"));
   const [rowsPerPage, setRowsPerPage] = React.useState(
-    parseInt(params.get("pagesize") ?? "100")
+    parseInt(params.get("pagesize") ?? "100"),
   );
 
   const searchParams = new URLSearchParams({
@@ -71,7 +71,7 @@ const Submissions: React.FC = () => {
     initialLangFilter,
     initialSortOrder,
     page * rowsPerPage,
-    rowsPerPage
+    rowsPerPage,
   );
 
   if (
@@ -105,13 +105,13 @@ const Submissions: React.FC = () => {
 
   const handleChangePage = (
     _: React.MouseEvent<HTMLButtonElement> | null,
-    newPage: number
+    newPage: number,
   ) => {
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage(newRowsPerPage);
@@ -148,7 +148,7 @@ const Submissions: React.FC = () => {
 
   const categories = categoriseProblems(
     problemListQuery.data.problems,
-    problemCategoriesQuery.data.categories
+    problemCategoriesQuery.data.categories,
   );
 
   return (
@@ -170,8 +170,8 @@ const Submissions: React.FC = () => {
                   <MenuItem key={problem.name} value={problem.name}>
                     <KatexTypography>{problem.title}</KatexTypography>
                   </MenuItem>
-                ))
-              )
+                )),
+              ),
             )}
           </Select>
         </FilterFormControl>

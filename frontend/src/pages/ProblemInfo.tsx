@@ -85,8 +85,8 @@ const ProblemInfoBody: React.FC<{
   const baseUrl = new URL(
     urlJoin(
       import.meta.env.VITE_PUBLIC_BUCKET_URL,
-      `${problemId}/${problemInfo.version}/`
-    )
+      `${problemId}/${problemInfo.version}/`,
+    ),
   );
 
   const infoTomlQuery = useProblemInfoTomlQuery(baseUrl);

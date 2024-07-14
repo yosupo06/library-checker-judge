@@ -22,7 +22,7 @@ const KatexRender: React.FC<Props> = (props) => {
         ignoredTags: ["script", "noscript", "style"],
       });
       const elems = Array.from(
-        ref.current?.getElementsByClassName("lang-ja")
+        ref.current?.getElementsByClassName("lang-ja"),
       ).concat(Array.from(ref.current?.getElementsByClassName("lang-en")));
       elems.forEach((e) => {
         if (e.classList.contains(`lang-${lang?.state.lang}`)) {
