@@ -49,7 +49,7 @@ export const useProblemInfoTomlQuery = (baseUrl: URL) => {
         } else {
           return Promise.reject("failed to fetch info.toml:" + r.status);
         }
-      })
+      }),
   );
 
   return useQuery({
@@ -67,7 +67,7 @@ export const useStatement = (baseUrl: URL) => {
       } else {
         return Promise.reject("failed to fetch task.md:" + r.status);
       }
-    })
+    }),
   );
 };
 
@@ -79,7 +79,7 @@ export const useSolveHpp = (baseUrl: URL) => {
       } else if (r.status == 404) {
         return null;
       }
-    })
+    }),
   );
 };
 

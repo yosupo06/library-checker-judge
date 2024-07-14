@@ -81,7 +81,7 @@ const ProblemsBody: React.FC = () => {
 
   const categories = categoriseProblems(
     problemList,
-    problemCategoriesQuery.data.categories
+    problemCategoriesQuery.data.categories,
   );
 
   return (

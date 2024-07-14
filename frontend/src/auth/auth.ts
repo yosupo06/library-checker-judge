@@ -34,7 +34,7 @@ export const registerQueryClient = (queryClient: QueryClient) => {
 
 export const useCurrentAuthUser = () => {
   return useQuery(currentUserQueryKey, () =>
-    auth.authStateReady().then(() => auth.currentUser)
+    auth.authStateReady().then(() => auth.currentUser),
   );
 };
 
@@ -52,7 +52,7 @@ export const useRegisterMutation = () => {
     return createUserWithEmailAndPassword(
       auth,
       args.email,
-      args.password
+      args.password,
     ).catch((error) => {
       if (error.code === "auth/email-already-in-use") {
         return signInWithEmailAndPassword(auth, args.email, args.password);

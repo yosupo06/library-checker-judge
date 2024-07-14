@@ -30,7 +30,7 @@ it("parse", () => {
   expect(data.title).toBe("A + B");
   expect(data.timeLimit).toBe(2);
   expect(data.forum).toBe(
-    "https://github.com/yosupo06/library-checker-problems/issues/32"
+    "https://github.com/yosupo06/library-checker-problems/issues/32",
   );
   expect(data.tests).toStrictEqual([
     {
@@ -73,7 +73,7 @@ it("parseWithoutParams", () => {
   expect(data.title).toBe("A + B");
   expect(data.timeLimit).toBe(2);
   expect(data.forum).toBe(
-    "https://github.com/yosupo06/library-checker-problems/issues/32"
+    "https://github.com/yosupo06/library-checker-problems/issues/32",
   );
   expect(data.tests).toStrictEqual([
     {

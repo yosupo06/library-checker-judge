@@ -78,7 +78,7 @@ const FileLoader: React.FC<{
 
   const setFiles = (files: File[]) => {
     const taskFile = files.find((e) =>
-      e.webkitRelativePath.endsWith("task.md")
+      e.webkitRelativePath.endsWith("task.md"),
     );
     if (!taskFile) {
       console.log("task.md not found");
@@ -97,7 +97,7 @@ const FileLoader: React.FC<{
       });
 
     const infoFile = files.find((e) =>
-      e.webkitRelativePath.endsWith("info.toml")
+      e.webkitRelativePath.endsWith("info.toml"),
     );
     if (!infoFile) {
       console.log("info.toml not found");
@@ -112,7 +112,7 @@ const FileLoader: React.FC<{
 
     const pattern = /(in|out)\/example_[0-9]*.(in|out)/;
     const exampleFiles = files.filter((e) =>
-      e.webkitRelativePath.match(pattern)
+      e.webkitRelativePath.match(pattern),
     );
     Promise.all(exampleFiles.map((e) => e.text())).then((texts) => {
       const examples: { [key: string]: string } = {};
@@ -175,7 +175,7 @@ const GithubDataLoader: React.FC<{
       owner,
       "library-checker-problems",
       branch,
-      problem
+      problem,
     );
 
     fetch(new URL(urlJoin(baseUrl, "info.toml")))

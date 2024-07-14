@@ -206,7 +206,7 @@ engine.registerTag("lang", {
         yield this.liquid.renderer.renderTemplates(
           section.templates,
           context,
-          emitter
+          emitter,
         );
       }
     }

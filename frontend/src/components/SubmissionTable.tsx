@@ -58,7 +58,7 @@ const SubmissionTable: React.FC<Props> = (props) => {
       dict[problem.id] = problem.name;
       return dict;
     },
-    {}
+    {},
   );
 
   return (

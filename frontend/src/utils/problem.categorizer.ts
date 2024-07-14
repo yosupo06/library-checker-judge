@@ -7,14 +7,14 @@ export type CategorisedProblems = {
 
 export const categoriseProblems = (
   problems: Problem[],
-  categories: ProblemCategory[]
+  categories: ProblemCategory[],
 ): CategorisedProblems => {
   const nameToProblem = problems.reduce<{ [name: string]: Problem }>(
     (dict, problem) => {
       dict[problem.name] = problem;
       return dict;
     },
-    {}
+    {},
   );
 
   const problemNames = problems.map((e) => e.name);

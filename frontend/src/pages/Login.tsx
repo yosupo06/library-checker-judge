@@ -28,7 +28,7 @@ const Login: React.FC = () => {
       },
       {
         onSuccess: () => navigate(`/`),
-      }
+      },
     );
   };
 
