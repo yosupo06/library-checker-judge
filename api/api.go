@@ -287,7 +287,7 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 		return nil, errors.New("unknown sort order")
 	}
 
-	list, count, err := database.FetchSubmissionList(s.db, in.Problem, in.Status, in.Lang, in.User, order, int(in.Skip), int(in.Limit))
+	list, count, err := database.FetchSubmissionList(s.db, in.Problem, in.Status, in.Lang, in.User, in.DedupUser, order, int(in.Skip), int(in.Limit))
 	if err != nil {
 		return nil, err
 	}

@@ -161,6 +161,7 @@ message SubmissionListRequest {
     string status = 4; // "AC"(filter)
     bool hacked = 7; // (filter)
     string user = 5; // "admin"(filter)
+    bool dedup_user = 9; // dedup same user or not
     string lang = 8; // "cpp"(filter)
     string order = 6; // sort order (default: "-id", "time")
 }
