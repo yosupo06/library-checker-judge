@@ -8,4 +8,5 @@ docker compose down -v
 docker compose up -d --build --wait
 
 # deploy sample problems
-(cd uploader && go run . ../../library-checker-problems/sample/aplusb/info.toml ../../library-checker-problems/datastructure/unionfind/info.toml)
+PROBLEMS_PATH=$(realpath $PROBLEMS_PATH)
+(cd uploader && go run . -dir $PROBLEMS_PATH $PROBLEMS_PATH/sample/aplusb/info.toml $PROBLEMS_PATH/datastructure/unionfind/info.toml)

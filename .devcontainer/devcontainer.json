@@ -3,13 +3,19 @@
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:2": {},
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/go:1": {},
 		"ghcr.io/devcontainers/features/terraform:1": {}
+	},
+	"postCreateCommand": "./.devcontainer/postCreateCommand.sh",
+	"remoteEnv": {
+		"PROBLEMS_PATH": "/home/vscode/library-checker-problems"
 	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"HashiCorp.terraform",
-				"GitHub.vscode-github-actions"
+				"GitHub.vscode-github-actions",
+				"ckolkman.vscode-postgres"
 			]
 		}
 	}
