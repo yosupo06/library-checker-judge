@@ -28,7 +28,7 @@ const Help: React.FC = () => {
           <a href="https://opensource.google/docs/hackathons/#judge">
             Google Open Source Docs
           </a>
-          , with some modifications
+          , with some modifications.
         </Typography>
       </Box>
 
@@ -56,7 +56,7 @@ const Help: React.FC = () => {
       <Box>
         <Typography variant="h3">Tips</Typography>
         <Typography variant="body1" paragraph={true}>
-          Memory Limit is an 1G for all problems. Stack Size Limit is unlimited.
+          Memory Limit is 1GB for all problems. Stack Size Limit is unlimited.
         </Typography>
         <Typography variant="body1">
           We will restart judge servers sometimes. If you submit your solution
