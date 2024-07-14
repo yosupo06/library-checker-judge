@@ -16,7 +16,6 @@ import {
   ProblemListResponse,
   RankingResponse,
   RejudgeRequest,
-  SubmissionInfoRequest,
   SubmissionInfoResponse,
   SubmissionListResponse,
   SubmitRequest,
