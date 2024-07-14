@@ -135,6 +135,7 @@ func judgeSubmissionTask(db *gorm.DB, judgeName string, id int32, enqueue time.T
 		return err
 	}
 	if taskResult.ExitCode != 0 {
+		s.CompileError = taskResult.Stderr
 		return finishSubmission(db, judgeName, s, "ICE")
 	}
 

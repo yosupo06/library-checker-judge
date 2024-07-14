@@ -13,6 +13,18 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - id: install-crun
+      name: Install crun
+      run: sudo ./packer/base/crun-install.sh
+
+    - id: prepare-docker-config
+      name: Prepare docker config
+      run: sudo cp ./packer/base/docker-daemon.json /etc/docker/daemon.json
+
+    - id: restart-docker
+      name: Restart docker
+      run: sudo service docker restart
+          
     - id: build-lang-images
       name: Build lang images
       run: ./build.sh
