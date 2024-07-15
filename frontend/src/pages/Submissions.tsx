@@ -11,6 +11,7 @@ import MenuItem from "@mui/material/MenuItem";
 import ListSubheader from "@mui/material/ListSubheader";
 import React from "react";
 import { useLocation } from "react-use";
+import CachedIcon from "@mui/icons-material/Cached";
 import {
   useLangList,
   useProblemCategories,
@@ -21,7 +22,68 @@ import SubmissionTable from "../components/SubmissionTable";
 import { categoriseProblems } from "../utils/problem.categorizer";
 import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
-import { Container } from "@mui/material";
+import {
+  Checkbox,
+  Container,
+  FormControlLabel,
+  InputLabel,
+} from "@mui/material";
+
+type SearchParams = {
+  problem: string;
+  user: string;
+  dedupUser: boolean;
+  status: string;
+  lang: string;
+  order: string;
+  page: number;
+  rowsPerPage: number;
+};
+
+const toURLSearchParams = (searchParams: SearchParams) => {
+  return new URLSearchParams({
+    problem: searchParams.problem,
+    user: searchParams.user,
+    dedupUser: searchParams.dedupUser.toString(),
+    status: searchParams.status,
+    lang: searchParams.lang,
+    order: searchParams.order,
+    page: searchParams.page.toString(),
+    pagesize: searchParams.rowsPerPage.toString(),
+  });
+};
+
+const Submissions: React.FC = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+
+  const [searchParams, setSearchParams] = React.useState({
+    problem: params.get("problem") ?? "",
+    user: params.get("user") ?? "",
+    dedupUser: (params.get("dedupuser") ?? "") === "true",
+    status: params.get("status") ?? "",
+    lang: params.get("lang") ?? "",
+    order: params.get("order") ?? "-id",
+    page: parseInt(params.get("page") ?? "0"),
+    rowsPerPage: parseInt(params.get("pagesize") ?? "100"),
+  });
+
+  return (
+    <Container>
+      <Typography variant="h2" paragraph={true}>
+        Submission List
+      </Typography>
+      <SubmissionsForm
+        searchParams={searchParams}
+        setSearchParams={setSearchParams}
+      />
+      <SubmissionsBody
+        searchParams={searchParams}
+        setSearchParams={setSearchParams}
+      />
+    </Container>
+  );
+};
 
 const FilterFormControl = styled(FormControl)({
   margin: 1,
@@ -29,50 +91,15 @@ const FilterFormControl = styled(FormControl)({
   minWidth: "120px",
 });
 
-const Submissions: React.FC = () => {
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-
-  const initialProblemName = params.get("problem") ?? "";
-  const [problemName, setProblemName] = React.useState(initialProblemName);
-  const initialUserName = params.get("user") ?? "";
-  const [userName, setUserName] = React.useState(initialUserName);
-  const initialStatusFilter = params.get("status") ?? "";
-  const [statusFilter, setStatusFilter] = React.useState(initialStatusFilter);
-  const initialLangFilter = params.get("lang") ?? "";
-  const [langFilter, setLangFilter] = React.useState(initialLangFilter);
-  const initialSortOrder = params.get("order") ?? "-id";
-  const [sortOrder, setSortOrder] = React.useState(initialSortOrder);
-
-  const [page, setPage] = React.useState(parseInt(params.get("page") ?? "0"));
-  const [rowsPerPage, setRowsPerPage] = React.useState(
-    parseInt(params.get("pagesize") ?? "100"),
-  );
-
-  const searchParams = new URLSearchParams({
-    problem: problemName,
-    user: userName,
-    status: statusFilter,
-    lang: langFilter,
-    order: sortOrder,
-    page: page.toString(),
-    pagesize: rowsPerPage.toString(),
-  });
+const SubmissionsForm: React.FC<{
+  searchParams: SearchParams;
+  setSearchParams: (params: SearchParams) => void;
+}> = (props) => {
+  const { searchParams, setSearchParams } = props;
 
   const langListQuery = useLangList();
-
   const problemListQuery = useProblemList();
   const problemCategoriesQuery = useProblemCategories();
-
-  const submissionListQuery = useSubmissionList(
-    initialProblemName,
-    initialUserName,
-    initialStatusFilter,
-    initialLangFilter,
-    initialSortOrder,
-    page * rowsPerPage,
-    rowsPerPage,
-  );
 
   if (
     langListQuery.isLoading ||
@@ -81,9 +108,6 @@ const Submissions: React.FC = () => {
   ) {
     return (
       <Box>
-        <Typography variant="h2" paragraph={true}>
-          Submission List
-        </Typography>
         <CircularProgress />
       </Box>
     );
@@ -94,57 +118,10 @@ const Submissions: React.FC = () => {
     problemCategoriesQuery.isError
   ) {
     return (
-      <Box>
-        <Typography variant="h2" paragraph={true}>
-          Submission List
-        </Typography>
-        Error
-      </Box>
+      // TODO: use <Alert>
+      <Box>Error</Box>
     );
   }
-
-  const handleChangePage = (
-    _: React.MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
-  ) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    setRowsPerPage(newRowsPerPage);
-    setPage(0);
-  };
-
-  const submissionList = (() => {
-    if (submissionListQuery.isLoading) {
-      return (
-        <Paper>
-          <SubmissionTable overviews={[]} />
-          <CircularProgress />
-        </Paper>
-      );
-    }
-    if (submissionListQuery.isError) {
-      return <p>Error: {submissionListQuery.error}</p>;
-    }
-    const value = submissionListQuery.data;
-    return (
-      <Paper>
-        <SubmissionTable overviews={value.submissions} />
-        <TablePagination
-          rowsPerPage={rowsPerPage}
-          component="div"
-          count={value.count}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
-    );
-  })();
 
   const categories = categoriseProblems(
     problemListQuery.data.problems,
@@ -152,85 +129,185 @@ const Submissions: React.FC = () => {
   );
 
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Submission List
-      </Typography>
-      <Box>
-        <FilterFormControl variant="standard">
-          <Select
-            value={problemName}
-            displayEmpty
-            onChange={(e) => setProblemName(e.target.value as string)}
-          >
-            <MenuItem value="">Problem Name</MenuItem>
-            {categories.map((category) =>
-              [<ListSubheader>{category.name}</ListSubheader>].concat(
-                category.problems.map((problem) => (
-                  <MenuItem key={problem.name} value={problem.name}>
-                    <KatexTypography>{problem.title}</KatexTypography>
-                  </MenuItem>
-                )),
-              ),
-            )}
-          </Select>
-        </FilterFormControl>
-        <FilterFormControl variant="standard">
-          <TextField
-            variant="standard"
-            label="User"
-            value={userName}
-            autoComplete="off"
-            onChange={(e) => setUserName(e.target.value)}
-          />
-        </FilterFormControl>
-        <FilterFormControl variant="standard">
-          <Select
-            value={statusFilter}
-            displayEmpty
-            onChange={(e) => setStatusFilter(e.target.value as string)}
-          >
-            <MenuItem value="">Status</MenuItem>
-            <MenuItem value="AC">AC</MenuItem>
-          </Select>
-        </FilterFormControl>
-        <FilterFormControl variant="standard">
-          <Select
-            value={langFilter}
-            displayEmpty
-            onChange={(e) => setLangFilter(e.target.value as string)}
-          >
-            <MenuItem value="">Lang</MenuItem>
-            {langListQuery.isSuccess &&
-              langListQuery.data.langs.map((e) => (
-                <MenuItem key={e.id} value={e.id}>
-                  {e.name}
-                </MenuItem>
-              ))}
-          </Select>
-        </FilterFormControl>
-        <FilterFormControl variant="standard">
-          <Select
-            value={sortOrder}
-            displayEmpty
-            onChange={(e) => setSortOrder(e.target.value as string)}
-          >
-            <MenuItem value="-id">Sort</MenuItem>
-            <MenuItem value="+time">Time</MenuItem>
-          </Select>
-        </FilterFormControl>
-        <Button
-          variant="outlined"
-          type="submit"
-          href={`?${searchParams.toString()}`}
-          onClick={() => submissionListQuery.remove()}
+    <Box>
+      <FilterFormControl variant="standard">
+        <InputLabel>Problem</InputLabel>
+        <Select
+          value={searchParams.problem}
+          onChange={(e) =>
+            setSearchParams({
+              ...searchParams,
+              problem: e.target.value,
+            })
+          }
         >
-          search
-        </Button>
-      </Box>
+          <MenuItem value="">-</MenuItem>
+          {categories.map((category) =>
+            [<ListSubheader>{category.name}</ListSubheader>].concat(
+              category.problems.map((problem) => (
+                <MenuItem key={problem.name} value={problem.name}>
+                  <KatexTypography>{problem.title}</KatexTypography>
+                </MenuItem>
+              )),
+            ),
+          )}
+        </Select>
+      </FilterFormControl>
+      <FilterFormControl variant="standard">
+        <TextField
+          variant="standard"
+          label="User"
+          value={searchParams.user}
+          autoComplete="off"
+          onChange={(e) =>
+            setSearchParams({
+              ...searchParams,
+              user: e.target.value,
+              page: 0,
+            })
+          }
+        />
+      </FilterFormControl>
+      <FilterFormControl variant="standard">
+        <InputLabel>Status</InputLabel>
+        <Select
+          value={searchParams.status}
+          onChange={(e) =>
+            setSearchParams({
+              ...searchParams,
+              status: e.target.value,
+              page: 0,
+            })
+          }
+        >
+          <MenuItem value="">-</MenuItem>
+          <MenuItem value="AC">AC</MenuItem>
+        </Select>
+      </FilterFormControl>
+      <FilterFormControl variant="standard">
+        <InputLabel>Language</InputLabel>
+        <Select
+          value={searchParams.lang}
+          onChange={(e) =>
+            setSearchParams({
+              ...searchParams,
+              lang: e.target.value,
+              page: 0,
+            })
+          }
+        >
+          <MenuItem value="">-</MenuItem>
+          {langListQuery.isSuccess &&
+            langListQuery.data.langs.map((e) => (
+              <MenuItem key={e.id} value={e.id}>
+                {e.name}
+              </MenuItem>
+            ))}
+        </Select>
+      </FilterFormControl>
+      <FilterFormControl variant="standard">
+        <InputLabel>Sort</InputLabel>
+        <Select
+          value={searchParams.order}
+          displayEmpty
+          onChange={(e) =>
+            setSearchParams({
+              ...searchParams,
+              order: e.target.value,
+              page: 0,
+            })
+          }
+        >
+          <MenuItem value="-id">ID</MenuItem>
+          <MenuItem value="+time">Time</MenuItem>
+        </Select>
+      </FilterFormControl>
+      <Button
+        variant="outlined"
+        type="submit"
+        href={`?${toURLSearchParams(searchParams).toString()}`}
+      >
+        <CachedIcon></CachedIcon>
+      </Button>
+      <FormControlLabel
+        control={<Checkbox />}
+        label="Dedup user"
+        checked={searchParams.dedupUser}
+        onChange={(_e, checked) =>
+          setSearchParams({
+            ...searchParams,
+            dedupUser: checked,
+            page: 0,
+          })
+        }
+      />
+    </Box>
+  );
+};
 
-      {submissionList}
-    </Container>
+const SubmissionsBody: React.FC<{
+  searchParams: SearchParams;
+  setSearchParams: (params: SearchParams) => void;
+}> = (props) => {
+  const { searchParams, setSearchParams } = props;
+  const { problem, user, dedupUser, status, lang, order, page, rowsPerPage } =
+    searchParams;
+
+  const submissionListQuery = useSubmissionList(
+    problem,
+    user,
+    dedupUser,
+    status,
+    lang,
+    order,
+    page * rowsPerPage,
+    rowsPerPage,
+  );
+
+  if (submissionListQuery.isLoading) {
+    return (
+      <Paper>
+        <SubmissionTable overviews={[]} />
+        <CircularProgress />
+      </Paper>
+    );
+  }
+  if (submissionListQuery.isError) {
+    return <Box>Error: {submissionListQuery.error}</Box>;
+  }
+
+  const handleChangePage = (
+    _: React.MouseEvent<HTMLButtonElement> | null,
+    newPage: number,
+  ) => {
+    setSearchParams({
+      ...searchParams,
+      page: newPage,
+    });
+  };
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setSearchParams({
+      ...searchParams,
+      rowsPerPage: parseInt(event.target.value, 10),
+    });
+  };
+
+  const value = submissionListQuery.data;
+  return (
+    <Paper>
+      <SubmissionTable overviews={value.submissions} />
+      <TablePagination
+        rowsPerPage={rowsPerPage}
+        component="div"
+        count={value.count}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+    </Paper>
   );
 };
 
