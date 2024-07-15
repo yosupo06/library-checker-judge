@@ -14,7 +14,7 @@
     exec = ["./main"]
     additional_files = ["common/fastio.h", "grader/grader.cpp", "grader/solve.hpp"]
 [[langs]]
-    id = "cpp23"
+    id = "cpp"
     name = "C++23"
     version = "g++(14.1)"
     source = "main.cpp"    
@@ -22,7 +22,7 @@
     compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
 [[langs]]
-    id = "cpp"
+    id = "cpp20"
     name = "C++20"
     version = "g++(14.1)"
     source = "main.cpp"
