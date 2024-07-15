@@ -119,6 +119,7 @@ export const useUserInfo = (
 export const useSubmissionList = (
   problem: string,
   user: string,
+  dedupUser: boolean,
   status: string,
   lang: string,
   order: string,
@@ -126,13 +127,23 @@ export const useSubmissionList = (
   limit: number,
 ): UseQueryResult<SubmissionListResponse> =>
   useQuery(
-    ["submissionList", problem, user, status, lang, order, skip, limit],
+    [
+      "submissionList",
+      problem,
+      user,
+      dedupUser,
+      status,
+      lang,
+      order,
+      skip,
+      limit,
+    ],
     async () =>
       await client.submissionList(
         {
           problem: problem,
           user: user,
-          dedupUser: false,
+          dedupUser: dedupUser,
           status: status,
           lang: lang,
           order: order,
