@@ -20,7 +20,8 @@
 				"HashiCorp.terraform",
 				"GitHub.vscode-github-actions",
 				"ckolkman.vscode-postgres",
-				"zxh404.vscode-proto3"
+				"zxh404.vscode-proto3",
+				"tamasfe.even-better-toml"
 			]
 		}
 	}
