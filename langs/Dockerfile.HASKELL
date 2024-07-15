@@ -1,6 +1,7 @@
-FROM ekidd/rust-musl-builder:latest as init-builder
-COPY --chown=rust:rust init .
-RUN cargo build --release
+FROM rust:alpine as init-builder
+WORKDIR /library-checker-init
+COPY init /library-checker-init
+RUN cargo build --release --target=x86_64-unknown-linux-musl
 
 FROM haskell:9.4.4-slim
 
@@ -44,6 +45,6 @@ RUN cabal update && cabal install --lib \
     vector-stream-0.1.0.0 \
     vector-th-unbox-0.2.2
 
-COPY --from=init-builder /home/rust/src/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
+COPY --from=init-builder /library-checker-init/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
 
 LABEL library-checker-image=true
