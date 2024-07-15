@@ -118,7 +118,7 @@ func TestCppAplusBAC(t *testing.T) {
 	testAplusBAC(t, "cpp", "ac.cpp")
 }
 func TestCppAclAplusBAC(t *testing.T) {
-	testAplusBAC(t, "cpp-acl", "ac_acl.cpp")
+	testAplusBAC(t, "cpp", "ac_acl.cpp")
 }
 func TestRustAplusBAC(t *testing.T) {
 	testAplusBAC(t, "rust", "ac.rs")
