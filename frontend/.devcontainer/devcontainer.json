@@ -11,5 +11,11 @@
 	"remoteEnv": {
 		"PROTO_PATH": "/home/vscode/library-checker-judge/api/proto"
 	},
-	"customizations": {}
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"GitHub.vscode-github-actions"
+			]
+		}
+	}
 }
