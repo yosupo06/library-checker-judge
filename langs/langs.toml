@@ -6,25 +6,33 @@
     exec = ["./checker", "input.in", "actual.out", "expect.out"]    
 [[langs]]
     id = "cpp-func"
-    name = "C++20(Function)"
-    version = "g++(13.2) + ac-library 1.4"
+    name = "C++23(Function)"
+    version = "g++(14.1) + ac-library 1.5.1"
     source = "main.cpp"    
     image_name = "library-checker-images-gcc"
-    compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
+    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
     additional_files = ["common/fastio.h", "grader/grader.cpp", "grader/solve.hpp"]
 [[langs]]
+    id = "cpp23"
+    name = "C++23"
+    version = "g++(14.1)"
+    source = "main.cpp"    
+    image_name = "library-checker-images-gcc"
+    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
+    exec = ["./main"]
+[[langs]]
     id = "cpp"
     name = "C++20"
-    version = "g++(13.2)"
-    source = "main.cpp"    
+    version = "g++(14.1)"
+    source = "main.cpp"
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
     exec = ["./main"]
 [[langs]]
     id = "cpp-acl"
     name = "C++20(ACL)"
-    version = "g++(13.2) + ac-library 1.5.1"
+    version = "g++(14.1) + ac-library 1.5.1"
     source = "main.cpp"    
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
@@ -32,7 +40,7 @@
 [[langs]]
     id = "cpp17"
     name = "C++17"
-    version = "g++(13.2)"
+    version = "g++(14.1)"
     source = "main.cpp"    
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++17", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
@@ -40,7 +48,7 @@
 [[langs]]
     id = "cpp14"
     name = "C++14"
-    version = "g++(13.2)"
+    version = "g++(14.1)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "main", "main.cpp"]
