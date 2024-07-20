@@ -63,11 +63,11 @@ func PushTask(db *gorm.DB, taskData TaskData, priority int32) error {
 	return nil
 }
 
-func PopTask(db *gorm.DB, judgeName string) (*Task, error) {
+func PopTask(db *gorm.DB) (*Task, error) {
 	task := Task{}
 	found := false
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		if err := db.Where("available <= ?", time.Now()).Order("priority desc").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		if err := tx.Where("available <= ?", time.Now()).Order("priority desc").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		} else if err != nil {
 			return err
@@ -89,6 +89,30 @@ func PopTask(db *gorm.DB, judgeName string) (*Task, error) {
 		return nil, nil
 	}
 	return &task, nil
+}
+
+func TouchTask(db *gorm.DB, id int32) error {
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		task := Task{
+			ID: id,
+		}
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; err != nil {
+			return err
+		}
+
+		if task.Available.Before(time.Now()) {
+			return errors.New("task.Available is not order than now")
+		}
+		task.Available = time.Now().Add(TASK_RETRY_PERIOD)
+		if err := tx.Save(&task).Error; err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func FinishTask(db *gorm.DB, taskId int32) error {

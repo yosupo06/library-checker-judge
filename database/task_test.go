@@ -20,17 +20,17 @@ func TestTask(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	task1, err := PopTask(db, "judge")
+	task1, err := PopTask(db)
 	if task1 == nil || task1.Submission != 789 || err != nil {
 		t.Fatal(task1, err)
 	}
 
-	task2, err := PopTask(db, "judge")
+	task2, err := PopTask(db)
 	if task2 == nil || task2.Submission != 123 || err != nil {
 		t.Fatal(task2, err)
 	}
 
-	if task, err := PopTask(db, "judge"); task != nil || err != nil {
+	if task, err := PopTask(db); task != nil || err != nil {
 		t.Fatal(task, err)
 	}
 
@@ -64,17 +64,17 @@ func TestTaskSamePriority(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	task1, err := PopTask(db, "judge")
+	task1, err := PopTask(db)
 	if task1 == nil || task1.Submission != 123 || err != nil {
 		t.Fatal(task1, err)
 	}
 
-	task2, err := PopTask(db, "judge")
+	task2, err := PopTask(db)
 	if task2 == nil || task2.Submission != 124 || err != nil {
 		t.Fatal(task2, err)
 	}
 
-	task3, err := PopTask(db, "judge")
+	task3, err := PopTask(db)
 	if task3 == nil || task3.Submission != 125 || err != nil {
 		t.Fatal(task3, err)
 	}

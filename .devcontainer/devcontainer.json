@@ -12,7 +12,8 @@
 	},
 	"forwardPorts": [
 		12380, // API
-		9000 // minio
+		9000, // minio
+		9099 // firebase
 	],
 	"customizations": {
 		"vscode": {
