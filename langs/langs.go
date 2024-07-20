@@ -37,7 +37,7 @@ func init() {
 	}
 	if _, err := toml.Decode(langToml, &data); err != nil {
 		slog.Error("toml decode failed", slog.Any("err", err))
-		os.Exit(0)
+		os.Exit(1)
 	}
 	LANGS = data.Langs
 }
