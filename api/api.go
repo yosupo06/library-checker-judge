@@ -17,6 +17,12 @@ import (
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
+const (
+	SUBMISSION_PRIORITY           = 50
+	ANONYMOUS_SUBMISSION_PRIORITY = 45
+	REJUDGE_PRIORITY              = 40
+)
+
 func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	uid := s.currentUserUID(ctx)
 
@@ -197,7 +203,11 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 
 	log.Println("Submit ", id)
 
-	if err := s.pushTask(ctx, id, 50); err != nil {
+	priority := ANONYMOUS_SUBMISSION_PRIORITY
+	if currentUser != nil {
+		priority = SUBMISSION_PRIORITY
+	}
+	if err := s.pushTask(ctx, id, int32(priority)); err != nil {
 		log.Print(err)
 		return nil, errors.New("inserting to judge queue is failed")
 	}
@@ -311,7 +321,7 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 		return nil, errors.New("no permission")
 	}
 
-	if err := s.pushTask(ctx, in.Id, 40); err != nil {
+	if err := s.pushTask(ctx, in.Id, REJUDGE_PRIORITY); err != nil {
 		log.Print("rejudge failed:", err)
 		return nil, errors.New("rejudge failed")
 	}
