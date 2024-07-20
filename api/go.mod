@@ -9,6 +9,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/lib/pq v1.10.9
 	github.com/yosupo06/library-checker-judge/database v0.0.0-20240720183423-bc39d9998377
+	github.com/yosupo06/library-checker-judge/langs v0.0.0-20240720194232-699a76c34e8c
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 	gorm.io/gorm v1.25.11
@@ -48,7 +49,6 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/rs/cors v1.11.0 // indirect
-	github.com/yosupo06/library-checker-judge/langs v0.0.0-20240720194232-699a76c34e8c // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.53.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0 // indirect
