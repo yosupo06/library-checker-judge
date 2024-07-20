@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -11,14 +10,11 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
 const POOLING_PERIOD = 3 * time.Second
-
-var testCaseFetcher TestCaseFetcher
 
 func getEnv(key, defaultValue string) string {
 	value := os.Getenv(key)
@@ -41,20 +37,12 @@ func main() {
 
 	flag.Parse()
 
-	judgeName, err := os.Hostname()
-	if err != nil {
-		log.Fatal("Cannot get hostname:", err)
-	}
-	judgeName = judgeName + "-" + uuid.New().String()
-
-	log.Print("JudgeName: ", judgeName)
-
 	// connect db
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
 	ReadLangs(*langsTomlPath)
 
-	testCaseFetcher, err = NewTestCaseFetcher(
+	testCaseFetcher, err := NewTestCaseFetcher(
 		minioHost,
 		minioID,
 		minioKey,
@@ -81,7 +69,7 @@ func main() {
 		}
 
 		log.Println("Start task:", taskID)
-		err = judgeSubmissionTask(db, taskID, judgeName, taskData.Submission)
+		err = judgeSubmissionTask(db, testCaseFetcher, taskID, taskData.Submission)
 		if err != nil {
 			log.Println(err.Error())
 			continue
@@ -90,10 +78,10 @@ func main() {
 	}
 }
 
-func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) (err error) {
+func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID int32, id int32) (err error) {
 	log.Println("Start judge submission:", id)
 
-	s, err := initSubmission(db, judgeName, id)
+	s, err := initSubmission(db, id)
 	if err != nil {
 		return err
 	}
@@ -103,14 +91,14 @@ func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) 
 
 	defer func() {
 		if err != nil {
-			if err2 := updateSubmission(db, taskID, judgeName, s, "IE"); err2 != nil {
+			if err2 := updateSubmission(db, taskID, s, "IE"); err2 != nil {
 				log.Println("Deep error:", err2)
 			}
 		}
 	}()
 
 	log.Println("Fetch data")
-	if err := updateSubmission(db, taskID, judgeName, s, "Fetching"); err != nil {
+	if err := updateSubmission(db, taskID, s, "Fetching"); err != nil {
 		return err
 	}
 
@@ -126,7 +114,7 @@ func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) 
 	defer judge.Close()
 
 	log.Println("Compile checker")
-	if err := updateSubmission(db, taskID, judgeName, s, "Compiling"); err != nil {
+	if err := updateSubmission(db, taskID, s, "Compiling"); err != nil {
 		return err
 	}
 
@@ -136,7 +124,7 @@ func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) 
 	}
 	if taskResult.ExitCode != 0 {
 		s.CompileError = taskResult.Stderr
-		return finishSubmission(db, taskID, judgeName, s, "ICE")
+		return finishSubmission(db, taskID, s, "ICE")
 	}
 
 	// write source to tempfile
@@ -161,7 +149,7 @@ func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) 
 	}
 	if result.ExitCode != 0 {
 		s.CompileError = result.Stderr
-		return finishSubmission(db, taskID, judgeName, s, "CE")
+		return finishSubmission(db, taskID, s, "CE")
 	}
 
 	log.Println("Start executing")
@@ -172,7 +160,7 @@ func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) 
 	caseNum := len(cases)
 	caseResults := []CaseResult{}
 	for idx, caseName := range cases {
-		if err := updateSubmission(db, taskID, judgeName, s, fmt.Sprintf("%d/%d", idx, caseNum)); err != nil {
+		if err := updateSubmission(db, taskID, s, fmt.Sprintf("%d/%d", idx, caseNum)); err != nil {
 			return err
 		}
 
@@ -199,16 +187,10 @@ func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) 
 
 	s.MaxTime = int32(caseResult.Time.Milliseconds())
 	s.MaxMemory = caseResult.Memory
-	return finishSubmission(db, taskID, judgeName, s, caseResult.Status)
+	return finishSubmission(db, taskID, s, caseResult.Status)
 }
 
-func initSubmission(db *gorm.DB, name string, id int32) (*database.Submission, error) {
-	if ok, err := database.TryLockSubmission(db, id, name); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, fmt.Errorf("failed to lock submission: %d", id)
-	}
-
+func initSubmission(db *gorm.DB, id int32) (*database.Submission, error) {
 	if err := database.ClearTestcaseResult(db, id); err != nil {
 		return nil, err
 	}
@@ -228,30 +210,18 @@ func initSubmission(db *gorm.DB, name string, id int32) (*database.Submission, e
 	return s, database.UpdateSubmission(db, *s)
 }
 
-func updateSubmission(db *gorm.DB, taskID int32, judgeName string, s *database.Submission, status string) error {
+func updateSubmission(db *gorm.DB, taskID int32, s *database.Submission, status string) error {
 	if err := database.TouchTask(db, taskID); err != nil {
-		return err
-	}
-	if err := lockSubmission(db, s.ID, judgeName); err != nil {
 		return err
 	}
 	s.Status = status
 	return database.UpdateSubmission(db, *s)
 }
 
-func finishSubmission(db *gorm.DB, taskID int32, judgeName string, s *database.Submission, status string) error {
+func finishSubmission(db *gorm.DB, taskID int32, s *database.Submission, status string) error {
 	s.JudgedTime = time.Now()
-	if err := updateSubmission(db, taskID, judgeName, s, status); err != nil {
+	if err := updateSubmission(db, taskID, s, status); err != nil {
 		return err
-	}
-	return database.UnlockSubmission(db, s.ID, judgeName)
-}
-
-func lockSubmission(db *gorm.DB, id int32, name string) error {
-	if ok, err := database.TryLockSubmission(db, id, name); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("lock failed")
 	}
 	return nil
 }
