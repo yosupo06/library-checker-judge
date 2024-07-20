@@ -1,6 +1,8 @@
 package database
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"time"
 
@@ -10,6 +12,17 @@ import (
 
 const TASK_RETRY_PERIOD = time.Minute
 
+type TaskType = int
+
+const (
+	JUDGE_SUBMISSION TaskType = 1
+)
+
+type TaskData struct {
+	TaskType   TaskType
+	Submission int32
+}
+
 // Task is db table
 type Task struct {
 	ID         int32 `gorm:"primaryKey;autoIncrement"`
@@ -17,13 +30,44 @@ type Task struct {
 	Priority   int32
 	Available  time.Time
 	Enqueue    time.Time
+	TaskData   []byte
 }
 
-func PopTask(db *gorm.DB, judgeName string) (*Task, error) {
+func encode(data TaskData) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	err := gob.NewEncoder(buf).Encode(&data)
+	return buf.Bytes(), err
+}
+
+func decode(data []byte) (TaskData, error) {
+	var taskData TaskData
+	err := gob.NewDecoder(bytes.NewBuffer(data)).Decode(&taskData)
+	return taskData, err
+}
+
+func PushTask(db *gorm.DB, taskData TaskData, priority int32) error {
+	now := time.Now()
+	binTaskData, err := encode(taskData)
+	if err != nil {
+		return err
+	}
+	if err := db.Save(&Task{
+		Submission: taskData.Submission,
+		Priority:   priority,
+		Available:  now,
+		Enqueue:    now,
+		TaskData:   binTaskData,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func PopTask(db *gorm.DB) (*Task, error) {
 	task := Task{}
 	found := false
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		if err := db.Where("available <= ?", time.Now()).Order("priority desc").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		if err := tx.Where("available <= ?", time.Now()).Order("priority desc, id asc").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		} else if err != nil {
 			return err
@@ -47,14 +91,25 @@ func PopTask(db *gorm.DB, judgeName string) (*Task, error) {
 	return &task, nil
 }
 
-func PushTask(db *gorm.DB, subId int32, priority int32) error {
-	now := time.Now()
-	if err := db.Save(&Task{
-		Submission: subId,
-		Priority:   priority,
-		Available:  now,
-		Enqueue:    now,
-	}).Error; err != nil {
+func TouchTask(db *gorm.DB, id int32) error {
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		task := Task{
+			ID: id,
+		}
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; err != nil {
+			return err
+		}
+
+		if task.Available.Before(time.Now()) {
+			return errors.New("task.Available is not order than now")
+		}
+		task.Available = time.Now().Add(TASK_RETRY_PERIOD)
+		if err := tx.Save(&task).Error; err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
 	return nil

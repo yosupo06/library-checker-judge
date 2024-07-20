@@ -276,8 +276,11 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	return res, nil
 }
 
-func (s *server) pushTask(ctx context.Context, subID, priority int32) error {
-	if err := database.PushTask(s.db, subID, priority); err != nil {
+func (s *server) pushTask(_ context.Context, subID, priority int32) error {
+	if err := database.PushTask(s.db, database.TaskData{
+		TaskType:   database.JUDGE_SUBMISSION,
+		Submission: subID,
+	}, priority); err != nil {
 		return err
 	}
 	return nil
@@ -377,7 +380,7 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 		return nil, err
 	}
 	var categories []Category
-	if json.Unmarshal([]byte(*data), &categories); err != nil {
+	if err := json.Unmarshal([]byte(*data), &categories); err != nil {
 		return nil, err
 	}
 
