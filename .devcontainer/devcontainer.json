@@ -13,6 +13,7 @@
 	"forwardPorts": [
 		12380, // API
 		9000, // minio
+		9001, // minio UI
 		9099 // firebase
 	],
 	"customizations": {
