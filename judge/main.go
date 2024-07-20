@@ -69,31 +69,31 @@ func main() {
 
 	log.Println("Start Pooling")
 	for {
-		task, err := database.PopTask(db)
+		taskID, taskData, err := database.PopTask(db)
 		if err != nil {
 			log.Print("PopJudgeTask error: ", err)
 			time.Sleep(POOLING_PERIOD)
 			continue
 		}
-		if task == nil {
+		if taskID == -1 {
 			time.Sleep(POOLING_PERIOD)
 			continue
 		}
 
-		log.Println("Start task:", task)
-		err = judgeSubmissionTask(db, task.ID, judgeName, task.Submission, task.Enqueue)
+		log.Println("Start task:", taskID)
+		err = judgeSubmissionTask(db, taskID, judgeName, taskData.Submission)
 		if err != nil {
 			log.Println(err.Error())
 			continue
 		}
-		database.FinishTask(db, task.ID)
+		database.FinishTask(db, taskID)
 	}
 }
 
-func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32, enqueue time.Time) (err error) {
+func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32) (err error) {
 	log.Println("Start judge submission:", id)
 
-	s, err := initSubmission(db, judgeName, id, enqueue)
+	s, err := initSubmission(db, judgeName, id)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func judgeSubmissionTask(db *gorm.DB, taskID int32, judgeName string, id int32, 
 	return finishSubmission(db, taskID, judgeName, s, caseResult.Status)
 }
 
-func initSubmission(db *gorm.DB, name string, id int32, enqueue time.Time) (*database.Submission, error) {
+func initSubmission(db *gorm.DB, name string, id int32) (*database.Submission, error) {
 	if ok, err := database.TryLockSubmission(db, id, name); err != nil {
 		return nil, err
 	} else if !ok {
@@ -215,11 +215,6 @@ func initSubmission(db *gorm.DB, name string, id int32, enqueue time.Time) (*dat
 
 	s, err := database.FetchSubmission(db, id)
 	if err != nil {
-		return nil, err
-	}
-
-	if s.JudgedTime.After(enqueue) {
-		log.Println("Already judged:", id)
 		return nil, err
 	}
 
