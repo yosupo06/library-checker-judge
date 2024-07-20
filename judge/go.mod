@@ -30,6 +30,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/yosupo06/library-checker-judge/langs v0.0.0-00010101000000-000000000000 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
@@ -40,3 +41,5 @@ require (
 )
 
 replace github.com/yosupo06/library-checker-judge/database => ../database
+
+replace github.com/yosupo06/library-checker-judge/langs => ../langs
