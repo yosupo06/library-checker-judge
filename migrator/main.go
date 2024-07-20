@@ -10,6 +10,6 @@ func main() {
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
 	if err := database.AutoMigrate(db); err != nil {
-		slog.Error("Migration failed:", err)
+		slog.Error("Migration failed:", slog.Any("err", err))
 	}
 }
