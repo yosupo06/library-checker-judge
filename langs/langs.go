@@ -4,12 +4,15 @@ import (
 	_ "embed"
 	"log/slog"
 	"os"
+	"slices"
 
 	"github.com/BurntSushi/toml"
 )
 
 type Lang struct {
 	ID              string   `toml:"id"`
+	Name            string   `toml:"name"`
+	Version         string   `toml:"version"`
 	Source          string   `toml:"source"`
 	Compile         []string `toml:"compile"`
 	Exec            []string `toml:"exec"`
@@ -17,7 +20,7 @@ type Lang struct {
 	AdditionalFiles []string `toml:"additional_files"`
 }
 
-var LANGS map[string]Lang
+var LANGS []Lang
 var LANG_CHECKER = Lang{
 	Source:    "checker.cpp",
 	ImageName: "library-checker-images-gcc",
@@ -36,8 +39,15 @@ func init() {
 		slog.Error("toml decode failed", slog.Any("err", err))
 		os.Exit(0)
 	}
-	LANGS = make(map[string]Lang)
-	for _, lang := range data.Langs {
-		LANGS[lang.ID] = lang
+	LANGS = data.Langs
+}
+
+func GetLang(id string) (Lang, bool) {
+	if idx := slices.IndexFunc(LANGS, func(lang Lang) bool {
+		return lang.ID == id
+	}); idx == -1 {
+		return Lang{}, false
+	} else {
+		return LANGS[idx], true
 	}
 }

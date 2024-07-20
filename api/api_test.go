@@ -147,6 +147,21 @@ func TestSubmissionSortOrderList(t *testing.T) {
 	t.Log(err)
 }
 
+func TestSubmit(t *testing.T) {
+	client := createTestAPIClient(t)
+
+	ctx := context.Background()
+	_, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: "aplusb",
+		Source:  "dummy-src",
+		Lang:    "cpp",
+	})
+	if err != nil {
+		t.Fatal("Failed to submit", err)
+	}
+	t.Log(err)
+}
+
 func TestSubmitBig(t *testing.T) {
 	client := createTestAPIClient(t)
 
@@ -161,6 +176,23 @@ func TestSubmitBig(t *testing.T) {
 		t.Fatal("Success to submit big source")
 	}
 	t.Log(err)
+}
+
+func TestSubmitUnknownLang(t *testing.T) {
+	client := createTestAPIClient(t)
+
+	ctx := context.Background()
+	for _, lang := range []string{"invalid-lang", "checker"} {
+		_, err := client.Submit(ctx, &pb.SubmitRequest{
+			Problem: "aplusb",
+			Source:  "dummy-src",
+			Lang:    lang,
+		})
+		if err == nil {
+			t.Fatal("Success to submit unknown language", err)
+		}
+		t.Log(err)
+	}
 }
 
 func TestAnonymousRejudge(t *testing.T) {

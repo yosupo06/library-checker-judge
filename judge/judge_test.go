@@ -66,7 +66,7 @@ func generateTestCaseDir(t *testing.T, inFilePath, outFilePath string) TestCaseD
 	return caseDir
 }
 
-func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath string) *Judge {
+func generateAplusBJudge(t *testing.T, langID, srcName, inFilePath, outFilePath string) *Judge {
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
 	if err != nil {
@@ -74,12 +74,16 @@ func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath st
 	}
 	defer src.Close()
 
-	srcFile := toRealFile(src, langs.LANGS[lang].Source, t)
+	lang, ok := langs.GetLang(langID)
+	if !ok {
+		t.Fatal("Unknown lang", langID)
+	}
+	srcFile := toRealFile(src, lang.Source, t)
 	defer os.Remove(srcFile)
 
 	caseDir := generateTestCaseDir(t, inFilePath, outFilePath)
 
-	judge, err := NewJudge(langs.LANGS[lang], 2.0, &caseDir)
+	judge, err := NewJudge(lang, 2.0, &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
@@ -246,9 +250,15 @@ func TestAplusbCE(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-	srcPath := toRealFile(src, langs.LANGS["cpp"].Source, t)
 
-	judge, err := NewJudge(langs.LANGS["cpp"], 2.0, &caseDir)
+	lang, ok := langs.GetLang("cpp")
+	if !ok {
+		t.Fatal("cpp lang is not found")
+	}
+
+	srcPath := toRealFile(src, lang.Source, t)
+
+	judge, err := NewJudge(lang, 2.0, &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}

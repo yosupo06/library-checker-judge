@@ -30,7 +30,6 @@ type server struct {
 	pb.UnimplementedLibraryCheckerServiceServer
 	db         *gorm.DB
 	authClient AuthClient
-	langs      []*pb.Lang
 }
 
 func NewGRPCServer(db *gorm.DB, authClient AuthClient, langsTomlPath string) *grpc.Server {
@@ -40,7 +39,6 @@ func NewGRPCServer(db *gorm.DB, authClient AuthClient, langsTomlPath string) *gr
 	pb.RegisterLibraryCheckerServiceServer(s, &server{
 		db:         db,
 		authClient: authClient,
-		langs:      ReadLangs(langsTomlPath),
 	})
 
 	return s
