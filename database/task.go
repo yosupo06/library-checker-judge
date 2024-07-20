@@ -67,7 +67,7 @@ func PopTask(db *gorm.DB) (*Task, error) {
 	task := Task{}
 	found := false
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("available <= ?", time.Now()).Order("priority desc").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		if err := tx.Where("available <= ?", time.Now()).Order("priority desc, id asc").Clauses(clause.Locking{Strength: "UPDATE"}).Take(&task).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil
 		} else if err != nil {
 			return err
