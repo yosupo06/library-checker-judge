@@ -148,7 +148,9 @@ func TestSubmissionSortOrderList(t *testing.T) {
 }
 
 func TestSubmit(t *testing.T) {
-	client := createTestAPIClient(t)
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		database.SaveProblem(db, DUMMY_PROBLEM)
+	})
 
 	ctx := context.Background()
 	_, err := client.Submit(ctx, &pb.SubmitRequest{
@@ -163,7 +165,9 @@ func TestSubmit(t *testing.T) {
 }
 
 func TestSubmitBig(t *testing.T) {
-	client := createTestAPIClient(t)
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		database.SaveProblem(db, DUMMY_PROBLEM)
+	})
 
 	ctx := context.Background()
 	bigSrc := strings.Repeat("a", 3*1000*1000) // 3 MB
@@ -179,7 +183,9 @@ func TestSubmitBig(t *testing.T) {
 }
 
 func TestSubmitUnknownLang(t *testing.T) {
-	client := createTestAPIClient(t)
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		database.SaveProblem(db, DUMMY_PROBLEM)
+	})
 
 	ctx := context.Background()
 	for _, lang := range []string{"invalid-lang", "checker"} {
