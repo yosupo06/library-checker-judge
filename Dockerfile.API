@@ -32,4 +32,4 @@ COPY --from=builder /go/src/github.com/yosupo06/library-checker-judge/api/api .
 COPY --from=grpc_health_probe_getter /tmp/grpc_health_probe /bin/grpc_health_probe
 
 ENV FIREBASE_PROJECT=dev-library-checker-project
-ENTRYPOINT ["./api", "--langs=./langs.toml"]
+ENTRYPOINT ["./api"]

@@ -248,7 +248,7 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 		tokenToUID: map[string]string{},
 	}
 
-	s := NewGRPCServer(db, authClient, "../langs/langs.toml")
+	s := NewGRPCServer(db, authClient)
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			log.Fatal("Server exited: ", err)

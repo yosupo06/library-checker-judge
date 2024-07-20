@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"io"
 	"log"
 	"net/http"
@@ -32,7 +31,7 @@ type server struct {
 	authClient AuthClient
 }
 
-func NewGRPCServer(db *gorm.DB, authClient AuthClient, langsTomlPath string) *grpc.Server {
+func NewGRPCServer(db *gorm.DB, authClient AuthClient) *grpc.Server {
 	// launch gRPC server
 	s := grpc.NewServer()
 
@@ -53,9 +52,6 @@ func createFirebaseApp(ctx context.Context, projectID string) (*firebase.App, er
 func main() {
 	ctx := context.Background()
 
-	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
-	flag.Parse()
-
 	db := database.Connect(database.GetDSNFromEnv(), getEnv("API_DB_LOG", "") != "")
 
 	// connect firebase
@@ -75,7 +71,7 @@ func main() {
 	// launch api service
 	port := getEnv("PORT", "12380")
 	log.Println("launch gRPCWeb server port:", port)
-	s := NewGRPCServer(db, firebaseAuth, *langsTomlPath)
+	s := NewGRPCServer(db, firebaseAuth)
 	wrappedGrpc := grpcweb.WrapServer(s, grpcweb.WithOriginFunc(func(origin string) bool { return true }))
 	http.HandleFunc("/health", func(resp http.ResponseWriter, req *http.Request) {
 		io.WriteString(resp, "SERVING")
