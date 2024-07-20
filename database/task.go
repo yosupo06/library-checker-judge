@@ -1,6 +1,8 @@
 package database
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"time"
 
@@ -10,6 +12,17 @@ import (
 
 const TASK_RETRY_PERIOD = time.Minute
 
+type TaskType = int
+
+const (
+	JUDGE_SUBMISSION TaskType = 1
+)
+
+type TaskData struct {
+	TaskType   TaskType
+	Submission int32
+}
+
 // Task is db table
 type Task struct {
 	ID         int32 `gorm:"primaryKey;autoIncrement"`
@@ -17,6 +30,37 @@ type Task struct {
 	Priority   int32
 	Available  time.Time
 	Enqueue    time.Time
+	TaskData   []byte
+}
+
+func encode(data TaskData) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	err := gob.NewEncoder(buf).Encode(&data)
+	return buf.Bytes(), err
+}
+
+func decode(data []byte) (TaskData, error) {
+	var taskData TaskData
+	err := gob.NewDecoder(bytes.NewBuffer(data)).Decode(&taskData)
+	return taskData, err
+}
+
+func PushTask(db *gorm.DB, taskData TaskData, priority int32) error {
+	now := time.Now()
+	binTaskData, err := encode(taskData)
+	if err != nil {
+		return err
+	}
+	if err := db.Save(&Task{
+		Submission: taskData.Submission,
+		Priority:   priority,
+		Available:  now,
+		Enqueue:    now,
+		TaskData:   binTaskData,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func PopTask(db *gorm.DB, judgeName string) (*Task, error) {
@@ -45,19 +89,6 @@ func PopTask(db *gorm.DB, judgeName string) (*Task, error) {
 		return nil, nil
 	}
 	return &task, nil
-}
-
-func PushTask(db *gorm.DB, subId int32, priority int32) error {
-	now := time.Now()
-	if err := db.Save(&Task{
-		Submission: subId,
-		Priority:   priority,
-		Available:  now,
-		Enqueue:    now,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
 }
 
 func FinishTask(db *gorm.DB, taskId int32) error {
