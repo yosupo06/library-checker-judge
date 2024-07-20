@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/yosupo06/library-checker-judge/langs"
 )
 
 const (
@@ -30,7 +31,7 @@ func init() {
 
 type Judge struct {
 	tl   float64
-	lang Lang
+	lang langs.Lang
 
 	checkerVolume *Volume
 	sourceVolume  *Volume
@@ -38,7 +39,7 @@ type Judge struct {
 	caseDir *TestCaseDir
 }
 
-func NewJudge(lang Lang, tl float64, caseDir *TestCaseDir) (*Judge, error) {
+func NewJudge(lang langs.Lang, tl float64, caseDir *TestCaseDir) (*Judge, error) {
 	return &Judge{
 		tl:      tl,
 		lang:    lang,
@@ -68,7 +69,7 @@ func (j *Judge) CompileChecker() (TaskResult, error) {
 		return TaskResult{}, err
 	}
 	paths = append(paths, includeFilePaths...)
-	v, t, err := compile(paths, langs["checker"].ImageName, langs["checker"].Compile)
+	v, t, err := compile(paths, langs.LANG_CHECKER.ImageName, langs.LANG_CHECKER.Compile)
 	if err != nil {
 		return TaskResult{}, err
 	}
@@ -207,7 +208,7 @@ func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t Tas
 	return
 }
 
-func runSource(volume Volume, lang Lang, timeLimit float64, inFilePath string) (string, TaskResult, error) {
+func runSource(volume Volume, lang langs.Lang, timeLimit float64, inFilePath string) (string, TaskResult, error) {
 	caseVolume, err := CreateVolume()
 	if err != nil {
 		return "", TaskResult{}, err
@@ -277,9 +278,9 @@ func runChecker(volume *Volume, inFilePath, expectFilePath, actualFilePath strin
 	}
 
 	// TODO: make volume read only?
-	checkerTaskInfo, err := NewTaskInfo(langs["checker"].ImageName, append(
+	checkerTaskInfo, err := NewTaskInfo(langs.LANG_CHECKER.ImageName, append(
 		DEFAULT_OPTIONS,
-		WithArguments(langs["checker"].Exec...),
+		WithArguments(langs.LANG_CHECKER.Exec...),
 		WithWorkDir("/workdir"),
 		WithTimeout(CHECKER_TIMEOUT),
 		WithVolume(volume, "/workdir"),

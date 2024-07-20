@@ -103,17 +103,12 @@ build {
     destination = "/tmp/judge"
   }
   provisioner "file" {
-    source = "../../langs/langs.toml"
-    destination = "/tmp/langs.toml"
-  }
-  provisioner "file" {
     content = local.parsed_judge_service
     destination = "/tmp/judge.service"
   }
   provisioner "shell" {
     inline = [
       "sudo cp /tmp/judge /root/judge",
-      "sudo cp /tmp/langs.toml /root/langs.toml",
       "sudo cp /tmp/judge.service /usr/local/lib/systemd/system/judge.service",
     ]
   }

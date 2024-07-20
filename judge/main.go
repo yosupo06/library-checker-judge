@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/database"
+	"github.com/yosupo06/library-checker-judge/langs"
 )
 
 const POOLING_PERIOD = 3 * time.Second
@@ -25,8 +26,6 @@ func getEnv(key, defaultValue string) string {
 }
 
 func main() {
-	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
-
 	prod := flag.Bool("prod", false, "production mode")
 
 	minioHost := getEnv("MINIO_HOST", "localhost:9000")
@@ -39,8 +38,6 @@ func main() {
 
 	// connect db
 	db := database.Connect(database.GetDSNFromEnv(), false)
-
-	ReadLangs(*langsTomlPath)
 
 	testCaseFetcher, err := NewTestCaseFetcher(
 		minioHost,
@@ -107,7 +104,7 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 		return err
 	}
 
-	judge, err := NewJudge(langs[s.Lang], float64(s.Problem.Timelimit)/1000, &testCases)
+	judge, err := NewJudge(langs.LANGS[s.Lang], float64(s.Problem.Timelimit)/1000, &testCases)
 	if err != nil {
 		return err
 	}
@@ -133,7 +130,7 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 		return err
 	}
 	defer os.RemoveAll(tmpSourceDir)
-	tmpSourceFile, err := os.Create(path.Join(tmpSourceDir, langs[s.Lang].Source))
+	tmpSourceFile, err := os.Create(path.Join(tmpSourceDir, langs.LANGS[s.Lang].Source))
 	if err != nil {
 		return err
 	}

@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 	"testing"
+
+	"github.com/yosupo06/library-checker-judge/langs"
 )
 
 var (
@@ -24,15 +26,11 @@ var (
 var sources embed.FS
 
 func TestMain(m *testing.M) {
-	langsTomlPath := flag.String("langs", "../langs/langs.toml", "toml path of langs.toml")
-
 	flag.Parse()
-
-	ReadLangs(*langsTomlPath)
 	os.Exit(m.Run())
 }
 
-func generateTestCaseDir(t *testing.T, lang, inFilePath, outFilePath string) TestCaseDir {
+func generateTestCaseDir(t *testing.T, inFilePath, outFilePath string) TestCaseDir {
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal("Failed to create tempDir: ", tempDir)
@@ -76,12 +74,12 @@ func generateAplusBJudge(t *testing.T, lang, srcName, inFilePath, outFilePath st
 	}
 	defer src.Close()
 
-	srcFile := toRealFile(src, langs[lang].Source, t)
+	srcFile := toRealFile(src, langs.LANGS[lang].Source, t)
 	defer os.Remove(srcFile)
 
-	caseDir := generateTestCaseDir(t, lang, inFilePath, outFilePath)
+	caseDir := generateTestCaseDir(t, inFilePath, outFilePath)
 
-	judge, err := NewJudge(langs[lang], 2.0, &caseDir)
+	judge, err := NewJudge(langs.LANGS[lang], 2.0, &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
@@ -242,15 +240,15 @@ func TestAplusbRE(t *testing.T) {
 }
 
 func TestAplusbCE(t *testing.T) {
-	caseDir := generateTestCaseDir(t, "cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
+	caseDir := generateTestCaseDir(t, SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, "ce.cpp"))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-	srcPath := toRealFile(src, langs["cpp"].Source, t)
+	srcPath := toRealFile(src, langs.LANGS["cpp"].Source, t)
 
-	judge, err := NewJudge(langs["cpp"], 2.0, &caseDir)
+	judge, err := NewJudge(langs.LANGS["cpp"], 2.0, &caseDir)
 	if err != nil {
 		t.Fatal("Failed to create Judge", err)
 	}
