@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // Submission is db table
@@ -191,58 +190,4 @@ func FetchSubmissionList(db *gorm.DB, problem, status, lang, user string, dedupU
 	}
 
 	return submissions, count, nil
-}
-
-const LOCK_TIME = time.Minute
-
-type SubmissionLock struct {
-	ID         int32      `gorm:"primaryKey"`
-	Submission Submission `gorm:"foreignKey:ID"`
-	Name       string
-	Ping       time.Time
-}
-
-func TryLockSubmission(db *gorm.DB, id int32, name string) (bool, error) {
-	now := time.Now()
-
-	succeeded := false
-	if err := db.Transaction(func(tx *gorm.DB) error {
-		lock := SubmissionLock{}
-		if err := tx.Where(SubmissionLock{
-			ID: id,
-		}).Attrs(SubmissionLock{
-			ID:   id,
-			Name: name,
-			Ping: time.Time{},
-		}).Clauses(clause.Locking{Strength: "UPDATE"}).FirstOrCreate(&lock).Error; err != nil {
-			return err
-		}
-
-		if lock.Name != name && now.Before(lock.Ping.Add(LOCK_TIME)) {
-			// already locked by another judge
-			return nil
-		}
-
-		lock.Name = name
-		lock.Ping = now
-		succeeded = true
-
-		return tx.Save(lock).Error
-	}); err != nil {
-		return false, err
-	}
-
-	return succeeded, nil
-}
-
-func UnlockSubmission(db *gorm.DB, id int32, name string) error {
-	if ok, err := TryLockSubmission(db, id, name); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("failed to lock")
-	}
-
-	return db.Delete(&SubmissionLock{
-		ID: id,
-	}).Error
 }

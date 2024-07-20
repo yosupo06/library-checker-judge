@@ -25,12 +25,11 @@ type TaskData struct {
 
 // Task is db table
 type Task struct {
-	ID         int32 `gorm:"primaryKey;autoIncrement"`
-	Submission int32
-	Priority   int32
-	Available  time.Time
-	Enqueue    time.Time
-	TaskData   []byte
+	ID        int32 `gorm:"primaryKey;autoIncrement"`
+	Priority  int32
+	Available time.Time
+	Enqueue   time.Time
+	TaskData  []byte
 }
 
 func encode(data TaskData) ([]byte, error) {
@@ -52,18 +51,17 @@ func PushTask(db *gorm.DB, taskData TaskData, priority int32) error {
 		return err
 	}
 	if err := db.Save(&Task{
-		Submission: taskData.Submission,
-		Priority:   priority,
-		Available:  now,
-		Enqueue:    now,
-		TaskData:   binTaskData,
+		Priority:  priority,
+		Available: now,
+		Enqueue:   now,
+		TaskData:  binTaskData,
 	}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func PopTask(db *gorm.DB) (*Task, error) {
+func PopTask(db *gorm.DB) (int32, TaskData, error) {
 	task := Task{}
 	found := false
 	if err := db.Transaction(func(tx *gorm.DB) error {
@@ -82,13 +80,17 @@ func PopTask(db *gorm.DB) (*Task, error) {
 
 		return nil
 	}); err != nil {
-		return nil, err
+		return -1, TaskData{}, err
 	}
 
 	if !found {
-		return nil, nil
+		return -1, TaskData{}, nil
 	}
-	return &task, nil
+	taskData, err := decode(task.TaskData)
+	if err != nil {
+		return -1, TaskData{}, err
+	}
+	return task.ID, taskData, nil
 }
 
 func TouchTask(db *gorm.DB, id int32) error {
