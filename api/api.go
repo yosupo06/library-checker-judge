@@ -226,7 +226,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 	currentUserName := s.currentUserName(ctx)
 	currentUser, _ := database.FetchUserFromName(s.db, currentUserName)
 
-	var sub *database.Submission
+	var sub database.Submission
 	sub, err := database.FetchSubmission(s.db, in.Id)
 	if err != nil {
 		log.Println("failed to fetch submission:", err)
@@ -238,7 +238,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 		return nil, errors.New("failed to fetch submission results")
 	}
 
-	overview := toProtoSubmissionOverview(database.ToSubmissionOverView(*sub))
+	overview := toProtoSubmissionOverview(database.ToSubmissionOverView(sub))
 
 	rej := false
 	if currentUser != nil {

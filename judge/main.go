@@ -82,9 +82,6 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 	if err != nil {
 		return err
 	}
-	if s == nil {
-		return nil
-	}
 	defer func() {
 		if err != nil {
 			if err2 := updateSubmission(db, taskID, s, "IE"); err2 != nil {
@@ -192,14 +189,14 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 	return finishSubmission(db, taskID, s, caseResult.Status)
 }
 
-func initSubmission(db *gorm.DB, id int32) (*database.Submission, error) {
+func initSubmission(db *gorm.DB, id int32) (database.Submission, error) {
 	if err := database.ClearTestcaseResult(db, id); err != nil {
-		return nil, err
+		return database.Submission{}, err
 	}
 
 	s, err := database.FetchSubmission(db, id)
 	if err != nil {
-		return nil, err
+		return database.Submission{}, err
 	}
 
 	s.MaxTime = -1
@@ -209,18 +206,18 @@ func initSubmission(db *gorm.DB, id int32) (*database.Submission, error) {
 	s.TestCasesVersion = s.Problem.TestCasesVersion
 	s.CompileError = []byte{}
 
-	return s, database.UpdateSubmission(db, *s)
+	return s, database.UpdateSubmission(db, s)
 }
 
-func updateSubmission(db *gorm.DB, taskID int32, s *database.Submission, status string) error {
+func updateSubmission(db *gorm.DB, taskID int32, s database.Submission, status string) error {
 	if err := database.TouchTask(db, taskID); err != nil {
 		return err
 	}
 	s.Status = status
-	return database.UpdateSubmission(db, *s)
+	return database.UpdateSubmission(db, s)
 }
 
-func finishSubmission(db *gorm.DB, taskID int32, s *database.Submission, status string) error {
+func finishSubmission(db *gorm.DB, taskID int32, s database.Submission, status string) error {
 	s.JudgedTime = time.Now()
 	if err := updateSubmission(db, taskID, s, status); err != nil {
 		return err

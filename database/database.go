@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -19,6 +20,8 @@ import (
 const (
 	MAX_TRY_TIMES = 3
 )
+
+var ErrNotExist = errors.New("not exist")
 
 type DSN struct {
 	Host     string
