@@ -61,9 +61,6 @@ func (p *problem) clean() error {
 func main() {
 	dir := flag.String("dir", "../../library-checker-problems", "directory of library-checker-problems")
 
-	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
-	minioPublicBucket := flag.String("miniopublicbucket", "testcase-public", "minio public bucket")
-
 	discordUrl := flag.String("discordwebhook", "", "webhook URL of discord")
 
 	forceUpload := flag.Bool("force", false, "force upload even if the version is the same")
@@ -84,8 +81,8 @@ func main() {
 
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
-	// connect minio
-	mc, err := storage.Connect(storage.GetConfigFromEnv())
+	// connect storage client
+	storageClient, err := storage.Connect(storage.GetConfigFromEnv())
 	if err != nil {
 		log.Fatalln("Cannot connect to Minio:", err)
 	}
@@ -145,7 +142,7 @@ func main() {
 				log.Fatalln("Failed to generate:", err)
 			}
 
-			if err := p.dir.UploadTestcases(mc, *minioBucket, *minioPublicBucket); err != nil {
+			if err := p.dir.UploadTestcases(storageClient); err != nil {
 				log.Fatalln("Failed to upload testcases:", err)
 			}
 		} else {
@@ -153,7 +150,7 @@ func main() {
 		}
 
 		if versionUpdated || *forceUpload {
-			if err := p.dir.UploadFiles(mc, *minioPublicBucket); err != nil {
+			if err := p.dir.UploadFiles(storageClient); err != nil {
 				log.Fatalln("Failed to upload public files:", err)
 			}
 		} else {

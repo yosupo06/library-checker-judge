@@ -25,6 +25,12 @@ var DEFAULT_CONFIG = Config{
 	useTLS:       false,
 }
 
+type Client struct {
+	client       *minio.Client
+	bucket       string
+	publicBucket string
+}
+
 func GetConfigFromEnv() Config {
 	config := DEFAULT_CONFIG
 	if host := os.Getenv("MINIO_HOST"); host != "" {
@@ -48,11 +54,20 @@ func GetConfigFromEnv() Config {
 	return config
 }
 
-func Connect(config Config) (*minio.Client, error) {
-	return minio.New(
+func Connect(config Config) (Client, error) {
+	client, err := minio.New(
 		config.Host, &minio.Options{
 			Creds:  credentials.NewStaticV4(config.ID, config.Secret, ""),
 			Secure: config.useTLS,
 		},
 	)
+	if err != nil {
+		return Client{}, err
+	}
+
+	return Client{
+		client:       client,
+		bucket:       config.Bucket,
+		publicBucket: config.PublicBucket,
+	}, nil
 }

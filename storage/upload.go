@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -32,7 +31,7 @@ type FileInfo struct {
 	required bool
 }
 
-func (p ProblemDir) UploadTestcases(mc *minio.Client, bucket string, publicBucket string) error {
+func (p ProblemDir) UploadTestcases(client Client) error {
 	h, err := p.TestCaseHash()
 	if err != nil {
 		return err
@@ -55,7 +54,7 @@ func (p ProblemDir) UploadTestcases(mc *minio.Client, bucket string, publicBucke
 	for _, ext := range []string{"in", "out"} {
 		if err := filepath.Walk(path.Join(p.Base, ext), func(fpath string, info fs.FileInfo, err error) error {
 			if strings.Contains(fpath, "example") {
-				if _, err := mc.FPutObject(context.Background(), publicBucket, fmt.Sprintf("v2/%s/%s/%s/%s", p.Name, v, ext, path.Base(fpath)), fpath, minio.PutObjectOptions{}); err != nil {
+				if _, err := client.client.FPutObject(context.Background(), client.publicBucket, fmt.Sprintf("v2/%s/%s/%s/%s", p.Name, v, ext, path.Base(fpath)), fpath, minio.PutObjectOptions{}); err != nil {
 					return err
 				}
 			}
@@ -110,14 +109,14 @@ func (p ProblemDir) UploadTestcases(mc *minio.Client, bucket string, publicBucke
 		return err
 	}
 
-	if _, err := mc.PutObject(context.Background(), bucket, fmt.Sprintf("v2/%s/%s.tar.gz", p.Name, h), tempFile, fileInfo.Size(), minio.PutObjectOptions{}); err != nil {
+	if _, err := client.client.PutObject(context.Background(), client.bucket, fmt.Sprintf("v2/%s/%s.tar.gz", p.Name, h), tempFile, fileInfo.Size(), minio.PutObjectOptions{}); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p ProblemDir) UploadFiles(mc *minio.Client, bucket string) error {
+func (p ProblemDir) UploadFiles(client Client) error {
 	v, err := p.Version()
 	if err != nil {
 		log.Fatal("Failed to fetch version: ", err)
@@ -127,12 +126,12 @@ func (p ProblemDir) UploadFiles(mc *minio.Client, bucket string) error {
 		src := path.Join(info.base, info.path)
 		if _, err := os.Stat(src); err != nil {
 			if info.required {
-				return errors.New(fmt.Sprintf("required file: %s/%s not found", info.base, info.path))
+				return fmt.Errorf("required file: %s/%s not found", info.base, info.path)
 			}
 			continue
 		}
 
-		if _, err := mc.FPutObject(context.Background(), bucket, fmt.Sprintf("v2/%s/%s/%s", p.Name, v, info.path), src, minio.PutObjectOptions{}); err != nil {
+		if _, err := client.client.FPutObject(context.Background(), client.bucket, fmt.Sprintf("v2/%s/%s/%s", p.Name, v, info.path), src, minio.PutObjectOptions{}); err != nil {
 			return err
 		}
 	}
