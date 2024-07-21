@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"log"
 	"sort"
@@ -371,18 +370,9 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 	return &res, nil
 }
 
-type Category struct {
-	Title    string   `json:"title"`
-	Problems []string `json:"problems"`
-}
-
 func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategoriesRequest) (*pb.ProblemCategoriesResponse, error) {
-	data, err := database.FetchMetadata(s.db, "problem_categories")
+	categories, err := database.FetchProblemCategories(s.db)
 	if err != nil {
-		return nil, err
-	}
-	var categories []Category
-	if err := json.Unmarshal([]byte(*data), &categories); err != nil {
 		return nil, err
 	}
 

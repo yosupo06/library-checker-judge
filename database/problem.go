@@ -57,7 +57,7 @@ func FetchProblemCategories(db *gorm.DB) ([]ProblemCategory, error) {
 		return nil, err
 	}
 	var categories []ProblemCategory
-	if json.Unmarshal([]byte(*data), &categories); err != nil {
+	if err := json.Unmarshal([]byte(*data), &categories); err != nil {
 		return nil, err
 	}
 
