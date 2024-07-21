@@ -19,16 +19,18 @@ jobs:
       name: Run docker compose
       run: docker compose up -d --build --wait
 
-    - id: uploader
+    - name: Uploader module test
       run: go test .
       working-directory: ./uploader
 
-    - id: database-test
-      name: Database test
+    - name: Database module test
       run: go test .
       working-directory: ./database
 
-    - id: api-test
-      name: Api test
+    - name: Storage module test
+      run: go test .
+      working-directory: ./storage
+
+    - name: Api module test
       run: go test .
       working-directory: ./api

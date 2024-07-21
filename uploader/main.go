@@ -1,39 +1,24 @@
 package main
 
 import (
-	"archive/tar"
-	"compress/gzip"
-	"context"
-	"crypto/sha256"
-	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/webhook"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/yosupo06/library-checker-judge/database"
+	"github.com/yosupo06/library-checker-judge/storage"
 	"gorm.io/gorm"
 )
 
 type problem struct {
-	root string
-	base string
+	dir  storage.ProblemDir
 	name string
-	v    string
 
 	info struct {
 		Title     string
@@ -41,71 +26,14 @@ type problem struct {
 	}
 }
 
-type FileInfo struct {
-	base     string
-	path     string
-	required bool
-}
-
-func (p *problem) fileInfos() []FileInfo {
-	return []FileInfo{
-		// Common files
-		// TODO: stop to manually add all common/*.h
-		{
-			base:     p.root,
-			path:     path.Join("common", "fastio.h"),
-			required: true,
-		},
-		{
-			base:     p.root,
-			path:     path.Join("common", "random.h"),
-			required: true,
-		},
-		{
-			base:     p.root,
-			path:     path.Join("common", "testlib.h"),
-			required: true,
-		},
-		// Problem files
-		{
-			base:     p.base,
-			path:     path.Join("task.md"),
-			required: true,
-		},
-		{
-			base:     p.base,
-			path:     path.Join("info.toml"),
-			required: true,
-		},
-		{
-			base:     p.base,
-			path:     path.Join("checker.cpp"),
-			required: true,
-		},
-		{
-			base:     p.base,
-			path:     path.Join("params.h"),
-			required: true,
-		},
-		// for C++(Function)
-		{
-			base:     p.base,
-			path:     path.Join("grader", "grader.cpp"),
-			required: false,
-		},
-		{
-			base:     p.base,
-			path:     path.Join("grader", "solve.hpp"),
-			required: false,
-		},
-	}
-}
-
 func newProblem(rootDir, tomlPath string) (*problem, error) {
 	baseDir := path.Dir(tomlPath)
 	p := problem{
-		root: rootDir,
-		base: baseDir,
+		dir: storage.ProblemDir{
+			Name: path.Base(baseDir),
+			Root: rootDir,
+			Base: baseDir,
+		},
 		name: path.Base(baseDir),
 	}
 
@@ -117,177 +45,23 @@ func newProblem(rootDir, tomlPath string) (*problem, error) {
 }
 
 func (p *problem) generate() error {
-	cmd := exec.Command(path.Join(p.root, "generate.py"), "-p", p.name)
+	cmd := exec.Command(path.Join(p.dir.Root, "generate.py"), "-p", p.name)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func (p *problem) clean() error {
-	cmd := exec.Command(path.Join(p.root, "generate.py"), "--clean", "-p", p.name)
+	cmd := exec.Command(path.Join(p.dir.Root, "generate.py"), "--clean", "-p", p.name)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func (p *problem) version() (string, error) {
-	hashes := []string{}
-
-	if h, err := p.testCasesHash(); err != nil {
-		return "", err
-	} else {
-		hashes = append(hashes, h)
-	}
-
-	for _, info := range p.fileInfos() {
-		path := path.Join(info.base, info.path)
-		h, err := fileHash(path)
-		if info.required && err != nil {
-			return "", err
-		}
-		hashes = append(hashes, h)
-	}
-
-	return joinHashes(hashes), nil
-}
-
-func (p *problem) testCasesHash() (string, error) {
-	caseHash, err := ioutil.ReadFile(path.Join(p.base, "hash.json"))
-	if err != nil {
-		return "", err
-	}
-	var cases map[string]string
-	if err := json.Unmarshal(caseHash, &cases); err != nil {
-		return "", err
-	}
-
-	hashes := make([]string, 0, len(cases))
-	for _, v := range cases {
-		hashes = append(hashes, v)
-	}
-	return joinHashes(hashes), nil
-}
-
-func (p *problem) uploadTestcases(mc *minio.Client, bucket string, publicBucket string) error {
-	h, err := p.testCasesHash()
-	if err != nil {
-		return err
-	}
-	v, err := p.version()
-	if err != nil {
-		return err
-	}
-
-	tempFile, err := os.CreateTemp("", "testcase*.tar.gz")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
-
-	gzipWriter := gzip.NewWriter(tempFile)
-	tarWriter := tar.NewWriter(gzipWriter)
-
-	for _, ext := range []string{"in", "out"} {
-		if err := filepath.Walk(path.Join(p.base, ext), func(fpath string, info fs.FileInfo, err error) error {
-			if strings.Contains(fpath, "example") {
-				if _, err := mc.FPutObject(context.Background(), publicBucket, fmt.Sprintf("v2/%s/%s/%s/%s", p.name, v, ext, path.Base(fpath)), fpath, minio.PutObjectOptions{}); err != nil {
-					return err
-				}
-			}
-
-			if path.Ext(fpath) == fmt.Sprintf(".%s", ext) {
-				file, err := os.Open(fpath)
-				if err != nil {
-					return err
-				}
-				defer file.Close()
-
-				fileInfo, err := file.Stat()
-				if err != nil {
-					return err
-				}
-
-				header := &tar.Header{
-					Name: fmt.Sprintf("%s/%s", ext, filepath.Base(fpath)),
-					Size: fileInfo.Size(),
-					Mode: 0600,
-				}
-
-				if err := tarWriter.WriteHeader(header); err != nil {
-					return err
-				}
-
-				_, err = io.Copy(tarWriter, file)
-				if err != nil {
-					return err
-				}
-
-				return nil
-			}
-			return nil
-		}); err != nil {
-			return err
-		}
-	}
-
-	if err := tarWriter.Close(); err != nil {
-		return err
-	}
-	if err := gzipWriter.Close(); err != nil {
-		return err
-	}
-
-	if _, err := tempFile.Seek(0, 0); err != nil {
-		return err
-	}
-	fileInfo, err := tempFile.Stat()
-	if err != nil {
-		return err
-	}
-
-	if _, err := mc.PutObject(context.Background(), bucket, fmt.Sprintf("v2/%s/%s.tar.gz", p.name, h), tempFile, fileInfo.Size(), minio.PutObjectOptions{}); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *problem) uploadFiles(mc *minio.Client, bucket string) error {
-	v, err := p.version()
-	if err != nil {
-		log.Fatal("Failed to fetch version: ", err)
-	}
-
-	for _, info := range p.fileInfos() {
-		src := path.Join(info.base, info.path)
-		if _, err := os.Stat(src); err != nil {
-			if info.required {
-				return errors.New(fmt.Sprintf("required file: %s/%s not found", info.base, info.path))
-			}
-			continue
-		}
-
-		if _, err := mc.FPutObject(context.Background(), bucket, fmt.Sprintf("v2/%s/%s/%s", p.name, v, info.path), src, minio.PutObjectOptions{}); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func main() {
 	dir := flag.String("dir", "../../library-checker-problems", "directory of library-checker-problems")
 
-	minioHost := flag.String("miniohost", "localhost:9000", "minio host")
-	minioID := flag.String("minioid", "minio", "minio ID")
-	minioKey := flag.String("miniokey", "miniopass", "minio access key")
-	minioBucket := flag.String("miniobucket", "testcase", "minio bucket")
-	minioPublicBucket := flag.String("miniopublicbucket", "testcase-public", "minio public bucket")
-
 	discordUrl := flag.String("discordwebhook", "", "webhook URL of discord")
-
-	useTLS := flag.Bool("tls", false, "use https for api / minio")
 
 	forceUpload := flag.Bool("force", false, "force upload even if the version is the same")
 
@@ -307,13 +81,8 @@ func main() {
 
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
-	// connect minio
-	mc, err := minio.New(
-		*minioHost, &minio.Options{
-			Creds:  credentials.NewStaticV4(*minioID, *minioKey, ""),
-			Secure: *useTLS,
-		},
-	)
+	// connect storage client
+	storageClient, err := storage.Connect(storage.GetConfigFromEnv())
 	if err != nil {
 		log.Fatalln("Cannot connect to Minio:", err)
 	}
@@ -331,7 +100,7 @@ func main() {
 			log.Fatalln("Failed to clean:", err)
 		}
 
-		v, err := p.version()
+		v, err := p.dir.Version()
 		if err != nil {
 			log.Fatalln("Failed to calculate version:", err)
 		}
@@ -349,17 +118,17 @@ func main() {
 		dbP.Name = p.name
 		dbP.Title = p.info.Title
 		dbP.Timelimit = int32(p.info.TimeLimit * 1000)
-		dbP.SourceUrl = fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.base)), p.name)
+		dbP.SourceUrl = fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.dir.Base)), p.name)
 
 		oldV := dbP.Version
-		if newV, err := p.version(); err != nil {
+		if newV, err := p.dir.Version(); err != nil {
 			log.Fatalln("Failed to calculate problem version:", err)
 		} else {
 			dbP.Version = newV
 		}
 
 		oldH := dbP.TestCasesVersion
-		if newH, err := p.testCasesHash(); err != nil {
+		if newH, err := p.dir.TestCaseHash(); err != nil {
 			log.Fatalln("Failed to calculate test cases hash:", err)
 		} else {
 			dbP.TestCasesVersion = newH
@@ -373,7 +142,7 @@ func main() {
 				log.Fatalln("Failed to generate:", err)
 			}
 
-			if err := p.uploadTestcases(mc, *minioBucket, *minioPublicBucket); err != nil {
+			if err := p.dir.UploadTestcases(storageClient); err != nil {
 				log.Fatalln("Failed to upload testcases:", err)
 			}
 		} else {
@@ -381,7 +150,7 @@ func main() {
 		}
 
 		if versionUpdated || *forceUpload {
-			if err := p.uploadFiles(mc, *minioPublicBucket); err != nil {
+			if err := p.dir.UploadFiles(storageClient); err != nil {
 				log.Fatalln("Failed to upload public files:", err)
 			}
 		} else {
@@ -431,26 +200,6 @@ func main() {
 	if err := uploadCategories(*dir, db); err != nil {
 		log.Fatal("Failed to update categories: ", err)
 	}
-}
-
-func fileHash(path string) (string, error) {
-	checker, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", sha256.Sum256(checker)), nil
-}
-
-func joinHashes(hashes []string) string {
-	arr := make([]string, len(hashes))
-	copy(arr, hashes)
-	sort.Strings(arr)
-
-	h := sha256.New()
-	for _, v := range arr {
-		h.Write([]byte(v))
-	}
-	return fmt.Sprintf("%x", h.Sum([]byte{}))
 }
 
 func uploadCategories(dir string, db *gorm.DB) error {
