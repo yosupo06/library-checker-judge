@@ -1,10 +1,4 @@
 [[langs]]
-    id = "checker"
-    source = "checker.cpp"    
-    image_name = "library-checker-images-gcc"
-    compile = ["g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "checker", "checker.cpp"]
-    exec = ["./checker", "input.in", "actual.out", "expect.out"]    
-[[langs]]
     id = "cpp-func"
     name = "C++23(Function)"
     version = "g++(14.1) + AC Library(1.5.1)"

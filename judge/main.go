@@ -85,7 +85,6 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 	if s == nil {
 		return nil
 	}
-
 	defer func() {
 		if err != nil {
 			if err2 := updateSubmission(db, taskID, s, "IE"); err2 != nil {
@@ -93,6 +92,11 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 			}
 		}
 	}()
+
+	lang, ok := langs.GetLang(s.Lang)
+	if !ok {
+		return fmt.Errorf("unknown language: %v", s.Lang)
+	}
 
 	log.Println("Fetch data")
 	if err := updateSubmission(db, taskID, s, "Fetching"); err != nil {
@@ -104,7 +108,7 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 		return err
 	}
 
-	judge, err := NewJudge(langs.LANGS[s.Lang], float64(s.Problem.Timelimit)/1000, &testCases)
+	judge, err := NewJudge(lang, float64(s.Problem.Timelimit)/1000, &testCases)
 	if err != nil {
 		return err
 	}
@@ -130,7 +134,8 @@ func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID in
 		return err
 	}
 	defer os.RemoveAll(tmpSourceDir)
-	tmpSourceFile, err := os.Create(path.Join(tmpSourceDir, langs.LANGS[s.Lang].Source))
+
+	tmpSourceFile, err := os.Create(path.Join(tmpSourceDir, lang.Source))
 	if err != nil {
 		return err
 	}

@@ -4,12 +4,12 @@ go 1.21
 
 require (
 	firebase.google.com/go/v4 v4.14.1
-	github.com/BurntSushi/toml v1.4.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/lib/pq v1.10.9
 	github.com/yosupo06/library-checker-judge/database v0.0.0-20240720183423-bc39d9998377
+	github.com/yosupo06/library-checker-judge/langs v0.0.0-20240720194232-699a76c34e8c
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 	gorm.io/gorm v1.25.11
@@ -24,6 +24,7 @@ require (
 	cloud.google.com/go/iam v1.1.11 // indirect
 	cloud.google.com/go/longrunning v0.5.10 // indirect
 	cloud.google.com/go/storage v1.43.0 // indirect
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MicahParks/keyfunc v1.9.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/desertbit/timer v1.0.1 // indirect
@@ -71,3 +72,5 @@ require (
 )
 
 replace github.com/yosupo06/library-checker-judge/database => ../database
+
+replace github.com/yosupo06/library-checker-judge/langs => ../langs

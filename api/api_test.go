@@ -147,8 +147,27 @@ func TestSubmissionSortOrderList(t *testing.T) {
 	t.Log(err)
 }
 
+func TestSubmit(t *testing.T) {
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		database.SaveProblem(db, DUMMY_PROBLEM)
+	})
+
+	ctx := context.Background()
+	_, err := client.Submit(ctx, &pb.SubmitRequest{
+		Problem: "aplusb",
+		Source:  "dummy-src",
+		Lang:    "cpp",
+	})
+	if err != nil {
+		t.Fatal("Failed to submit", err)
+	}
+	t.Log(err)
+}
+
 func TestSubmitBig(t *testing.T) {
-	client := createTestAPIClient(t)
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		database.SaveProblem(db, DUMMY_PROBLEM)
+	})
 
 	ctx := context.Background()
 	bigSrc := strings.Repeat("a", 3*1000*1000) // 3 MB
@@ -161,6 +180,25 @@ func TestSubmitBig(t *testing.T) {
 		t.Fatal("Success to submit big source")
 	}
 	t.Log(err)
+}
+
+func TestSubmitUnknownLang(t *testing.T) {
+	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
+		database.SaveProblem(db, DUMMY_PROBLEM)
+	})
+
+	ctx := context.Background()
+	for _, lang := range []string{"invalid-lang", "checker"} {
+		_, err := client.Submit(ctx, &pb.SubmitRequest{
+			Problem: "aplusb",
+			Source:  "dummy-src",
+			Lang:    lang,
+		})
+		if err == nil {
+			t.Fatal("Success to submit unknown language", err)
+		}
+		t.Log(err)
+	}
 }
 
 func TestAnonymousRejudge(t *testing.T) {
@@ -216,7 +254,7 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 		tokenToUID: map[string]string{},
 	}
 
-	s := NewGRPCServer(db, authClient, "../langs/langs.toml")
+	s := NewGRPCServer(db, authClient)
 	go func() {
 		if err := s.Serve(listen); err != nil {
 			log.Fatal("Server exited: ", err)

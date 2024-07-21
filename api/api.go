@@ -15,6 +15,7 @@ import (
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
+	"github.com/yosupo06/library-checker-judge/langs"
 )
 
 const (
@@ -161,14 +162,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	if len(in.Source) > 1024*1024 {
 		return nil, errors.New("too large Source")
 	}
-	ok := false
-	for _, lang := range s.langs {
-		if lang.Id == in.Lang {
-			ok = true
-			break
-		}
-	}
-	if !ok {
+	if _, ok := langs.GetLang(in.Lang); !ok {
 		return nil, errors.New("unknown Lang")
 	}
 	if _, err := s.ProblemInfo(ctx, &pb.ProblemInfoRequest{
@@ -332,7 +326,15 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 }
 
 func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.LangListResponse, error) {
-	return &pb.LangListResponse{Langs: s.langs}, nil
+	var pbLangs []*pb.Lang
+	for _, lang := range langs.LANGS {
+		pbLangs = append(pbLangs, &pb.Lang{
+			Id:      lang.ID,
+			Name:    lang.Name,
+			Version: lang.Version,
+		})
+	}
+	return &pb.LangListResponse{Langs: pbLangs}, nil
 }
 
 func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.RankingResponse, error) {
