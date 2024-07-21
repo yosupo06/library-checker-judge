@@ -5,8 +5,8 @@ go 1.21
 require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/disgoorg/disgo v0.18.9
-	github.com/minio/minio-go/v7 v7.0.74
 	github.com/yosupo06/library-checker-judge/database v0.0.0-20240720203119-96952ae98145
+	github.com/yosupo06/library-checker-judge/storage v0.0.0-00010101000000-000000000000
 	gorm.io/gorm v1.25.11
 )
 
@@ -32,6 +32,7 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
+	github.com/minio/minio-go/v7 v7.0.74 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/sasha-s/go-csync v0.0.0-20240107134140-fcbab37b09ad // indirect
 	golang.org/x/crypto v0.25.0 // indirect
@@ -43,3 +44,5 @@ require (
 )
 
 replace github.com/yosupo06/library-checker-judge/database => ../database
+
+replace github.com/yosupo06/library-checker-judge/storage => ../storage

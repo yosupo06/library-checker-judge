@@ -9,9 +9,6 @@ if __name__ == "__main__":
 
     tomls = sorted(list(filter(lambda p: not p.match('test/**/info.toml'), Path('../library-checker-problems/').glob('**/info.toml'))))
 
-    MINIO_HOST = environ["MINIO_HOST"]
-    MINIO_ID = environ["MINIO_ID"]
-    MINIO_SECRET = environ["MINIO_SECRET"]
     MINIO_BUCKET = environ["MINIO_BUCKET"]
     MINIO_PUBLIC_BUCKET = environ["MINIO_PUBLIC_BUCKET"]
     DISCORD_WEBHOOK = environ["DISCORD_WEBHOOK"]
@@ -19,9 +16,6 @@ if __name__ == "__main__":
 
     subprocess.run(
         ["./uploader"] +
-        ["-miniohost", MINIO_HOST] +
-        ["-minioid", MINIO_ID] +
-        ["-miniokey", MINIO_SECRET] +
         ["-miniobucket", MINIO_BUCKET] +
         ["-miniopublicbucket", MINIO_PUBLIC_BUCKET] +
         ["-discordwebhook", DISCORD_WEBHOOK] +
