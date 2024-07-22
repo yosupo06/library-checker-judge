@@ -131,7 +131,7 @@ func (p ProblemDir) UploadFiles(client Client) error {
 			continue
 		}
 
-		if _, err := client.client.FPutObject(context.Background(), client.bucket, fmt.Sprintf("v2/%s/%s/%s", p.Name, v, info.path), src, minio.PutObjectOptions{}); err != nil {
+		if _, err := client.client.FPutObject(context.Background(), client.publicBucket, fmt.Sprintf("v2/%s/%s/%s", p.Name, v, info.path), src, minio.PutObjectOptions{}); err != nil {
 			return err
 		}
 	}
