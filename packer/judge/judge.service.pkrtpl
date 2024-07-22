@@ -10,7 +10,7 @@ Environment=LIBRARY_CHECKER_JUDGE=true
 Environment=CGROUP_PARENT=judge.slice
 Environment=MINIO_HOST=${minio_host}
 Environment=MINIO_ID=${minio_id}
-Environment=MINIO_KEY=${minio_key}
+Environment=MINIO_SECRET=${minio_secret}
 Environment=MINIO_BUCKET=${minio_bucket}
 Environment=MINIO_PUBLIC_BUCKET=${minio_public_bucket}
 Environment=PGUSER=${pg_user}
