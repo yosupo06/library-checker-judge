@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/yosupo06/library-checker-judge/langs"
+	"github.com/yosupo06/library-checker-judge/storage"
 )
 
 var (
@@ -30,14 +31,14 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func generateTestCaseDir(t *testing.T, inFilePath, outFilePath string) TestCaseDir {
+func generateTestCaseDir(t *testing.T, inFilePath, outFilePath string) storage.TestCaseDir {
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal("Failed to create tempDir: ", tempDir)
 	}
 
-	caseDir := TestCaseDir{
-		dir: tempDir,
+	caseDir := storage.TestCaseDir{
+		Dir: tempDir,
 	}
 
 	type Info struct {

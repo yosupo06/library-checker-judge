@@ -7,8 +7,8 @@ import (
 	"path"
 	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/langs"
+	"github.com/yosupo06/library-checker-judge/storage"
 )
 
 const (
@@ -36,10 +36,10 @@ type Judge struct {
 	checkerVolume *Volume
 	sourceVolume  *Volume
 
-	caseDir *TestCaseDir
+	caseDir *storage.TestCaseDir
 }
 
-func NewJudge(lang langs.Lang, tl float64, caseDir *TestCaseDir) (*Judge, error) {
+func NewJudge(lang langs.Lang, tl float64, caseDir *storage.TestCaseDir) (*Judge, error) {
 	return &Judge{
 		tl:      tl,
 		lang:    lang,

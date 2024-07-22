@@ -10,43 +10,24 @@ import (
 
 	"gorm.io/gorm"
 
-	_ "github.com/lib/pq"
 	"github.com/yosupo06/library-checker-judge/database"
 	"github.com/yosupo06/library-checker-judge/langs"
+	"github.com/yosupo06/library-checker-judge/storage"
 )
 
 const POOLING_PERIOD = 3 * time.Second
 
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
-}
-
 func main() {
-	prod := flag.Bool("prod", false, "production mode")
-
-	minioHost := getEnv("MINIO_HOST", "localhost:9000")
-	minioID := getEnv("MINIO_ID", "minio")
-	minioKey := getEnv("MINIO_KEY", "miniopass")
-	minioBucket := getEnv("MINIO_BUCKET", "testcase")
-	minioPublicBucket := getEnv("MINIO_PUBLIC_BUCKET", "testcase-public")
-
 	flag.Parse()
 
 	// connect db
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
-	testCaseFetcher, err := NewTestCaseFetcher(
-		minioHost,
-		minioID,
-		minioKey,
-		minioBucket,
-		minioPublicBucket,
-		*prod,
-	)
+	storageClient, err := storage.Connect(storage.GetConfigFromEnv())
+	if err != nil {
+		log.Fatal(err)
+	}
+	testCaseFetcher, err := storage.NewTestCaseFetcher(storageClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,7 +56,7 @@ func main() {
 	}
 }
 
-func judgeSubmissionTask(db *gorm.DB, testCaseFetcher TestCaseFetcher, taskID int32, id int32) (err error) {
+func judgeSubmissionTask(db *gorm.DB, testCaseFetcher storage.TestCaseFetcher, taskID int32, id int32) (err error) {
 	log.Println("Start judge submission:", id)
 
 	s, err := initSubmission(db, id)

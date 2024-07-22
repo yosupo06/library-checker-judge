@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/disgoorg/disgo v0.18.9
-	github.com/yosupo06/library-checker-judge/database v0.0.0-20240720203119-96952ae98145
+	github.com/yosupo06/library-checker-judge/database v0.0.0-20240721222554-ee0d9b0cddd7
 	github.com/yosupo06/library-checker-judge/storage v0.0.0-00010101000000-000000000000
 	gorm.io/gorm v1.25.11
 )
