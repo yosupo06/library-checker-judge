@@ -12,7 +12,7 @@ variable "minio_host" {
 variable "minio_id" {
   type = string
 }
-variable "minio_key" {
+variable "minio_secret" {
   type = string
 }
 variable "minio_bucket" {
@@ -37,7 +37,7 @@ locals {
   parsed_judge_service = templatefile("judge.service.pkrtpl", {
     minio_host = var.minio_host
     minio_id = var.minio_id
-    minio_key = var.minio_key
+    minio_secret = var.minio_secret
     minio_bucket = var.minio_bucket
     minio_public_bucket = var.minio_public_bucket    
     pg_user = var.pg_user
