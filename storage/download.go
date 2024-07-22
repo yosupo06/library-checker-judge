@@ -1,8 +1,8 @@
-package main
+package storage
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -11,25 +11,23 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/minio/minio-go/v6"
+	"github.com/minio/minio-go/v7"
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
 const BASE_OBJECT_PATH = "v2"
 
 type TestCaseFetcher struct {
-	minioClient       *minio.Client
-	minioBucket       string
-	minioPublicBucket string
-	casesDir          string
+	client   Client
+	casesDir string
 }
 
 type TestCaseDir struct {
-	dir string
+	Dir string
 }
 
 func (t *TestCaseDir) PublicFileDir() string {
-	return path.Join(t.dir, "public")
+	return path.Join(t.Dir, "public")
 }
 
 func (t *TestCaseDir) PublicFilePath(key string) string {
@@ -61,7 +59,7 @@ func (t *TestCaseDir) IncludeFilePaths() ([]string, error) {
 }
 
 func (t *TestCaseDir) InFilesDir() string {
-	return path.Join(t.dir, "in")
+	return path.Join(t.Dir, "in")
 }
 
 func (t *TestCaseDir) InFilePath(name string) string {
@@ -73,42 +71,25 @@ func (t *TestCaseDir) InFile(name string) (*os.File, error) {
 }
 
 func (t *TestCaseDir) OutFilePath(name string) string {
-	return path.Join(t.dir, "out", name+".out")
+	return path.Join(t.Dir, "out", name+".out")
 }
 
 func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
 	return os.Open(t.OutFilePath(name))
 }
 
-func NewTestCaseFetcher(minioEndpoint, minioID, minioKey, minioBucket, minioPublicBucket string, minioSecure bool) (TestCaseFetcher, error) {
-	log.Println("Init TestCaseFetcher bucket:", minioBucket, minioPublicBucket)
-
+func NewTestCaseFetcher(client Client) (TestCaseFetcher, error) {
 	// create case directory
-	dir, err := ioutil.TempDir("", "case")
+	dir, err := os.MkdirTemp("", "case")
 	if err != nil {
 		log.Println("Failed to create tempdir:", err)
 		return TestCaseFetcher{}, err
 	}
 	log.Println("TestCaseFetcher data dir:", dir)
 
-	// connect minio
-	client, err := minio.New(
-		minioEndpoint,
-		minioID,
-		minioKey,
-		minioSecure,
-	)
-
-	if err != nil {
-		log.Fatalln("Cannot connect to Minio:", err)
-		return TestCaseFetcher{}, err
-	}
-
 	return TestCaseFetcher{
-		minioClient:       client,
-		minioBucket:       minioBucket,
-		minioPublicBucket: minioPublicBucket,
-		casesDir:          dir,
+		client:   client,
+		casesDir: dir,
 	}, nil
 }
 
@@ -137,24 +118,24 @@ func (t *TestCaseFetcher) Fetch(problem database.Problem) (TestCaseDir, error) {
 			return TestCaseDir{}, err
 		}
 
-		log.Printf("Download public files: %s//%s", t.minioPublicBucket, publicObjectPath)
-		for object := range t.minioClient.ListObjects(t.minioPublicBucket, publicObjectPath, true, nil) {
+		log.Printf("Download public files: %s//%s", t.client.publicBucket, publicObjectPath)
+		for object := range t.client.client.ListObjects(context.Background(), t.client.publicBucket, minio.ListObjectsOptions{Prefix: publicObjectPath, Recursive: true}) {
 			key := strings.TrimPrefix(object.Key, publicObjectPath)
 			dstPath := path.Join(dataPath, "public", key)
 			log.Printf("Download: %s -> %s", object.Key, dstPath)
-			if err := t.minioClient.FGetObject(t.minioPublicBucket, object.Key, dstPath, minio.GetObjectOptions{}); err != nil {
+			if err := t.client.client.FGetObject(context.Background(), t.client.publicBucket, object.Key, dstPath, minio.GetObjectOptions{}); err != nil {
 				return TestCaseDir{}, err
 			}
 		}
 	}
-	return TestCaseDir{dir: dataPath}, nil
+	return TestCaseDir{Dir: dataPath}, nil
 }
 
 func (t *TestCaseFetcher) downloadTestCases(problem database.Problem) error {
 	s3TestCasesPath := path.Join(BASE_OBJECT_PATH, problem.Name, fmt.Sprintf("%s.tar.gz", problem.TestCasesVersion))
 
 	if _, err := os.Stat(t.testCasesPath(problem)); err != nil {
-		if err := t.minioClient.FGetObject(t.minioBucket, s3TestCasesPath, t.testCasesPath(problem), minio.GetObjectOptions{}); err != nil {
+		if err := t.client.client.FGetObject(context.Background(), t.client.bucket, s3TestCasesPath, t.testCasesPath(problem), minio.GetObjectOptions{}); err != nil {
 			return err
 		}
 	}
