@@ -16,50 +16,8 @@ import (
 	"gorm.io/gorm"
 )
 
-type problem struct {
-	dir  storage.ProblemDir
-	name string
-
-	info struct {
-		Title     string
-		TimeLimit float64
-	}
-}
-
-func newProblem(rootDir, tomlPath string) (*problem, error) {
-	baseDir := path.Dir(tomlPath)
-	p := problem{
-		dir: storage.ProblemDir{
-			Name: path.Base(baseDir),
-			Root: rootDir,
-			Base: baseDir,
-		},
-		name: path.Base(baseDir),
-	}
-
-	if _, err := toml.DecodeFile(tomlPath, &p.info); err != nil {
-		return nil, err
-	}
-
-	return &p, nil
-}
-
-func (p *problem) generate() error {
-	cmd := exec.Command(path.Join(p.dir.Root, "generate.py"), "-p", p.name)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-func (p *problem) clean() error {
-	cmd := exec.Command(path.Join(p.dir.Root, "generate.py"), "--clean", "-p", p.name)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 func main() {
-	dir := flag.String("dir", "../../library-checker-problems", "directory of library-checker-problems")
+	problemsDir := flag.String("dir", "../../library-checker-problems", "directory of library-checker-problems")
 
 	discordUrl := flag.String("discordwebhook", "", "webhook URL of discord")
 
@@ -79,6 +37,7 @@ func main() {
 		dc = c
 	}
 
+	// connect database
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
 	// connect storage client
@@ -88,23 +47,25 @@ func main() {
 	}
 
 	for _, t := range tomls {
-		p, err := newProblem(*dir, t)
+		// clean testcase & generate params.h
+		if err := clean(*problemsDir, t); err != nil {
+			log.Fatalln("Failed to clean:", err)
+		}
+
+		p, err := newProblem(*problemsDir, t)
 		if err != nil {
 			log.Fatalln("Failed to fetch problem info:", err)
 		}
-
 		log.Println("Upload problem:", p.name)
+
+		v := p.target.Problem.Version
+		h := p.target.Problem.TestCaseHash
+		log.Println("Problem version:", v, h)
 
 		// clean testcase & generate params.h
 		if err := p.clean(); err != nil {
 			log.Fatalln("Failed to clean:", err)
 		}
-
-		v, err := p.dir.Version()
-		if err != nil {
-			log.Fatalln("Failed to calculate version:", err)
-		}
-		log.Println("Problem version:", v)
 
 		dbP, err := database.FetchProblem(db, p.name)
 		if err != nil {
@@ -118,21 +79,13 @@ func main() {
 		dbP.Name = p.name
 		dbP.Title = p.info.Title
 		dbP.Timelimit = int32(p.info.TimeLimit * 1000)
-		dbP.SourceUrl = fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(p.dir.Base)), p.name)
+		dbP.SourceUrl = toSourceURL(t)
 
 		oldV := dbP.Version
-		if newV, err := p.dir.Version(); err != nil {
-			log.Fatalln("Failed to calculate problem version:", err)
-		} else {
-			dbP.Version = newV
-		}
+		dbP.Version = v
 
 		oldH := dbP.TestCasesVersion
-		if newH, err := p.dir.TestCaseHash(); err != nil {
-			log.Fatalln("Failed to calculate test cases hash:", err)
-		} else {
-			dbP.TestCasesVersion = newH
-		}
+		dbP.TestCasesVersion = h
 
 		versionUpdated := (dbP.Version != oldV)
 		testcaseUpdated := (dbP.TestCasesVersion != oldH)
@@ -142,7 +95,7 @@ func main() {
 				log.Fatalln("Failed to generate:", err)
 			}
 
-			if err := p.dir.UploadTestcases(storageClient); err != nil {
+			if err := p.target.UploadTestcases(storageClient); err != nil {
 				log.Fatalln("Failed to upload testcases:", err)
 			}
 		} else {
@@ -150,7 +103,7 @@ func main() {
 		}
 
 		if versionUpdated || *forceUpload {
-			if err := p.dir.UploadFiles(storageClient); err != nil {
+			if err := p.target.UploadFiles(storageClient); err != nil {
 				log.Fatalln("Failed to upload public files:", err)
 			}
 		} else {
@@ -197,9 +150,60 @@ func main() {
 		}
 	}
 
-	if err := uploadCategories(*dir, db); err != nil {
+	if err := uploadCategories(*problemsDir, db); err != nil {
 		log.Fatal("Failed to update categories: ", err)
 	}
+}
+
+type problem struct {
+	target storage.UploadTarget
+	name   string
+
+	info struct {
+		Title     string
+		TimeLimit float64
+	}
+}
+
+func newProblem(rootDir, tomlPath string) (*problem, error) {
+	baseDir := path.Dir(tomlPath)
+
+	target, err := storage.NewUploadTarget(baseDir, rootDir)
+	if err != nil {
+		return nil, nil
+	}
+
+	p := problem{
+		target: target,
+		name:   path.Base(baseDir),
+	}
+
+	if _, err := toml.DecodeFile(tomlPath, &p.info); err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+func (p *problem) generate() error {
+	cmd := exec.Command(path.Join(p.target.Root, "generate.py"), "-p", p.name)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func (p *problem) clean() error {
+	cmd := exec.Command(path.Join(p.target.Root, "generate.py"), "--clean", "-p", p.name)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func clean(problemsDir, tomlPath string) error {
+	cmd := exec.Command(path.Join(problemsDir, "generate.py"), "--clean", tomlPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func uploadCategories(dir string, db *gorm.DB) error {
@@ -224,4 +228,9 @@ func uploadCategories(dir string, db *gorm.DB) error {
 	}
 
 	return database.SaveProblemCategories(db, cs)
+}
+
+func toSourceURL(tomlPath string) string {
+	dir := path.Dir(tomlPath)
+	return fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(dir)), path.Base(dir))
 }

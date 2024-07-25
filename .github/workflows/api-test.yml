@@ -34,3 +34,7 @@ jobs:
     - name: Api module test
       run: go test .
       working-directory: ./api
+
+    - name: Uploader module test
+      run: go test .
+      working-directory: ./uploader

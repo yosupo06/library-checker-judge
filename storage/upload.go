@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,10 +18,10 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
-type ProblemDir struct {
-	Name string
-	Root string
-	Base string
+type UploadTarget struct {
+	Base    string
+	Root    string
+	Problem Problem
 }
 
 type FileInfo struct {
@@ -31,15 +30,121 @@ type FileInfo struct {
 	required bool
 }
 
-func (p ProblemDir) UploadTestcases(client Client) error {
-	h, err := p.TestCaseHash()
+func NewUploadTarget(base, root string) (UploadTarget, error) {
+	h, err := testCaseHash(base)
 	if err != nil {
-		return err
+		return UploadTarget{}, err
 	}
-	v, err := p.Version()
+	v, err := version(base, root)
 	if err != nil {
-		return err
+		return UploadTarget{}, err
 	}
+	return UploadTarget{
+		Root: root,
+		Base: base,
+		Problem: Problem{
+			Name:         path.Base(base),
+			TestCaseHash: h,
+			Version:      v,
+		},
+	}, nil
+}
+
+func testCaseHash(base string) (string, error) {
+	caseHash, err := os.ReadFile(path.Join(base, "hash.json"))
+	if err != nil {
+		return "", err
+	}
+	var cases map[string]string
+	if err := json.Unmarshal(caseHash, &cases); err != nil {
+		return "", err
+	}
+
+	hashes := make([]string, 0, len(cases))
+	for _, v := range cases {
+		hashes = append(hashes, v)
+	}
+	return joinHashes(hashes), nil
+}
+
+func version(base, root string) (string, error) {
+	hashes := []string{}
+
+	if h, err := testCaseHash(base); err != nil {
+		return "", err
+	} else {
+		hashes = append(hashes, h)
+	}
+
+	for _, info := range fileInfos(base, root) {
+		path := path.Join(info.base, info.path)
+		h, err := fileHash(path)
+		if info.required && err != nil {
+			return "", err
+		}
+		hashes = append(hashes, h)
+	}
+
+	return joinHashes(hashes), nil
+}
+
+func fileInfos(base, root string) []FileInfo {
+	return []FileInfo{
+		// Common files
+		// TODO: stop to manually add all common/*.h
+		{
+			base:     root,
+			path:     path.Join("common", "fastio.h"),
+			required: true,
+		},
+		{
+			base:     root,
+			path:     path.Join("common", "random.h"),
+			required: true,
+		},
+		{
+			base:     root,
+			path:     path.Join("common", "testlib.h"),
+			required: true,
+		},
+		// Problem files
+		{
+			base:     base,
+			path:     path.Join("task.md"),
+			required: true,
+		},
+		{
+			base:     base,
+			path:     path.Join("info.toml"),
+			required: true,
+		},
+		{
+			base:     base,
+			path:     path.Join("checker.cpp"),
+			required: true,
+		},
+		{
+			base:     base,
+			path:     path.Join("params.h"),
+			required: true,
+		},
+		// for C++(Function)
+		{
+			base:     base,
+			path:     path.Join("grader", "grader.cpp"),
+			required: false,
+		},
+		{
+			base:     base,
+			path:     path.Join("grader", "solve.hpp"),
+			required: false,
+		},
+	}
+}
+
+func (p UploadTarget) UploadTestcases(client Client) error {
+	h := p.Problem.TestCaseHash
+	v := p.Problem.Version
 
 	tempFile, err := os.CreateTemp("", "testcase*.tar.gz")
 	if err != nil {
@@ -54,7 +159,7 @@ func (p ProblemDir) UploadTestcases(client Client) error {
 	for _, ext := range []string{"in", "out"} {
 		if err := filepath.Walk(path.Join(p.Base, ext), func(fpath string, info fs.FileInfo, err error) error {
 			if strings.Contains(fpath, "example") {
-				if _, err := client.client.FPutObject(context.Background(), client.publicBucket, fmt.Sprintf("v2/%s/%s/%s/%s", p.Name, v, ext, path.Base(fpath)), fpath, minio.PutObjectOptions{}); err != nil {
+				if _, err := client.client.FPutObject(context.Background(), client.publicBucket, fmt.Sprintf("v2/%s/%s/%s/%s", p.Problem.Name, v, ext, path.Base(fpath)), fpath, minio.PutObjectOptions{}); err != nil {
 					return err
 				}
 			}
@@ -109,20 +214,17 @@ func (p ProblemDir) UploadTestcases(client Client) error {
 		return err
 	}
 
-	if _, err := client.client.PutObject(context.Background(), client.bucket, fmt.Sprintf("v2/%s/%s.tar.gz", p.Name, h), tempFile, fileInfo.Size(), minio.PutObjectOptions{}); err != nil {
+	if _, err := client.client.PutObject(context.Background(), client.bucket, fmt.Sprintf("v2/%s/%s.tar.gz", p.Problem.Name, h), tempFile, fileInfo.Size(), minio.PutObjectOptions{}); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p ProblemDir) UploadFiles(client Client) error {
-	v, err := p.Version()
-	if err != nil {
-		log.Fatal("Failed to fetch version: ", err)
-	}
+func (p UploadTarget) UploadFiles(client Client) error {
+	v := p.Problem.Version
 
-	for _, info := range p.fileInfos() {
+	for _, info := range fileInfos(p.Base, p.Root) {
 		src := path.Join(info.base, info.path)
 		if _, err := os.Stat(src); err != nil {
 			if info.required {
@@ -131,7 +233,7 @@ func (p ProblemDir) UploadFiles(client Client) error {
 			continue
 		}
 
-		if _, err := client.client.FPutObject(context.Background(), client.publicBucket, fmt.Sprintf("v2/%s/%s/%s", p.Name, v, info.path), src, minio.PutObjectOptions{}); err != nil {
+		if _, err := client.client.FPutObject(context.Background(), client.publicBucket, fmt.Sprintf("v2/%s/%s/%s", p.Problem.Name, v, info.path), src, minio.PutObjectOptions{}); err != nil {
 			return err
 		}
 	}
@@ -139,42 +241,12 @@ func (p ProblemDir) UploadFiles(client Client) error {
 	return nil
 }
 
-func (p ProblemDir) Version() (string, error) {
-	hashes := []string{}
-
-	if h, err := p.TestCaseHash(); err != nil {
-		return "", err
-	} else {
-		hashes = append(hashes, h)
-	}
-
-	for _, info := range p.fileInfos() {
-		path := path.Join(info.base, info.path)
-		h, err := fileHash(path)
-		if info.required && err != nil {
-			return "", err
-		}
-		hashes = append(hashes, h)
-	}
-
-	return joinHashes(hashes), nil
-}
-
-func (p ProblemDir) TestCaseHash() (string, error) {
-	caseHash, err := os.ReadFile(path.Join(p.Base, "hash.json"))
+func fileHash(path string) (string, error) {
+	checker, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
-	var cases map[string]string
-	if err := json.Unmarshal(caseHash, &cases); err != nil {
-		return "", err
-	}
-
-	hashes := make([]string, 0, len(cases))
-	for _, v := range cases {
-		hashes = append(hashes, v)
-	}
-	return joinHashes(hashes), nil
+	return fmt.Sprintf("%x", sha256.Sum256(checker)), nil
 }
 
 func joinHashes(hashes []string) string {
@@ -187,66 +259,4 @@ func joinHashes(hashes []string) string {
 		h.Write([]byte(v))
 	}
 	return fmt.Sprintf("%x", h.Sum([]byte{}))
-}
-
-func (p *ProblemDir) fileInfos() []FileInfo {
-	return []FileInfo{
-		// Common files
-		// TODO: stop to manually add all common/*.h
-		{
-			base:     p.Root,
-			path:     path.Join("common", "fastio.h"),
-			required: true,
-		},
-		{
-			base:     p.Root,
-			path:     path.Join("common", "random.h"),
-			required: true,
-		},
-		{
-			base:     p.Root,
-			path:     path.Join("common", "testlib.h"),
-			required: true,
-		},
-		// Problem files
-		{
-			base:     p.Base,
-			path:     path.Join("task.md"),
-			required: true,
-		},
-		{
-			base:     p.Base,
-			path:     path.Join("info.toml"),
-			required: true,
-		},
-		{
-			base:     p.Base,
-			path:     path.Join("checker.cpp"),
-			required: true,
-		},
-		{
-			base:     p.Base,
-			path:     path.Join("params.h"),
-			required: true,
-		},
-		// for C++(Function)
-		{
-			base:     p.Base,
-			path:     path.Join("grader", "grader.cpp"),
-			required: false,
-		},
-		{
-			base:     p.Base,
-			path:     path.Join("grader", "solve.hpp"),
-			required: false,
-		},
-	}
-}
-
-func fileHash(path string) (string, error) {
-	checker, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", sha256.Sum256(checker)), nil
 }
