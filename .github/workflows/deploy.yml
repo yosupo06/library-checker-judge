@@ -9,16 +9,23 @@ on:
       problems-branch:
         type: string
         default: master
+      build-base:
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       env:
         type: string
         default: dev
-        description: environment of deploy
+        description: Environment of deploy
       problems-branch:
         type: string
         default: master
-        description: branch of library-checker-problems
+        description: Branch of library-checker-problems
+      build-base:
+        type: boolean
+        default: true
+        description: Build a base image of judge or not
 
 env:
   TF_CLOUD_ORGANIZATION: "yosupo06-org"
@@ -52,6 +59,7 @@ jobs:
     secrets: inherit
     with:
       env: ${{ inputs.env }}
+      build-base: ${{ inputs.build-base }}
 
   terraform-apply:
     needs: judge-deploy
