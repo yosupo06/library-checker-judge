@@ -21,7 +21,7 @@ func createDummyProblem(t *testing.T, db *gorm.DB) {
 	}
 }
 
-func TestProblemInfo(t *testing.T) {
+func TestFetchProblemInfo(t *testing.T) {
 	db := CreateTestDB(t)
 	createDummyProblem(t, db)
 
@@ -37,12 +37,18 @@ func TestProblemInfo(t *testing.T) {
 		TestCasesVersion: "tversion123",
 		Version:          "version456",
 	}
-	if *problem != expect {
+	if problem != expect {
 		t.Fatal(problem, "!=", expect)
 	}
+}
 
-	if problem3, err := FetchProblem(db, "aplusc"); problem3 != nil || err != nil {
-		t.Fatal(problem3, err)
+func TestFetchInvalidProblem(t *testing.T) {
+	db := CreateTestDB(t)
+	createDummyProblem(t, db)
+
+	_, err := FetchProblem(db, "invalid")
+	if err != ErrNotExist {
+		t.Fatal(err)
 	}
 }
 
