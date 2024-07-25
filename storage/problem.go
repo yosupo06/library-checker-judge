@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/minio/minio-go/v7"
 )
@@ -14,12 +13,15 @@ type Problem struct {
 	TestCaseHash string
 }
 
-func (c Client) UploadTestCase(ctx context.Context, problem Problem, testcase *os.File) error {
-	fileInfo, err := testcase.Stat()
-	if err != nil {
+func (p Problem) UploadTestCase(ctx context.Context, c Client, tarGzPath string) error {
+	if _, err := c.client.FPutObject(ctx, c.bucket, fmt.Sprintf("v2/%s/%s.tar.gz", p.Name, p.TestCaseHash), tarGzPath, minio.PutObjectOptions{}); err != nil {
 		return err
 	}
-	if _, err := c.client.PutObject(ctx, c.bucket, fmt.Sprintf("v2/%s/%s.tar.gz", problem.Name, problem.TestCaseHash), testcase, fileInfo.Size(), minio.PutObjectOptions{}); err != nil {
+	return nil
+}
+
+func (p Problem) UploadPublicFile(ctx context.Context, c Client, localPath, remotePath string) error {
+	if _, err := c.client.FPutObject(ctx, c.publicBucket, fmt.Sprintf("v2/%s/%s/%s", p.Name, p.Version, remotePath), localPath, minio.PutObjectOptions{}); err != nil {
 		return err
 	}
 	return nil

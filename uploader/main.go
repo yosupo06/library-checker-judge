@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
@@ -32,7 +32,8 @@ func main() {
 	if *discordUrl != "" {
 		c, err := webhook.NewWithURL(*discordUrl)
 		if err != nil {
-			log.Fatal("Failed to init discord client:", err)
+			slog.Error("Failed to init discord client", "err", err)
+			os.Exit(1)
 		}
 		dc = c
 	}
@@ -43,157 +44,144 @@ func main() {
 	// connect storage client
 	storageClient, err := storage.Connect(storage.GetConfigFromEnv())
 	if err != nil {
-		log.Fatalln("Cannot connect to Minio:", err)
+		slog.Error("Failed to connect to Minio", "err", err)
+		os.Exit(1)
 	}
 
 	for _, t := range tomls {
+		slog.Info("Upload problem", "toml", t)
+
 		// clean testcase & generate params.h
 		if err := clean(*problemsDir, t); err != nil {
-			log.Fatalln("Failed to clean:", err)
+			slog.Error("Failed to clean", "err", err)
+			os.Exit(1)
 		}
 
-		p, err := newProblem(*problemsDir, t)
+		// generate problem info
+		target, err := storage.NewUploadTarget(path.Dir(t), *problemsDir)
 		if err != nil {
-			log.Fatalln("Failed to fetch problem info:", err)
+			slog.Error("Failed to build UploadTarget", "err", err)
+			os.Exit(1)
 		}
-		log.Println("Upload problem:", p.name)
+		name := target.Problem.Name
+		v := target.Problem.Version
+		h := target.Problem.TestCaseHash
+		slog.Info("Problem info", "name", name, "version", v, "hash", h)
 
-		v := p.target.Problem.Version
-		h := p.target.Problem.TestCaseHash
-		log.Println("Problem version:", v, h)
-
-		// clean testcase & generate params.h
-		if err := p.clean(); err != nil {
-			log.Fatalln("Failed to clean:", err)
+		// fetch problem info from database
+		dbP, err := database.FetchProblem(db, name)
+		newProblem := (err == database.ErrNotExist)
+		if newProblem {
+			slog.Info("New problem")
+			dbP = database.Problem{
+				Name: name,
+			}
+		} else if err != nil {
+			slog.Error("Failed to fetch problem", "err", err)
+			os.Exit(1)
 		}
+		versionUpdated := (v != dbP.Version)
+		testcaseUpdated := (h != dbP.TestCasesVersion)
 
-		dbP, err := database.FetchProblem(db, p.name)
+		info, err := parseInfo(t)
 		if err != nil {
-			log.Fatalln("Failed to fetch problem:", err)
+			slog.Error("Failed to parse info.toml", "err", err)
+			os.Exit(1)
 		}
 
 		// update problem fields
-		if dbP == nil {
-			dbP = &database.Problem{}
-		}
-		dbP.Name = p.name
-		dbP.Title = p.info.Title
-		dbP.Timelimit = int32(p.info.TimeLimit * 1000)
+		dbP.Title = info.Title
+		dbP.Timelimit = int32(info.TimeLimit * 1000)
 		dbP.SourceUrl = toSourceURL(t)
-
-		oldV := dbP.Version
 		dbP.Version = v
-
-		oldH := dbP.TestCasesVersion
 		dbP.TestCasesVersion = h
 
-		versionUpdated := (dbP.Version != oldV)
-		testcaseUpdated := (dbP.TestCasesVersion != oldH)
-
-		if versionUpdated || *forceUpload {
-			if err := p.generate(); err != nil {
-				log.Fatalln("Failed to generate:", err)
+		// upload test cases
+		if testcaseUpdated || *forceUpload {
+			if err := generate(*problemsDir, t); err != nil {
+				slog.Error("Failed to generate", "err", err)
+				os.Exit(1)
 			}
-
-			if err := p.target.UploadTestcases(storageClient); err != nil {
-				log.Fatalln("Failed to upload testcases:", err)
-			}
-		} else {
-			log.Println("Skip test cases uploading")
-		}
-
-		if versionUpdated || *forceUpload {
-			if err := p.target.UploadFiles(storageClient); err != nil {
-				log.Fatalln("Failed to upload public files:", err)
+			if err := target.UploadTestcases(storageClient); err != nil {
+				slog.Error("Failed to upload test cases", "err", err)
+				os.Exit(1)
 			}
 		} else {
-			log.Println("Skip public files uploading")
+			slog.Info("Skip to upload test cases")
 		}
 
-		if err := p.clean(); err != nil {
-			log.Fatalln("Failed to clean problem:", err)
+		// upload public files
+		if versionUpdated || *forceUpload {
+			if err := target.UploadPublicFiles(storageClient); err != nil {
+				slog.Error("Failed to upload public files", "err", err)
+				os.Exit(1)
+			}
+		} else {
+			slog.Info("Skip to upload public files")
 		}
 
-		if err := database.SaveProblem(db, *dbP); err != nil {
-			log.Fatalln("Failed to update problem info:", err)
+		if err := clean(*problemsDir, t); err != nil {
+			slog.Error("Failed to clean", "err", err)
+			os.Exit(1)
+		}
+
+		if err := database.SaveProblem(db, dbP); err != nil {
+			slog.Error("Failed to upload problem info", "err", err)
+			os.Exit(1)
 		}
 
 		if dc != nil && testcaseUpdated {
-			if oldH == "" {
+			if newProblem {
 				if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
 					AddEmbeds(discord.NewEmbedBuilder().
-						SetTitlef("New problem added: %s", p.info.Title).
+						SetTitlef("New problem added: %s", info.Title).
 						SetColor(0x00ff00).
-						SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
+						SetURLf("https://judge.yosupo.jp/problem/%s", name).
 						AddField("Github", fmt.Sprintf("[link](%s)", dbP.SourceUrl), false).
 						AddField("Test case hash", v[0:16], false).
 						Build()).
 					Build(),
 				); err != nil {
-					log.Fatalln("Error sending message:", err)
+					slog.Error("Failed to send message", "err", err)
 				}
-			} else if testcaseUpdated {
+			} else {
 				if _, err := dc.CreateMessage(discord.NewWebhookMessageCreateBuilder().
 					AddEmbeds(discord.NewEmbedBuilder().
-						SetTitlef("Testcase updated: %s", p.info.Title).
+						SetTitlef("Testcase updated: %s", info.Title).
 						SetColor(0x0000ff).
-						SetURLf("https://judge.yosupo.jp/problem/%s", p.name).
+						SetURLf("https://judge.yosupo.jp/problem/%s", name).
 						AddField("Github", fmt.Sprintf("[link](%s)", dbP.SourceUrl), false).
-						AddField("Old test case hash", oldV[0:16], false).
 						AddField("New test case hash", v[0:16], false).
 						Build()).
 					Build(),
 				); err != nil {
-					log.Fatalln("Error sending message:", err)
+					slog.Error("Failed to send message", "err", err)
 				}
 			}
 		}
 	}
 
 	if err := uploadCategories(*problemsDir, db); err != nil {
-		log.Fatal("Failed to update categories: ", err)
+		slog.Error("Failed to update categories", "err", err)
+		os.Exit(1)
 	}
 }
 
-type problem struct {
-	target storage.UploadTarget
-	name   string
-
-	info struct {
-		Title     string
-		TimeLimit float64
-	}
+type Info struct {
+	Title     string
+	TimeLimit float64
 }
 
-func newProblem(rootDir, tomlPath string) (*problem, error) {
-	baseDir := path.Dir(tomlPath)
-
-	target, err := storage.NewUploadTarget(baseDir, rootDir)
-	if err != nil {
-		return nil, nil
+func parseInfo(tomlPath string) (Info, error) {
+	info := Info{}
+	if _, err := toml.DecodeFile(tomlPath, &info); err != nil {
+		return info, err
 	}
-
-	p := problem{
-		target: target,
-		name:   path.Base(baseDir),
-	}
-
-	if _, err := toml.DecodeFile(tomlPath, &p.info); err != nil {
-		return nil, err
-	}
-
-	return &p, nil
+	return info, nil
 }
 
-func (p *problem) generate() error {
-	cmd := exec.Command(path.Join(p.target.Root, "generate.py"), "-p", p.name)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-func (p *problem) clean() error {
-	cmd := exec.Command(path.Join(p.target.Root, "generate.py"), "--clean", "-p", p.name)
+func generate(problemsDir, tomlPath string) error {
+	cmd := exec.Command(path.Join(problemsDir, "generate.py"), tomlPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -214,7 +202,7 @@ func uploadCategories(dir string, db *gorm.DB) error {
 		}
 	}
 	if _, err := toml.DecodeFile(path.Join(dir, "categories.toml"), &data); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	cs := []database.ProblemCategory{}

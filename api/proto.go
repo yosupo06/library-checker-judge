@@ -31,7 +31,7 @@ func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {
 	}
 }
 
-func toProtoProblemInfo(p *database.Problem) *pb.ProblemInfoResponse {
+func toProtoProblemInfo(p database.Problem) *pb.ProblemInfoResponse {
 	return &pb.ProblemInfoResponse{
 		Title:            p.Title,
 		TimeLimit:        float64(p.Timelimit) / 1000.0,

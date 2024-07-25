@@ -17,21 +17,21 @@ type Problem struct {
 	Version          string
 }
 
-func FetchProblem(db *gorm.DB, name string) (*Problem, error) {
+func FetchProblem(db *gorm.DB, name string) (Problem, error) {
 	if name == "" {
-		return nil, errors.New("empty problem name")
+		return Problem{}, errors.New("empty problem name")
 	}
 	problem := Problem{
 		Name: name,
 	}
 
 	if err := db.Take(&problem).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
+		return Problem{}, ErrNotExist
 	} else if err != nil {
-		return nil, err
+		return Problem{}, err
 	}
 
-	return &problem, nil
+	return problem, nil
 }
 
 func SaveProblem(db *gorm.DB, problem Problem) error {
