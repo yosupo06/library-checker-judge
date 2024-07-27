@@ -164,6 +164,9 @@ func AutoMigrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(SubmissionTestcaseResult{}); err != nil {
 		return err
 	}
+	if err := db.AutoMigrate(Hack{}); err != nil {
+		return err
+	}
 	if err := db.AutoMigrate(Task{}); err != nil {
 		return err
 	}

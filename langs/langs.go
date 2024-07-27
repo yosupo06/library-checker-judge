@@ -31,6 +31,8 @@ var LANG_CHECKER = Lang{
 //go:embed langs.toml
 var langToml string
 
+var LANG_SOLUTION Lang
+
 func init() {
 	var data struct {
 		Langs []Lang `toml:"langs"`
@@ -40,6 +42,13 @@ func init() {
 		os.Exit(1)
 	}
 	LANGS = data.Langs
+
+	if lang, ok := GetLang("cpp"); !ok {
+		slog.Error("cpp is not found in langs")
+		os.Exit(1)
+	} else {
+		LANG_SOLUTION = lang
+	}
 }
 
 func GetLang(id string) (Lang, bool) {

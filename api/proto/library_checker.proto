@@ -21,7 +21,10 @@ service LibraryCheckerService {
     rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
     rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
     rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}    
-    
+
+    rpc Hack (HackRequest) returns (HackResponse) {}
+    rpc HackInfo (HackInfoRequest) returns (HackInfoResponse) {}
+
     rpc LangList (LangListRequest) returns (LangListResponse) {}
     rpc Ranking (RankingRequest) returns (RankingResponse) {} // used by another product
 }
@@ -174,6 +177,34 @@ message RejudgeRequest {
     int32 id = 1; // submission id
 }
 message RejudgeResponse {
+}
+
+// --- Hack ---
+
+message HackRequest {
+    optional int32 submission = 1; // submission id
+    optional bytes test_case = 2; // input
+}
+message HackResponse {
+    optional int32 id = 1; // submission id
+}
+
+message HackInfoRequest {
+    optional int32 id = 1; // submission id
+}
+message HackInfoResponse {
+    optional HackOverview overview = 1;
+    optional bytes test_case = 2; // input
+    optional bytes checker_out = 3; // output of checker
+}
+
+message HackOverview {
+    optional int32 id = 1; // hack id
+    optional int32 submission_id = 2; // submission id
+    optional string status = 3; // "AC"
+    optional double time = 4; // 2.0 = 2 seconds
+    optional int64 memory = 5; // x bytes
+    optional google.protobuf.Timestamp hack_time = 6;
 }
 
 // --- Lang ---

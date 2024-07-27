@@ -15,12 +15,15 @@ const TASK_RETRY_PERIOD = time.Minute
 type TaskType = int
 
 const (
-	JUDGE_SUBMISSION TaskType = 1
+	_ TaskType = iota
+	JUDGE_SUBMISSION
+	JUDGE_HACK
 )
 
 type TaskData struct {
 	TaskType   TaskType
 	Submission int32
+	Hack       int32
 }
 
 // Task is db table
@@ -42,6 +45,20 @@ func decode(data []byte) (TaskData, error) {
 	var taskData TaskData
 	err := gob.NewDecoder(bytes.NewBuffer(data)).Decode(&taskData)
 	return taskData, err
+}
+
+func PushSubmissionTask(db *gorm.DB, id, priority int32) error {
+	return PushTask(db, TaskData{
+		TaskType:   JUDGE_SUBMISSION,
+		Submission: id,
+	}, priority)
+}
+
+func PushHackTask(db *gorm.DB, id, priority int32) error {
+	return PushTask(db, TaskData{
+		TaskType:   JUDGE_HACK,
+		Submission: id,
+	}, priority)
 }
 
 func PushTask(db *gorm.DB, taskData TaskData, priority int32) error {

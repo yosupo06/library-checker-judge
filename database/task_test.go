@@ -7,21 +7,15 @@ import (
 func TestTask(t *testing.T) {
 	db := CreateTestDB(t)
 
-	if err := PushTask(db, TaskData{
-		TaskType:   JUDGE_SUBMISSION,
-		Submission: 123,
-	}, 1); err != nil {
+	if err := PushSubmissionTask(db, 123, 1); err != nil {
 		t.Fatal(err)
 	}
-	if err := PushTask(db, TaskData{
-		TaskType:   JUDGE_SUBMISSION,
-		Submission: 789,
-	}, 10); err != nil {
+	if err := PushHackTask(db, 456, 10); err != nil {
 		t.Fatal(err)
 	}
 
 	id1, data1, err := PopTask(db)
-	if id1 == -1 || data1.Submission != 789 || err != nil {
+	if id1 == -1 || data1.Hack != 456 || err != nil {
 		t.Fatal(id1, data1, err)
 	}
 
