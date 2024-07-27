@@ -68,6 +68,11 @@ func fileInfos(base, root string) []FileInfo {
 			path:     path.Join("params.h"),
 			required: true,
 		},
+		{
+			base:     base,
+			path:     path.Join("sol", "correct.cpp"),
+			required: true,
+		},
 		// for C++(Function)
 		{
 			base:     base,
