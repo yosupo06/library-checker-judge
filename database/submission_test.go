@@ -46,6 +46,40 @@ func TestFetchInvalidSubmission(t *testing.T) {
 	}
 }
 
+func TestUpdateSubmissionStatus(t *testing.T) {
+	db := CreateTestDB(t)
+
+	createDummyProblem(t, db)
+
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
+		t.Fatal(err)
+	}
+
+	sub := Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: true, String: "user1"},
+		MaxTime:     1234,
+	}
+
+	id, err := SaveSubmission(db, sub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := UpdateSubmissionStatus(db, id, "IE"); err != nil {
+		t.Fatal(err)
+	}
+
+	sub2, err := FetchSubmission(db, id)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if sub2.User.Name != "user1" || sub2.Problem.Name != "aplusb" || sub2.Status != "IE" || sub2.MaxTime != 1234 {
+		t.Fatal("invalid data", sub2)
+	}
+}
+
 func TestSubmissionResult(t *testing.T) {
 	db := CreateTestDB(t)
 

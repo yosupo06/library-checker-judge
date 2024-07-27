@@ -149,9 +149,9 @@ func WithMemoryLimitMB(limitMB int) TaskInfoOption {
 	}
 }
 
-func WithStackLimitKB(limitMB int) TaskInfoOption {
+func WithStackLimitKB(limitKB int) TaskInfoOption {
 	return func(ti *TaskInfo) error {
-		ti.StackLimitKB = limitMB
+		ti.StackLimitKB = limitKB
 		return nil
 	}
 }
