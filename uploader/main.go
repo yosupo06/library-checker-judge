@@ -83,7 +83,7 @@ func main() {
 		versionUpdated := (v != dbP.Version)
 		testcaseUpdated := (h != dbP.TestCasesVersion)
 
-		info, err := parseInfo(t)
+		info, err := storage.ParseInfo(t)
 		if err != nil {
 			slog.Error("Failed to parse info.toml", "err", err)
 			os.Exit(1)
@@ -165,19 +165,6 @@ func main() {
 		slog.Error("Failed to update categories", "err", err)
 		os.Exit(1)
 	}
-}
-
-type Info struct {
-	Title     string
-	TimeLimit float64
-}
-
-func parseInfo(tomlPath string) (Info, error) {
-	info := Info{}
-	if _, err := toml.DecodeFile(tomlPath, &info); err != nil {
-		return info, err
-	}
-	return info, nil
 }
 
 func generate(problemsDir, tomlPath string) error {

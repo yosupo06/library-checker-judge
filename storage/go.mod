@@ -3,6 +3,7 @@ module github.com/yosupo06/library-checker-judge/storage
 go 1.21
 
 require (
+	github.com/BurntSushi/toml v1.4.0
 	github.com/minio/minio-go/v7 v7.0.74
 	github.com/yosupo06/library-checker-judge/database v0.0.0-20240721222554-ee0d9b0cddd7
 )
