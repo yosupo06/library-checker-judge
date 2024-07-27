@@ -60,34 +60,40 @@ func AggregateResults(results []CaseResult) CaseResult {
 }
 
 func compileChecker(dir storage.ProblemFiles) (Volume, TaskResult, error) {
-	paths := []string{dir.CheckerPath()}
 	includeFiles, err := dir.IncludeFilePaths()
 	if err != nil {
 		return Volume{}, TaskResult{}, err
 	}
-	paths = append(paths, includeFiles...)
 
-	v, t, err := compile(paths, langs.LANG_CHECKER.ImageName, langs.LANG_CHECKER.Compile)
+	v, t, err := compile(dir.CheckerPath(), langs.LANG_CHECKER.Source, includeFiles, langs.LANG_CHECKER.ImageName, langs.LANG_CHECKER.Compile)
 	if err != nil {
 		return Volume{}, TaskResult{}, err
 	}
 	return v, t, nil
 }
 
-func compileSource(dir storage.ProblemFiles, sourcePath string, lang langs.Lang) (Volume, TaskResult, error) {
-	paths := []string{sourcePath}
-	for _, key := range lang.AdditionalFiles {
-		paths = append(paths, dir.PublicFilePath(key))
-	}
-	v, t, err := compile(paths, lang.ImageName, lang.Compile)
+func compileSolution(dir storage.ProblemFiles) (Volume, TaskResult, error) {
+	v, t, err := compile(dir.SolutionPath(), langs.LANG_SOLUTION.Source, []string{}, langs.LANG_SOLUTION.ImageName, langs.LANG_SOLUTION.Compile)
 	if err != nil {
 		return Volume{}, TaskResult{}, err
 	}
 	return v, t, err
 }
 
-func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t TaskResult, err error) {
-	log.Println("Compile:", srcPaths, imageName, cmd)
+func compileSource(dir storage.ProblemFiles, sourcePath string, lang langs.Lang) (Volume, TaskResult, error) {
+	paths := []string{}
+	for _, key := range lang.AdditionalFiles {
+		paths = append(paths, dir.PublicFilePath(key))
+	}
+	v, t, err := compile(sourcePath, lang.Source, paths, lang.ImageName, lang.Compile)
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	return v, t, err
+}
+
+func compile(srcPath, srcName string, includePaths []string, imageName string, cmd []string) (v Volume, t TaskResult, err error) {
+	log.Println("Compile:", srcPath, imageName, cmd)
 	v, err = CreateVolume()
 	if err != nil {
 		return
@@ -100,7 +106,10 @@ func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t Tas
 		}
 	}()
 
-	for _, p := range srcPaths {
+	if err = v.CopyFile(srcPath, srcName); err != nil {
+		return
+	}
+	for _, p := range includePaths {
 		if _, err = os.Stat(p); err == nil {
 			if err = v.CopyFile(p, path.Base(p)); err != nil {
 				return
