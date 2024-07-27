@@ -106,6 +106,10 @@ func (p ProblemFiles) CheckerPath() string {
 	return p.PublicFilePath("checker.cpp")
 }
 
+func (p ProblemFiles) SolutionPath() string {
+	return p.PublicFilePath(path.Join("sol", "correct.cpp"))
+}
+
 func (p ProblemFiles) IncludeFilePaths() ([]string, error) {
 	filePaths := []string{
 		p.PublicFilePath("params.h"),
