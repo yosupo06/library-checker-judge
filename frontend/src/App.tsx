@@ -22,6 +22,8 @@ import StatementViewer from "./pages/StatementViewer";
 import { Box } from "@mui/system";
 import { registerQueryClient } from "./auth/auth";
 import UserInfo from "./pages/UserInfo";
+import Hack from "./pages/Hack";
+import HackInfo from "./pages/HackInfo";
 const theme = createTheme({
   typography: {
     button: {
@@ -90,6 +92,8 @@ function App(): JSX.Element {
                   path="/tool/statementviewer"
                   element={<StatementViewer />}
                 />
+                <Route path="/hack" element={<Hack />} />
+                <Route path="/hack/:ID" element={<HackInfo />} />
                 <Route element={NotFound} />
               </Routes>
             </Box>

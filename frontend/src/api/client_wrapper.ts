@@ -10,6 +10,9 @@ import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 import {
   ChangeCurrentUserInfoRequest,
+  HackInfoResponse,
+  HackRequest,
+  HackResponse,
   LangListResponse,
   ProblemCategoriesResponse,
   ProblemInfoResponse,
@@ -218,4 +221,39 @@ const useBearer = () => {
     },
     enabled: !idToken.isLoading,
   });
+};
+
+export const useHackMutation = (
+  options?: Omit<
+    UseMutationOptions<HackResponse, unknown, HackRequest, unknown>,
+    "mutationFn"
+  >,
+) => {
+  const bearer = useBearer();
+  return useMutation(
+    async (req: HackRequest) =>
+      await client.hack(req, bearer.data ?? undefined).response,
+    options,
+  );
+};
+
+export const useHackInfo = (
+  id: number,
+  options?: Omit<
+    UseQueryOptions<HackInfoResponse, unknown, HackInfoResponse, string[]>,
+    "queryKey" | "queryFn"
+  >,
+): UseQueryResult<HackInfoResponse> => {
+  const bearer = useBearer();
+  return useQuery(
+    ["hackInfo", String(id)],
+    async () =>
+      await client.hackInfo(
+        {
+          id: id,
+        },
+        bearer.data ?? undefined,
+      ).response,
+    options,
+  );
 };
