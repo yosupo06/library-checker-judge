@@ -51,7 +51,7 @@ func main() {
 				continue
 			}
 		case database.JUDGE_HACK:
-			if err := execHackTask(db, downloader, taskID, taskData.Submission); err != nil {
+			if err := execHackTask(db, downloader, taskID, taskData.Hack); err != nil {
 				slog.Error("failed to judge Hack", "err", err)
 				continue
 			}

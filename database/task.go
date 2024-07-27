@@ -56,8 +56,8 @@ func PushSubmissionTask(db *gorm.DB, id, priority int32) error {
 
 func PushHackTask(db *gorm.DB, id, priority int32) error {
 	return PushTask(db, TaskData{
-		TaskType:   JUDGE_HACK,
-		Submission: id,
+		TaskType: JUDGE_HACK,
+		Hack:     id,
 	}, priority)
 }
 
