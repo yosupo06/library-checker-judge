@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"flag"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -16,7 +15,7 @@ var (
 	TESTLIB_PATH       = path.Join("sources", "testlib.h")
 	APLUSB_DIR         = path.Join("sources", "aplusb")
 	CHECKER_PATH       = path.Join(APLUSB_DIR, "checker.cpp")
-	PARAMS_H_PATH      = path.Join(APLUSB_DIR, "checker.cpp")
+	PARAMS_H_PATH      = path.Join(APLUSB_DIR, "params.h")
 	SAMPLE_IN_PATH     = path.Join(APLUSB_DIR, "sample.in")
 	SAMPLE_OUT_PATH    = path.Join(APLUSB_DIR, "sample.out")
 	SAMPLE_WA_OUT_PATH = path.Join(APLUSB_DIR, "sample_wa.out")
@@ -31,14 +30,15 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func generateTestCaseDir(t *testing.T, inFilePath, outFilePath string) storage.TestCaseDir {
+func prepareProblemFiles(t *testing.T, inFilePath, outFilePath string) storage.ProblemFiles {
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal("Failed to create tempDir: ", tempDir)
 	}
 
-	caseDir := storage.TestCaseDir{
-		Dir: tempDir,
+	dir := storage.ProblemFiles{
+		PublicFiles: tempDir,
+		TestCases:   tempDir,
 	}
 
 	type Info struct {
@@ -46,11 +46,11 @@ func generateTestCaseDir(t *testing.T, inFilePath, outFilePath string) storage.T
 		dst string
 	}
 	for _, info := range []Info{
-		{src: CHECKER_PATH, dst: caseDir.CheckerPath()},
-		{src: inFilePath, dst: caseDir.InFilePath(DUMMY_CASE_NAME)},
-		{src: outFilePath, dst: caseDir.OutFilePath(DUMMY_CASE_NAME)},
-		{src: TESTLIB_PATH, dst: path.Join(caseDir.PublicFileDir(), "common", "testlib.h")},
-		{src: PARAMS_H_PATH, dst: caseDir.PublicFilePath("params.h")},
+		{src: CHECKER_PATH, dst: dir.CheckerPath()},
+		{src: TESTLIB_PATH, dst: dir.PublicFilePath(path.Join("common", "testlib.h"))},
+		{src: PARAMS_H_PATH, dst: dir.PublicFilePath("params.h")},
+		{src: inFilePath, dst: dir.InFilePath(DUMMY_CASE_NAME)},
+		{src: outFilePath, dst: dir.OutFilePath(DUMMY_CASE_NAME)},
 	} {
 		checker, err := sources.ReadFile(info.src)
 		if err != nil {
@@ -59,15 +59,18 @@ func generateTestCaseDir(t *testing.T, inFilePath, outFilePath string) storage.T
 		if err := os.MkdirAll(path.Dir(info.dst), os.ModePerm); err != nil {
 			t.Fatal(err)
 		}
-		if err := ioutil.WriteFile(info.dst, checker, 0644); err != nil {
+		if err := os.WriteFile(info.dst, checker, 0644); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	return caseDir
+	return dir
 }
 
-func generateAplusBJudge(t *testing.T, langID, srcName, inFilePath, outFilePath string) *Judge {
+func testAplusB(t *testing.T, langID, srcName, inFilePath, outFilePath, expectedStatus string) {
+	t.Log("Start", langID, srcName)
+
+	files := prepareProblemFiles(t, inFilePath, outFilePath)
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
 	if err != nil {
@@ -82,44 +85,37 @@ func generateAplusBJudge(t *testing.T, langID, srcName, inFilePath, outFilePath 
 	srcFile := toRealFile(src, lang.Source, t)
 	defer os.Remove(srcFile)
 
-	caseDir := generateTestCaseDir(t, inFilePath, outFilePath)
-
-	judge, err := NewJudge(lang, 2.0, &caseDir)
-	if err != nil {
-		t.Fatal("Failed to create Judge", err)
-	}
-
-	checkerResult, err := judge.CompileChecker()
+	checkerVolume, checkerResult, err := compileChecker(files)
 	if err != nil || checkerResult.ExitCode != 0 {
-		t.Fatal("error CompileChecker", err)
+		t.Fatal("Error CompileChecker", err)
 	}
-	sourceResult, err := judge.CompileSource(srcFile)
+	t.Cleanup(func() { checkerVolume.Remove() })
+
+	sourceVolume, sourceResult, err := compileSource(files, srcFile, lang)
 	if err != nil || sourceResult.ExitCode != 0 {
-		t.Fatal("error CompileSource", err)
+		t.Fatal("Error CompileSource", err)
 	}
+	t.Cleanup(func() { sourceVolume.Remove() })
 
-	return judge
-}
-
-func testAplusBAC(t *testing.T, lang, srcName string) {
-	t.Logf("Start %s test: %s", lang, srcName)
-	judge := generateAplusBJudge(t, lang, srcName, SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
-	defer judge.Close()
-
-	result, err := judge.TestCase(DUMMY_CASE_NAME)
+	result, err := testCase(sourceVolume, checkerVolume, lang, 2.0, files.InFilePath(DUMMY_CASE_NAME), files.OutFilePath(DUMMY_CASE_NAME))
 	if err != nil {
-		t.Fatal("error Run Test", err)
+		t.Fatal("Error to eval testCase", err)
 	}
 	t.Log("Result:", result)
 
-	if result.Status != "AC" {
-		t.Fatal("error Status", result, string(result.Stderr), string(result.CheckerOut))
+	if result.Status != expectedStatus {
+		t.Fatal("Error Status", result, string(result.Stderr), string(result.CheckerOut))
 	}
+}
+
+func testAplusBAC(t *testing.T, langID, srcName string) {
+	testAplusB(t, langID, srcName, SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "AC")
 }
 
 func TestCppAplusBAC(t *testing.T) {
 	testAplusBAC(t, "cpp", "ac.cpp")
 }
+
 func TestCppAclAplusBAC(t *testing.T) {
 	testAplusBAC(t, "cpp", "ac_acl.cpp")
 }
@@ -166,114 +162,48 @@ func TestRubyAplusBAC(t *testing.T) {
 	testAplusBAC(t, "ruby", "ac.rb")
 }
 
-func TestAplusBWA(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "wa.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
-	defer judge.Close()
-
-	result, err := judge.TestCase(DUMMY_CASE_NAME)
-
-	if err != nil {
-		t.Fatal("error Run Test", err)
-	}
-	t.Log("Result:", result)
-
-	if result.Status != "WA" {
-		t.Fatal("error Status", result)
-	}
+func TestCppAplusBWA(t *testing.T) {
+	testAplusB(t, "cpp", "wa.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "WA")
 }
 
-func TestAplusbPE(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "pe.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
-	defer judge.Close()
-
-	result, err := judge.TestCase(DUMMY_CASE_NAME)
-
-	if err != nil {
-		t.Fatal("error Run Test", err)
-	}
-	t.Log("Result:", result)
-
-	if result.Status != "PE" {
-		t.Fatal("error Status", result)
-	}
+func TestCppAplusBPE(t *testing.T) {
+	testAplusB(t, "cpp", "pe.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "PE")
 }
 
-func TestAplusbFail(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "ac.cpp", SAMPLE_IN_PATH, SAMPLE_WA_OUT_PATH)
-	defer judge.Close()
-
-	result, err := judge.TestCase(DUMMY_CASE_NAME)
-
-	if err != nil {
-		t.Fatal("error Run Test", err)
-	}
-	t.Log("Result:", result)
-
-	if result.Status != "Fail" {
-		t.Fatal("error Status", result)
-	}
+func TestCppAplusBTLE(t *testing.T) {
+	testAplusB(t, "cpp", "tle.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "TLE")
 }
 
-func TestAplusbTLE(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "tle.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
-	defer judge.Close()
-
-	result, err := judge.TestCase(DUMMY_CASE_NAME)
-	if err != nil {
-		t.Fatal("error Run Test", err)
-	}
-	t.Log("Result:", result)
-
-	if result.Status != "TLE" {
-		t.Fatal("error Status", result)
-	}
+func TestCppAplusBRE(t *testing.T) {
+	testAplusB(t, "cpp", "re.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "RE")
 }
 
-func TestAplusbRE(t *testing.T) {
-	judge := generateAplusBJudge(t, "cpp", "re.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
-	defer judge.Close()
-
-	result, err := judge.TestCase(DUMMY_CASE_NAME)
-	if err != nil {
-		t.Fatal("error Run Test", err)
-	}
-	t.Log("Result:", result)
-
-	if result.Status != "RE" {
-		t.Fatal("error Status", result)
-	}
+func TestCppAplusBFail(t *testing.T) {
+	testAplusB(t, "cpp", "ac.cpp", SAMPLE_IN_PATH, SAMPLE_WA_OUT_PATH, "Fail")
 }
 
-func TestAplusbCE(t *testing.T) {
-	caseDir := generateTestCaseDir(t, SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
+func TestAplusBCE(t *testing.T) {
+	files := prepareProblemFiles(t, SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, "ce.cpp"))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
+	defer src.Close()
 
 	lang, ok := langs.GetLang("cpp")
 	if !ok {
-		t.Fatal("cpp lang is not found")
+		t.Fatal("Unknown lang cpp")
 	}
+	srcFile := toRealFile(src, lang.Source, t)
+	defer os.Remove(srcFile)
 
-	srcPath := toRealFile(src, lang.Source, t)
-
-	judge, err := NewJudge(lang, 2.0, &caseDir)
+	volume, result, err := compileSource(files, srcFile, lang)
 	if err != nil {
-		t.Fatal("Failed to create Judge", err)
+		t.Fatal("Failed CompileChecker", err, result)
 	}
-	defer judge.Close()
-
-	sourceResult, err := judge.CompileSource(srcPath)
-	if err != nil {
-		t.Fatal("error CompileSource", err)
+	if result.ExitCode == 0 {
+		t.Fatal("Success CompileChecker", result)
 	}
-	if sourceResult.ExitCode == 0 {
-		t.Fatal("compile succeeded")
-	}
-	if len(sourceResult.Stderr) == 0 {
-		t.Fatal("compile error is empty")
-	}
-	t.Log("Compile error:", sourceResult.Stderr)
+	t.Cleanup(func() { volume.Remove() })
 }

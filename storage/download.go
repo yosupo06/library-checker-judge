@@ -2,163 +2,134 @@ package storage
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/yosupo06/library-checker-judge/database"
 )
 
-const BASE_OBJECT_PATH = "v2"
-
-type TestCaseFetcher struct {
+type TestCaseDownloader struct {
 	client   Client
-	casesDir string
+	localDir string
 }
 
-type TestCaseDir struct {
-	Dir string
-}
-
-func (t *TestCaseDir) PublicFileDir() string {
-	return path.Join(t.Dir, "public")
-}
-
-func (t *TestCaseDir) PublicFilePath(key string) string {
-	return path.Join(t.PublicFileDir(), key)
-}
-
-func (t *TestCaseDir) CheckerPath() string {
-	return t.PublicFilePath("checker.cpp")
-}
-
-func (t *TestCaseDir) CheckerFile() (*os.File, error) {
-	return os.Open(t.CheckerPath())
-}
-
-func (t *TestCaseDir) IncludeFilePaths() ([]string, error) {
-	filePaths := []string{
-		t.PublicFilePath("params.h"),
-	}
-
-	files, err := os.ReadDir(path.Join(t.PublicFileDir(), "common"))
-	if err != nil {
-		return nil, err
-	}
-	for _, file := range files {
-		filePaths = append(filePaths, path.Join(t.PublicFileDir(), "common", file.Name()))
-	}
-
-	return filePaths, nil
-}
-
-func (t *TestCaseDir) InFilesDir() string {
-	return path.Join(t.Dir, "in")
-}
-
-func (t *TestCaseDir) InFilePath(name string) string {
-	return path.Join(t.InFilesDir(), name+".in")
-}
-
-func (t *TestCaseDir) InFile(name string) (*os.File, error) {
-	return os.Open(t.InFilePath(name))
-}
-
-func (t *TestCaseDir) OutFilePath(name string) string {
-	return path.Join(t.Dir, "out", name+".out")
-}
-
-func (t *TestCaseDir) OutFile(name string) (*os.File, error) {
-	return os.Open(t.OutFilePath(name))
-}
-
-func NewTestCaseFetcher(client Client) (TestCaseFetcher, error) {
-	// create case directory
+func NewTestCaseDownloader(client Client) (TestCaseDownloader, error) {
 	dir, err := os.MkdirTemp("", "case")
 	if err != nil {
-		log.Println("Failed to create tempdir:", err)
-		return TestCaseFetcher{}, err
+		slog.Error("Failed to create tempdir", "err", err)
+		return TestCaseDownloader{}, err
 	}
-	log.Println("TestCaseFetcher data dir:", dir)
-
-	return TestCaseFetcher{
+	slog.Info("TestCaseDownloader created", "dir", dir)
+	return TestCaseDownloader{
 		client:   client,
-		casesDir: dir,
+		localDir: dir,
 	}, nil
 }
-
-func (t *TestCaseFetcher) Close() error {
-	if err := os.RemoveAll(t.casesDir); err != nil {
+func (t TestCaseDownloader) Close() error {
+	if err := os.RemoveAll(t.localDir); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *TestCaseFetcher) Fetch(problem database.Problem) (TestCaseDir, error) {
-	publicObjectPath := path.Join(BASE_OBJECT_PATH, problem.Name, problem.Version)
-	dataPath := path.Join(t.casesDir, path.Join(BASE_OBJECT_PATH, problem.Name, problem.Version))
+type ProblemFiles struct {
+	TestCases   string
+	PublicFiles string
+}
 
-	if err := t.downloadTestCases(problem); err != nil {
-		return TestCaseDir{}, err
+func (t TestCaseDownloader) Fetch(problem Problem) (ProblemFiles, error) {
+	testCases, err := t.fetchTestCases(problem)
+	if err != nil {
+		return ProblemFiles{}, err
+	}
+	publicFiles, err := t.fetchPublicFiles(problem)
+	if err != nil {
+		return ProblemFiles{}, err
 	}
 
-	if _, err := os.Stat(dataPath); err != nil {
-		if err := os.MkdirAll(dataPath, os.ModePerm); err != nil {
-			return TestCaseDir{}, err
-		}
+	return ProblemFiles{
+		TestCases:   testCases,
+		PublicFiles: publicFiles,
+	}, nil
+}
 
-		cmd := exec.Command("tar", "-xf", t.testCasesPath(problem), "-C", dataPath)
+func (t TestCaseDownloader) fetchTestCases(problem Problem) (string, error) {
+	slog.Info("Download test cases", "name", problem.Name, "hash", problem.TestCaseHash)
+
+	tarGzPath := path.Join(t.localDir, problem.TestCaseHash+".tar.gz")
+	localDir := path.Join(t.localDir, problem.TestCaseHash)
+	key := problem.testCasesKey()
+
+	if _, err := os.Stat(tarGzPath); err != nil {
+		slog.Info("Download test cases", "remote", key)
+		if err := t.client.client.FGetObject(context.Background(), t.client.bucket, key, tarGzPath, minio.GetObjectOptions{}); err != nil {
+			return "", err
+		}
+		if err := os.MkdirAll(localDir, os.ModePerm); err != nil {
+			return "", err
+		}
+		cmd := exec.Command("tar", "-xf", tarGzPath, "-C", localDir)
 		if err := cmd.Run(); err != nil {
-			return TestCaseDir{}, err
+			slog.Error("failed to expand tar.gz")
+			return "", err
 		}
+	}
 
-		log.Printf("Download public files: %s//%s", t.client.publicBucket, publicObjectPath)
-		for object := range t.client.client.ListObjects(context.Background(), t.client.publicBucket, minio.ListObjectsOptions{Prefix: publicObjectPath, Recursive: true}) {
-			key := strings.TrimPrefix(object.Key, publicObjectPath)
-			dstPath := path.Join(dataPath, "public", key)
-			log.Printf("Download: %s -> %s", object.Key, dstPath)
-			if err := t.client.client.FGetObject(context.Background(), t.client.publicBucket, object.Key, dstPath, minio.GetObjectOptions{}); err != nil {
-				return TestCaseDir{}, err
+	return localDir, nil
+}
+
+func (t TestCaseDownloader) fetchPublicFiles(problem Problem) (string, error) {
+	prefix := problem.publicFileKeyPrefix()
+
+	destDir := path.Join(t.localDir, problem.Version)
+	if _, err := os.Stat(destDir); err != nil {
+		slog.Info("Download public files", "name", problem.Name, "version", problem.Version)
+		for object := range t.client.client.ListObjects(context.Background(), t.client.publicBucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true}) {
+			destPath := path.Join(destDir, strings.TrimPrefix(object.Key, prefix))
+			slog.Info("Download public file", "key", object.Key, "to", destPath)
+			if err := t.client.client.FGetObject(context.Background(), t.client.publicBucket, object.Key, destPath, minio.GetObjectOptions{}); err != nil {
+				return "", err
 			}
 		}
 	}
-	return TestCaseDir{Dir: dataPath}, nil
+	return destDir, nil
 }
 
-func (t *TestCaseFetcher) downloadTestCases(problem database.Problem) error {
-	s3TestCasesPath := path.Join(BASE_OBJECT_PATH, problem.Name, fmt.Sprintf("%s.tar.gz", problem.TestCasesVersion))
+func (p ProblemFiles) PublicFilePath(key string) string {
+	return path.Join(p.PublicFiles, key)
+}
 
-	if _, err := os.Stat(t.testCasesPath(problem)); err != nil {
-		if err := t.client.client.FGetObject(context.Background(), t.client.bucket, s3TestCasesPath, t.testCasesPath(problem), minio.GetObjectOptions{}); err != nil {
-			return err
-		}
+func (p ProblemFiles) CheckerPath() string {
+	return p.PublicFilePath("checker.cpp")
+}
+
+func (p ProblemFiles) IncludeFilePaths() ([]string, error) {
+	filePaths := []string{
+		p.PublicFilePath("params.h"),
 	}
 
-	return nil
-}
-
-func (t *TestCaseFetcher) testCasesPath(problem database.Problem) string {
-	return path.Join(t.casesDir, fmt.Sprintf("%s-%s.tar.gz", problem.Name, problem.TestCasesVersion))
-}
-
-func (t *TestCaseDir) CaseNames() ([]string, error) {
-	// write glob code
-	matches, err := filepath.Glob(path.Join(t.InFilesDir(), "*.in"))
+	files, err := os.ReadDir(p.PublicFilePath("common"))
 	if err != nil {
 		return nil, err
 	}
-	result := []string{}
-	for _, match := range matches {
-		_, name := path.Split(match)
-		name = strings.TrimSuffix(name, ".in")
-		result = append(result, name)
+	for _, file := range files {
+		filePaths = append(filePaths, p.PublicFilePath(path.Join("common", file.Name())))
 	}
-	sort.Strings(result)
-	return result, nil
+
+	return filePaths, nil
+}
+
+func (p ProblemFiles) InfoTomlPath() string {
+	return p.PublicFilePath("info.toml")
+}
+
+func (p ProblemFiles) InFilePath(testCase string) string {
+	return path.Join(p.TestCases, "in", testCase+".in")
+}
+
+func (p ProblemFiles) OutFilePath(testCase string) string {
+	return path.Join(p.TestCases, "out", testCase+".out")
 }

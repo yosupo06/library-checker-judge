@@ -29,115 +29,6 @@ func init() {
 	}
 }
 
-type Judge struct {
-	tl   float64
-	lang langs.Lang
-
-	checkerVolume *Volume
-	sourceVolume  *Volume
-
-	caseDir *storage.TestCaseDir
-}
-
-func NewJudge(lang langs.Lang, tl float64, caseDir *storage.TestCaseDir) (*Judge, error) {
-	return &Judge{
-		tl:      tl,
-		lang:    lang,
-		caseDir: caseDir,
-	}, nil
-}
-
-func (j *Judge) Close() error {
-	if j.checkerVolume != nil {
-		if err := j.checkerVolume.Remove(); err != nil {
-			return err
-		}
-	}
-	if j.sourceVolume != nil {
-		if err := j.sourceVolume.Remove(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (j *Judge) CompileChecker() (TaskResult, error) {
-	paths := []string{}
-	paths = append(paths, j.caseDir.CheckerPath())
-	includeFilePaths, err := j.caseDir.IncludeFilePaths()
-	if err != nil {
-		return TaskResult{}, err
-	}
-	paths = append(paths, includeFilePaths...)
-	v, t, err := compile(paths, langs.LANG_CHECKER.ImageName, langs.LANG_CHECKER.Compile)
-	if err != nil {
-		return TaskResult{}, err
-	}
-	j.checkerVolume = &v
-	return t, err
-}
-
-func (j *Judge) CompileSource(sourcePath string) (TaskResult, error) {
-	paths := []string{}
-	paths = append(paths, sourcePath)
-	for _, key := range j.lang.AdditionalFiles {
-		paths = append(paths, j.caseDir.PublicFilePath(key))
-	}
-	v, t, err := compile(paths, j.lang.ImageName, j.lang.Compile)
-	if err != nil {
-		return TaskResult{}, err
-	}
-	j.sourceVolume = &v
-	return t, err
-}
-
-func (j *Judge) TestCase(caseName string) (CaseResult, error) {
-	log.Println("Start to judge case:", caseName)
-
-	inFilePath := j.caseDir.InFilePath(caseName)
-	expectFilePath := j.caseDir.OutFilePath(caseName)
-
-	outFilePath, result, err := runSource(*j.sourceVolume, j.lang, j.tl, inFilePath)
-	if err != nil {
-		return CaseResult{}, err
-	}
-	defer os.Remove(outFilePath)
-
-	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: result.Stderr, CheckerOut: []byte{}}
-	if result.TLE {
-		//timeout
-		baseResult.Status = "TLE"
-		return baseResult, nil
-	}
-
-	if result.ExitCode != 0 {
-		//runtime error
-		baseResult.Status = "RE"
-		return baseResult, nil
-	}
-
-	checkerResult, err := runChecker(j.checkerVolume, inFilePath, expectFilePath, outFilePath)
-	if err != nil {
-		return CaseResult{}, err
-	}
-	baseResult.CheckerOut = checkerResult.Stderr
-
-	if checkerResult.TLE {
-		baseResult.Status = "ITLE"
-	} else if checkerResult.ExitCode == 1 {
-		baseResult.Status = "WA"
-	} else if checkerResult.ExitCode == 2 {
-		baseResult.Status = "PE"
-	} else if checkerResult.ExitCode == 3 {
-		baseResult.Status = "Fail"
-	} else if checkerResult.ExitCode != 0 {
-		baseResult.Status = "Unknown"
-	} else {
-		baseResult.Status = "AC"
-	}
-	return baseResult, nil
-}
-
 type CaseResult struct {
 	CaseName   string
 	Status     string
@@ -166,6 +57,33 @@ func AggregateResults(results []CaseResult) CaseResult {
 		}
 	}
 	return ans
+}
+
+func compileChecker(dir storage.ProblemFiles) (Volume, TaskResult, error) {
+	paths := []string{dir.CheckerPath()}
+	includeFiles, err := dir.IncludeFilePaths()
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	paths = append(paths, includeFiles...)
+
+	v, t, err := compile(paths, langs.LANG_CHECKER.ImageName, langs.LANG_CHECKER.Compile)
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	return v, t, nil
+}
+
+func compileSource(dir storage.ProblemFiles, sourcePath string, lang langs.Lang) (Volume, TaskResult, error) {
+	paths := []string{sourcePath}
+	for _, key := range lang.AdditionalFiles {
+		paths = append(paths, dir.PublicFilePath(key))
+	}
+	v, t, err := compile(paths, lang.ImageName, lang.Compile)
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	return v, t, err
 }
 
 func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t TaskResult, err error) {
@@ -206,6 +124,48 @@ func compile(srcPaths []string, imageName string, cmd []string) (v Volume, t Tas
 	}
 	t, err = ti.Run()
 	return
+}
+
+func testCase(sourceVolume, checkerVolume Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {
+	outFilePath, result, err := runSource(sourceVolume, lang, timeLimit, inFilePath)
+	if err != nil {
+		return CaseResult{}, err
+	}
+	defer os.Remove(outFilePath)
+
+	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: result.Stderr, CheckerOut: []byte{}}
+	if result.TLE {
+		//timeout
+		baseResult.Status = "TLE"
+		return baseResult, nil
+	}
+
+	if result.ExitCode != 0 {
+		//runtime error
+		baseResult.Status = "RE"
+		return baseResult, nil
+	}
+
+	checkerResult, err := runChecker(checkerVolume, inFilePath, expectFilePath, outFilePath)
+	if err != nil {
+		return CaseResult{}, err
+	}
+	baseResult.CheckerOut = checkerResult.Stderr
+
+	if checkerResult.TLE {
+		baseResult.Status = "ITLE"
+	} else if checkerResult.ExitCode == 1 {
+		baseResult.Status = "WA"
+	} else if checkerResult.ExitCode == 2 {
+		baseResult.Status = "PE"
+	} else if checkerResult.ExitCode == 3 {
+		baseResult.Status = "Fail"
+	} else if checkerResult.ExitCode != 0 {
+		baseResult.Status = "Unknown"
+	} else {
+		baseResult.Status = "AC"
+	}
+	return baseResult, nil
 }
 
 func runSource(volume Volume, lang langs.Lang, timeLimit float64, inFilePath string) (string, TaskResult, error) {
@@ -266,7 +226,7 @@ func runSource(volume Volume, lang langs.Lang, timeLimit float64, inFilePath str
 	return outFile.Name(), result, err
 }
 
-func runChecker(volume *Volume, inFilePath, expectFilePath, actualFilePath string) (TaskResult, error) {
+func runChecker(volume Volume, inFilePath, expectFilePath, actualFilePath string) (TaskResult, error) {
 	if err := volume.CopyFile(inFilePath, "input.in"); err != nil {
 		return TaskResult{}, err
 	}
@@ -283,7 +243,7 @@ func runChecker(volume *Volume, inFilePath, expectFilePath, actualFilePath strin
 		WithArguments(langs.LANG_CHECKER.Exec...),
 		WithWorkDir("/workdir"),
 		WithTimeout(CHECKER_TIMEOUT),
-		WithVolume(volume, "/workdir"),
+		WithVolume(&volume, "/workdir"),
 	)...)
 	if err != nil {
 		return TaskResult{}, err
