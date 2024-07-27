@@ -147,7 +147,7 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 	}
 	defer os.Remove(tarGz)
 
-	if err := p.Problem.UploadTestCase(context.Background(), client, tarGz); err != nil {
+	if err := p.Problem.UploadTestCases(context.Background(), client, tarGz); err != nil {
 		return err
 	}
 
