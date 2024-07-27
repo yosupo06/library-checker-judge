@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func prepareProblemFiles(t *testing.T) storage.ProblemFiles {
+func prepareProblemFiles(t *testing.T, inFilePath, outFilePath string) storage.ProblemFiles {
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal("Failed to create tempDir: ", tempDir)
@@ -49,8 +49,8 @@ func prepareProblemFiles(t *testing.T) storage.ProblemFiles {
 		{src: CHECKER_PATH, dst: dir.CheckerPath()},
 		{src: TESTLIB_PATH, dst: dir.PublicFilePath(path.Join("common", "testlib.h"))},
 		{src: PARAMS_H_PATH, dst: dir.PublicFilePath("params.h")},
-		{src: SAMPLE_IN_PATH, dst: dir.InFilePath(DUMMY_CASE_NAME)},
-		{src: SAMPLE_OUT_PATH, dst: dir.OutFilePath(DUMMY_CASE_NAME)},
+		{src: inFilePath, dst: dir.InFilePath(DUMMY_CASE_NAME)},
+		{src: outFilePath, dst: dir.OutFilePath(DUMMY_CASE_NAME)},
 	} {
 		checker, err := sources.ReadFile(info.src)
 		if err != nil {
@@ -67,10 +67,10 @@ func prepareProblemFiles(t *testing.T) storage.ProblemFiles {
 	return dir
 }
 
-func testAplusB(t *testing.T, langID, srcName, expectedStatus string) {
+func testAplusB(t *testing.T, langID, srcName, inFilePath, outFilePath, expectedStatus string) {
 	t.Log("Start", langID, srcName)
 
-	files := prepareProblemFiles(t)
+	files := prepareProblemFiles(t, inFilePath, outFilePath)
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
 	if err != nil {
@@ -109,7 +109,7 @@ func testAplusB(t *testing.T, langID, srcName, expectedStatus string) {
 }
 
 func testAplusBAC(t *testing.T, langID, srcName string) {
-	testAplusB(t, langID, srcName, "AC")
+	testAplusB(t, langID, srcName, SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "AC")
 }
 
 func TestCppAplusBAC(t *testing.T) {
@@ -163,23 +163,27 @@ func TestRubyAplusBAC(t *testing.T) {
 }
 
 func TestCppAplusBWA(t *testing.T) {
-	testAplusB(t, "cpp", "wa.cpp", "WA")
+	testAplusB(t, "cpp", "wa.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "WA")
 }
 
 func TestCppAplusBPE(t *testing.T) {
-	testAplusB(t, "cpp", "pe.cpp", "PE")
+	testAplusB(t, "cpp", "pe.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "PE")
 }
 
 func TestCppAplusBTLE(t *testing.T) {
-	testAplusB(t, "cpp", "tle.cpp", "TLE")
+	testAplusB(t, "cpp", "tle.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "TLE")
 }
 
 func TestCppAplusBRE(t *testing.T) {
-	testAplusB(t, "cpp", "re.cpp", "RE")
+	testAplusB(t, "cpp", "re.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "RE")
+}
+
+func TestCppAplusBFail(t *testing.T) {
+	testAplusB(t, "cpp", "ac.cpp", SAMPLE_IN_PATH, SAMPLE_WA_OUT_PATH, "Fail")
 }
 
 func TestAplusBCE(t *testing.T) {
-	files := prepareProblemFiles(t)
+	files := prepareProblemFiles(t, SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 
 	src, err := sources.Open(path.Join(APLUSB_DIR, "ce.cpp"))
 	if err != nil {
