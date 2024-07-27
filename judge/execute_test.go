@@ -28,7 +28,7 @@ func toRealFile(src io.Reader, name string, t *testing.T) string {
 	if _, err := io.Copy(outFile, src); err != nil {
 		t.Fatal(err)
 	}
-	outFile.Seek(0, 0)
+	outFile.Close()
 	return outFile.Name()
 }
 

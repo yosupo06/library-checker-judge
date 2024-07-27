@@ -117,6 +117,16 @@ func UpdateSubmission(db *gorm.DB, submission Submission) error {
 	return nil
 }
 
+func UpdateSubmissionStatus(db *gorm.DB, id int32, status string) error {
+	if err := db.Updates(Submission{
+		ID:     id,
+		Status: status,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func ClearTestcaseResult(db *gorm.DB, subID int32) error {
 	if err := db.Where("submission = ?", subID).Delete(&SubmissionTestcaseResult{}).Error; err != nil {
 		return err
