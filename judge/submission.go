@@ -157,6 +157,9 @@ func (data SubmissionTaskData) judge() error {
 
 func (data SubmissionTaskData) updateSubmissionStatus(status string) error {
 	data.s.Status = status
+	if err := database.TouchTask(data.db, data.taskID); err != nil {
+		return err
+	}
 	if err := database.UpdateSubmissionStatus(data.db, data.s.ID, status); err != nil {
 		return err
 	}
