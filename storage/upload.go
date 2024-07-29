@@ -156,7 +156,7 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 		return err
 	}
 
-	// upload examples to public bucket
+	// upload examples to the public bucket
 	for _, ext := range []string{"in", "out"} {
 		if err := filepath.Walk(path.Join(p.Base, ext), func(fpath string, info fs.FileInfo, err error) error {
 			if strings.Contains(fpath, "example") {
