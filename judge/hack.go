@@ -70,7 +70,7 @@ type HackTaskData struct {
 	lang   langs.Lang
 }
 
-func (data HackTaskData) judge() error {
+func (data *HackTaskData) judge() error {
 	slog.Info("Compile checker")
 	data.h.Status = "Compiling"
 	if err := data.updateHack(); err != nil {
@@ -134,7 +134,7 @@ func (data HackTaskData) judge() error {
 	return data.updateHack()
 }
 
-func (data HackTaskData) compileSolution() (Volume, error) {
+func (data *HackTaskData) compileSolution() (Volume, error) {
 	slog.Info("Compile solution")
 	v, r, err := compileSolution(data.files)
 	if err != nil {
@@ -149,7 +149,7 @@ func (data HackTaskData) compileSolution() (Volume, error) {
 	return v, nil
 }
 
-func (data HackTaskData) runModelSolution(v Volume, inFilePath string) (string, error) {
+func (data *HackTaskData) runModelSolution(v Volume, inFilePath string) (string, error) {
 	slog.Info("Generate model output")
 	path, r, err := runSource(v, langs.LANG_SOLUTION, data.info.TimeLimit, inFilePath)
 	if err != nil {
@@ -164,7 +164,7 @@ func (data HackTaskData) runModelSolution(v Volume, inFilePath string) (string, 
 	return path, nil
 }
 
-func (data HackTaskData) updateHackStatus(status string) error {
+func (data *HackTaskData) updateHackStatus(status string) error {
 	data.h.Status = status
 	if err := database.TouchTask(data.db, data.taskID); err != nil {
 		return err
@@ -175,7 +175,7 @@ func (data HackTaskData) updateHackStatus(status string) error {
 	return nil
 }
 
-func (data HackTaskData) updateHack() error {
+func (data *HackTaskData) updateHack() error {
 	if err := database.TouchTask(data.db, data.taskID); err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (data HackTaskData) updateHack() error {
 	return nil
 }
 
-func (data HackTaskData) compileSource() (Volume, TaskResult, error) {
+func (data *HackTaskData) compileSource() (Volume, TaskResult, error) {
 	// write source to tempfile
 	sourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {

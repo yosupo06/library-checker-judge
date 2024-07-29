@@ -43,7 +43,7 @@ func (p Problem) publicFileKeyPrefix() string {
 }
 
 func (p Problem) publicFileKey(key string) string {
-	return fmt.Sprintf("v2/%s/%s/%s", p.Name, p.Version, key)
+	return fmt.Sprintf("%s/%s", p.publicFileKeyPrefix(), key)
 }
 
 type Info struct {
@@ -58,7 +58,7 @@ type Info struct {
 func ParseInfo(tomlPath string) (Info, error) {
 	info := Info{}
 	if _, err := toml.DecodeFile(tomlPath, &info); err != nil {
-		return info, err
+		return Info{}, err
 	}
 	return info, nil
 }

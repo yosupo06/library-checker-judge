@@ -64,7 +64,7 @@ type SubmissionTaskData struct {
 	lang   langs.Lang
 }
 
-func (data SubmissionTaskData) init() error {
+func (data *SubmissionTaskData) init() error {
 	data.s.MaxTime = -1
 	data.s.MaxMemory = -1
 	data.s.PrevStatus = data.s.Status
@@ -80,7 +80,7 @@ func (data SubmissionTaskData) init() error {
 	return nil
 }
 
-func (data SubmissionTaskData) judge() error {
+func (data *SubmissionTaskData) judge() error {
 	slog.Info("Fetch data")
 	if err := data.updateSubmissionStatus("Fetching"); err != nil {
 		return err
@@ -155,7 +155,7 @@ func (data SubmissionTaskData) judge() error {
 	return data.updateSubmission()
 }
 
-func (data SubmissionTaskData) updateSubmissionStatus(status string) error {
+func (data *SubmissionTaskData) updateSubmissionStatus(status string) error {
 	data.s.Status = status
 	if err := database.TouchTask(data.db, data.taskID); err != nil {
 		return err
@@ -166,7 +166,7 @@ func (data SubmissionTaskData) updateSubmissionStatus(status string) error {
 	return nil
 }
 
-func (data SubmissionTaskData) updateSubmission() error {
+func (data *SubmissionTaskData) updateSubmission() error {
 	if err := database.TouchTask(data.db, data.taskID); err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (data SubmissionTaskData) updateSubmission() error {
 	return nil
 }
 
-func (data SubmissionTaskData) compileSource() (Volume, TaskResult, error) {
+func (data *SubmissionTaskData) compileSource() (Volume, TaskResult, error) {
 	// write source to tempfile
 	sourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {
