@@ -69,7 +69,7 @@ func (data *SubmissionTaskData) init() error {
 	data.s.MaxMemory = -1
 	data.s.PrevStatus = data.s.Status
 	data.s.Status = "-"
-	data.s.TestCasesVersion = "123" //data.s.Problem.TestCasesVersion
+	data.s.TestCasesVersion = data.s.Problem.TestCasesVersion
 	data.s.CompileError = []byte{}
 	if err := data.updateSubmission(); err != nil {
 		return err
