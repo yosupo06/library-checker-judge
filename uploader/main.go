@@ -97,8 +97,7 @@ func main() {
 		dbP.TestCasesVersion = h
 
 		// upload test cases
-		// TODO: we have to generate test cases even if only the version is updated (for example files)
-		if versionUpdated || *forceUpload {
+		if testcaseUpdated || *forceUpload {
 			if err := generate(*problemsDir, t); err != nil {
 				slog.Error("Failed to generate", "err", err)
 				os.Exit(1)

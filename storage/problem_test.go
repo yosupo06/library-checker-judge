@@ -54,7 +54,7 @@ func TestTestCasesKey(t *testing.T) {
 	}
 
 	key := p.testCasesKey()
-	if key != "v2/aplusb/hash.tar.gz" {
+	if key != "v3/aplusb/hash.tar.gz" {
 		t.Fatal("TestCasesKey is differ", key)
 	}
 }
@@ -67,12 +67,12 @@ func TestPublicFileKeyPrefix(t *testing.T) {
 	}
 
 	prefix := p.publicFileKeyPrefix()
-	if prefix != "v2/aplusb/version" {
+	if prefix != "v3/aplusb/version" {
 		t.Fatal("TestPublicFileKeyPrefix is differ", prefix)
 	}
 }
 
-func TestP(t *testing.T) {
+func TestPublicFileKey(t *testing.T) {
 	p := Problem{
 		Name:         "aplusb",
 		Version:      "version",
@@ -80,7 +80,20 @@ func TestP(t *testing.T) {
 	}
 
 	key := p.publicFileKey("key")
-	if key != "v2/aplusb/version/key" {
-		t.Fatal("TestPublicFileKey is differ", key)
+	if key != "v3/aplusb/version/key" {
+		t.Fatal("TestPublicFileKey is not expected", key)
+	}
+}
+
+func TestPublicTestCaseKey(t *testing.T) {
+	p := Problem{
+		Name:         "aplusb",
+		Version:      "version",
+		TestCaseHash: "hash",
+	}
+
+	key := p.publicTestCaseKey("in/example_00.in")
+	if key != "v3/aplusb/hash/in/example_00.in" {
+		t.Fatal("TestPublicTestCase is not expected", key)
 	}
 }

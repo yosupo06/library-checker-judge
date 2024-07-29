@@ -26,8 +26,15 @@ func (p Problem) UploadTestCases(ctx context.Context, c Client, tarGzPath string
 }
 
 func (p Problem) UploadPublicFile(ctx context.Context, c Client, localPath, key string) error {
-	remoteURL := p.publicFileKey(key)
-	slog.Info("Upload public file", "remote", remoteURL)
+	return p.uploadAsPublic(ctx, c, localPath, p.publicFileKey(key))
+}
+
+func (p Problem) UploadPublicTestCase(ctx context.Context, c Client, localPath, key string) error {
+	return p.uploadAsPublic(ctx, c, localPath, p.publicTestCaseKey(key))
+}
+
+func (p Problem) uploadAsPublic(ctx context.Context, c Client, localPath, remoteURL string) error {
+	slog.Info("Upload public file", "local", localPath, "remote", remoteURL)
 	if _, err := c.client.FPutObject(ctx, c.publicBucket, remoteURL, localPath, minio.PutObjectOptions{}); err != nil {
 		return err
 	}
@@ -35,11 +42,15 @@ func (p Problem) UploadPublicFile(ctx context.Context, c Client, localPath, key 
 }
 
 func (p Problem) testCasesKey() string {
-	return fmt.Sprintf("v2/%s/%s.tar.gz", p.Name, p.TestCaseHash)
+	return fmt.Sprintf("v3/%s/testcase/%s.tar.gz", p.Name, p.TestCaseHash)
+}
+
+func (p Problem) publicTestCaseKey(key string) string {
+	return fmt.Sprintf("v3/%s/testcase/%s/%s", p.Name, p.TestCaseHash, key)
 }
 
 func (p Problem) publicFileKeyPrefix() string {
-	return fmt.Sprintf("v2/%s/%s", p.Name, p.Version)
+	return fmt.Sprintf("v3/%s/files/%s", p.Name, p.Version)
 }
 
 func (p Problem) publicFileKey(key string) string {
