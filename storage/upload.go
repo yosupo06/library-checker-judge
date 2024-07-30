@@ -160,7 +160,7 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 	for _, ext := range []string{"in", "out"} {
 		if err := filepath.Walk(path.Join(p.Base, ext), func(fpath string, info fs.FileInfo, err error) error {
 			if strings.Contains(fpath, "example") {
-				if err := p.Problem.UploadPublicFile(context.Background(), client, fpath, path.Join(ext, path.Base(fpath))); err != nil {
+				if err := p.Problem.UploadPublicTestCase(context.Background(), client, fpath, path.Join(ext, path.Base(fpath))); err != nil {
 					return err
 				}
 			}
