@@ -27,13 +27,13 @@ import Statement, {
   useStatement,
 } from "../components/Statement";
 import { useLang } from "../contexts/LangContext";
-import urlJoin from "url-join";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 import NotFound from "./NotFound";
 import { Link as RouterLink } from "react-router-dom";
 import styled from "@emotion/styled";
 import { ProblemInfoToml } from "../utils/problem.info";
+import { ProblemVersion } from "../utils/problem.storage";
 
 const ProblemInfo: React.FC = () => {
   const { problemId } = useParams<"problemId">();
@@ -76,20 +76,21 @@ const ProblemInfo: React.FC = () => {
 };
 export default ProblemInfo;
 
+const baseURL = new URL(import.meta.env.VITE_PUBLIC_BUCKET_URL);
+
 const ProblemInfoBody: React.FC<{
   problemId: string;
   problemInfo: ProblemInfoResponse;
 }> = (props) => {
   const { problemId, problemInfo } = props;
 
-  const baseUrl = new URL(
-    urlJoin(
-      import.meta.env.VITE_PUBLIC_BUCKET_URL,
-      `${problemId}/${problemInfo.version}/`,
-    ),
-  );
+  const problemVersion = {
+    name: problemId,
+    version: problemInfo.version,
+    testCasesVersion: problemInfo.testcasesVersion,
+  };
 
-  const infoTomlQuery = useProblemInfoTomlQuery(baseUrl);
+  const infoTomlQuery = useProblemInfoTomlQuery(baseURL, problemVersion);
 
   if (infoTomlQuery.isLoading) {
     return (
@@ -122,7 +123,11 @@ const ProblemInfoBody: React.FC<{
       />
       <Divider />
 
-      <StatementBody baseUrl={baseUrl} infoToml={infoTomlQuery.data} />
+      <StatementBody
+        baseUrl={baseURL}
+        problemVersion={problemVersion}
+        infoToml={infoTomlQuery.data}
+      />
 
       <Divider
         sx={{
@@ -130,7 +135,7 @@ const ProblemInfoBody: React.FC<{
         }}
       />
 
-      <SolveHpp baseUrl={baseUrl} />
+      <SolveHpp baseUrl={baseURL} problemVersion={problemVersion} />
 
       <Divider
         sx={{
@@ -145,15 +150,16 @@ const ProblemInfoBody: React.FC<{
 
 export const StatementBody: React.FC<{
   baseUrl: URL;
+  problemVersion: ProblemVersion;
   infoToml: ProblemInfoToml;
 }> = (props) => {
-  const { baseUrl, infoToml } = props;
+  const { baseUrl, problemVersion, infoToml } = props;
 
   const lang = useLang();
 
-  const statement = useStatement(baseUrl);
+  const statement = useStatement(baseUrl, problemVersion);
 
-  const examples = useExamples(infoToml, baseUrl);
+  const examples = useExamples(infoToml, baseUrl, problemVersion);
 
   return (
     <Statement
@@ -222,10 +228,13 @@ const UsefulLinks: React.FC<{
   );
 };
 
-const SolveHpp: React.FC<{ baseUrl: URL }> = (props) => {
-  const { baseUrl } = props;
+const SolveHpp: React.FC<{
+  baseUrl: URL;
+  problemVersion: ProblemVersion;
+}> = (props) => {
+  const { baseUrl, problemVersion } = props;
 
-  const solveHppQuery = useSolveHpp(baseUrl);
+  const solveHppQuery = useSolveHpp(baseUrl, problemVersion);
 
   return (
     <Box>

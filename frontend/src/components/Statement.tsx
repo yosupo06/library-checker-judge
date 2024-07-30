@@ -5,6 +5,14 @@ import { StatementData, useStatementParser } from "../utils/statement.parser";
 import KatexRender from "../components/katex/KatexRender";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { ProblemInfoToml, parseProblemInfoToml } from "../utils/problem.info";
+import {
+  ProblemVersion,
+  inFileURL,
+  infoURL,
+  outFileURL,
+  solveHppURL,
+  taskURL,
+} from "../utils/problem.storage";
 
 const Statement: React.FC<{
   lang: Lang;
@@ -39,11 +47,15 @@ const Statement: React.FC<{
 
 export default Statement;
 
-export const useProblemInfoTomlQuery = (baseUrl: URL) => {
+export const useProblemInfoTomlQuery = (
+  baseURL: URL,
+  problemVersion: ProblemVersion,
+) => {
+  const url = infoURL(baseURL, problemVersion);
   const infoTomlQuery = useQuery(
-    ["statement", baseUrl.href, "info.toml"],
+    ["statement", baseURL.href, "info.toml"],
     async () =>
-      fetch(new URL("info.toml", baseUrl.href)).then((r) => {
+      fetch(url).then((r) => {
         if (r.status == 200) {
           return r.text();
         } else {
@@ -53,15 +65,16 @@ export const useProblemInfoTomlQuery = (baseUrl: URL) => {
   );
 
   return useQuery({
-    queryKey: ["statement", baseUrl.href, "parse-info"],
+    queryKey: ["statement", baseURL.href, "parse-info"],
     queryFn: () => parseProblemInfoToml(infoTomlQuery.data ?? ""),
     enabled: infoTomlQuery.isSuccess,
   });
 };
 
-export const useStatement = (baseUrl: URL) => {
-  return useQuery(["statement", baseUrl.href, "task.md"], () =>
-    fetch(new URL("task.md", baseUrl.href)).then((r) => {
+export const useStatement = (baseURL: URL, problemVersion: ProblemVersion) => {
+  const url = taskURL(baseURL, problemVersion);
+  return useQuery(["statement", baseURL.href, "task.md"], () =>
+    fetch(url).then((r) => {
       if (r.status == 200) {
         return r.text();
       } else {
@@ -71,9 +84,10 @@ export const useStatement = (baseUrl: URL) => {
   );
 };
 
-export const useSolveHpp = (baseUrl: URL) => {
-  return useQuery(["statement", baseUrl.href, "solve.hpp"], () =>
-    fetch(new URL("grader/solve.hpp", baseUrl.href)).then((r) => {
+export const useSolveHpp = (baseURL: URL, problemVersion: ProblemVersion) => {
+  const url = solveHppURL(baseURL, problemVersion);
+  return useQuery(["statement", baseURL.href, "solve.hpp"], () =>
+    fetch(url).then((r) => {
       if (r.status == 200) {
         return r.text();
       } else if (r.status == 404) {
@@ -83,7 +97,11 @@ export const useSolveHpp = (baseUrl: URL) => {
   );
 };
 
-export const useExamples = (info: ProblemInfoToml, baseUrl: URL) => {
+export const useExamples = (
+  info: ProblemInfoToml,
+  baseURL: URL,
+  problemVersion: ProblemVersion,
+) => {
   const exampleNumber = (() => {
     return info.tests.find((v) => v.name === "example.in")?.number ?? 0;
   })();
@@ -91,11 +109,11 @@ export const useExamples = (info: ProblemInfoToml, baseUrl: URL) => {
   const examples = Array.from(Array(exampleNumber), (_, k) => `example_0${k}`);
   const inExampleQueries = useQueries({
     queries: examples.map((name) => {
-      const inName = `in/${name}.in`;
+      const url = inFileURL(baseURL, problemVersion, name);
       return {
-        queryKey: [baseUrl.href, inName],
+        queryKey: [baseURL.href, "in", name],
         queryFn: () =>
-          fetch(new URL(inName, baseUrl.href)).then((r) => {
+          fetch(url).then((r) => {
             if (r.status == 200) {
               return r.text();
             } else {
@@ -107,11 +125,11 @@ export const useExamples = (info: ProblemInfoToml, baseUrl: URL) => {
   });
   const outExampleQueries = useQueries({
     queries: examples.map((name) => {
-      const outName = `out/${name}.out`;
+      const url = outFileURL(baseURL, problemVersion, name);
       return {
-        queryKey: [baseUrl.href, outName],
+        queryKey: [baseURL.href, "out", name],
         queryFn: () =>
-          fetch(new URL(outName, baseUrl.href)).then((r) => {
+          fetch(url).then((r) => {
             if (r.status == 200) {
               return r.text();
             } else {
