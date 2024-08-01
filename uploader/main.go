@@ -65,7 +65,7 @@ func main() {
 		}
 		name := target.Problem.Name
 		v := target.Problem.Version
-		h := target.Problem.TestCaseHash
+		h := target.Problem.TestCaseVersion
 		slog.Info("Problem info", "name", name, "version", v, "hash", h)
 
 		// fetch problem info from database
@@ -80,14 +80,16 @@ func main() {
 			slog.Error("Failed to fetch problem", "err", err)
 			os.Exit(1)
 		}
-		versionUpdated := (v != dbP.Version)
-		testcaseUpdated := (h != dbP.TestCasesVersion)
 
+		// parse info.toml
 		info, err := storage.ParseInfo(t)
 		if err != nil {
 			slog.Error("Failed to parse info.toml", "err", err)
 			os.Exit(1)
 		}
+
+		versionUpdated := (v != dbP.Version)
+		testcaseUpdated := (h != dbP.TestCasesVersion)
 
 		// update problem fields
 		dbP.Title = info.Title

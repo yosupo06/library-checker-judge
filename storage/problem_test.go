@@ -48,9 +48,9 @@ func TestParseInfo(t *testing.T) {
 
 func TestTestCasesKey(t *testing.T) {
 	p := Problem{
-		Name:         "aplusb",
-		Version:      "version",
-		TestCaseHash: "hash",
+		Name:            "aplusb",
+		Version:         "version",
+		TestCaseVersion: "hash",
 	}
 
 	key := p.testCasesKey()
@@ -61,9 +61,9 @@ func TestTestCasesKey(t *testing.T) {
 
 func TestPublicFileKeyPrefix(t *testing.T) {
 	p := Problem{
-		Name:         "aplusb",
-		Version:      "version",
-		TestCaseHash: "hash",
+		Name:            "aplusb",
+		Version:         "version",
+		TestCaseVersion: "hash",
 	}
 
 	prefix := p.publicFileKeyPrefix()
@@ -74,9 +74,9 @@ func TestPublicFileKeyPrefix(t *testing.T) {
 
 func TestPublicFileKey(t *testing.T) {
 	p := Problem{
-		Name:         "aplusb",
-		Version:      "version",
-		TestCaseHash: "hash",
+		Name:            "aplusb",
+		Version:         "version",
+		TestCaseVersion: "hash",
 	}
 
 	key := p.publicFileKey("key")
@@ -87,9 +87,9 @@ func TestPublicFileKey(t *testing.T) {
 
 func TestPublicTestCaseKey(t *testing.T) {
 	p := Problem{
-		Name:         "aplusb",
-		Version:      "version",
-		TestCaseHash: "hash",
+		Name:            "aplusb",
+		Version:         "version",
+		TestCaseVersion: "hash",
 	}
 
 	key := p.publicTestCaseKey("in/example_00.in")

@@ -28,9 +28,9 @@ func execHackTask(db *gorm.DB, downloader storage.TestCaseDownloader, taskID int
 		return fmt.Errorf("unknown language: %v", lang)
 	}
 	p := storage.Problem{
-		Name:         s.Problem.Name,
-		Version:      s.Problem.Version,
-		TestCaseHash: s.Problem.TestCasesVersion,
+		Name:            s.Problem.Name,
+		Version:         s.Problem.Version,
+		TestCaseVersion: s.Problem.TestCasesVersion,
 	}
 	files, err := downloader.Fetch(p)
 	if err != nil {
@@ -71,11 +71,19 @@ type HackTaskData struct {
 }
 
 func (data *HackTaskData) judge() error {
-	slog.Info("Compile checker")
-	data.h.Status = "Compiling"
-	if err := data.updateHack(); err != nil {
+	if err := data.updateHackStatus("Compiling"); err != nil {
 		return err
 	}
+	slog.Info("Compile source")
+	sourceVolume, taskResult, err := data.compileSource()
+	if err != nil {
+		return err
+	}
+	defer sourceVolume.Remove()
+	if taskResult.ExitCode != 0 {
+		return data.updateHackStatus("CE")
+	}
+	slog.Info("Compile checker")
 	checkerVolume, taskResult, err := compileChecker(data.files)
 	if err != nil {
 		return err
@@ -84,13 +92,18 @@ func (data *HackTaskData) judge() error {
 	if taskResult.ExitCode != 0 {
 		return data.updateHackStatus("ICE")
 	}
-
-	// compile solution
+	slog.Info("Compile solution")
 	solutionVolume, err := data.compileSolution()
 	if err != nil {
 		return err
 	}
 	defer solutionVolume.Remove()
+	slog.Info("Compile verifier")
+	verifierVolume, err := data.compileVerifier()
+	if err != nil {
+		return err
+	}
+	defer verifierVolume.Remove()
 
 	// write input to tempfle
 	tempFile, err := os.CreateTemp("", "")
@@ -103,22 +116,28 @@ func (data *HackTaskData) judge() error {
 	tempFile.Close()
 	inFilePath := tempFile.Name()
 
+	slog.Info("Verify input")
+	if err := data.updateHackStatus("Verifying"); err != nil {
+		return err
+	}
+	path, r, err := runSource(verifierVolume, langs.LANG_VERIFIER, VERIFIER_TIMEOUT.Seconds(), inFilePath)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(path); err != nil {
+		return err
+	}
+	if r.ExitCode != 0 {
+		data.h.CheckerOut = r.Stderr
+		return data.updateHackStatus("Invalid")
+	}
+
 	slog.Info("Generate model output")
 	expectedFilePath, err := data.runModelSolution(solutionVolume, inFilePath)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(expectedFilePath)
-
-	slog.Info("Compile source")
-	sourceVolume, taskResult, err := data.compileSource()
-	if err != nil {
-		return err
-	}
-	defer sourceVolume.Remove()
-	if taskResult.ExitCode != 0 {
-		return data.updateHackStatus("CE")
-	}
 
 	slog.Info("Start executing")
 	result, err := testCase(sourceVolume, checkerVolume, data.lang, data.info.TimeLimit, inFilePath, expectedFilePath)
@@ -134,6 +153,26 @@ func (data *HackTaskData) judge() error {
 	return data.updateHack()
 }
 
+func (data *HackTaskData) compileSource() (Volume, TaskResult, error) {
+	// write source to tempfile
+	sourceDir, err := os.MkdirTemp("", "source")
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	defer os.RemoveAll(sourceDir)
+
+	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	if _, err := sourceFile.WriteString(data.h.Submission.Source); err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	sourceFile.Close()
+
+	return compileSource(data.files, sourceFile.Name(), data.lang)
+}
+
 func (data *HackTaskData) compileSolution() (Volume, error) {
 	slog.Info("Compile solution")
 	v, r, err := compileSolution(data.files)
@@ -145,6 +184,21 @@ func (data *HackTaskData) compileSolution() (Volume, error) {
 			return Volume{}, err
 		}
 		return Volume{}, fmt.Errorf("compile failed of model solution")
+	}
+	return v, nil
+}
+
+func (data *HackTaskData) compileVerifier() (Volume, error) {
+	slog.Info("Compile verifier")
+	v, r, err := compileVerifier(data.files)
+	if err != nil {
+		return Volume{}, err
+	}
+	if r.ExitCode != 0 {
+		if err := v.Remove(); err != nil {
+			return Volume{}, err
+		}
+		return Volume{}, fmt.Errorf("compile failed of verifier")
 	}
 	return v, nil
 }
@@ -169,7 +223,7 @@ func (data *HackTaskData) updateHackStatus(status string) error {
 	if err := database.TouchTask(data.db, data.taskID); err != nil {
 		return err
 	}
-	if err := database.UpdateSubmissionStatus(data.db, data.h.ID, status); err != nil {
+	if err := database.UpdateHack(data.db, data.h); err != nil {
 		return err
 	}
 	return nil
@@ -183,24 +237,4 @@ func (data *HackTaskData) updateHack() error {
 		return err
 	}
 	return nil
-}
-
-func (data *HackTaskData) compileSource() (Volume, TaskResult, error) {
-	// write source to tempfile
-	sourceDir, err := os.MkdirTemp("", "source")
-	if err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-	defer os.RemoveAll(sourceDir)
-
-	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
-	if err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-	if _, err := sourceFile.WriteString(data.h.Submission.Source); err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-	sourceFile.Close()
-
-	return compileSource(data.files, sourceFile.Name(), data.lang)
 }

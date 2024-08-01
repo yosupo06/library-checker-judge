@@ -27,9 +27,9 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 	}
 
 	problem := storage.Problem{
-		Name:         s.Problem.Name,
-		Version:      s.Problem.Version,
-		TestCaseHash: s.Problem.TestCasesVersion,
+		Name:            s.Problem.Name,
+		Version:         s.Problem.Version,
+		TestCaseVersion: s.Problem.TestCasesVersion,
 	}
 	files, err := downloader.Fetch(problem)
 	if err != nil {

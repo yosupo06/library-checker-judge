@@ -57,10 +57,10 @@ func (t TestCaseDownloader) Fetch(problem Problem) (ProblemFiles, error) {
 }
 
 func (t TestCaseDownloader) fetchTestCases(problem Problem) (string, error) {
-	slog.Info("Download test cases", "name", problem.Name, "hash", problem.TestCaseHash)
+	slog.Info("Download test cases", "name", problem.Name, "hash", problem.TestCaseVersion)
 
-	tarGzPath := path.Join(t.localDir, problem.TestCaseHash+".tar.gz")
-	localDir := path.Join(t.localDir, problem.TestCaseHash)
+	tarGzPath := path.Join(t.localDir, problem.TestCaseVersion+".tar.gz")
+	localDir := path.Join(t.localDir, problem.TestCaseVersion)
 	key := problem.testCasesKey()
 
 	if _, err := os.Stat(tarGzPath); err != nil {
@@ -100,6 +100,10 @@ func (t TestCaseDownloader) fetchPublicFiles(problem Problem) (string, error) {
 
 func (p ProblemFiles) PublicFilePath(key string) string {
 	return path.Join(p.PublicFiles, key)
+}
+
+func (p ProblemFiles) VerifierPath() string {
+	return p.PublicFilePath("verifier.cpp")
 }
 
 func (p ProblemFiles) CheckerPath() string {
