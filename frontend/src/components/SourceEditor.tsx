@@ -2,13 +2,14 @@ import "katex/dist/katex.min.css";
 import React, { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { editor } from "monaco-editor";
+import { Box } from "@mui/material";
 
 interface Props {
   value: string;
   language?: string;
   onChange?: (value: string) => void;
   readOnly: boolean;
-  autoHeight: boolean;
+  height?: number;
 }
 
 const editorMode = (lang?: string) => {
@@ -48,45 +49,48 @@ const editorMode = (lang?: string) => {
   return "plaintext";
 };
 
+const MIN_EDITOR_HEIGHT = 100;
+
 const SourceEditor: React.FC<Props> = (props) => {
-  const minHeight = 100;
-  const { value, language, onChange, readOnly, autoHeight } = props;
-  const [editorHeight, setEditorHeight] = useState(minHeight);
+  const { value, language, onChange, readOnly, height } = props;
+  const [editorHeight, setEditorHeight] = useState(height ?? MIN_EDITOR_HEIGHT);
 
   const mode = editorMode(language);
 
   const updateHeight = (editor: editor.IStandaloneCodeEditor) => {
-    if (autoHeight) {
-      setEditorHeight(Math.max(minHeight, editor.getContentHeight()));
+    if (height === undefined) {
+      setEditorHeight(Math.max(MIN_EDITOR_HEIGHT, editor.getContentHeight()));
     }
   };
 
   return (
-    <Editor
-      value={value}
-      language={mode}
-      height={autoHeight ? editorHeight : undefined}
-      onChange={(src) => {
-        if (src !== undefined && onChange) onChange(src);
-      }}
-      onMount={(editor) => {
-        editor.onDidContentSizeChange(() => {
+    <Box sx={{ width: "auto" }}>
+      <Editor
+        value={value}
+        language={mode}
+        height={editorHeight}
+        onChange={(src) => {
+          if (src !== undefined && onChange) onChange(src);
+        }}
+        onMount={(editor) => {
+          editor.onDidContentSizeChange(() => {
+            updateHeight(editor);
+          });
           updateHeight(editor);
-        });
-        updateHeight(editor);
-      }}
-      options={{
-        readOnly: readOnly,
-        scrollBeyondLastColumn: 0,
-        scrollBeyondLastLine: false,
-        minimap: {
-          enabled: false,
-        },
-        scrollbar: {
-          alwaysConsumeMouseWheel: false,
-        },
-      }}
-    />
+        }}
+        options={{
+          readOnly: readOnly,
+          scrollBeyondLastColumn: 0,
+          scrollBeyondLastLine: false,
+          minimap: {
+            enabled: false,
+          },
+          scrollbar: {
+            alwaysConsumeMouseWheel: false,
+          },
+        }}
+      />
+    </Box>
   );
 };
 

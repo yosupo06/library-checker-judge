@@ -117,12 +117,7 @@ const SubmissionInfoBody: React.FC<{
         }}
       />
       <Paper>
-        <SourceEditor
-          value={info.source}
-          language={lang}
-          readOnly={true}
-          autoHeight={true}
-        />
+        <SourceEditor value={info.source} language={lang} readOnly={true} />
       </Paper>
     </Box>
   );

@@ -21,9 +21,6 @@ const HackInfo: React.FC = () => {
   if (hackInfoQuery.isLoading) {
     return (
       <Container>
-        <Typography variant="h2" paragraph={true}>
-          Hack #{ID}
-        </Typography>
         <CircularProgress />
       </Container>
     );
@@ -32,9 +29,6 @@ const HackInfo: React.FC = () => {
   if (hackInfoQuery.isError) {
     return (
       <Container>
-        <Typography variant="h2" paragraph={true}>
-          Hack #{ID}
-        </Typography>
         <Alert severity="error">
           {(hackInfoQuery.error as RpcError).toString()}
         </Alert>
