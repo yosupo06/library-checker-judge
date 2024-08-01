@@ -53,7 +53,7 @@ export const useProblemInfoTomlQuery = (
 ) => {
   const url = infoURL(baseURL, problemVersion);
   const infoTomlQuery = useQuery(
-    ["statement", baseURL.href, "info.toml"],
+    ["statement", problemVersion, "info.toml"],
     async () =>
       fetch(url).then((r) => {
         if (r.status == 200) {
@@ -65,7 +65,7 @@ export const useProblemInfoTomlQuery = (
   );
 
   return useQuery({
-    queryKey: ["statement", baseURL.href, "parse-info"],
+    queryKey: ["statement", problemVersion, "parse-info"],
     queryFn: () => parseProblemInfoToml(infoTomlQuery.data ?? ""),
     enabled: infoTomlQuery.isSuccess,
   });
@@ -73,7 +73,7 @@ export const useProblemInfoTomlQuery = (
 
 export const useStatement = (baseURL: URL, problemVersion: ProblemVersion) => {
   const url = taskURL(baseURL, problemVersion);
-  return useQuery(["statement", baseURL.href, "task.md"], () =>
+  return useQuery(["statement", problemVersion, "task.md"], () =>
     fetch(url).then((r) => {
       if (r.status == 200) {
         return r.text();
@@ -86,7 +86,7 @@ export const useStatement = (baseURL: URL, problemVersion: ProblemVersion) => {
 
 export const useSolveHpp = (baseURL: URL, problemVersion: ProblemVersion) => {
   const url = solveHppURL(baseURL, problemVersion);
-  return useQuery(["statement", baseURL.href, "solve.hpp"], () =>
+  return useQuery(["statement", problemVersion, "solve.hpp"], () =>
     fetch(url).then((r) => {
       if (r.status == 200) {
         return r.text();
@@ -111,7 +111,7 @@ export const useExamples = (
     queries: examples.map((name) => {
       const url = inFileURL(baseURL, problemVersion, name);
       return {
-        queryKey: [baseURL.href, "in", name],
+        queryKey: [problemVersion, "in", name],
         queryFn: () =>
           fetch(url).then((r) => {
             if (r.status == 200) {
@@ -127,7 +127,7 @@ export const useExamples = (
     queries: examples.map((name) => {
       const url = outFileURL(baseURL, problemVersion, name);
       return {
-        queryKey: [baseURL.href, "out", name],
+        queryKey: [problemVersion, "out", name],
         queryFn: () =>
           fetch(url).then((r) => {
             if (r.status == 200) {
