@@ -22,6 +22,12 @@ func (s *server) Hack(ctx context.Context, in *pb.HackRequest) (*pb.HackResponse
 	currentUserName := s.currentUserName(ctx)
 	currentUser, _ := database.FetchUserFromName(s.db, currentUserName)
 
+	submission := in.GetSubmission()
+
+	if _, err := database.FetchSubmission(s.db, submission); err != nil {
+		return nil, err
+	}
+
 	name := ""
 	if currentUser != nil {
 		name = currentUser.Name
@@ -29,9 +35,10 @@ func (s *server) Hack(ctx context.Context, in *pb.HackRequest) (*pb.HackResponse
 
 	h := database.Hack{
 		HackTime:     time.Now(),
-		SubmissionID: in.GetSubmission(),
+		SubmissionID: submission,
 		TestCase:     in.GetTestCase(),
 		UserName:     sql.NullString{String: name, Valid: name != ""},
+		Status:       "WJ",
 	}
 
 	id, err := database.SaveHack(s.db, h)

@@ -27,11 +27,16 @@ var LANG_CHECKER = Lang{
 	Compile:   []string{"g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "checker", "checker.cpp"},
 	Exec:      []string{"./checker", "input.in", "actual.out", "expect.out"},
 }
+var LANG_VERIFIER = Lang{
+	Source:    "verifier.cpp",
+	ImageName: "library-checker-images-gcc",
+	Compile:   []string{"g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "verifier", "verifier.cpp"},
+	Exec:      []string{"./verifier"},
+}
+var LANG_SOLUTION Lang
 
 //go:embed langs.toml
 var langToml string
-
-var LANG_SOLUTION Lang
 
 func init() {
 	var data struct {

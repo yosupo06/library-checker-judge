@@ -65,6 +65,11 @@ func fileInfos(base, root string) []FileInfo {
 		},
 		{
 			base:     base,
+			path:     path.Join("verifier.cpp"),
+			required: true,
+		},
+		{
+			base:     base,
 			path:     path.Join("params.h"),
 			required: true,
 		},
@@ -100,9 +105,9 @@ func NewUploadTarget(base, root string) (UploadTarget, error) {
 		Root: root,
 		Base: base,
 		Problem: Problem{
-			Name:         path.Base(base),
-			TestCaseHash: h,
-			Version:      v,
+			Name:            path.Base(base),
+			TestCaseVersion: h,
+			Version:         v,
 		},
 	}, nil
 }

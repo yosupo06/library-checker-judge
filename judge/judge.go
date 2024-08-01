@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	COMPILE_TIMEOUT = 30 * time.Second
-	CHECKER_TIMEOUT = 30 * time.Second
+	COMPILE_TIMEOUT  = 30 * time.Second
+	CHECKER_TIMEOUT  = 30 * time.Second
+	VERIFIER_TIMEOUT = 30 * time.Second
 )
 
 var DEFAULT_OPTIONS []TaskInfoOption
@@ -65,7 +66,20 @@ func compileChecker(dir storage.ProblemFiles) (Volume, TaskResult, error) {
 		return Volume{}, TaskResult{}, err
 	}
 
-	v, t, err := compile(dir.CheckerPath(), langs.LANG_CHECKER.Source, includeFiles, langs.LANG_CHECKER.ImageName, langs.LANG_CHECKER.Compile)
+	v, t, err := compile(dir.CheckerPath(), includeFiles, langs.LANG_CHECKER)
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+	return v, t, nil
+}
+
+func compileVerifier(dir storage.ProblemFiles) (Volume, TaskResult, error) {
+	includeFiles, err := dir.IncludeFilePaths()
+	if err != nil {
+		return Volume{}, TaskResult{}, err
+	}
+
+	v, t, err := compile(dir.VerifierPath(), includeFiles, langs.LANG_VERIFIER)
 	if err != nil {
 		return Volume{}, TaskResult{}, err
 	}
@@ -73,7 +87,7 @@ func compileChecker(dir storage.ProblemFiles) (Volume, TaskResult, error) {
 }
 
 func compileSolution(dir storage.ProblemFiles) (Volume, TaskResult, error) {
-	v, t, err := compile(dir.SolutionPath(), langs.LANG_SOLUTION.Source, []string{}, langs.LANG_SOLUTION.ImageName, langs.LANG_SOLUTION.Compile)
+	v, t, err := compile(dir.SolutionPath(), []string{}, langs.LANG_SOLUTION)
 	if err != nil {
 		return Volume{}, TaskResult{}, err
 	}
@@ -85,15 +99,15 @@ func compileSource(dir storage.ProblemFiles, sourcePath string, lang langs.Lang)
 	for _, key := range lang.AdditionalFiles {
 		paths = append(paths, dir.PublicFilePath(key))
 	}
-	v, t, err := compile(sourcePath, lang.Source, paths, lang.ImageName, lang.Compile)
+	v, t, err := compile(sourcePath, paths, lang)
 	if err != nil {
 		return Volume{}, TaskResult{}, err
 	}
 	return v, t, err
 }
 
-func compile(srcPath, srcName string, includePaths []string, imageName string, cmd []string) (v Volume, t TaskResult, err error) {
-	log.Println("Compile:", srcPath, imageName, cmd)
+func compile(srcPath string, includePaths []string, lang langs.Lang) (v Volume, t TaskResult, err error) {
+	log.Println("Compile:", srcPath, lang)
 	v, err = CreateVolume()
 	if err != nil {
 		return
@@ -106,7 +120,7 @@ func compile(srcPath, srcName string, includePaths []string, imageName string, c
 		}
 	}()
 
-	if err = v.CopyFile(srcPath, srcName); err != nil {
+	if err = v.CopyFile(srcPath, lang.Source); err != nil {
 		return
 	}
 	for _, p := range includePaths {
@@ -121,9 +135,9 @@ func compile(srcPath, srcName string, includePaths []string, imageName string, c
 		}
 	}
 
-	ti, err := NewTaskInfo(imageName, append(
+	ti, err := NewTaskInfo(lang.ImageName, append(
 		DEFAULT_OPTIONS,
-		WithArguments(cmd...),
+		WithArguments(lang.Compile...),
 		WithWorkDir("/workdir"),
 		WithVolume(&v, "/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),

@@ -11,9 +11,9 @@ import (
 )
 
 type Problem struct {
-	Name         string
-	Version      string
-	TestCaseHash string
+	Name            string
+	Version         string
+	TestCaseVersion string
 }
 
 func (p Problem) UploadTestCases(ctx context.Context, c Client, tarGzPath string) error {
@@ -42,11 +42,15 @@ func (p Problem) uploadAsPublic(ctx context.Context, c Client, localPath, remote
 }
 
 func (p Problem) testCasesKey() string {
-	return fmt.Sprintf("v3/%s/testcase/%s.tar.gz", p.Name, p.TestCaseHash)
+	return fmt.Sprintf("%s.tar.gz", p.testCaseKeyPrefix())
 }
 
 func (p Problem) publicTestCaseKey(key string) string {
-	return fmt.Sprintf("v3/%s/testcase/%s/%s", p.Name, p.TestCaseHash, key)
+	return fmt.Sprintf("%s/%s", p.testCaseKeyPrefix(), key)
+}
+
+func (p Problem) testCaseKeyPrefix() string {
+	return fmt.Sprintf("v3/%s/testcase/%s", p.Name, p.TestCaseVersion)
 }
 
 func (p Problem) publicFileKeyPrefix() string {
