@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import SourceEditor from "../components/SourceEditor";
 import { useHackMutation } from "../api/client_wrapper";
 import { Container, FormControl, TextField } from "@mui/material";
+import { refactorTestCase } from "../utils/hack";
 
 const Hack: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Hack: React.FC = () => {
     e.preventDefault();
     mutation.mutate({
       submission: parseInt(submissionId),
-      testCase: new TextEncoder().encode(testCase),
+      testCase: new TextEncoder().encode(refactorTestCase(testCase)),
     });
   };
 
