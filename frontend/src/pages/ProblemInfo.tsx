@@ -251,7 +251,6 @@ const SolveHpp: React.FC<{
             value={solveHppQuery.data}
             language="cpp"
             readOnly={true}
-            autoHeight={true}
           />
         </>
       )}
@@ -317,12 +316,7 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
       </Typography>
 
       <form onSubmit={handleSubmit}>
-        <FormControl
-          sx={{
-            height: "400px",
-            width: "100%",
-          }}
-        >
+        <FormControl fullWidth>
           <SourceEditor
             value={source}
             language={progLang}
@@ -330,7 +324,7 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
               setSource(e);
             }}
             readOnly={false}
-            autoHeight={false}
+            height={400}
           />
         </FormControl>
         <FormControl>

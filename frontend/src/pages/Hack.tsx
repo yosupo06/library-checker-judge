@@ -4,7 +4,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SourceEditor from "../components/SourceEditor";
 import { useHackMutation } from "../api/client_wrapper";
-import { Container, FormControl, TextField } from "@mui/material";
+import {
+  Box,
+  Container,
+  FormControl,
+  Tab,
+  Tabs,
+  TextField,
+} from "@mui/material";
 import { refactorTestCase } from "../utils/hack";
 
 const Hack: React.FC = () => {
@@ -16,6 +23,7 @@ const Hack: React.FC = () => {
   });
   const [submissionId, setSubmissionId] = useState("");
   const [testCase, setTestCase] = useState("");
+  const [tabIndex, setTabIndex] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,11 +35,11 @@ const Hack: React.FC = () => {
 
   return (
     <Container>
-      <Typography variant="h4" paragraph={true}>
+      <Typography variant="h2" paragraph={true}>
         Hack
       </Typography>
 
-      <form onSubmit={handleSubmit}>
+      <Box component="form" onSubmit={handleSubmit}>
         <FormControl>
           <TextField
             label="Submission ID"
@@ -39,26 +47,41 @@ const Hack: React.FC = () => {
             onChange={(e) => setSubmissionId(e.target.value)}
           />
         </FormControl>
-        <FormControl
-          sx={{
-            height: "400px",
-            width: "100%",
-          }}
-        >
-          <SourceEditor
-            value={testCase}
-            language="txt"
-            onChange={(e) => {
-              setTestCase(e);
-            }}
-            readOnly={false}
-            autoHeight={false}
-          />
-        </FormControl>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs
+            value={tabIndex}
+            onChange={(_, newValue) => setTabIndex(newValue)}
+          >
+            <Tab label="Text" />
+            <Tab label="Generator" />
+          </Tabs>
+        </Box>
+
+        {tabIndex === 0 && (
+          <Box sx={{ p: 3 }}>
+            <Box>
+              <SourceEditor
+                value={testCase}
+                onChange={(e) => {
+                  setTestCase(e);
+                }}
+                readOnly={false}
+                height={600}
+              />
+            </Box>
+          </Box>
+        )}
+        {tabIndex === 1 && (
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h4" paragraph={true}>
+              TODO
+            </Typography>
+          </Box>
+        )}
         <Button color="primary" type="submit">
           Hack
         </Button>
-      </form>
+      </Box>
     </Container>
   );
 };

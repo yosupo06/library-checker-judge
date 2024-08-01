@@ -304,18 +304,13 @@ const EditorSide: React.FC<{
           <Typography variant="h4" paragraph={true}>
             task.md
           </Typography>
-          <Box
-            sx={{
-              height: "400px",
-              width: "100%",
-            }}
-          >
+          <Box>
             <SourceEditor
               value={data.statement}
               language="markdown"
               onChange={setStatement}
               readOnly={false}
-              autoHeight={false}
+              height={600}
             />
           </Box>
         </Box>
@@ -325,18 +320,13 @@ const EditorSide: React.FC<{
           <Typography variant="h4" paragraph={true}>
             info.toml
           </Typography>
-          <Box
-            sx={{
-              height: "400px",
-              width: "100%",
-            }}
-          >
+          <Box>
             <SourceEditor
               value={data.info}
               language="plaintext"
               onChange={setInfo}
               readOnly={false}
-              autoHeight={false}
+              height={600}
             />
           </Box>
         </Box>
