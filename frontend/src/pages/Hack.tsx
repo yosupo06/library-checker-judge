@@ -36,7 +36,7 @@ const Hack: React.FC = () => {
   return (
     <Container>
       <Typography variant="h2" paragraph={true}>
-        Hack
+        Hack (β)
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit}>
@@ -59,16 +59,17 @@ const Hack: React.FC = () => {
 
         {tabIndex === 0 && (
           <Box sx={{ p: 3 }}>
-            <Box>
-              <SourceEditor
-                value={testCase}
-                onChange={(e) => {
-                  setTestCase(e);
-                }}
-                readOnly={false}
-                height={600}
-              />
-            </Box>
+            <SourceEditor
+              value={testCase}
+              onChange={(e) => {
+                setTestCase(e);
+              }}
+              readOnly={false}
+              height={600}
+            />
+            <Typography variant="caption">
+              Max length: 1MiB(=2<sup>20</sup>Byte)
+            </Typography>
           </Box>
         )}
         {tabIndex === 1 && (
