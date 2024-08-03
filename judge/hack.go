@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -71,6 +73,19 @@ type HackTaskData struct {
 }
 
 func (data *HackTaskData) judge() error {
+	if err := data.updateHackStatus("Generating"); err != nil {
+		return err
+	}
+	inFilePath, err := data.generateTestCase()
+	if err != nil {
+		return err
+	}
+	if inFilePath == "" {
+		slog.Info("Failed to generate test case")
+		return nil
+	}
+	defer os.Remove(inFilePath)
+
 	if err := data.updateHackStatus("Compiling"); err != nil {
 		return err
 	}
@@ -105,17 +120,6 @@ func (data *HackTaskData) judge() error {
 	}
 	defer verifierVolume.Remove()
 
-	// write input to tempfle
-	tempFile, err := os.CreateTemp("", "")
-	if err != nil {
-		return err
-	}
-	if _, err := tempFile.Write(data.h.TestCase); err != nil {
-		return err
-	}
-	tempFile.Close()
-	inFilePath := tempFile.Name()
-
 	slog.Info("Verify input")
 	if err := data.updateHackStatus("Verifying"); err != nil {
 		return err
@@ -146,8 +150,8 @@ func (data *HackTaskData) judge() error {
 	}
 
 	data.h.Status = result.Status
-	data.h.Time = int32(result.Time.Milliseconds())
-	data.h.Memory = result.Memory
+	data.h.Time = sql.NullInt32{Valid: true, Int32: int32(result.Time.Milliseconds())}
+	data.h.Memory = sql.NullInt64{Valid: true, Int64: result.Memory}
 	data.h.Stderr = result.Stderr
 	data.h.CheckerOut = result.CheckerOut
 	return data.updateHack()
@@ -201,6 +205,55 @@ func (data *HackTaskData) compileVerifier() (Volume, error) {
 		return Volume{}, fmt.Errorf("compile failed of verifier")
 	}
 	return v, nil
+}
+
+func (data *HackTaskData) generateTestCase() (string, error) {
+	slog.Info("Generate TestCase")
+	if data.h.TestCaseCpp != nil {
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", err
+		}
+		if _, err := tempFile.Write(data.h.TestCaseCpp); err != nil {
+			return "", err
+		}
+		if err := tempFile.Close(); err != nil {
+			return "", err
+		}
+		defer os.Remove(tempFile.Name())
+
+		v, r, err := compileSource(data.files, tempFile.Name(), langs.LANG_GENERATOR)
+		if err != nil {
+			return "", err
+		}
+		if r.ExitCode != 0 {
+			return "", data.updateHackStatus("CE")
+		}
+		path, r, err := runGenerator(v)
+		if err != nil {
+			return "", err
+		}
+		if r.ExitCode != 0 {
+			return "", data.updateHackStatus("GE")
+		}
+
+		return path, nil
+	} else if data.h.TestCaseTxt != nil {
+		tempFile, err := os.CreateTemp("", "")
+		if err != nil {
+			return "", err
+		}
+		if _, err := tempFile.Write(data.h.TestCaseTxt); err != nil {
+			return "", err
+		}
+		if err := tempFile.Close(); err != nil {
+			return "", err
+		}
+		inFilePath := tempFile.Name()
+		return inFilePath, nil
+	} else {
+		return "", errors.New("data source is not found")
+	}
 }
 
 func (data *HackTaskData) runModelSolution(v Volume, inFilePath string) (string, error) {

@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	COMPILE_TIMEOUT  = 30 * time.Second
-	CHECKER_TIMEOUT  = 30 * time.Second
-	VERIFIER_TIMEOUT = 30 * time.Second
+	COMPILE_TIMEOUT   = 30 * time.Second
+	CHECKER_TIMEOUT   = 30 * time.Second
+	VERIFIER_TIMEOUT  = 30 * time.Second
+	GENERATOR_TIMEOUT = 10 * time.Second
 )
 
 var DEFAULT_OPTIONS []TaskInfoOption
@@ -273,4 +274,30 @@ func runChecker(volume Volume, inFilePath, expectFilePath, actualFilePath string
 	}
 
 	return checkerTaskInfo.Run()
+}
+
+func runGenerator(v Volume) (string, TaskResult, error) {
+	outFile, err := os.CreateTemp("", "")
+	if err != nil {
+		return "", TaskResult{}, err
+	}
+	defer outFile.Close()
+
+	ti, err := NewTaskInfo(langs.LANG_GENERATOR.ImageName, append(
+		DEFAULT_OPTIONS,
+		WithArguments(langs.LANG_GENERATOR.Exec...),
+		WithWorkDir("/workdir"),
+		WithTimeout(VERIFIER_TIMEOUT),
+		WithVolume(&v, "/workdir"),
+		WithStdout(outFile),
+	)...)
+	if err != nil {
+		return "", TaskResult{}, err
+	}
+
+	result, err := ti.Run()
+	if err != nil {
+		return "", TaskResult{}, err
+	}
+	return outFile.Name(), result, nil
 }
