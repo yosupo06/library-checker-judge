@@ -105,6 +105,7 @@ func TestUpdateHack(t *testing.T) {
 
 	hackID, err := SaveHack(db, Hack{
 		SubmissionID: subID,
+		TestCaseTxt:  []byte{},
 	})
 	if err != nil {
 		t.Fatal(err)
