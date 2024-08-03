@@ -182,29 +182,35 @@ message RejudgeResponse {
 // --- Hack ---
 
 message HackRequest {
-    optional int32 submission = 1; // submission id
-    optional bytes test_case = 2; // input
+    int32 submission = 1; // submission id
+    oneof test_case {
+        bytes txt = 2;
+        bytes cpp = 3;
+    }
 }
 message HackResponse {
-    optional int32 id = 1; // submission id
+    int32 id = 1; // submission id
 }
 
 message HackInfoRequest {
-    optional int32 id = 1; // submission id
+    int32 id = 1; // submission id
 }
 message HackInfoResponse {
-    optional HackOverview overview = 1;
-    optional bytes test_case = 2; // input
-    optional bytes checker_out = 3; // output of checker
+    HackOverview overview = 1;
+    oneof test_case {
+        bytes txt = 2;
+        bytes cpp = 3;
+    }
+    optional bytes checker_out = 4; // output of checker
 }
 
 message HackOverview {
-    optional int32 id = 1; // hack id
-    optional int32 submission_id = 2; // submission id
-    optional string status = 3; // "AC"
+    int32 id = 1; // hack id
+    int32 submission_id = 2; // submission id
+    string status = 3; // "AC"
     optional double time = 4; // 2.0 = 2 seconds
     optional int64 memory = 5; // x bytes
-    optional google.protobuf.Timestamp hack_time = 6;
+    google.protobuf.Timestamp hack_time = 6;
 }
 
 // --- Lang ---

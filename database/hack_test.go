@@ -24,6 +24,7 @@ func TestHack(t *testing.T) {
 
 	hackID, err := SaveHack(db, Hack{
 		SubmissionID: subID,
+		TestCaseCpp:  []byte{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -37,6 +38,42 @@ func TestHack(t *testing.T) {
 	}
 	if hack.Submission.ID != subID {
 		t.Fatal("hack.Submission.ID != subID", hack, subID)
+	}
+}
+
+func TestSave(t *testing.T) {
+	db := CreateTestDB(t)
+
+	createDummyProblem(t, db)
+
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
+		t.Fatal(err)
+	}
+
+	subID, err := SaveSubmission(db, Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: true, String: "user1"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := SaveHack(db, Hack{
+		SubmissionID: subID,
+	}); err == nil {
+		t.Fatal("success to save")
+	} else {
+		t.Log(err)
+	}
+
+	if _, err := SaveHack(db, Hack{
+		SubmissionID: subID,
+		TestCaseCpp:  []byte{},
+		TestCaseTxt:  []byte{},
+	}); err == nil {
+		t.Fatal("success to save")
+	} else {
+		t.Log(err)
 	}
 }
 

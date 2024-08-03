@@ -33,6 +33,12 @@ var LANG_VERIFIER = Lang{
 	Compile:   []string{"g++", "-O2", "-std=c++17", "-march=native", "-o", "verifier", "verifier.cpp"},
 	Exec:      []string{"./verifier"},
 }
+var LANG_GENERATOR = Lang{
+	Source:    "generator.cpp",
+	ImageName: "library-checker-images-gcc",
+	Compile:   []string{"g++", "-O2", "-std=c++17", "-march=native", "-o", "generator", "generator.cpp"},
+	Exec:      []string{"./generator", "0"},
+}
 var LANG_SOLUTION Lang
 
 //go:embed langs.toml
