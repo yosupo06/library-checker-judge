@@ -25,7 +25,7 @@ const Hack: React.FC = () => {
   const [testCaseTxt, setTestCaseTxt] = useState("");
   const [testCaseCpp, setTestCaseCpp] = useState("");
   const [tabIndex, setTabIndex] = useState(0);
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tabIndex === 0) {
@@ -34,7 +34,7 @@ const Hack: React.FC = () => {
         testCase: {
           oneofKind: "txt",
           txt: new TextEncoder().encode(refactorTestCase(testCaseTxt)),
-        }
+        },
       });
     } else {
       mutation.mutate({
@@ -42,7 +42,7 @@ const Hack: React.FC = () => {
         testCase: {
           oneofKind: "cpp",
           cpp: new TextEncoder().encode(refactorTestCase(testCaseCpp)),
-        }
+        },
       });
     }
   };

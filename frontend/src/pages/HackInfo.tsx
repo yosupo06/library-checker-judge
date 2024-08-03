@@ -77,7 +77,7 @@ const TestCase: React.FC<{
   info: HackInfoResponse;
 }> = (props) => {
   const { info } = props;
-  const testCase = info.testCase
+  const testCase = info.testCase;
 
   if (testCase.oneofKind === "txt") {
     return (
@@ -85,20 +85,20 @@ const TestCase: React.FC<{
         <Typography>TestCase</Typography>
         <pre>{new TextDecoder().decode(testCase.txt)}</pre>
       </>
-    )
+    );
   } else if (testCase.oneofKind === "cpp") {
     return (
       <>
         <Typography>TestCase</Typography>
         <pre>{new TextDecoder().decode(testCase.cpp)}</pre>
       </>
-    )
+    );
   } else {
     return (
       <>
         <Typography>TestCase</Typography>
         <pre>not found</pre>
       </>
-    )
+    );
   }
 };
