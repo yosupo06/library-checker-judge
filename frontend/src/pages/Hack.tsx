@@ -22,15 +22,29 @@ const Hack: React.FC = () => {
     },
   });
   const [submissionId, setSubmissionId] = useState("");
-  const [testCase, setTestCase] = useState("");
+  const [testCaseTxt, setTestCaseTxt] = useState("");
+  const [testCaseCpp, setTestCaseCpp] = useState("");
   const [tabIndex, setTabIndex] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate({
-      submission: parseInt(submissionId),
-      testCase: new TextEncoder().encode(refactorTestCase(testCase)),
-    });
+    if (tabIndex === 0) {
+      mutation.mutate({
+        submission: parseInt(submissionId),
+        testCase: {
+          oneofKind: "txt",
+          txt: new TextEncoder().encode(refactorTestCase(testCaseTxt)),
+        },
+      });
+    } else {
+      mutation.mutate({
+        submission: parseInt(submissionId),
+        testCase: {
+          oneofKind: "cpp",
+          cpp: new TextEncoder().encode(refactorTestCase(testCaseCpp)),
+        },
+      });
+    }
   };
 
   return (
@@ -60,9 +74,9 @@ const Hack: React.FC = () => {
         {tabIndex === 0 && (
           <Box sx={{ p: 3 }}>
             <SourceEditor
-              value={testCase}
+              value={testCaseTxt}
               onChange={(e) => {
-                setTestCase(e);
+                setTestCaseTxt(e);
               }}
               readOnly={false}
               height={600}
@@ -74,8 +88,17 @@ const Hack: React.FC = () => {
         )}
         {tabIndex === 1 && (
           <Box sx={{ p: 3 }}>
-            <Typography variant="h4" paragraph={true}>
-              TODO
+            <SourceEditor
+              value={testCaseCpp}
+              onChange={(e) => {
+                setTestCaseCpp(e);
+              }}
+              readOnly={false}
+              language="cpp"
+              height={600}
+            />
+            <Typography variant="caption">
+              Max length: 1MiB(=2<sup>20</sup>Byte)
             </Typography>
           </Box>
         )}
