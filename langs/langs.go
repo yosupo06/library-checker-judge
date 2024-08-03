@@ -24,13 +24,13 @@ var LANGS []Lang
 var LANG_CHECKER = Lang{
 	Source:    "checker.cpp",
 	ImageName: "library-checker-images-gcc",
-	Compile:   []string{"g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "checker", "checker.cpp"},
+	Compile:   []string{"g++", "-O2", "-std=c++17", "-march=native", "-o", "checker", "checker.cpp"},
 	Exec:      []string{"./checker", "input.in", "actual.out", "expect.out"},
 }
 var LANG_VERIFIER = Lang{
 	Source:    "verifier.cpp",
 	ImageName: "library-checker-images-gcc",
-	Compile:   []string{"g++", "-O2", "-std=c++14", "-DEVAL", "-march=native", "-o", "verifier", "verifier.cpp"},
+	Compile:   []string{"g++", "-O2", "-std=c++17", "-march=native", "-o", "verifier", "verifier.cpp"},
 	Exec:      []string{"./verifier"},
 }
 var LANG_SOLUTION Lang
