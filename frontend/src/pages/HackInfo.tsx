@@ -5,71 +5,118 @@ import { useParams } from "react-router-dom";
 import { useHackInfo } from "../api/client_wrapper";
 import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
-import { Alert, Container } from "@mui/material";
-import { HackInfoResponse } from "../proto/library_checker";
+import {
+  Alert,
+  Container,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
+import { HackInfoResponse, HackOverview } from "../proto/library_checker";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 const HackInfo: React.FC = () => {
-  const { ID } = useParams<"ID">();
-  if (!ID) {
+  const { id } = useParams<"id">();
+  if (!id) {
     throw new Error(`hack ID is not defined`);
   }
-  const hackInfoQuery = useHackInfo(parseInt(ID), {
+  if (Number.isNaN(parseInt(id))) {
+    throw new Error(`hack ID is not int`);
+  }
+  return (
+    <Container>
+      <Typography variant="h2" paragraph={true}>
+        Hack #{id}
+      </Typography>
+      <HackInfoBody id={parseInt(id)} />
+    </Container>
+  );
+};
+export default HackInfo;
+
+const HackInfoBody: React.FC<{
+  id: number;
+}> = (props) => {
+  const { id } = props;
+  const hackInfoQuery = useHackInfo(id, {
     refetchInterval: 1000,
   });
 
   if (hackInfoQuery.isLoading) {
     return (
-      <Container>
-        <Typography variant="h2" paragraph={true}>
-          Hack #{ID}
-        </Typography>
+      <Box>
         <CircularProgress />
-      </Container>
+      </Box>
     );
   }
 
   if (hackInfoQuery.isError) {
     return (
-      <Container>
-        <Typography variant="h2" paragraph={true}>
-          Hack #{ID}
-        </Typography>
+      <Box>
         <Alert severity="error">
           {(hackInfoQuery.error as RpcError).toString()}
         </Alert>
-      </Container>
+      </Box>
     );
   }
+
+  const info = hackInfoQuery.data;
+
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Hack #{ID}
-      </Typography>
-      <HackInfoBody info={hackInfoQuery.data} />
-    </Container>
+    <Box>
+      {info.overview && <OverView overview={info.overview} />}
+      <TestCase info={info} />
+      {info.stderr && (
+        <Box>
+          <Typography>Stderr</Typography>
+          <pre>{new TextDecoder().decode(info.stderr)}</pre>
+        </Box>
+      )}
+      {info.judgeOutput && (
+        <Box>
+          <Typography>Judge output</Typography>
+          <pre>{new TextDecoder().decode(info.judgeOutput)}</pre>
+        </Box>
+      )}
+    </Box>
   );
 };
 
-export default HackInfo;
-
-const HackInfoBody: React.FC<{
-  info: HackInfoResponse;
+const OverView: React.FC<{
+  overview: HackOverview;
 }> = (props) => {
-  const { info } = props;
+  const { overview } = props;
+
   return (
-    <Box>
-      <Typography>
-        Submission:{" "}
-        <Link href={`/submission/${info.overview?.submissionId}`}>
-          #{info.overview?.submissionId}
-        </Link>
-      </Typography>
-      <Typography>Status: {info.overview?.status}</Typography>
-      <TestCase info={info} />
-      <Typography>Checker output</Typography>
-      <pre>{new TextDecoder().decode(info.checkerOut)}</pre>
-    </Box>
+    <TableContainer>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Submission</TableCell>
+            <TableCell>Hacker</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Time</TableCell>
+            <TableCell>Memory</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <TableCell>
+              <Link href={`/submission/${overview.submissionId}`}>
+                #{overview.submissionId}
+              </Link>
+            </TableCell>
+            <TableCell>{overview.userName ?? "(Anonymous)"}</TableCell>
+            <TableCell>{overview.status}</TableCell>
+            <TableCell>{overview.time?.toString()}</TableCell>
+            <TableCell>{overview.memory?.toString()}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 };
 

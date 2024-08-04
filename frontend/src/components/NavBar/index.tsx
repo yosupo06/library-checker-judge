@@ -44,12 +44,12 @@ const NavBar: React.FC = () => {
   return (
     <>
       <AppBar position="static">
-        <Toolbar sx={{ display: { xs: "none", md: "flex" } }}>
+        <Toolbar key="bar-md" sx={{ display: { xs: "none", md: "flex" } }}>
           {title}
           <NavBarElements />
         </Toolbar>
 
-        <Toolbar sx={{ display: { xs: "flex", md: "none" } }}>
+        <Toolbar key="bar-xs" sx={{ display: { xs: "flex", md: "none" } }}>
           {title}
           <IconButton
             onClick={toggleDrawerOpen}
