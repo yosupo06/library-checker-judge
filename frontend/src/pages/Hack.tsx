@@ -48,7 +48,7 @@ const Hack: React.FC = () => {
       });
     }
   };
-  
+
   return (
     <Container>
       <Typography variant="h2" paragraph={true}>
