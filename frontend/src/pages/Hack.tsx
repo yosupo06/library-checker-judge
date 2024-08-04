@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import SourceEditor from "../components/SourceEditor";
 import { useHackMutation } from "../api/client_wrapper";
 import {
+  Alert,
   Box,
   Container,
   FormControl,
@@ -13,6 +14,7 @@ import {
   TextField,
 } from "@mui/material";
 import { refactorTestCase } from "../utils/hack";
+import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 const Hack: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +54,11 @@ const Hack: React.FC = () => {
       <Typography variant="h2" paragraph={true}>
         Hack (β)
       </Typography>
+
+      {mutation.isSuccess && <Alert severity="success">Hack submitted</Alert>}
+      {mutation.isError && (
+        <Alert severity="error">{(mutation.error as RpcError).message}</Alert>
+      )}
 
       <Box component="form" onSubmit={handleSubmit}>
         <FormControl>

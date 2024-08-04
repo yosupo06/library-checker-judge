@@ -93,7 +93,7 @@ function App(): JSX.Element {
                   element={<StatementViewer />}
                 />
                 <Route path="/hack" element={<Hack />} />
-                <Route path="/hack/:ID" element={<HackInfo />} />
+                <Route path="/hack/:id" element={<HackInfo />} />
                 <Route element={NotFound} />
               </Routes>
             </Box>
