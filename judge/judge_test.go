@@ -91,13 +91,13 @@ func testAplusB(t *testing.T, langID, srcName, inFilePath, outFilePath, expected
 	}
 	t.Cleanup(func() { checkerVolume.Remove() })
 
-	sourceVolume, sourceResult, err := compileSource(files, srcFile, lang)
+	sourceVolume, sourceResult, err := compile(files, srcFile, lang)
 	if err != nil || sourceResult.ExitCode != 0 {
 		t.Fatal("Error CompileSource", err)
 	}
 	t.Cleanup(func() { sourceVolume.Remove() })
 
-	result, err := testCase(sourceVolume, checkerVolume, lang, 2.0, files.InFilePath(DUMMY_CASE_NAME), files.OutFilePath(DUMMY_CASE_NAME))
+	result, err := runTestCase(sourceVolume, checkerVolume, lang, 2.0, files.InFilePath(DUMMY_CASE_NAME), files.OutFilePath(DUMMY_CASE_NAME))
 	if err != nil {
 		t.Fatal("Error to eval testCase", err)
 	}
@@ -198,7 +198,7 @@ func TestAplusBCE(t *testing.T) {
 	srcFile := toRealFile(src, lang.Source, t)
 	defer os.Remove(srcFile)
 
-	volume, result, err := compileSource(files, srcFile, lang)
+	volume, result, err := compile(files, srcFile, lang)
 	if err != nil {
 		t.Fatal("Failed CompileChecker", err, result)
 	}

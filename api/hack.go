@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	TEST_CASE_TXT_LENGTH_LIMIT = 256 * 1024
-	TEST_CASE_CPP_LENGTH_LIMIT = 256 * 1024
+	TEST_CASE_TXT_LENGTH_LIMIT = 1024 * 1024
+	TEST_CASE_CPP_LENGTH_LIMIT = 1024 * 1024
 )
 
 func (s *server) Hack(ctx context.Context, in *pb.HackRequest) (*pb.HackResponse, error) {
@@ -73,6 +73,9 @@ func (s *server) HackInfo(ctx context.Context, in *pb.HackInfoRequest) (*pb.Hack
 		Status:       h.Status,
 		HackTime:     toProtoTimestamp(h.HackTime),
 	}
+	if h.UserName.Valid {
+		overView.UserName = &h.UserName.String
+	}
 	if h.Time.Valid {
 		time := float64(h.Time.Int32) / 1000.0
 		overView.Time = &time
@@ -82,11 +85,20 @@ func (s *server) HackInfo(ctx context.Context, in *pb.HackInfoRequest) (*pb.Hack
 		overView.Memory = &memory
 	}
 	response := pb.HackInfoResponse{
-		Overview:   &overView,
-		CheckerOut: h.CheckerOut,
+		Overview:    &overView,
+		Stderr:      h.Stderr,
+		JudgeOutput: h.JudgeOutput,
 	}
-	response.TestCase = &pb.HackInfoResponse_Cpp{
-		Cpp: h.TestCaseCpp,
+	if h.TestCaseCpp != nil {
+		response.TestCase = &pb.HackInfoResponse_Cpp{
+			Cpp: h.TestCaseCpp,
+		}
 	}
+	if h.TestCaseTxt != nil {
+		response.TestCase = &pb.HackInfoResponse_Cpp{
+			Cpp: h.TestCaseTxt,
+		}
+	}
+
 	return &response, nil
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"log"
+	"log/slog"
 	"os"
 	"path"
 	"time"
@@ -12,19 +13,21 @@ import (
 )
 
 const (
-	COMPILE_TIMEOUT   = 30 * time.Second
-	CHECKER_TIMEOUT   = 30 * time.Second
-	VERIFIER_TIMEOUT  = 30 * time.Second
-	GENERATOR_TIMEOUT = 10 * time.Second
+	DEFAULT_PID_LIMIT       = 100
+	DEFAULT_MEMORY_LIMIT_MB = 1024
+	COMPILE_TIMEOUT         = 30 * time.Second
+	CHECKER_TIMEOUT         = 10 * time.Second
+	VERIFIER_TIMEOUT        = 10 * time.Second
+	GENERATOR_TIMEOUT       = 10 * time.Second
 )
 
 var DEFAULT_OPTIONS []TaskInfoOption
 
 func init() {
 	DEFAULT_OPTIONS = []TaskInfoOption{
-		WithPidsLimit(100),
+		WithPidsLimit(DEFAULT_PID_LIMIT),
 		WithStackLimitKB(-1),
-		WithMemoryLimitMB(1024),
+		WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
 	}
 	if c := os.Getenv("CGROUP_PARENT"); c != "" {
 		DEFAULT_OPTIONS = append(DEFAULT_OPTIONS, WithCgroupParent(c))
@@ -41,74 +44,31 @@ type CaseResult struct {
 	CheckerOut []byte
 }
 
-func AggregateResults(results []CaseResult) CaseResult {
-	ans := CaseResult{
-		Status: "AC",
-		Time:   0,
-		Memory: -1,
-	}
-	for _, res := range results {
-		if res.Status != "AC" {
-			ans.Status = res.Status
-		}
-		if ans.Time < res.Time {
-			ans.Time = res.Time
-		}
-		if ans.Memory < res.Memory {
-			ans.Memory = res.Memory
-		}
-	}
-	return ans
-}
-
 func compileChecker(dir storage.ProblemFiles) (Volume, TaskResult, error) {
-	includeFiles, err := dir.IncludeFilePaths()
-	if err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-
-	v, t, err := compile(dir.CheckerPath(), includeFiles, langs.LANG_CHECKER)
-	if err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-	return v, t, nil
+	return compile(dir, dir.CheckerPath(), langs.LANG_CHECKER)
 }
 
 func compileVerifier(dir storage.ProblemFiles) (Volume, TaskResult, error) {
-	includeFiles, err := dir.IncludeFilePaths()
-	if err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-
-	v, t, err := compile(dir.VerifierPath(), includeFiles, langs.LANG_VERIFIER)
-	if err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-	return v, t, nil
+	return compile(dir, dir.VerifierPath(), langs.LANG_VERIFIER)
 }
 
-func compileSolution(dir storage.ProblemFiles) (Volume, TaskResult, error) {
-	v, t, err := compile(dir.SolutionPath(), []string{}, langs.LANG_SOLUTION)
-	if err != nil {
-		return Volume{}, TaskResult{}, err
-	}
-	return v, t, err
+func compileModelSolution(dir storage.ProblemFiles) (Volume, TaskResult, error) {
+	return compile(dir, dir.SolutionPath(), langs.LANG_MODEL_SOLUTION)
 }
 
-func compileSource(dir storage.ProblemFiles, sourcePath string, lang langs.Lang) (Volume, TaskResult, error) {
+func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v Volume, t TaskResult, err error) {
+	slog.Info("Compile", "lang", l.ID, "src", srcPath)
+
 	paths := []string{}
-	for _, key := range lang.AdditionalFiles {
+	for _, key := range l.AdditionalFiles {
 		paths = append(paths, dir.PublicFilePath(key))
 	}
-	v, t, err := compile(sourcePath, paths, lang)
-	if err != nil {
+	if ps, err := dir.IncludeFilePaths(); err != nil {
 		return Volume{}, TaskResult{}, err
+	} else {
+		paths = append(paths, ps...)
 	}
-	return v, t, err
-}
 
-func compile(srcPath string, includePaths []string, lang langs.Lang) (v Volume, t TaskResult, err error) {
-	log.Println("Compile:", srcPath, lang)
 	v, err = CreateVolume()
 	if err != nil {
 		return
@@ -121,10 +81,10 @@ func compile(srcPath string, includePaths []string, lang langs.Lang) (v Volume, 
 		}
 	}()
 
-	if err = v.CopyFile(srcPath, lang.Source); err != nil {
+	if err = v.CopyFile(srcPath, l.Source); err != nil {
 		return
 	}
-	for _, p := range includePaths {
+	for _, p := range paths {
 		if _, err = os.Stat(p); err == nil {
 			if err = v.CopyFile(p, path.Base(p)); err != nil {
 				return
@@ -136,9 +96,9 @@ func compile(srcPath string, includePaths []string, lang langs.Lang) (v Volume, 
 		}
 	}
 
-	ti, err := NewTaskInfo(lang.ImageName, append(
+	ti, err := NewTaskInfo(l.ImageName, append(
 		DEFAULT_OPTIONS,
-		WithArguments(lang.Compile...),
+		WithArguments(l.Compile...),
 		WithWorkDir("/workdir"),
 		WithVolume(&v, "/workdir"),
 		WithTimeout(COMPILE_TIMEOUT),
@@ -150,7 +110,7 @@ func compile(srcPath string, includePaths []string, lang langs.Lang) (v Volume, 
 	return
 }
 
-func testCase(sourceVolume, checkerVolume Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {
+func runTestCase(sourceVolume, checkerVolume Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {
 	outFilePath, result, err := runSource(sourceVolume, lang, timeLimit, inFilePath)
 	if err != nil {
 		return CaseResult{}, err
