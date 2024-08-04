@@ -30,7 +30,7 @@ func main() {
 	}
 	defer downloader.Close()
 
-	slog.Info("Start Pooling")
+	slog.Info("Start pooling")
 	for {
 		taskID, taskData, err := database.PopTask(db)
 		if err != nil {

@@ -128,7 +128,7 @@ func (data *SubmissionTaskData) judge() error {
 		inFilePath := data.files.InFilePath(testCaseName)
 		expectFilePath := data.files.OutFilePath(testCaseName)
 
-		result, err := testCase(sourceVolume, checkerVolume, data.lang, info.TimeLimit, inFilePath, expectFilePath)
+		result, err := runTestCase(sourceVolume, checkerVolume, data.lang, info.TimeLimit, inFilePath, expectFilePath)
 		if err != nil {
 			return err
 		}
@@ -193,5 +193,25 @@ func (data *SubmissionTaskData) compileSource() (Volume, TaskResult, error) {
 	}
 	sourceFile.Close()
 
-	return compileSource(data.files, sourceFile.Name(), data.lang)
+	return compile(data.files, sourceFile.Name(), data.lang)
+}
+
+func AggregateResults(results []CaseResult) CaseResult {
+	ans := CaseResult{
+		Status: "AC",
+		Time:   0,
+		Memory: -1,
+	}
+	for _, res := range results {
+		if res.Status != "AC" {
+			ans.Status = res.Status
+		}
+		if ans.Time < res.Time {
+			ans.Time = res.Time
+		}
+		if ans.Memory < res.Memory {
+			ans.Memory = res.Memory
+		}
+	}
+	return ans
 }

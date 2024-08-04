@@ -132,7 +132,7 @@ func (data *HackTaskData) judge() error {
 		return err
 	}
 	if r.ExitCode != 0 {
-		data.h.CheckerOut = r.Stderr
+		data.h.JudgeOutput = r.Stderr
 		return data.updateHackStatus("Invalid")
 	}
 
@@ -144,16 +144,15 @@ func (data *HackTaskData) judge() error {
 	defer os.Remove(expectedFilePath)
 
 	slog.Info("Start executing")
-	result, err := testCase(sourceVolume, checkerVolume, data.lang, data.info.TimeLimit, inFilePath, expectedFilePath)
+	result, err := runTestCase(sourceVolume, checkerVolume, data.lang, data.info.TimeLimit, inFilePath, expectedFilePath)
 	if err != nil {
 		return err
 	}
-
 	data.h.Status = result.Status
 	data.h.Time = sql.NullInt32{Valid: true, Int32: int32(result.Time.Milliseconds())}
 	data.h.Memory = sql.NullInt64{Valid: true, Int64: result.Memory}
 	data.h.Stderr = result.Stderr
-	data.h.CheckerOut = result.CheckerOut
+	data.h.JudgeOutput = result.CheckerOut
 	return data.updateHack()
 }
 
@@ -174,12 +173,12 @@ func (data *HackTaskData) compileSource() (Volume, TaskResult, error) {
 	}
 	sourceFile.Close()
 
-	return compileSource(data.files, sourceFile.Name(), data.lang)
+	return compile(data.files, sourceFile.Name(), data.lang)
 }
 
 func (data *HackTaskData) compileSolution() (Volume, error) {
 	slog.Info("Compile solution")
-	v, r, err := compileSolution(data.files)
+	v, r, err := compileModelSolution(data.files)
 	if err != nil {
 		return Volume{}, err
 	}
@@ -222,18 +221,20 @@ func (data *HackTaskData) generateTestCase() (string, error) {
 		}
 		defer os.Remove(tempFile.Name())
 
-		v, r, err := compileSource(data.files, tempFile.Name(), langs.LANG_GENERATOR)
+		v, r, err := compile(data.files, tempFile.Name(), langs.LANG_GENERATOR)
 		if err != nil {
 			return "", err
 		}
 		if r.ExitCode != 0 {
-			return "", data.updateHackStatus("CE")
+			data.h.JudgeOutput = r.Stderr
+			return "", data.updateHackStatus("GCE")
 		}
 		path, r, err := runGenerator(v)
 		if err != nil {
 			return "", err
 		}
 		if r.ExitCode != 0 {
+			data.h.JudgeOutput = r.Stderr
 			return "", data.updateHackStatus("GE")
 		}
 
@@ -258,7 +259,7 @@ func (data *HackTaskData) generateTestCase() (string, error) {
 
 func (data *HackTaskData) runModelSolution(v Volume, inFilePath string) (string, error) {
 	slog.Info("Generate model output")
-	path, r, err := runSource(v, langs.LANG_SOLUTION, data.info.TimeLimit, inFilePath)
+	path, r, err := runSource(v, langs.LANG_MODEL_SOLUTION, data.info.TimeLimit, inFilePath)
 	if err != nil {
 		return "", err
 	}

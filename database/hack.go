@@ -22,11 +22,11 @@ type Hack struct {
 	TestCaseCpp []byte
 
 	// Result
-	Status     string
-	Time       sql.NullInt32
-	Memory     sql.NullInt64
-	Stderr     []byte
-	CheckerOut []byte
+	Status      string
+	Time        sql.NullInt32
+	Memory      sql.NullInt64
+	Stderr      []byte
+	JudgeOutput []byte
 }
 
 func FetchHack(db *gorm.DB, id int32) (Hack, error) {

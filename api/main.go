@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -70,7 +71,7 @@ func main() {
 
 	// launch api service
 	port := getEnv("PORT", "12380")
-	log.Println("launch gRPCWeb server port:", port)
+	slog.Info("Launch gRPCWeb server", "port", port)
 	s := NewGRPCServer(db, firebaseAuth)
 	wrappedGrpc := grpcweb.WrapServer(s, grpcweb.WithOriginFunc(func(origin string) bool { return true }))
 	http.HandleFunc("/health", func(resp http.ResponseWriter, req *http.Request) {

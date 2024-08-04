@@ -22,24 +22,27 @@ type Lang struct {
 
 var LANGS []Lang
 var LANG_CHECKER = Lang{
+	ID:        "checker",
 	Source:    "checker.cpp",
 	ImageName: "library-checker-images-gcc",
 	Compile:   []string{"g++", "-O2", "-std=c++17", "-march=native", "-o", "checker", "checker.cpp"},
 	Exec:      []string{"./checker", "input.in", "actual.out", "expect.out"},
 }
 var LANG_VERIFIER = Lang{
+	ID:        "verifier",
 	Source:    "verifier.cpp",
 	ImageName: "library-checker-images-gcc",
 	Compile:   []string{"g++", "-O2", "-std=c++17", "-march=native", "-o", "verifier", "verifier.cpp"},
 	Exec:      []string{"./verifier"},
 }
 var LANG_GENERATOR = Lang{
+	ID:        "generator",
 	Source:    "generator.cpp",
 	ImageName: "library-checker-images-gcc",
 	Compile:   []string{"g++", "-O2", "-std=c++17", "-march=native", "-o", "generator", "generator.cpp"},
 	Exec:      []string{"./generator", "0"},
 }
-var LANG_SOLUTION Lang
+var LANG_MODEL_SOLUTION Lang
 
 //go:embed langs.toml
 var langToml string
@@ -58,7 +61,7 @@ func init() {
 		slog.Error("cpp is not found in langs")
 		os.Exit(1)
 	} else {
-		LANG_SOLUTION = lang
+		LANG_MODEL_SOLUTION = lang
 	}
 }
 

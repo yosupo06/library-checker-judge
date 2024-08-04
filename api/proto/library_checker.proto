@@ -201,16 +201,18 @@ message HackInfoResponse {
         bytes txt = 2;
         bytes cpp = 3;
     }
-    optional bytes checker_out = 4; // output of checker
+    optional bytes stderr = 4; // stderr of the solution
+    optional bytes judge_output = 5; // (CE, Verifier output, Checker output)
 }
 
 message HackOverview {
     int32 id = 1; // hack id
     int32 submission_id = 2; // submission id
     string status = 3; // "AC"
-    optional double time = 4; // 2.0 = 2 seconds
-    optional int64 memory = 5; // x bytes
-    google.protobuf.Timestamp hack_time = 6;
+    optional string user_name = 4; // "yosupo"
+    optional double time = 5; // 2.0 = 2 seconds
+    optional int64 memory = 6; // x bytes
+    google.protobuf.Timestamp hack_time = 7;
 }
 
 // --- Lang ---
