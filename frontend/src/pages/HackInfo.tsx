@@ -111,8 +111,15 @@ const OverView: React.FC<{
             </TableCell>
             <TableCell>{overview.userName ?? "(Anonymous)"}</TableCell>
             <TableCell>{overview.status}</TableCell>
-            <TableCell>{overview.time?.toString()}</TableCell>
-            <TableCell>{overview.memory?.toString()}</TableCell>
+            <TableCell>
+              {overview.time ? Math.round(overview.time * 1000) : "-"} ms
+            </TableCell>
+            <TableCell>
+              {overview.memory
+                ? (Number(overview.memory) / 1024 / 1024).toFixed(2)
+                : "-"}{" "}
+              Mib
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>
