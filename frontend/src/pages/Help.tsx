@@ -1,16 +1,20 @@
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import JudgeStatusList from "../components/JudgeStatusList";
 import LangList from "../components/LangList";
 import MainContainer from "../components/MainContainer";
-import { Avatar, Chip, List, ListItem, ListItemAvatar, ListItemIcon, ListItemText, Paper, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
-import { Computer } from "@mui/icons-material";
+import {
+  Chip,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 
 const Help: React.FC = () => {
   return (
     <MainContainer title="Help">
-      <>        
+      <>
         <Typography variant="h3" paragraph={true}>
           Terms and conditions
         </Typography>
@@ -44,8 +48,8 @@ const Help: React.FC = () => {
             <ListItemText primary="c2d-highcpu-8 (GCP)" />
           </ListItem>
           <ListItem>
-            <ListItemIcon sx={{paddingRight: 1}}>
-              <Chip sx={{width: 100 }} label="CPU" />
+            <ListItemIcon sx={{ paddingRight: 1 }}>
+              <Chip sx={{ width: 100 }} label="CPU" />
             </ListItemIcon>
             <ListItemText primary="AMD EPYC™ 7B13 (limit 1 core)" />
           </ListItem>
