@@ -18,7 +18,6 @@ import {
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
 import { GitHub, FlashOn, Person, Forum } from "@mui/icons-material";
-import KatexTypography from "../components/katex/KatexTypography";
 import { Alert, Container } from "@mui/material";
 import Statement, {
   useExamples,
@@ -34,6 +33,7 @@ import { Link as RouterLink } from "react-router-dom";
 import styled from "@emotion/styled";
 import { ProblemInfoToml } from "../utils/problem.info";
 import { ProblemVersion } from "../utils/problem.storage";
+import MainContainer from "../components/MainContainer";
 
 const ProblemInfo: React.FC = () => {
   const { problemId } = useParams<"problemId">();
@@ -62,16 +62,12 @@ const ProblemInfo: React.FC = () => {
   }
 
   return (
-    <Container>
-      <KatexTypography variant="h2" paragraph={true}>
-        {problemInfoQuery.data.title}
-      </KatexTypography>
-
+    <MainContainer title={problemInfoQuery.data.title}>
       <ProblemInfoBody
         problemId={problemId}
         problemInfo={problemInfoQuery.data}
       />
-    </Container>
+    </MainContainer>
   );
 };
 export default ProblemInfo;

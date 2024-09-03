@@ -32,6 +32,7 @@ import {
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
+import MainContainer from "../components/MainContainer";
 
 const SubmissionInfo: React.FC = () => {
   const { submissionId } = useParams<"submissionId">();
@@ -62,12 +63,9 @@ const SubmissionInfo: React.FC = () => {
     );
   }
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Submission #{submissionId}
-      </Typography>
+    <MainContainer title={`Submission #${submissionId}`}>
       <SubmissionInfoBody info={submissionInfoQuery.data} />
-    </Container>
+    </MainContainer>
   );
 };
 

@@ -7,7 +7,6 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Link from "@mui/material/Link";
 import {
   Alert,
-  Container,
   Table,
   TableBody,
   TableCell,
@@ -17,22 +16,22 @@ import {
 } from "@mui/material";
 import { HackInfoResponse, HackOverview } from "../proto/library_checker";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
+import MainContainer from "../components/MainContainer";
+import NotFound from "./NotFound";
 
 const HackInfo: React.FC = () => {
   const { id } = useParams<"id">();
   if (!id) {
     throw new Error(`hack ID is not defined`);
   }
-  if (Number.isNaN(parseInt(id))) {
-    throw new Error(`hack ID is not int`);
+  const intID = parseInt(id);
+  if (Number.isNaN(intID)) {
+    return <NotFound />;
   }
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Hack #{id}
-      </Typography>
-      <HackInfoBody id={parseInt(id)} />
-    </Container>
+    <MainContainer title={`Hack #{id}`}>
+      <HackInfoBody id={intID} />
+    </MainContainer>
   );
 };
 export default HackInfo;

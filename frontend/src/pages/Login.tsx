@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -11,6 +10,7 @@ import {
   useSendPasswordResetEmailMutation,
   useSignInMutation,
 } from "../auth/auth";
+import MainContainer from "../components/MainContainer";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -33,10 +33,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Login
-      </Typography>
+    <MainContainer title="Login">
       <Alert severity="info">
         <AlertTitle>Info</AlertTitle>
         If you registered your account without an email, please attach{" "}
@@ -69,7 +66,7 @@ const Login: React.FC = () => {
         </Button>
       </form>
       <PasswordReset />
-    </Container>
+    </MainContainer>
   );
 };
 
