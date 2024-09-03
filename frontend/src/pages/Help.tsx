@@ -4,11 +4,13 @@ import React from "react";
 import JudgeStatusList from "../components/JudgeStatusList";
 import LangList from "../components/LangList";
 import MainContainer from "../components/MainContainer";
+import { Avatar, Chip, List, ListItem, ListItemAvatar, ListItemIcon, ListItemText, Paper, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { Computer } from "@mui/icons-material";
 
 const Help: React.FC = () => {
   return (
     <MainContainer title="Help">
-      <Box>
+      <>        
         <Typography variant="h3" paragraph={true}>
           Terms and conditions
         </Typography>
@@ -28,10 +30,42 @@ const Help: React.FC = () => {
           </a>
           , with some modifications.
         </Typography>
-      </Box>
+      </>
 
-      <Box>
-        <Typography variant="h3">Lang List</Typography>
+      <>
+        <Typography variant="h3" paragraph={true}>
+          Resource information
+        </Typography>
+        <List>
+          <ListItem>
+            <ListItemIcon sx={{ paddingRight: 1 }}>
+              <Chip sx={{ width: 100 }} label="Server" />
+            </ListItemIcon>
+            <ListItemText primary="c2d-highcpu-8 (GCP)" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon sx={{paddingRight: 1}}>
+              <Chip sx={{width: 100 }} label="CPU" />
+            </ListItemIcon>
+            <ListItemText primary="AMD EPYC™ 7B13 (limit 1 core)" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon sx={{ paddingRight: 1 }}>
+              <Chip sx={{ width: 100 }} label="Memory" />
+            </ListItemIcon>
+            <ListItemText primary="Limit 1 GiB" />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon sx={{ paddingRight: 1 }}>
+              <Chip sx={{ width: 100 }} label="Stack Size" />
+            </ListItemIcon>
+            <ListItemText primary="Unlimited" />
+          </ListItem>
+        </List>
+      </>
+
+      <>
+        <Typography variant="h3">Compiler list</Typography>
         <LangList />
         <Typography variant="body1" paragraph={true}>
           より詳しくは
@@ -44,24 +78,12 @@ const Help: React.FC = () => {
           </a>
           を参照してください
         </Typography>
-      </Box>
+      </>
 
-      <Box>
-        <Typography variant="h3">Judge Status</Typography>
+      <>
+        <Typography variant="h3">Judge status</Typography>
         <JudgeStatusList />
-      </Box>
-
-      <Box>
-        <Typography variant="h3">Tips</Typography>
-        <Typography variant="body1" paragraph={true}>
-          Memory Limit is 1GB for all problems. Stack Size Limit is unlimited.
-        </Typography>
-        <Typography variant="body1">
-          We will restart judge servers sometimes. If you submit your solution
-          while restarting, it may take a longer time (~ 5min) rather than
-          usual.
-        </Typography>
-      </Box>
+      </>
     </MainContainer>
   );
 };
