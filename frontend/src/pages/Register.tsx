@@ -1,6 +1,5 @@
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Alert from "@mui/material/Alert";
 import React, { useState } from "react";
@@ -8,6 +7,43 @@ import { useCurrentUser, useRegister } from "../api/client_wrapper";
 import { useCurrentAuthUser, useRegisterMutation } from "../auth/auth";
 import { Step, StepContent, StepLabel, Stepper } from "@mui/material";
 import { Link } from "react-router-dom";
+import MainContainer from "../components/MainContainer";
+
+const Register: React.FC = () => {
+  const currentAuthUser = useCurrentAuthUser();
+  const currentUser = useCurrentUser();
+
+  let step = 0;
+  if (currentAuthUser.data != null) step = 1;
+  if (currentUser.isSuccess && currentUser.data.user != null) step = 2;
+
+  return (
+    <MainContainer title="Register">
+      <Stepper activeStep={step} orientation="vertical">
+        <Step key={"step1"}>
+          <StepLabel>Register email & password</StepLabel>
+          <StepContent>
+            <RegisterAuth />
+          </StepContent>
+        </Step>
+        <Step key={"step2"}>
+          <StepLabel>Register user name</StepLabel>
+          <StepContent>
+            <RegisterUserID />
+          </StepContent>
+        </Step>
+        <Step key={"step3"}>
+          <StepLabel>Finish</StepLabel>
+          <StepContent>
+            <Link to="/">Go to Top Page</Link>
+          </StepContent>
+        </Step>
+      </Stepper>
+    </MainContainer>
+  );
+};
+
+export default Register;
 
 const RegisterAuth: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -104,43 +140,3 @@ const RegisterUserID: React.FC = () => {
     </>
   );
 };
-
-const Register: React.FC = () => {
-  const currentAuthUser = useCurrentAuthUser();
-  const currentUser = useCurrentUser();
-
-  let step = 0;
-  if (currentAuthUser.data != null) step = 1;
-  if (currentUser.isSuccess && currentUser.data.user != null) step = 2;
-
-  return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Register
-      </Typography>
-
-      <Stepper activeStep={step} orientation="vertical">
-        <Step key={"step1"}>
-          <StepLabel>Register email & password</StepLabel>
-          <StepContent>
-            <RegisterAuth />
-          </StepContent>
-        </Step>
-        <Step key={"step2"}>
-          <StepLabel>Register user name</StepLabel>
-          <StepContent>
-            <RegisterUserID />
-          </StepContent>
-        </Step>
-        <Step key={"step3"}>
-          <StepLabel>Finish</StepLabel>
-          <StepContent>
-            <Link to="/">Go to Top Page</Link>
-          </StepContent>
-        </Step>
-      </Stepper>
-    </Container>
-  );
-};
-
-export default Register;

@@ -1,15 +1,13 @@
-import { Container } from "@mui/material";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import JudgeStatusList from "../components/JudgeStatusList";
 import LangList from "../components/LangList";
+import MainContainer from "../components/MainContainer";
 
 const Help: React.FC = () => {
   return (
-    <Container>
-      <Typography variant="h2">Help</Typography>
-
+    <MainContainer title="Help">
       <Box>
         <Typography variant="h3" paragraph={true}>
           Terms and conditions
@@ -64,7 +62,7 @@ const Help: React.FC = () => {
           usual.
         </Typography>
       </Box>
-    </Container>
+    </MainContainer>
   );
 };
 

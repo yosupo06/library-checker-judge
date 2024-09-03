@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
 import TablePagination from "@mui/material/TablePagination";
@@ -22,12 +21,8 @@ import SubmissionTable from "../components/SubmissionTable";
 import { categoriseProblems } from "../utils/problem.categorizer";
 import { styled } from "@mui/system";
 import KatexTypography from "../components/katex/KatexTypography";
-import {
-  Checkbox,
-  Container,
-  FormControlLabel,
-  InputLabel,
-} from "@mui/material";
+import { Checkbox, FormControlLabel, InputLabel } from "@mui/material";
+import MainContainer from "../components/MainContainer";
 
 type SearchParams = {
   problem: string;
@@ -69,10 +64,7 @@ const Submissions: React.FC = () => {
   });
 
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Submission List
-      </Typography>
+    <MainContainer title="Submission List">
       <SubmissionsForm
         searchParams={searchParams}
         setSearchParams={setSearchParams}
@@ -81,7 +73,7 @@ const Submissions: React.FC = () => {
         searchParams={searchParams}
         setSearchParams={setSearchParams}
       />
-    </Container>
+    </MainContainer>
   );
 };
 

@@ -1,16 +1,12 @@
-import { Container } from "@mui/material";
-import Typography from "@mui/material/Typography";
 import React from "react";
 import RankingList from "../components/RankingList";
+import MainContainer from "../components/MainContainer";
 
 const Ranking: React.FC<Record<string, never>> = () => {
   return (
-    <Container>
-      <Typography variant="h2" paragraph={true}>
-        Ranking
-      </Typography>
+    <MainContainer title="Ranking">
       <RankingList />
-    </Container>
+    </MainContainer>
   );
 };
 

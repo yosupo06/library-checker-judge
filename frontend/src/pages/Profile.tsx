@@ -22,6 +22,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import { Navigate } from "react-router-dom";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
 import { User } from "../proto/library_checker";
+import MainContainer from "../components/MainContainer";
 
 const Profile: React.FC = () => {
   const currentAuthUser = useCurrentAuthUser();
@@ -64,8 +65,7 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <Container>
-      <Typography variant="h2">Profile: {user.name}</Typography>
+    <MainContainer title={`Profile: ${user.name}`}>
       <GeneralSetting user={user} />
       <Divider
         sx={{
@@ -73,7 +73,7 @@ const Profile: React.FC = () => {
         }}
       />
       <EmailSetting user={authUser} />
-    </Container>
+    </MainContainer>
   );
 };
 export default Profile;

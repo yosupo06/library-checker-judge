@@ -16,18 +16,14 @@ import {
   CategorisedProblems,
   categoriseProblems,
 } from "../utils/problem.categorizer";
-import { Alert, Container, Tab, Tabs } from "@mui/material";
+import { Alert, Tab, Tabs } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
+import MainContainer from "../components/MainContainer";
 
 const Problems: React.FC = () => (
-  <Container>
-    <Box>
-      <Typography variant="h2" paragraph={true}>
-        Problem List
-      </Typography>
-      <ProblemsBody />
-    </Box>
-  </Container>
+  <MainContainer title="Problem List">
+    <ProblemsBody />
+  </MainContainer>
 );
 export default Problems;
 

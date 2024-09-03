@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
-import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Link from "@mui/material/Link";
 import List from "@mui/material/List";
@@ -12,7 +11,7 @@ import { useUserInfo } from "../api/client_wrapper";
 import { useParams } from "react-router-dom";
 import NotFound from "./NotFound";
 import { LibraryBooks } from "@mui/icons-material";
-import { Container } from "@mui/material";
+import MainContainer from "../components/MainContainer";
 
 const UserInfo: React.FC = () => {
   const { userId } = useParams<"userId">();
@@ -45,8 +44,7 @@ const UserInfo: React.FC = () => {
   const showUserName = showUser.name;
 
   return (
-    <Container>
-      <Typography variant="h2">{showUserName}</Typography>
+    <MainContainer title={showUserName}>
       <List>
         <ListItem>
           <ListItemAvatar>
@@ -66,7 +64,7 @@ const UserInfo: React.FC = () => {
           />
         </ListItem>
       </List>
-    </Container>
+    </MainContainer>
   );
 };
 
