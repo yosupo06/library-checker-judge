@@ -12,7 +12,7 @@ import TableRow from "@mui/material/TableRow";
 const RankingList: React.FC = () => {
   const rankingQuery = useRanking();
 
-  if (rankingQuery.isLoading) {
+  if (rankingQuery.isPending) {
     return (
       <Box>
         <Typography>Loading...</Typography>
@@ -22,7 +22,7 @@ const RankingList: React.FC = () => {
   if (rankingQuery.isError) {
     return (
       <Box>
-        <Typography>Error: {rankingQuery.error}</Typography>
+        <Typography>Error: {rankingQuery.error.message}</Typography>
       </Box>
     );
   }

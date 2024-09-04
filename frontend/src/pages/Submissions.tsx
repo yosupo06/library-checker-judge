@@ -94,9 +94,9 @@ const SubmissionsForm: React.FC<{
   const problemCategoriesQuery = useProblemCategories();
 
   if (
-    langListQuery.isLoading ||
-    problemListQuery.isLoading ||
-    problemCategoriesQuery.isLoading
+    langListQuery.isPending ||
+    problemListQuery.isPending ||
+    problemCategoriesQuery.isPending
   ) {
     return (
       <Box>
@@ -256,7 +256,7 @@ const SubmissionsBody: React.FC<{
     rowsPerPage,
   );
 
-  if (submissionListQuery.isLoading) {
+  if (submissionListQuery.isPending) {
     return (
       <Paper>
         <SubmissionTable overviews={[]} />
@@ -265,7 +265,7 @@ const SubmissionsBody: React.FC<{
     );
   }
   if (submissionListQuery.isError) {
-    return <Box>Error: {submissionListQuery.error}</Box>;
+    return <Box>Error: {submissionListQuery.error.message}</Box>;
   }
 
   const handleChangePage = (

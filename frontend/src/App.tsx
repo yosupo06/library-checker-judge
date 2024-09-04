@@ -52,7 +52,8 @@ function App(): JSX.Element {
     if (savedLangState) {
       initialLangState = JSON.parse(savedLangState);
     }
-  } catch (_) {
+  } catch (e) {
+    console.log(e);
     localStorage.removeItem("lang");
   }
   const [langState, langDispatch] = useReducer(LangReducer, initialLangState);
@@ -94,7 +95,7 @@ function App(): JSX.Element {
                 />
                 <Route path="/hack" element={<Hack />} />
                 <Route path="/hack/:id" element={<HackInfo />} />
-                <Route element={NotFound} />
+                <Route element={<NotFound />} />
               </Routes>
             </Box>
           </Router>

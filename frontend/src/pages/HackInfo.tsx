@@ -44,7 +44,7 @@ const HackInfoBody: React.FC<{
     refetchInterval: 1000,
   });
 
-  if (hackInfoQuery.isLoading) {
+  if (hackInfoQuery.isPending) {
     return (
       <Box>
         <CircularProgress />

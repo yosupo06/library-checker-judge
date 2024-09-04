@@ -31,7 +31,7 @@ const SubmissionTable: React.FC<Props> = (props) => {
 
   const langListQuery = useLangList();
 
-  if (langListQuery.isLoading || langListQuery.isError) {
+  if (langListQuery.isPending || langListQuery.isError) {
     return (
       <TableContainer>
         <Table>

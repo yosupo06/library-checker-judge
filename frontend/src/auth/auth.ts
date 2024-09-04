@@ -33,9 +33,10 @@ export const registerQueryClient = (queryClient: QueryClient) => {
 };
 
 export const useCurrentAuthUser = () => {
-  return useQuery(currentUserQueryKey, () =>
-    auth.authStateReady().then(() => auth.currentUser),
-  );
+  return useQuery({
+    queryKey: currentUserQueryKey,
+    queryFn: () => auth.authStateReady().then(() => auth.currentUser),
+  });
 };
 
 export const useIdToken = () => {
@@ -48,45 +49,55 @@ export const useIdToken = () => {
 };
 
 export const useRegisterMutation = () => {
-  return useMutation((args: { email: string; password: string }) => {
-    return createUserWithEmailAndPassword(
-      auth,
-      args.email,
-      args.password,
-    ).catch((error) => {
-      if (error.code === "auth/email-already-in-use") {
-        return signInWithEmailAndPassword(auth, args.email, args.password);
-      } else {
-        throw error;
-      }
-    });
+  return useMutation({
+    mutationFn: (args: { email: string; password: string }) => {
+      return createUserWithEmailAndPassword(
+        auth,
+        args.email,
+        args.password,
+      ).catch((error) => {
+        if (error.code === "auth/email-already-in-use") {
+          return signInWithEmailAndPassword(auth, args.email, args.password);
+        } else {
+          throw error;
+        }
+      });
+    },
   });
 };
 
 export const useSignInMutation = () => {
-  return useMutation((args: { email: string; password: string }) => {
-    return signInWithEmailAndPassword(auth, args.email, args.password);
+  return useMutation({
+    mutationFn: (args: { email: string; password: string }) => {
+      return signInWithEmailAndPassword(auth, args.email, args.password);
+    },
   });
 };
 
 export const useSignOutMutation = () => {
-  return useMutation(() => {
-    return signOut(auth);
+  return useMutation({
+    mutationFn: () => {
+      return signOut(auth);
+    },
   });
 };
 
 export const useUpdateEmailMutation = () => {
-  return useMutation(async (newEmail: string) => {
-    const user = auth.currentUser;
-    if (!user) {
-      return Promise.reject();
-    }
-    await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
+  return useMutation({
+    mutationFn: async (newEmail: string) => {
+      const user = auth.currentUser;
+      if (!user) {
+        return Promise.reject();
+      }
+      await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
+    },
   });
 };
 
 export const useSendPasswordResetEmailMutation = () => {
-  return useMutation((email: string) => {
-    return sendPasswordResetEmail(auth, email);
+  return useMutation({
+    mutationFn: (email: string) => {
+      return sendPasswordResetEmail(auth, email);
+    },
   });
 };

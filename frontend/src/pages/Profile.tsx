@@ -28,7 +28,7 @@ const Profile: React.FC = () => {
   const currentAuthUser = useCurrentAuthUser();
   const currentUser = useCurrentUser();
 
-  if (currentAuthUser.isLoading || currentUser.isLoading) {
+  if (currentAuthUser.isPending || currentUser.isPending) {
     return (
       <Container>
         <CircularProgress />

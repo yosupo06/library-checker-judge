@@ -40,34 +40,34 @@ export const useCurrentUser = () => {
 export const useRegister = () => {
   const bearer = useBearer();
   const queryClient = useQueryClient();
-  return useMutation(
-    async (name: string) =>
+  return useMutation({
+    mutationFn: async (name: string) =>
       await client.register(
         {
           name: name,
         },
         bearer.data ?? undefined,
       ),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(currentUserKey);
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: currentUserKey,
+      });
     },
-  );
+  });
 };
 export const useChangeCurrentUserInfoMutation = () => {
   const bearer = useBearer();
   const queryClient = useQueryClient();
-  return useMutation(
-    async (req: ChangeCurrentUserInfoRequest) =>
+  return useMutation({
+    mutationFn: async (req: ChangeCurrentUserInfoRequest) =>
       await client.changeCurrentUserInfo(req, bearer.data ?? undefined)
         .response,
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(currentUserKey);
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: currentUserKey,
+      });
     },
-  );
+  });
 };
 
 const transport = new GrpcWebFetchTransport({
@@ -77,46 +77,49 @@ const client = new LibraryCheckerServiceClient(transport);
 export default client;
 
 export const useLangList = (): UseQueryResult<LangListResponse> =>
-  useQuery(["langList"], async () => await client.langList({}, {}).response);
+  useQuery({
+    queryKey: ["langList"],
+    queryFn: async () => await client.langList({}, {}).response,
+  });
 
 export const useRanking = (): UseQueryResult<RankingResponse> =>
-  useQuery(["ranking"], async () => await client.ranking({}, {}).response);
+  useQuery({
+    queryKey: ["ranking"],
+    queryFn: async () => await client.ranking({}, {}).response,
+  });
 
 export const useProblemInfo = (
   name: string,
 ): UseQueryResult<ProblemInfoResponse> =>
-  useQuery(
-    ["problemInfo", name],
-    async () => await client.problemInfo({ name: name }, {}).response,
-  );
+  useQuery({
+    queryKey: ["problemInfo", name],
+    queryFn: async () => await client.problemInfo({ name: name }, {}).response,
+  });
 
 export const useProblemList = (): UseQueryResult<ProblemListResponse> =>
-  useQuery(
-    ["problemList"],
-    async () => await client.problemList({}, {}).response,
-  );
+  useQuery({
+    queryKey: ["problemList"],
+    queryFn: async () => await client.problemList({}, {}).response,
+  });
 
 export const useProblemCategories =
   (): UseQueryResult<ProblemCategoriesResponse> =>
-    useQuery(
-      ["problemCategories"],
-      async () => await client.problemCategories({}, {}).response,
-    );
+    useQuery({
+      queryKey: ["problemCategories"],
+      queryFn: async () => await client.problemCategories({}, {}).response,
+    });
 
 export const useUserInfo = (
   name: string,
-  options?: Omit<
-    UseQueryOptions<UserInfoResponse, unknown, UserInfoResponse, string[]>,
-    "queryKey" | "queryFn"
-  >,
+  options?: Omit<UseQueryOptions<UserInfoResponse>, "queryKey" | "queryFn">,
 ): UseQueryResult<UserInfoResponse> => {
   const bearer = useBearer();
-  return useQuery(
-    ["api", "userInfo", name, bearer.data?.meta.authorization ?? ""],
-    async () =>
+  return useQuery({
+    queryKey: ["api", "userInfo", name, bearer.data?.meta.authorization ?? ""],
+    queryFn: async () =>
       await client.userInfo({ name: name }, bearer.data ?? undefined).response,
-    options,
-  );
+    ...options,
+  });
 };
 
 export const useSubmissionList = (
@@ -129,8 +132,8 @@ export const useSubmissionList = (
   skip: number,
   limit: number,
 ): UseQueryResult<SubmissionListResponse> =>
-  useQuery(
-    [
+  useQuery({
+    queryKey: [
       "submissionList",
       problem,
       user,
@@ -141,7 +144,7 @@ export const useSubmissionList = (
       skip,
       limit,
     ],
-    async () =>
+    queryFn: async () =>
       await client.submissionList(
         {
           problem: problem,
@@ -156,54 +159,49 @@ export const useSubmissionList = (
         },
         {},
       ).response,
-  );
+  });
 
 export const useSubmissionInfo = (
   id: number,
   options?: Omit<
-    UseQueryOptions<
-      SubmissionInfoResponse,
-      unknown,
-      SubmissionInfoResponse,
-      string[]
-    >,
+    UseQueryOptions<SubmissionInfoResponse>,
     "queryKey" | "queryFn"
   >,
 ): UseQueryResult<SubmissionInfoResponse> => {
   const bearer = useBearer();
-  return useQuery(
-    ["submissionInfo", String(id)],
-    async () =>
+  return useQuery({
+    queryKey: ["submissionInfo", String(id)],
+    queryFn: async () =>
       await client.submissionInfo(
         {
           id: id,
         },
         bearer.data ?? undefined,
       ).response,
-    options,
-  );
+    ...options,
+  });
 };
 
 export const useSubmitMutation = (
   options?: Omit<
-    UseMutationOptions<SubmitResponse, unknown, SubmitRequest, unknown>,
+    UseMutationOptions<SubmitResponse, Error, SubmitRequest>,
     "mutationFn"
   >,
 ) => {
   const bearer = useBearer();
-  return useMutation(
-    async (req: SubmitRequest) =>
+  return useMutation({
+    mutationFn: async (req: SubmitRequest) =>
       await client.submit(req, bearer.data ?? undefined).response,
-    options,
-  );
+    ...options,
+  });
 };
 
 export const useRejudgeMutation = () => {
   const bearer = useBearer();
-  return useMutation(
-    async (req: RejudgeRequest) =>
+  return useMutation({
+    mutationFn: async (req: RejudgeRequest) =>
       await client.rejudge(req, bearer.data ?? undefined).response,
-  );
+  });
 };
 
 const useBearer = () => {
@@ -225,35 +223,32 @@ const useBearer = () => {
 
 export const useHackMutation = (
   options?: Omit<
-    UseMutationOptions<HackResponse, unknown, HackRequest, unknown>,
+    UseMutationOptions<HackResponse, Error, HackRequest>,
     "mutationFn"
   >,
 ) => {
   const bearer = useBearer();
-  return useMutation(
-    async (req: HackRequest) =>
+  return useMutation({
+    mutationFn: async (req: HackRequest) =>
       await client.hack(req, bearer.data ?? undefined).response,
-    options,
-  );
+    ...options,
+  });
 };
 
 export const useHackInfo = (
   id: number,
-  options?: Omit<
-    UseQueryOptions<HackInfoResponse, unknown, HackInfoResponse, string[]>,
-    "queryKey" | "queryFn"
-  >,
+  options?: Omit<UseQueryOptions<HackInfoResponse>, "queryKey" | "queryFn">,
 ): UseQueryResult<HackInfoResponse> => {
   const bearer = useBearer();
-  return useQuery(
-    ["hackInfo", String(id)],
-    async () =>
+  return useQuery({
+    queryKey: ["hackInfo", String(id)],
+    queryFn: async () =>
       await client.hackInfo(
         {
           id: id,
         },
         bearer.data ?? undefined,
       ).response,
-    options,
-  );
+    ...options,
+  });
 };
