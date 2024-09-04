@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -11,7 +10,9 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { Autorenew, ExpandMore } from "@mui/icons-material";
+import Input from "@mui/icons-material/Input";
+import Autorenew from "@mui/icons-material/Autorenew";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 import React from "react";
 import { useParams } from "react-router-dom";
 import SubmissionTable from "../components/SubmissionTable";
@@ -22,49 +23,31 @@ import {
   useUserInfo,
 } from "../api/client_wrapper";
 import CircularProgress from "@mui/material/CircularProgress";
-import Link from "@mui/material/Link";
 import { LibraryBooks } from "@mui/icons-material";
-import { Alert, Collapse, Container, Divider, IconButton } from "@mui/material";
+import { Alert, Collapse, Divider, IconButton } from "@mui/material";
 import {
   SubmissionCaseResult,
   SubmissionInfoResponse,
 } from "../proto/library_checker";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { RpcError } from "@protobuf-ts/runtime-rpc";
 import MainContainer from "../components/MainContainer";
+import { ExternalLinkButton, LinkButton } from "../components/LinkButton";
+import NotFound from "./NotFound";
 
 const SubmissionInfo: React.FC = () => {
   const { submissionId } = useParams<"submissionId">();
   if (!submissionId) {
     throw new Error(`submissionId is not defined`);
   }
-  const submissionIdInt = parseInt(submissionId);
-
-  const submissionInfoQuery = useSubmissionInfo(submissionIdInt, {
-    refetchInterval: 1000,
-  });
-
-  if (submissionInfoQuery.isPending) {
-    return (
-      <Container>
-        <CircularProgress />
-      </Container>
-    );
+  const intID = parseInt(submissionId);
+  if (Number.isNaN(intID)) {
+    return <NotFound />;
   }
 
-  if (submissionInfoQuery.isError) {
-    return (
-      <Container>
-        <Alert severity="error">
-          {(submissionInfoQuery.error as RpcError).toString()}
-        </Alert>
-      </Container>
-    );
-  }
   return (
     <MainContainer title={`Submission #${submissionId}`}>
-      <SubmissionInfoBody info={submissionInfoQuery.data} />
+      <SubmissionInfoBody id={intID} />
     </MainContainer>
   );
 };
@@ -72,22 +55,31 @@ const SubmissionInfo: React.FC = () => {
 export default SubmissionInfo;
 
 const SubmissionInfoBody: React.FC<{
-  info: SubmissionInfoResponse;
+  id: number;
 }> = (props) => {
-  const { info } = props;
-  const compileError = new TextDecoder().decode(info.compileError);
+  const { id } = props;
+  const submissionInfoQuery = useSubmissionInfo(id, {
+    refetchInterval: 1000,
+  });
+
+  if (submissionInfoQuery.isPending) {
+    return <CircularProgress />;
+  }
+  if (submissionInfoQuery.isError) {
+    return <Alert severity="error">{submissionInfoQuery.error.message}</Alert>;
+  }
+
+  const info = submissionInfoQuery.data;
   const overview = info.overview;
+  if (!overview) {
+    return <Alert severity="error">Submission overview is not found</Alert>;
+  }
+
+  const compileError = new TextDecoder().decode(info.compileError);
   const lang = overview ? overview.lang : undefined;
 
   return (
-    <Box>
-      <Rejudge info={info} />
-      <Divider
-        sx={{
-          marginTop: 3,
-          marginBottom: 3,
-        }}
-      />
+    <>
       <Overview info={info} />
       <Divider
         sx={{
@@ -117,19 +109,35 @@ const SubmissionInfoBody: React.FC<{
       <Paper>
         <SourceEditor value={info.source} language={lang} readOnly={true} />
       </Paper>
-    </Box>
+    </>
   );
 };
 
-const Rejudge: React.FC<{ info: SubmissionInfoResponse }> = (props) => {
+const Overview: React.FC<{ info: SubmissionInfoResponse }> = (props) => {
   const { info } = props;
-  const overview = info.overview;
-  if (!overview) {
-    return <Box>Loading error</Box>;
-  }
+  const overview = info.overview!;
+
+  return (
+    <>
+      <SubmissionTable overviews={[overview]} />
+      <Box
+        sx={{
+          marginTop: 1,
+        }}
+      >
+        <UsefulLinks info={info} />
+      </Box>
+    </>
+  );
+};
+
+const UsefulLinks: React.FC<{
+  info: SubmissionInfoResponse;
+}> = (props) => {
+  const { info } = props;
+  const overview = info.overview!;
 
   const mutation = useRejudgeMutation();
-
   const handleRejudge = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -139,44 +147,31 @@ const Rejudge: React.FC<{ info: SubmissionInfoResponse }> = (props) => {
   };
 
   return (
-    <Box>
+    <>
+      {mutation.isSuccess && (
+        <Alert severity="success">Sent rejudge request</Alert>
+      )}
+      {mutation.isError && (
+        <Alert severity="error">{mutation.error.message}</Alert>
+      )}
+      <LinkButton
+        variant="outlined"
+        startIcon={<Input />}
+        to={`/hack/?id=${overview.id}`}
+      >
+        Hack
+      </LinkButton>
       {info.canRejudge && (
-        <Button
+        <LinkButton
           variant="outlined"
           startIcon={<Autorenew />}
           onClick={handleRejudge}
         >
           Rejudge
-        </Button>
+        </LinkButton>
       )}
-      {mutation.isSuccess && (
-        <Alert severity="success">Sent rejudge request</Alert>
-      )}
-      {mutation.isError && (
-        <Alert severity="error">{(mutation.error as RpcError).message}</Alert>
-      )}
-    </Box>
-  );
-};
-
-const Overview: React.FC<{ info: SubmissionInfoResponse }> = (props) => {
-  const { info } = props;
-  const overview = info.overview;
-  if (!overview) {
-    return <Box>Loading error</Box>;
-  }
-
-  return (
-    <Box>
-      <SubmissionTable overviews={[overview]} />
-      <Box
-        sx={{
-          marginTop: 1,
-        }}
-      >
-        {overview.userName && <LibraryButton name={overview.userName} />}
-      </Box>
-    </Box>
+      {overview.userName && <LibraryButton name={overview.userName} />}
+    </>
   );
 };
 
@@ -204,12 +199,12 @@ const LibraryButton: React.FC<{ name: string }> = (props) => {
   const libraryURL = user.libraryUrl;
 
   if (!libraryURL) {
-    return <Box></Box>;
+    return <></>;
   }
   return (
-    <Button variant="outlined" startIcon={<LibraryBooks />}>
-      <Link href={libraryURL}> {libraryURL}</Link>
-    </Button>
+    <ExternalLinkButton startIcon={<LibraryBooks />} href={libraryURL}>
+      {libraryURL}
+    </ExternalLinkButton>
   );
 };
 
@@ -224,7 +219,7 @@ const CaseResults: React.FC<{ info: SubmissionInfoResponse }> = (props) => {
     <Box>
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMore />}>
-          <Typography>Case Results</Typography>
+          <Typography>Test cases</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <TableContainer>
