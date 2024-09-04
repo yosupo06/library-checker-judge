@@ -20,7 +20,7 @@ const Statement: React.FC<{
 }> = (props) => {
   const statement = useStatementParser(props.lang, props.data);
 
-  if (statement.isLoading) {
+  if (statement.isPending) {
     return (
       <Box>
         <CircularProgress />
@@ -52,9 +52,9 @@ export const useProblemInfoTomlQuery = (
   problemVersion: ProblemVersion,
 ) => {
   const url = infoURL(baseURL, problemVersion);
-  const infoTomlQuery = useQuery(
-    ["statement", problemVersion, "info.toml"],
-    async () =>
+  const infoTomlQuery = useQuery({
+    queryKey: ["statement", problemVersion, "info.toml"],
+    queryFn: async () =>
       fetch(url).then((r) => {
         if (r.status == 200) {
           return r.text();
@@ -62,7 +62,7 @@ export const useProblemInfoTomlQuery = (
           return Promise.reject("failed to fetch info.toml:" + r.status);
         }
       }),
-  );
+  });
 
   return useQuery({
     queryKey: ["statement", problemVersion, "parse-info"],
@@ -73,28 +73,32 @@ export const useProblemInfoTomlQuery = (
 
 export const useStatement = (baseURL: URL, problemVersion: ProblemVersion) => {
   const url = taskURL(baseURL, problemVersion);
-  return useQuery(["statement", problemVersion, "task.md"], () =>
-    fetch(url).then((r) => {
-      if (r.status == 200) {
-        return r.text();
-      } else {
-        return Promise.reject("failed to fetch task.md:" + r.status);
-      }
-    }),
-  );
+  return useQuery({
+    queryKey: ["statement", problemVersion, "task.md"],
+    queryFn: () =>
+      fetch(url).then((r) => {
+        if (r.status == 200) {
+          return r.text();
+        } else {
+          return Promise.reject("failed to fetch task.md:" + r.status);
+        }
+      }),
+  });
 };
 
 export const useSolveHpp = (baseURL: URL, problemVersion: ProblemVersion) => {
   const url = solveHppURL(baseURL, problemVersion);
-  return useQuery(["statement", problemVersion, "solve.hpp"], () =>
-    fetch(url).then((r) => {
-      if (r.status == 200) {
-        return r.text();
-      } else if (r.status == 404) {
-        return null;
-      }
-    }),
-  );
+  return useQuery({
+    queryKey: ["statement", problemVersion, "solve.hpp"],
+    queryFn: () =>
+      fetch(url).then((r) => {
+        if (r.status == 200) {
+          return r.text();
+        } else if (r.status == 404) {
+          return null;
+        }
+      }),
+  });
 };
 
 export const useExamples = (

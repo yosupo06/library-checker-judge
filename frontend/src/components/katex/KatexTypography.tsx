@@ -21,6 +21,7 @@ interface Props {
     | "subtitle1"
     | "subtitle2";
   paragraph?: boolean;
+  children?: React.ReactNode;
 }
 
 const renderMathInElementOptions: RenderMathInElementOptions = {

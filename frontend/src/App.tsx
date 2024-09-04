@@ -94,7 +94,7 @@ function App(): JSX.Element {
                 />
                 <Route path="/hack" element={<Hack />} />
                 <Route path="/hack/:id" element={<HackInfo />} />
-                <Route element={NotFound} />
+                <Route element={<NotFound />} />
               </Routes>
             </Box>
           </Router>

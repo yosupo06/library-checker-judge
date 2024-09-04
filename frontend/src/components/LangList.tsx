@@ -13,7 +13,7 @@ import { useLangList } from "../api/client_wrapper";
 const LangList: React.FC = () => {
   const langListQuery = useLangList();
 
-  if (langListQuery.isLoading) {
+  if (langListQuery.isPending) {
     return (
       <Box>
         <Typography>Loading...</Typography>
@@ -23,7 +23,7 @@ const LangList: React.FC = () => {
   if (langListQuery.isError) {
     return (
       <Box>
-        <Typography>Error: {langListQuery.error}</Typography>
+        <Typography>Error: {langListQuery.error.message}</Typography>
       </Box>
     );
   }

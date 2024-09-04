@@ -37,7 +37,7 @@ const ProblemsBody: React.FC = () => {
     enabled: userName !== "",
   });
 
-  if (problemListQuery.isLoading || problemCategoriesQuery.isLoading) {
+  if (problemListQuery.isPending || problemCategoriesQuery.isPending) {
     return (
       <Box>
         <CircularProgress />

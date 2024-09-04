@@ -43,7 +43,7 @@ const ProblemInfo: React.FC = () => {
 
   const problemInfoQuery = useProblemInfo(problemId);
 
-  if (problemInfoQuery.isLoading) {
+  if (problemInfoQuery.isPending) {
     return (
       <Container>
         <CircularProgress />
@@ -88,7 +88,7 @@ const ProblemInfoBody: React.FC<{
 
   const infoTomlQuery = useProblemInfoTomlQuery(baseURL, problemVersion);
 
-  if (infoTomlQuery.isLoading) {
+  if (infoTomlQuery.isPending) {
     return (
       <Box>
         <CircularProgress />
@@ -273,7 +273,7 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
     },
   });
 
-  if (langListQuery.isLoading) {
+  if (langListQuery.isPending) {
     return (
       <Box>
         <CircularProgress />

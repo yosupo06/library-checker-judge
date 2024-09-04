@@ -45,7 +45,7 @@ const SubmissionInfo: React.FC = () => {
     refetchInterval: 1000,
   });
 
-  if (submissionInfoQuery.isLoading) {
+  if (submissionInfoQuery.isPending) {
     return (
       <Container>
         <CircularProgress />
@@ -183,7 +183,7 @@ const Overview: React.FC<{ info: SubmissionInfoResponse }> = (props) => {
 const LibraryButton: React.FC<{ name: string }> = (props) => {
   const userInfoQuery = useUserInfo(props.name, {});
 
-  if (userInfoQuery.isLoading) {
+  if (userInfoQuery.isPending) {
     return (
       <Box>
         <CircularProgress />
