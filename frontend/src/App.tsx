@@ -52,7 +52,8 @@ function App(): JSX.Element {
     if (savedLangState) {
       initialLangState = JSON.parse(savedLangState);
     }
-  } catch (_) {
+  } catch (e) {
+    console.log(e);
     localStorage.removeItem("lang");
   }
   const [langState, langDispatch] = useReducer(LangReducer, initialLangState);
