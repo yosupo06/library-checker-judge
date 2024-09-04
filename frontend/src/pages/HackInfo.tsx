@@ -29,7 +29,7 @@ const HackInfo: React.FC = () => {
     return <NotFound />;
   }
   return (
-    <MainContainer title={`Hack #{id}`}>
+    <MainContainer title={`Hack #${id}`}>
       <HackInfoBody id={intID} />
     </MainContainer>
   );

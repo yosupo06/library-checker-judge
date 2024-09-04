@@ -94,6 +94,7 @@ export const useProblemInfo = (
   useQuery({
     queryKey: ["problemInfo", name],
     queryFn: async () => await client.problemInfo({ name: name }, {}).response,
+    structuralSharing: false,
   });
 
 export const useProblemList = (): UseQueryResult<ProblemListResponse> =>
@@ -159,6 +160,7 @@ export const useSubmissionList = (
         },
         {},
       ).response,
+    structuralSharing: false,
   });
 
 export const useSubmissionInfo = (
@@ -178,6 +180,7 @@ export const useSubmissionInfo = (
         },
         bearer.data ?? undefined,
       ).response,
+    structuralSharing: false,
     ...options,
   });
 };

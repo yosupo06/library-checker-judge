@@ -67,6 +67,7 @@ export const useProblemInfoTomlQuery = (
   return useQuery({
     queryKey: ["statement", problemVersion, "parse-info"],
     queryFn: () => parseProblemInfoToml(infoTomlQuery.data ?? ""),
+    structuralSharing: false,
     enabled: infoTomlQuery.isSuccess,
   });
 };

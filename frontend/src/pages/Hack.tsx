@@ -1,7 +1,7 @@
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import SourceEditor from "../components/SourceEditor";
 import { useHackMutation } from "../api/client_wrapper";
 import { Alert, Box, FormControl, Tab, Tabs, TextField } from "@mui/material";
@@ -10,13 +10,16 @@ import { RpcError } from "@protobuf-ts/runtime-rpc";
 import MainContainer from "../components/MainContainer";
 
 const Hack: React.FC = () => {
+  const id = useSearchParams()[0].get("id");
+
   const navigate = useNavigate();
   const mutation = useHackMutation({
     onSuccess: (resp) => {
       navigate(`/hack/${resp.id}`);
     },
   });
-  const [submissionId, setSubmissionId] = useState("");
+
+  const [submissionId, setSubmissionId] = useState(id ?? "");
   const [testCaseTxt, setTestCaseTxt] = useState("");
   const [testCaseCpp, setTestCaseCpp] = useState("");
   const [tabIndex, setTabIndex] = useState(0);
@@ -54,6 +57,7 @@ const Hack: React.FC = () => {
           <TextField
             label="Submission ID"
             value={submissionId}
+            type="number"
             onChange={(e) => setSubmissionId(e.target.value)}
           />
         </FormControl>

@@ -7,7 +7,7 @@ import FormControl from "@mui/material/FormControl";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import React, { useState } from "react";
-import { LinkProps, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
 import {
   useCurrentUser,
@@ -30,10 +30,10 @@ import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 import NotFound from "./NotFound";
 import { Link as RouterLink } from "react-router-dom";
-import styled from "@emotion/styled";
 import { ProblemInfoToml } from "../utils/problem.info";
 import { ProblemVersion } from "../utils/problem.storage";
 import MainContainer from "../components/MainContainer";
+import { LinkButton, ExternalLinkButton } from "../components/LinkButton";
 
 const ProblemInfo: React.FC = () => {
   const { problemId } = useParams<"problemId">();
@@ -174,8 +174,6 @@ const UsefulLinks: React.FC<{
   problemId: string;
   infoToml: ProblemInfoToml;
 }> = (props) => {
-  const ButtonLink = styled(Button)<LinkProps>();
-
   const { problemInfo, problemId, infoToml } = props;
 
   const currentUser = useCurrentUser();
@@ -189,7 +187,7 @@ const UsefulLinks: React.FC<{
   return (
     <Box>
       {currentUser.isSuccess && currentUser.data.user?.name && (
-        <ButtonLink
+        <LinkButton
           LinkComponent={RouterLink}
           variant="outlined"
           startIcon={<Person />}
@@ -200,26 +198,24 @@ const UsefulLinks: React.FC<{
           }).toString()}`}
         >
           My Submissions
-        </ButtonLink>
+        </LinkButton>
       )}
-      <ButtonLink
+      <LinkButton
         LinkComponent={RouterLink}
         variant="outlined"
         startIcon={<FlashOn />}
         to={`/submissions/?${fastestParams.toString()}`}
       >
         Fastest
-      </ButtonLink>
-      <Button
-        variant="outlined"
-        startIcon={<GitHub />}
-        href={problemInfo.sourceUrl}
-      >
+      </LinkButton>
+      <ExternalLinkButton startIcon={<GitHub />} href={problemInfo.sourceUrl}>
         GitHub
-      </Button>
-      <Button variant="outlined" startIcon={<Forum />} href={infoToml.forum}>
-        Forum
-      </Button>
+      </ExternalLinkButton>
+      {infoToml.forum && (
+        <ExternalLinkButton startIcon={<Forum />} href={infoToml.forum}>
+          Forum
+        </ExternalLinkButton>
+      )}
     </Box>
   );
 };
