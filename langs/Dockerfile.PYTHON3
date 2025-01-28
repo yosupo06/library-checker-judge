@@ -3,7 +3,7 @@ WORKDIR /library-checker-init
 COPY init /library-checker-init
 RUN cargo build --release --target=x86_64-unknown-linux-musl
 
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 RUN pip install --upgrade numpy scipy
 

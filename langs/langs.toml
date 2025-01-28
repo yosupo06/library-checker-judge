@@ -58,7 +58,7 @@
 [[langs]]
     id = "python3"
     name = "Python3"
-    version = "python3.10 + numpy + scipy"
+    version = "python3.12 + numpy + scipy"
     source = "main.py"
     image_name = "library-checker-images-python3"
     compile = ["sh", "-c", "echo | python3 -c 'import main.py' || :"]
@@ -66,7 +66,7 @@
 [[langs]]
     id = "pypy3"
     name = "PyPy3"
-    version = "pypy3.9-7.3.9"
+    version = "pypy3.10-7.3.17"
     source = "main.py"
     image_name = "library-checker-images-pypy"
     compile = ["pypy3", "-c", "'print(1)'"]
@@ -90,7 +90,7 @@
 [[langs]]
     id = "go"
     name = "Go"
-    version = "go 1.18.2"
+    version = "go 1.23.5"
     source = "main.go"
     image_name = "library-checker-images-golang"
     compile = ["go", "build", "main.go"]

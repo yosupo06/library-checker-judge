@@ -1,4 +1,4 @@
-FROM node:18-bullseye
+FROM node:22-bookworm
 
 RUN apt update && apt install -y openjdk-17-jdk
 
