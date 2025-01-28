@@ -119,3 +119,11 @@
     image_name = "library-checker-images-ruby"
     compile = ["ruby", "-w", "-c", "main.rb"]
     exec = ["ruby", "main.rb"]
+[[langs]]
+    id = "ruby3"
+    name = "Ruby3"
+    version = "ruby 3.4.1"
+    source = "main.rb"
+    image_name = "library-checker-images-ruby3"
+    compile = ["ruby", "-w", "-c", "main.rb"]
+    exec = ["ruby", "main.rb"]
