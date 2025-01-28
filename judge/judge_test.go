@@ -162,6 +162,10 @@ func TestRubyAplusBAC(t *testing.T) {
 	testAplusBAC(t, "ruby", "ac.rb")
 }
 
+func TestRuby3AplusBAC(t *testing.T) {
+	testAplusBAC(t, "ruby3", "ac.rb")
+}
+
 func TestCppAplusBWA(t *testing.T) {
 	testAplusB(t, "cpp", "wa.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "WA")
 }

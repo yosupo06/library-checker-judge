@@ -2,20 +2,9 @@ FROM golang:1.21 as builder
 
 WORKDIR /go/src/github.com/yosupo06/library-checker-judge/api
 
-COPY ./api/go.mod /go/src/github.com/yosupo06/library-checker-judge/api/
-COPY ./api/go.sum /go/src/github.com/yosupo06/library-checker-judge/api/
-
-COPY ./database/go.mod /go/src/github.com/yosupo06/library-checker-judge/database/
-COPY ./database/go.sum /go/src/github.com/yosupo06/library-checker-judge/database/
-
-COPY ./langs/go.mod /go/src/github.com/yosupo06/library-checker-judge/langs/
-COPY ./langs/go.sum /go/src/github.com/yosupo06/library-checker-judge/langs/
-
-RUN go mod download
-
-COPY ./api/. /go/src/github.com/yosupo06/library-checker-judge/api/
-COPY ./database/. /go/src/github.com/yosupo06/library-checker-judge/database/
-COPY ./langs/. /go/src/github.com/yosupo06/library-checker-judge/langs/
+COPY ./api /go/src/github.com/yosupo06/library-checker-judge/api
+COPY ./database /go/src/github.com/yosupo06/library-checker-judge/database
+COPY ./langs /go/src/github.com/yosupo06/library-checker-judge/langs
 
 RUN CGO_ENABLED=0 GOOS=linux go build .
 
