@@ -1,4 +1,4 @@
-FROM rust:alpine as init-builder
+FROM rust:alpine AS init-builder
 WORKDIR /library-checker-init
 COPY init /library-checker-init
 RUN cargo build --release --target=x86_64-unknown-linux-musl

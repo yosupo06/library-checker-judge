@@ -1,9 +1,9 @@
-FROM rust:alpine as init-builder
+FROM rust:alpine AS init-builder
 WORKDIR /library-checker-init
 COPY init /library-checker-init
 RUN cargo build --release --target=x86_64-unknown-linux-musl
 
-FROM ubuntu:22.04 as builder
+FROM ubuntu:22.04 AS builder
 
 RUN apt-get update
 RUN apt-get install -y wget xz-utils
