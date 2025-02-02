@@ -20,9 +20,11 @@ services:
         retries: 30
 
   db:
-    image: postgres:11.3
+    image: postgres:17.2
     ports:
       - 5432:5432
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=librarychecker
       - POSTGRES_PASSWORD=lcdummypassword
@@ -43,6 +45,8 @@ services:
   minio:
     image: minio/minio
     command: server /data --console-address :9001
+    volumes:
+      - ./minio_data:/data
     ports:
       - 9000:9000
       - 9001:9001
@@ -62,8 +66,6 @@ services:
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc config host add myminio http://minio:9000 minio miniopass;
-      /usr/bin/mc rm --recursive --force myminio/testcase;
-      /usr/bin/mc rm --recursive --force myminio/testcase-public;
       /usr/bin/mc mb myminio/testcase;
       /usr/bin/mc mb myminio/testcase-public;
       /usr/bin/mc policy download myminio/testcase;

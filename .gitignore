@@ -12,3 +12,6 @@ deploy/library_checker_pb2.py
 deploy/library_checker_pb2_grpc.py
 
 go.work
+
+db_data
+minio_data
