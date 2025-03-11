@@ -24,8 +24,8 @@ type Submission struct {
 	MaxTime          int32
 	MaxMemory        int64
 	CompileError     []byte
-	UserName         sql.NullString
-	User             User `gorm:"foreignKey:UserName"`
+	UserName         sql.NullString `gorm:"index"`
+	User             User           `gorm:"foreignKey:UserName"`
 	JudgedTime       time.Time
 }
 
