@@ -113,6 +113,11 @@ func NewUploadTarget(base, root string) (UploadTarget, error) {
 }
 
 func testCaseHash(base string) (string, error) {
+	checkerHash, err := fileHash(path.Join(base, "checker.cpp"))
+	if err != nil {
+		return "", err
+	}
+
 	caseHash, err := os.ReadFile(path.Join(base, "hash.json"))
 	if err != nil {
 		return "", err
@@ -126,7 +131,7 @@ func testCaseHash(base string) (string, error) {
 	for _, v := range cases {
 		hashes = append(hashes, v)
 	}
-	return joinHashes(hashes), nil
+	return joinHashes([]string{checkerHash, joinHashes(hashes)}), nil
 }
 
 func version(base, root string) (string, error) {
