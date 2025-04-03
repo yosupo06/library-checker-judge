@@ -86,6 +86,12 @@ type VolumeMountInfo struct {
 	Volume *Volume
 }
 
+type BindMountInfo struct {
+	HostPath      string
+	ContainerPath string
+	ReadOnly      bool
+}
+
 type ContainerMonitorBuilder func(c *containerInfo) (containerMonitor, error)
 
 var DEFAULT_MONITOR_BUILDER ContainerMonitorBuilder
@@ -113,6 +119,7 @@ type TaskInfo struct {
 	WorkDir             string
 	cgroupParent        string
 	VolumeMountInfo     []VolumeMountInfo
+	BindMountInfo       []BindMountInfo
 	monitorBuilder      ContainerMonitorBuilder
 
 	Stdin  io.Reader
@@ -189,6 +196,17 @@ func WithVolume(volume *Volume, containerPath string) TaskInfoOption {
 		ti.VolumeMountInfo = append(ti.VolumeMountInfo, VolumeMountInfo{
 			Path:   containerPath,
 			Volume: volume,
+		})
+		return nil
+	}
+}
+
+func WithBindMount(hostPath string, containerPath string, readOnly bool) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.BindMountInfo = append(ti.BindMountInfo, BindMountInfo{
+			HostPath:      hostPath,
+			ContainerPath: containerPath,
+			ReadOnly:      readOnly,
 		})
 		return nil
 	}
@@ -300,6 +318,16 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	for _, volumeMount := range t.VolumeMountInfo {
 		args = append(args, "-v")
 		args = append(args, fmt.Sprintf("%s:%s", volumeMount.Volume.Name, volumeMount.Path))
+	}
+
+	// bind mount
+	for _, bindMount := range t.BindMountInfo {
+		args = append(args, "--mount")
+		mountOpt := fmt.Sprintf("type=bind,src=%s,dst=%s", bindMount.HostPath, bindMount.ContainerPath)
+		if bindMount.ReadOnly {
+			mountOpt += ",readonly"
+		}
+		args = append(args, mountOpt)
 	}
 
 	// cgroup parent
