@@ -45,12 +45,11 @@ func execHackTask(db *gorm.DB, downloader storage.TestCaseDownloader, taskID int
 	}
 
 	data := HackTaskData{
-		db:     db,
-		taskID: taskID,
-		files:  files,
-		info:   info,
-		h:      hack,
-		lang:   lang,
+		task:  NewTaskData(db, taskID),
+		files: files,
+		info:  info,
+		h:     hack,
+		lang:  lang,
 	}
 	if err := data.judge(); err != nil {
 		data.h.Status = "IE"
@@ -64,12 +63,11 @@ func execHackTask(db *gorm.DB, downloader storage.TestCaseDownloader, taskID int
 }
 
 type HackTaskData struct {
-	db     *gorm.DB
-	taskID int32
-	files  storage.ProblemFiles
-	info   storage.Info
-	h      database.Hack
-	lang   langs.Lang
+	task  TaskData
+	files storage.ProblemFiles
+	info  storage.Info
+	h     database.Hack
+	lang  langs.Lang
 }
 
 func (data *HackTaskData) judge() error {
@@ -274,20 +272,23 @@ func (data *HackTaskData) runModelSolution(v Volume, inFilePath string) (string,
 
 func (data *HackTaskData) updateHackStatus(status string) error {
 	data.h.Status = status
-	if err := database.TouchTask(data.db, data.taskID); err != nil {
+
+	if err := data.task.TouchIfNeeded(); err != nil {
 		return err
 	}
-	if err := database.UpdateHack(data.db, data.h); err != nil {
+
+	if err := database.UpdateHack(data.task.db, data.h); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (data *HackTaskData) updateHack() error {
-	if err := database.TouchTask(data.db, data.taskID); err != nil {
+	if err := data.task.TouchIfNeeded(); err != nil {
 		return err
 	}
-	if err := database.UpdateHack(data.db, data.h); err != nil {
+
+	if err := database.UpdateHack(data.task.db, data.h); err != nil {
 		return err
 	}
 	return nil

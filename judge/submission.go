@@ -36,11 +36,10 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 		return err
 	}
 	data := SubmissionTaskData{
-		db:     db,
-		taskID: taskID,
-		files:  files,
-		s:      s,
-		lang:   lang,
+		task:  NewTaskData(db, taskID),
+		files: files,
+		s:     s,
+		lang:  lang,
 	}
 
 	if err := data.init(); err != nil {
@@ -57,11 +56,10 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 }
 
 type SubmissionTaskData struct {
-	db     *gorm.DB
-	taskID int32
-	files  storage.ProblemFiles
-	s      database.Submission
-	lang   langs.Lang
+	task  TaskData
+	files storage.ProblemFiles
+	s     database.Submission
+	lang  langs.Lang
 }
 
 func (data *SubmissionTaskData) init() error {
@@ -74,7 +72,7 @@ func (data *SubmissionTaskData) init() error {
 	if err := data.updateSubmission(); err != nil {
 		return err
 	}
-	if err := database.ClearTestcaseResult(data.db, data.s.ID); err != nil {
+	if err := database.ClearTestcaseResult(data.task.db, data.s.ID); err != nil {
 		return err
 	}
 	return nil
@@ -134,7 +132,7 @@ func (data *SubmissionTaskData) judge() error {
 		}
 		results = append(results, result)
 
-		if err := database.SaveTestcaseResult(data.db, database.SubmissionTestcaseResult{
+		if err := database.SaveTestcaseResult(data.task.db, database.SubmissionTestcaseResult{
 			Submission: data.s.ID,
 			Testcase:   testCaseName,
 			Status:     result.Status,
@@ -157,20 +155,23 @@ func (data *SubmissionTaskData) judge() error {
 
 func (data *SubmissionTaskData) updateSubmissionStatus(status string) error {
 	data.s.Status = status
-	if err := database.TouchTask(data.db, data.taskID); err != nil {
+
+	if err := data.task.TouchIfNeeded(); err != nil {
 		return err
 	}
-	if err := database.UpdateSubmissionStatus(data.db, data.s.ID, status); err != nil {
+
+	if err := database.UpdateSubmissionStatus(data.task.db, data.s.ID, status); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (data *SubmissionTaskData) updateSubmission() error {
-	if err := database.TouchTask(data.db, data.taskID); err != nil {
+	if err := data.task.TouchIfNeeded(); err != nil {
 		return err
 	}
-	if err := database.UpdateSubmission(data.db, data.s); err != nil {
+
+	if err := database.UpdateSubmission(data.task.db, data.s); err != nil {
 		return err
 	}
 	return nil

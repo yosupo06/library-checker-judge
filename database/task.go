@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const TASK_RETRY_PERIOD = time.Minute
+const TASK_RETRY_PERIOD = 2 * time.Minute
 
 type TaskType = int
 
