@@ -107,7 +107,7 @@ func TestSubmissionResult(t *testing.T) {
 		Memory:     456,
 		Stderr:     []byte{12, 34},
 	}
-	if err := SaveTestcaseResult(db, result); err != nil {
+	if err := SaveTestcaseResults(db, []SubmissionTestcaseResult{result}); err != nil {
 		t.Fatal(err)
 	}
 
