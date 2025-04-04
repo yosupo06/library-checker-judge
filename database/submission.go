@@ -134,8 +134,8 @@ func ClearTestcaseResult(db *gorm.DB, subID int32) error {
 	return nil
 }
 
-func SaveTestcaseResult(db *gorm.DB, result SubmissionTestcaseResult) error {
-	if err := db.Save(&result).Error; err != nil {
+func SaveTestcaseResults(db *gorm.DB, results []SubmissionTestcaseResult) error {
+	if err := db.Save(&results).Error; err != nil {
 		return err
 	}
 

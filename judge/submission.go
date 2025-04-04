@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"time" // 追加
 
 	"gorm.io/gorm"
 
@@ -46,7 +47,8 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 		return err
 	}
 	if err := data.judge(); err != nil {
-		if err := data.updateSubmissionStatus("IE"); err != nil {
+		data.s.Status = "IE"
+		if err := data.updateSubmission(); err != nil {
 			slog.Error("Deep error", "err", err)
 		}
 		return err
@@ -56,10 +58,12 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 }
 
 type SubmissionTaskData struct {
-	task  TaskData
-	files storage.ProblemFiles
-	s     database.Submission
-	lang  langs.Lang
+	task       TaskData
+	files      storage.ProblemFiles
+	s          database.Submission
+	lang       langs.Lang
+	buffer     []database.SubmissionTestcaseResult
+	lastUpdate time.Time
 }
 
 func (data *SubmissionTaskData) init() error {
@@ -69,6 +73,7 @@ func (data *SubmissionTaskData) init() error {
 	data.s.Status = "-"
 	data.s.TestCasesVersion = data.s.Problem.TestCasesVersion
 	data.s.CompileError = []byte{}
+	data.lastUpdate = time.Now()
 	if err := data.updateSubmission(); err != nil {
 		return err
 	}
@@ -80,12 +85,14 @@ func (data *SubmissionTaskData) init() error {
 
 func (data *SubmissionTaskData) judge() error {
 	slog.Info("Fetch data")
-	if err := data.updateSubmissionStatus("Fetching"); err != nil {
+	data.s.Status = "Fetching"
+	if err := data.syncStatusAndResults(false); err != nil {
 		return err
 	}
 
 	slog.Info("Compile checker")
-	if err := data.updateSubmissionStatus("Compiling"); err != nil {
+	data.s.Status = "Compiling"
+	if err := data.syncStatusAndResults(false); err != nil {
 		return err
 	}
 	checkerVolume, taskResult, err := compileChecker(data.files)
@@ -119,10 +126,10 @@ func (data *SubmissionTaskData) judge() error {
 	testCaseNum := len(testCases)
 	results := []CaseResult{}
 	for idx, testCaseName := range testCases {
-		if err := data.updateSubmissionStatus(fmt.Sprintf("%d/%d", idx, testCaseNum)); err != nil {
+		data.s.Status = fmt.Sprintf("%d/%d", idx, testCaseNum)
+		if err := data.syncStatusAndResults(false); err != nil {
 			return err
 		}
-
 		inFilePath := data.files.InFilePath(testCaseName)
 		expectFilePath := data.files.OutFilePath(testCaseName)
 
@@ -132,7 +139,7 @@ func (data *SubmissionTaskData) judge() error {
 		}
 		results = append(results, result)
 
-		if err := database.SaveTestcaseResult(data.task.db, database.SubmissionTestcaseResult{
+		data.buffer = append(data.buffer, database.SubmissionTestcaseResult{
 			Submission: data.s.ID,
 			Testcase:   testCaseName,
 			Status:     result.Status,
@@ -140,9 +147,11 @@ func (data *SubmissionTaskData) judge() error {
 			Memory:     result.Memory,
 			Stderr:     result.Stderr,
 			CheckerOut: result.CheckerOut,
-		}); err != nil {
-			return err
-		}
+		})
+	}
+
+	if err := data.syncStatusAndResults(true); err != nil {
+		return err
 	}
 
 	totalResult := AggregateResults(results)
@@ -153,16 +162,28 @@ func (data *SubmissionTaskData) judge() error {
 	return data.updateSubmission()
 }
 
-func (data *SubmissionTaskData) updateSubmissionStatus(status string) error {
-	data.s.Status = status
+func (data *SubmissionTaskData) syncStatusAndResults(force bool) error {
+	now := time.Now()
+	if !force && now.Sub(data.lastUpdate) < 3*time.Second {
+		return nil
+	}
 
 	if err := data.task.TouchIfNeeded(); err != nil {
 		return err
 	}
 
-	if err := database.UpdateSubmissionStatus(data.task.db, data.s.ID, status); err != nil {
+	if err := database.UpdateSubmissionStatus(data.task.db, data.s.ID, data.s.Status); err != nil {
 		return err
 	}
+
+	if len(data.buffer) != 0 {
+		if err := database.SaveTestcaseResults(data.task.db, data.buffer); err != nil {
+			return err
+		}
+		data.buffer = make([]database.SubmissionTestcaseResult, 0)
+	}
+
+	data.lastUpdate = now
 	return nil
 }
 
