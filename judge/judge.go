@@ -111,6 +111,7 @@ func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v Volume, 
 }
 
 func runTestCase(sourceVolume, checkerVolume Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {
+	slog.Info("TestCase", "lang", lang.ID, "in", inFilePath, "expect", expectFilePath)
 	outFilePath, result, err := runSource(sourceVolume, lang, timeLimit, inFilePath)
 	if err != nil {
 		return CaseResult{}, err
@@ -211,23 +212,15 @@ func runSource(volume Volume, lang langs.Lang, timeLimit float64, inFilePath str
 }
 
 func runChecker(volume Volume, inFilePath, expectFilePath, actualFilePath string) (TaskResult, error) {
-	if err := volume.CopyFile(inFilePath, "input.in"); err != nil {
-		return TaskResult{}, err
-	}
-	if err := volume.CopyFile(expectFilePath, "expect.out"); err != nil {
-		return TaskResult{}, err
-	}
-	if err := volume.CopyFile(actualFilePath, "actual.out"); err != nil {
-		return TaskResult{}, err
-	}
-
-	// TODO: make volume read only?
 	checkerTaskInfo, err := NewTaskInfo(langs.LANG_CHECKER.ImageName, append(
 		DEFAULT_OPTIONS,
 		WithArguments(langs.LANG_CHECKER.Exec...),
 		WithWorkDir("/workdir"),
 		WithTimeout(CHECKER_TIMEOUT),
 		WithVolume(&volume, "/workdir"),
+		WithBindMount(inFilePath, "/workdir/input.in", true),
+		WithBindMount(expectFilePath, "/workdir/expect.out", true),
+		WithBindMount(actualFilePath, "/workdir/actual.out", true),
 	)...)
 	if err != nil {
 		return TaskResult{}, err

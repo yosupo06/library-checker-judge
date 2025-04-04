@@ -47,15 +47,16 @@ func main() {
 		switch taskData.TaskType {
 		case database.JUDGE_SUBMISSION:
 			if err := execSubmissionTask(db, downloader, taskID, taskData.Submission); err != nil {
-				slog.Error("failed to judge Submission", "err", err)
+				slog.Error("Failed to judge Submission", "err", err)
 				continue
 			}
 		case database.JUDGE_HACK:
 			if err := execHackTask(db, downloader, taskID, taskData.Hack); err != nil {
-				slog.Error("failed to judge Hack", "err", err)
+				slog.Error("Failed to judge Hack", "err", err)
 				continue
 			}
 		}
+		slog.Info("Finish task", "ID", taskID)
 		database.FinishTask(db, taskID)
 	}
 }
