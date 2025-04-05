@@ -29,7 +29,7 @@ resource "google_storage_bucket" "private" {
 resource "google_storage_bucket" "internal" {
   for_each = toset([
     local.internal_region,
-    "asia-northeast1"
+    "us-east1"
   ])
   name                        = "v2-${var.env}-library-checker-${each.key}-internal"
   location                    = each.key
