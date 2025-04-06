@@ -22,6 +22,7 @@ locals {
 
   external_region = "asia-northeast1"
   internal_region = "asia-northeast1"
+  internal_zone = "asia-northeast1-b"
 }
 
 provider "google" {
