@@ -60,15 +60,15 @@ resource "google_compute_instance_template" "judge" {
   }
 }
 
-resource "google_compute_region_instance_group_manager" "judge" {
+resource "google_compute_instance_group_manager" "judge" {
   for_each = toset([
-    local.internal_region,
+    local.internal_zone,
   ])
 
   name = "judge-${each.key}"
 
   base_instance_name = "judge"
-  region             = each.key
+  zone = each.key
 
   update_policy {
     type                  = "PROACTIVE"
