@@ -35,7 +35,7 @@ output "public_bucket_name" {
     value = google_storage_bucket.public.name
 }
 output "internal_bucket_name" {
-    value = google_storage_bucket.internal[local.internal_region].name
+    value = google_storage_bucket.internal[local.region].name
 }
 
 output "storage_hmac_id" {

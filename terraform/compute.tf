@@ -14,7 +14,7 @@ data "google_compute_image" "judge" {
 resource "google_compute_instance_template" "judge" {
   name_prefix = "judge-template-"
   description = "This template is used to create judge server."
-  region      = local.internal_region
+  region      = local.region
 
   machine_type   = local.judge_instance_type
   can_ip_forward = false
@@ -33,7 +33,7 @@ resource "google_compute_instance_template" "judge" {
   }
 
   network_interface {
-    subnetwork = google_compute_subnetwork.main[local.internal_region].name
+    subnetwork = google_compute_subnetwork.main[local.region].name
   }
 
   scheduling {
@@ -62,7 +62,7 @@ resource "google_compute_instance_template" "judge" {
 
 resource "google_compute_instance_group_manager" "judge" {
   for_each = toset([
-    local.internal_zone,
+    local.zone,
   ])
 
   name = "judge-${each.key}"
