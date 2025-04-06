@@ -20,9 +20,8 @@ locals {
     "prod" : "v2.api.judge.yosupo.jp",
   }
 
-  external_region = "asia-northeast1"
-  internal_region = "asia-northeast1"
-  internal_zone = "asia-northeast1-b"
+  region = "asia-northeast1"
+  zone = "asia-northeast1-b"
 }
 
 provider "google" {
@@ -40,7 +39,7 @@ resource "google_secret_manager_secret" "discord_announcement_webhook" {
 }
 
 resource "google_artifact_registry_repository" "main" {
-  location      = local.external_region
+  location      = local.region
   repository_id = "main"
   description   = "docker repository"
   format        = "DOCKER"
