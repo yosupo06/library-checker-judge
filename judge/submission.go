@@ -58,15 +58,31 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 }
 
 type SubmissionTaskData struct {
-	task       TaskData
-	files      storage.ProblemFiles
-	s          database.Submission
-	lang       langs.Lang
-	buffer     []database.SubmissionTestcaseResult
-	lastUpdate time.Time
+	task          TaskData
+	files         storage.ProblemFiles
+	s             database.Submission
+	lang          langs.Lang
+	results       []database.SubmissionTestcaseResult
+	resultsToSave []database.SubmissionTestcaseResult
+	lastUpdate    time.Time
+	info          storage.Info
 }
 
 func (data *SubmissionTaskData) init() error {
+	info, err := storage.ParseInfo(data.files.InfoTomlPath())
+	if err != nil {
+		return err
+	}
+	data.info = info
+
+	testCases := data.info.TestCaseNames()
+	data.results = make([]database.SubmissionTestcaseResult, len(testCases))
+	for i := range data.results {
+		data.results[i].Submission = data.s.ID
+		data.results[i].Testcase = testCases[i]
+		data.results[i].Status = "-"
+	}
+
 	data.s.MaxTime = -1
 	data.s.MaxMemory = -1
 	data.s.PrevStatus = data.s.Status
@@ -80,6 +96,10 @@ func (data *SubmissionTaskData) init() error {
 	if err := database.ClearTestcaseResult(data.task.db, data.s.ID); err != nil {
 		return err
 	}
+	if err := database.SaveTestcaseResults(data.task.db, data.results); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -118,43 +138,39 @@ func (data *SubmissionTaskData) judge() error {
 	}
 
 	slog.Info("Start executing")
-	info, err := storage.ParseInfo(data.files.InfoTomlPath())
-	if err != nil {
-		return err
-	}
-	testCases := info.TestCaseNames()
-	testCaseNum := len(testCases)
-	results := []CaseResult{}
-	for idx, testCaseName := range testCases {
+	testCaseNum := len(data.results)
+	caseResults := []CaseResult{}
+	for idx := 0; idx < testCaseNum; idx++ {
+		testCaseName := data.results[idx].Testcase
 		data.s.Status = fmt.Sprintf("%d/%d", idx, testCaseNum)
+
 		if err := data.syncStatusAndResults(false); err != nil {
 			return err
 		}
+
 		inFilePath := data.files.InFilePath(testCaseName)
 		expectFilePath := data.files.OutFilePath(testCaseName)
 
-		result, err := runTestCase(sourceVolume, checkerVolume, data.lang, info.TimeLimit, inFilePath, expectFilePath)
+		result, err := runTestCase(sourceVolume, checkerVolume, data.lang, data.info.TimeLimit, inFilePath, expectFilePath)
 		if err != nil {
 			return err
 		}
-		results = append(results, result)
+		data.results[idx].Status = result.Status
+		data.results[idx].Time = int32(result.Time.Milliseconds())
+		data.results[idx].Memory = result.Memory
+		data.results[idx].Stderr = result.Stderr
+		data.results[idx].CheckerOut = result.CheckerOut
 
-		data.buffer = append(data.buffer, database.SubmissionTestcaseResult{
-			Submission: data.s.ID,
-			Testcase:   testCaseName,
-			Status:     result.Status,
-			Time:       int32(result.Time.Milliseconds()),
-			Memory:     result.Memory,
-			Stderr:     result.Stderr,
-			CheckerOut: result.CheckerOut,
-		})
+		data.resultsToSave = append(data.resultsToSave, data.results[idx])
+		caseResults = append(caseResults, result)
 	}
 
+	// Final sync to save all results
 	if err := data.syncStatusAndResults(true); err != nil {
 		return err
 	}
 
-	totalResult := AggregateResults(results)
+	totalResult := aggregateResults(caseResults)
 
 	data.s.Status = totalResult.Status
 	data.s.MaxTime = int32(totalResult.Time.Milliseconds())
@@ -176,11 +192,11 @@ func (data *SubmissionTaskData) syncStatusAndResults(force bool) error {
 		return err
 	}
 
-	if len(data.buffer) != 0 {
-		if err := database.SaveTestcaseResults(data.task.db, data.buffer); err != nil {
+	if len(data.resultsToSave) != 0 {
+		if err := database.SaveTestcaseResults(data.task.db, data.resultsToSave); err != nil {
 			return err
 		}
-		data.buffer = make([]database.SubmissionTestcaseResult, 0)
+		data.resultsToSave = []database.SubmissionTestcaseResult{}
 	}
 
 	data.lastUpdate = now
@@ -218,7 +234,7 @@ func (data *SubmissionTaskData) compileSource() (Volume, TaskResult, error) {
 	return compile(data.files, sourceFile.Name(), data.lang)
 }
 
-func AggregateResults(results []CaseResult) CaseResult {
+func aggregateResults(results []CaseResult) CaseResult {
 	ans := CaseResult{
 		Status: "AC",
 		Time:   0,
