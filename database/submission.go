@@ -69,13 +69,14 @@ const (
 
 // SubmissionTestcaseResult is db table
 type SubmissionTestcaseResult struct {
-	Submission int32  `gorm:"primaryKey"` // TODO: should be foreign key
-	Testcase   string `gorm:"primaryKey"`
-	Status     string
-	Time       int32
-	Memory     int64
-	Stderr     []byte
-	CheckerOut []byte
+	Submission   int32  `gorm:"primaryKey"` // TODO: should be foreign key
+	Testcase     string `gorm:"primaryKey"`
+	Status       string
+	Time         int32
+	Memory       int64
+	Stderr       []byte
+	CheckerOut   []byte
+	DisplayOrder int32
 }
 
 func FetchSubmission(db *gorm.DB, id int32) (Submission, error) {
@@ -150,7 +151,7 @@ func FetchTestcaseResults(db *gorm.DB, id int32) ([]SubmissionTestcaseResult, er
 
 	// TODO: to DB query
 	sort.Slice(cases, func(i, j int) bool {
-		return cases[i].Testcase < cases[j].Testcase
+		return cases[i].DisplayOrder < cases[j].DisplayOrder
 	})
 
 	return cases, nil
