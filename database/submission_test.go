@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +79,32 @@ func TestUpdateSubmissionStatus(t *testing.T) {
 	if sub2.User.Name != "user1" || sub2.Problem.Name != "aplusb" || sub2.Status != "IE" || sub2.MaxTime != 1234 {
 		t.Fatal("invalid data", sub2)
 	}
+}
+
+func TestSubmitInvalidSource(t *testing.T) {
+	db := CreateTestDB(t)
+
+	createDummyProblem(t, db)
+
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := SaveSubmission(db, Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: false},
+	}); err == nil {
+		t.Fatal("must be error")
+	}
+
+	if _, err := SaveSubmission(db, Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: false},
+		Source:      strings.Repeat("a", 1024*1024+1),
+	}); err == nil {
+		t.Fatal("must be error")
+	}
+
 }
 
 func TestSubmissionResult(t *testing.T) {
