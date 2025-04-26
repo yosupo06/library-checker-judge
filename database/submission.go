@@ -25,7 +25,7 @@ type Submission struct {
 	MaxMemory        int64
 	CompileError     []byte
 	UserName         sql.NullString `gorm:"index"`
-	User             User           `gorm:"foreignKey:UserName"`
+	User             *User          `gorm:"foreignKey:UserName"`
 	JudgedTime       time.Time
 }
 
@@ -41,7 +41,7 @@ type SubmissionOverView struct {
 	MaxTime          int32
 	MaxMemory        int64
 	UserName         sql.NullString
-	User             User
+	User             *User
 }
 
 func ToSubmissionOverView(s Submission) SubmissionOverView {

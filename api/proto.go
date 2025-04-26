@@ -13,7 +13,7 @@ func toProtoSubmissionOverview(s database.SubmissionOverView) pb.SubmissionOverv
 		Id:             int32(s.ID),
 		ProblemName:    s.Problem.Name,
 		ProblemTitle:   s.Problem.Title,
-		UserName:       s.User.Name,
+		UserName:       s.UserName.String,
 		Lang:           s.Lang,
 		IsLatest:       s.TestCasesVersion == s.Problem.TestCasesVersion,
 		Status:         s.Status,

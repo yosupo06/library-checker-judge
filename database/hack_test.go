@@ -17,6 +17,7 @@ func TestHack(t *testing.T) {
 	subID, err := SaveSubmission(db, Submission{
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
+		Source:      "source",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -53,6 +54,7 @@ func TestSave(t *testing.T) {
 	subID, err := SaveSubmission(db, Submission{
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
+		Source:      "source",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +100,7 @@ func TestUpdateHack(t *testing.T) {
 	subID, err := SaveSubmission(db, Submission{
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
+		Source:      "source",
 	})
 	if err != nil {
 		t.Fatal(err)
