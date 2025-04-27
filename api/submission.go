@@ -12,6 +12,12 @@ import (
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
+const (
+	submissionPriority          = 50
+	anonymousSubmissionPriority = 45
+	rejudgePriority             = 40
+)
+
 func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitResponse, error) {
 	// Validation
 	type SubmitParams struct {
@@ -59,9 +65,9 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 
 	log.Println("Submit ", id)
 
-	priority := ANONYMOUS_SUBMISSION_PRIORITY
+	priority := anonymousSubmissionPriority
 	if currentUser != nil {
-		priority = SUBMISSION_PRIORITY
+		priority = submissionPriority
 	}
 	if err := s.pushTask(ctx, id, int32(priority)); err != nil {
 		log.Print(err)
@@ -80,7 +86,7 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 		return nil, errors.New("no permission")
 	}
 
-	if err := s.pushTask(ctx, in.Id, REJUDGE_PRIORITY); err != nil {
+	if err := s.pushTask(ctx, in.Id, rejudgePriority); err != nil {
 		log.Print("rejudge failed:", err)
 		return nil, errors.New("rejudge failed")
 	}
@@ -137,6 +143,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListRequest) (*pb.SubmissionListResponse, error) {
 	if 1000 < in.Limit {
 		return nil, errors.New("limit must not greater than 1000")
+
 	}
 
 	var order []database.SubmissionOrder

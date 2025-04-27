@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	hackPriority = 10
+
 	TEST_CASE_TXT_LENGTH_LIMIT = 1024 * 1024
 	TEST_CASE_CPP_LENGTH_LIMIT = 1024 * 1024
 )
