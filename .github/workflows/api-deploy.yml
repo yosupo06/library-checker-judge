@@ -22,7 +22,7 @@ env:
   TF_WORKSPACE: "${{ inputs.env }}-library-checker"
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
