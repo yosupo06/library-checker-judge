@@ -141,16 +141,6 @@ func (s *server) ProblemList(ctx context.Context, in *pb.ProblemListRequest) (*p
 	return &res, nil
 }
 
-func (s *server) pushTask(_ context.Context, subID, priority int32) error {
-	if err := database.PushTask(s.db, database.TaskData{
-		TaskType:   database.JUDGE_SUBMISSION,
-		Submission: subID,
-	}, priority); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.LangListResponse, error) {
 	var pbLangs []*pb.Lang
 	for _, lang := range langs.LANGS {
