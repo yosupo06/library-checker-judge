@@ -10,19 +10,23 @@ import (
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
 	"github.com/yosupo06/library-checker-judge/database"
-	"github.com/yosupo06/library-checker-judge/langs"
 )
 
 func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitResponse, error) {
-	if in.Source == "" {
-		return nil, errors.New("empty Source")
+	// Validation
+	type SubmitParams struct {
+		Source string `validate:"source"`
+		Lang   string `validate:"lang"`
 	}
-	if len(in.Source) > 1024*1024 {
-		return nil, errors.New("too large Source")
+	params := SubmitParams{
+		Source: in.Source,
+		Lang:   in.Lang,
 	}
-	if _, ok := langs.GetLang(in.Lang); !ok {
-		return nil, errors.New("unknown Lang")
+	if err := validate.Struct(params); err != nil {
+		return nil, errors.New("invalid submission parameters")
 	}
+
+	// Validation
 	if _, err := s.ProblemInfo(ctx, &pb.ProblemInfoRequest{
 		Name: in.Problem,
 	}); err != nil {
