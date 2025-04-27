@@ -19,13 +19,13 @@ type Submission struct {
 	Status           string
 	PrevStatus       string
 	Hacked           bool
-	Source           string
+	Source           string `validate:"source"`
 	TestCasesVersion string
 	MaxTime          int32
 	MaxMemory        int64
 	CompileError     []byte
 	UserName         sql.NullString `gorm:"index"`
-	User             User           `gorm:"foreignKey:UserName"`
+	User             *User          `gorm:"foreignKey:UserName"`
 	JudgedTime       time.Time
 }
 
@@ -41,7 +41,7 @@ type SubmissionOverView struct {
 	MaxTime          int32
 	MaxMemory        int64
 	UserName         sql.NullString
-	User             User
+	User             *User
 }
 
 func ToSubmissionOverView(s Submission) SubmissionOverView {
@@ -100,6 +100,9 @@ func SaveSubmission(db *gorm.DB, submission Submission) (int32, error) {
 	if submission.ID != 0 {
 		return 0, errors.New("must not specify submission id")
 	}
+	if err := validate.Struct(submission); err != nil {
+		return 0, err
+	}
 	if err := db.Save(&submission).Error; err != nil {
 		return 0, err
 	}
@@ -110,6 +113,9 @@ func SaveSubmission(db *gorm.DB, submission Submission) (int32, error) {
 func UpdateSubmission(db *gorm.DB, submission Submission) error {
 	if submission.ID == 0 {
 		return errors.New("must specify submission id")
+	}
+	if err := validate.Struct(submission); err != nil {
+		return err
 	}
 	if err := db.Save(&submission).Error; err != nil {
 		return err

@@ -48,3 +48,25 @@ func TestLibraryURLValidate(t *testing.T) {
 		}
 	}
 }
+
+func TestSourceValidate(t *testing.T) {
+	type Param struct {
+		Source string `validate:"source"`
+	}
+
+	for _, source := range []string{"a", strings.Repeat("a", 1024*1024)} {
+		if err := validate.Struct(&Param{
+			Source: source,
+		}); err != nil {
+			t.Fatalf("%v should be valid source: %v", source, err)
+		}
+	}
+
+	for _, source := range []string{"", strings.Repeat("a", 1024*1024+1)} {
+		if err := validate.Struct(&Param{
+			Source: source,
+		}); err == nil {
+			t.Fatalf("%v should not be valid source", source)
+		}
+	}	
+}

@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -18,6 +19,7 @@ func TestSubmission(t *testing.T) {
 	sub := Submission{
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
+		Source:      "source",
 	}
 
 	id, err := SaveSubmission(db, sub)
@@ -59,6 +61,7 @@ func TestUpdateSubmissionStatus(t *testing.T) {
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
 		MaxTime:     1234,
+		Source:      "source",
 	}
 
 	id, err := SaveSubmission(db, sub)
@@ -80,6 +83,33 @@ func TestUpdateSubmissionStatus(t *testing.T) {
 	}
 }
 
+func TestSubmitInvalidSource(t *testing.T) {
+	db := CreateTestDB(t)
+
+	createDummyProblem(t, db)
+
+	if err := RegisterUser(db, "user1", "id1"); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := SaveSubmission(db, Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: false},
+		Source:      "",
+	}); err == nil {
+		t.Fatal("must be error")
+	}
+
+	if _, err := SaveSubmission(db, Submission{
+		ProblemName: "aplusb",
+		UserName:    sql.NullString{Valid: false},
+		Source:      strings.Repeat("a", 1024*1024+1),
+	}); err == nil {
+		t.Fatal("must be error")
+	}
+
+}
+
 func TestSubmissionResult(t *testing.T) {
 	db := CreateTestDB(t)
 
@@ -92,6 +122,7 @@ func TestSubmissionResult(t *testing.T) {
 	sub := Submission{
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
+		Source:      "source",
 	}
 
 	id, err := SaveSubmission(db, sub)
@@ -133,6 +164,7 @@ func TestSubmissionResultEmpty(t *testing.T) {
 	sub := Submission{
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
+		Source:      "source",
 	}
 	if _, err := SaveSubmission(db, sub); err != nil {
 		t.Fatal(err)
@@ -161,6 +193,7 @@ func TestSubmissionList(t *testing.T) {
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
 		MaxTime:     1234,
+		Source:      "source",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -169,6 +202,7 @@ func TestSubmissionList(t *testing.T) {
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: false},
 		MaxTime:     123,
+		Source:      "source",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -260,6 +294,7 @@ func TestDedupSubmissionList(t *testing.T) {
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
 		MaxTime:     123,
+		Source:      "source",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -268,6 +303,7 @@ func TestDedupSubmissionList(t *testing.T) {
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user1"},
 		MaxTime:     1234,
+		Source:      "source",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -276,6 +312,7 @@ func TestDedupSubmissionList(t *testing.T) {
 		ProblemName: "aplusb",
 		UserName:    sql.NullString{Valid: true, String: "user2"},
 		MaxTime:     234,
+		Source:      "source",
 	}); err != nil {
 		t.Fatal(err)
 	}
