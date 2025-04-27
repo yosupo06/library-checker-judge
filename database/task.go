@@ -10,14 +10,14 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const TASK_RETRY_PERIOD = 2 * time.Minute
+const taskRetryPeriod = 2 * time.Minute
 
 type TaskType = int
 
 const (
 	_ TaskType = iota
-	JUDGE_SUBMISSION
-	JUDGE_HACK
+	JudgeSubmission
+	JudgeHack
 )
 
 type TaskData struct {
@@ -48,20 +48,20 @@ func decode(data []byte) (TaskData, error) {
 }
 
 func PushSubmissionTask(db *gorm.DB, id, priority int32) error {
-	return PushTask(db, TaskData{
-		TaskType:   JUDGE_SUBMISSION,
+	return pushTask(db, TaskData{
+		TaskType:   JudgeSubmission,
 		Submission: id,
 	}, priority)
 }
 
 func PushHackTask(db *gorm.DB, id, priority int32) error {
-	return PushTask(db, TaskData{
-		TaskType: JUDGE_HACK,
+	return pushTask(db, TaskData{
+		TaskType: JudgeHack,
 		Hack:     id,
 	}, priority)
 }
 
-func PushTask(db *gorm.DB, taskData TaskData, priority int32) error {
+func pushTask(db *gorm.DB, taskData TaskData, priority int32) error {
 	now := time.Now()
 	binTaskData, err := encode(taskData)
 	if err != nil {
@@ -90,7 +90,7 @@ func PopTask(db *gorm.DB) (int32, TaskData, error) {
 
 		found = true
 
-		task.Available = time.Now().Add(TASK_RETRY_PERIOD)
+		task.Available = time.Now().Add(taskRetryPeriod)
 		if err := tx.Save(&task).Error; err != nil {
 			return err
 		}
@@ -122,7 +122,7 @@ func TouchTask(db *gorm.DB, id int32) error {
 		if task.Available.Before(time.Now()) {
 			return errors.New("task.Available is not order than now")
 		}
-		task.Available = time.Now().Add(TASK_RETRY_PERIOD)
+		task.Available = time.Now().Add(taskRetryPeriod)
 		if err := tx.Save(&task).Error; err != nil {
 			return err
 		}
