@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	hackPriority = 10
+
 	TEST_CASE_TXT_LENGTH_LIMIT = 1024 * 1024
 	TEST_CASE_CPP_LENGTH_LIMIT = 1024 * 1024
 )
@@ -55,7 +57,7 @@ func (s *server) Hack(ctx context.Context, in *pb.HackRequest) (*pb.HackResponse
 
 	slog.Info("Create new hack", "id", id)
 
-	if err := database.PushHackTask(s.db, id, HACK_PRIORITY); err != nil {
+	if err := database.PushHackTask(s.db, id, hackPriority); err != nil {
 		return nil, err
 	}
 
