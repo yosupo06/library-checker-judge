@@ -91,6 +91,7 @@ func PopTask(db *gorm.DB) (int32, TaskData, error) {
 		found = true
 
 		task.Available = time.Now().Add(taskRetryPeriod)
+		task.Priority--
 		if err := tx.Save(&task).Error; err != nil {
 			return err
 		}
