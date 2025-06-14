@@ -24,6 +24,7 @@ import { registerQueryClient } from "./auth/auth";
 import UserInfo from "./pages/UserInfo";
 import Hack from "./pages/Hack";
 import HackInfo from "./pages/HackInfo";
+import Hacks from "./pages/Hacks";
 const theme = createTheme({
   typography: {
     button: {
@@ -95,6 +96,7 @@ function App(): JSX.Element {
                 />
                 <Route path="/hack" element={<Hack />} />
                 <Route path="/hack/:id" element={<HackInfo />} />
+                <Route path="/hacks" element={<Hacks />} />
                 <Route element={<NotFound />} />
               </Routes>
             </Box>
