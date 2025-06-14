@@ -118,6 +118,7 @@ message SubmitRequest {
     string problem = 1; // "aplusb"
     string source = 2; // "int main() ..."
     string lang = 3; // "cpp"
+    bool tle_knockout = 4; // special feature: default false (normal behavior), when true stops execution on first TLE
 }
 message SubmitResponse {
     int32 id = 1; // submission id

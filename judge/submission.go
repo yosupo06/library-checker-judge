@@ -14,10 +14,10 @@ import (
 	"github.com/yosupo06/library-checker-judge/storage"
 )
 
-func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, taskID int32, subID int32) error {
-	slog.Info("Start to judge submission", "taskID", taskID, "submissionID", subID)
+func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, taskID int32, submissionData database.SubmissionData) error {
+	slog.Info("Start to judge submission", "taskID", taskID, "submissionID", submissionData.ID)
 
-	s, err := database.FetchSubmission(db, subID)
+	s, err := database.FetchSubmission(db, submissionData.ID)
 	if err != nil {
 		return err
 	}
@@ -37,10 +37,11 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 		return err
 	}
 	data := SubmissionTaskData{
-		task:  NewTaskData(db, taskID),
-		files: files,
-		s:     s,
-		lang:  lang,
+		task:           NewTaskData(db, taskID),
+		files:          files,
+		s:              s,
+		submissionData: submissionData,
+		lang:           lang,
 	}
 
 	if err := data.init(); err != nil {
@@ -58,14 +59,15 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 }
 
 type SubmissionTaskData struct {
-	task          TaskData
-	files         storage.ProblemFiles
-	s             database.Submission
-	lang          langs.Lang
-	results       []database.SubmissionTestcaseResult
-	resultsToSave []database.SubmissionTestcaseResult
-	lastUpdate    time.Time
-	info          storage.Info
+	task           TaskData
+	files          storage.ProblemFiles
+	s              database.Submission
+	submissionData database.SubmissionData
+	lang           langs.Lang
+	results        []database.SubmissionTestcaseResult
+	resultsToSave  []database.SubmissionTestcaseResult
+	lastUpdate     time.Time
+	info           storage.Info
 }
 
 func (data *SubmissionTaskData) init() error {
@@ -163,6 +165,21 @@ func (data *SubmissionTaskData) judge() error {
 
 		data.resultsToSave = append(data.resultsToSave, data.results[idx])
 		caseResults = append(caseResults, result)
+
+		// Check if we should stop on TLE
+		if data.submissionData.TleKnockout && result.Status == "TLE" {
+			slog.Info("Stopping execution due to TLE (tle_knockout=true)", "testCase", testCaseName, "caseIndex", idx)
+			// Mark remaining test cases as not executed
+			for remainingIdx := idx + 1; remainingIdx < testCaseNum; remainingIdx++ {
+				data.results[remainingIdx].Status = "-"
+				data.results[remainingIdx].Time = 0
+				data.results[remainingIdx].Memory = 0
+				data.results[remainingIdx].Stderr = []byte{}
+				data.results[remainingIdx].CheckerOut = []byte{}
+				data.resultsToSave = append(data.resultsToSave, data.results[remainingIdx])
+			}
+			break
+		}
 	}
 
 	// Final sync to save all results

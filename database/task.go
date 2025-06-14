@@ -27,7 +27,8 @@ type TaskPayload interface {
 
 // SubmissionData contains submission information for judge tasks
 type SubmissionData struct {
-	ID int32
+	ID          int32
+	TleKnockout bool
 }
 
 func (s SubmissionData) GetTaskType() TaskType {
