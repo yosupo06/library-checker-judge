@@ -24,6 +24,7 @@ service LibraryCheckerService {
 
     rpc Hack (HackRequest) returns (HackResponse) {}
     rpc HackInfo (HackInfoRequest) returns (HackInfoResponse) {}
+    rpc HackList (HackListRequest) returns (HackListResponse) {}
 
     rpc LangList (LangListRequest) returns (LangListResponse) {}
     rpc Ranking (RankingRequest) returns (RankingResponse) {} // used by another product
@@ -214,6 +215,18 @@ message HackOverview {
     optional double time = 5; // 2.0 = 2 seconds
     optional int64 memory = 6; // x bytes
     google.protobuf.Timestamp hack_time = 7;
+}
+
+message HackListRequest {
+    uint32 skip = 1; // fetch [skip, skip + limit)-th hacks
+    uint32 limit = 2; // # of hacks (max 1000)
+    string user = 3; // "admin"(filter)
+    string status = 4; // "AC"(filter)
+    string order = 5; // sort order (default: "-id", "time")
+}
+message HackListResponse {
+    repeated HackOverview hacks = 1;
+    int32 count = 2; // # of hacks(skip/limit don't effect this)
 }
 
 // --- Lang ---
