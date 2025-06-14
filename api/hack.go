@@ -105,3 +105,42 @@ func (s *server) HackInfo(ctx context.Context, in *pb.HackInfoRequest) (*pb.Hack
 
 	return &response, nil
 }
+
+func (s *server) HackList(ctx context.Context, in *pb.HackListRequest) (*pb.HackListResponse, error) {
+	hacks, err := database.FetchHackList(s.db, int(in.Skip), int(in.Limit), in.User, in.Status, in.Order)
+	if err != nil {
+		return nil, err
+	}
+
+	count, err := database.CountHacks(s.db, in.User, in.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	var hackOverviews []*pb.HackOverview
+	for _, h := range hacks {
+		overView := pb.HackOverview{
+			Id:           h.ID,
+			SubmissionId: h.SubmissionID,
+			Status:       h.Status,
+			HackTime:     toProtoTimestamp(h.HackTime),
+		}
+		if h.UserName.Valid {
+			overView.UserName = &h.UserName.String
+		}
+		if h.Time.Valid {
+			time := float64(h.Time.Int32) / 1000.0
+			overView.Time = &time
+		}
+		if h.Memory.Valid {
+			memory := h.Memory.Int64
+			overView.Memory = &memory
+		}
+		hackOverviews = append(hackOverviews, &overView)
+	}
+
+	return &pb.HackListResponse{
+		Hacks: hackOverviews,
+		Count: int32(count),
+	}, nil
+}

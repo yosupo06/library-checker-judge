@@ -80,3 +80,61 @@ func (h *Hack) valid() error {
 	}
 	return nil
 }
+
+func FetchHackList(db *gorm.DB, skip, limit int, user, status, order string) ([]Hack, error) {
+	var hacks []Hack
+	
+	query := db.Preload("User").Preload("Submission")
+	
+	if user != "" {
+		query = query.Where("user_name = ?", user)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	
+	if order == "" {
+		order = "-id"
+	}
+	if order == "-id" {
+		query = query.Order("id DESC")
+	} else if order == "id" {
+		query = query.Order("id ASC")
+	} else if order == "time" {
+		query = query.Order("hack_time ASC")
+	} else if order == "-time" {
+		query = query.Order("hack_time DESC")
+	}
+	
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if skip > 0 {
+		query = query.Offset(skip)
+	}
+	
+	if err := query.Find(&hacks).Error; err != nil {
+		return nil, err
+	}
+	
+	return hacks, nil
+}
+
+func CountHacks(db *gorm.DB, user, status string) (int, error) {
+	var count int64
+	
+	query := db.Model(&Hack{})
+	
+	if user != "" {
+		query = query.Where("user_name = ?", user)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	
+	return int(count), nil
+}
