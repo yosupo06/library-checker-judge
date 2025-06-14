@@ -4,8 +4,12 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
+import Switch from "@mui/material/Switch";
+import Stack from "@mui/material/Stack";
+import InputLabel from "@mui/material/InputLabel";
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLocalStorage } from "react-use";
@@ -18,6 +22,7 @@ import {
 import { ProblemInfoResponse } from "../proto/library_checker";
 import SourceEditor from "../components/SourceEditor";
 import { GitHub, FlashOn, Person, Forum } from "@mui/icons-material";
+import { useTranslation } from "../utils/translations";
 import { Alert, Container } from "@mui/material";
 import Statement, {
   useExamples,
@@ -260,6 +265,10 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
   const navigate = useNavigate();
   const [source, setSource] = useState("");
   const [progLang, setProgLang] = useLocalStorage("programming-lang", "");
+  const [tleKnockout, setTleKnockout] = useState(true);
+  
+  const lang = useLang();
+  const t = useTranslation(lang);
 
   const langListQuery = useLangList();
 
@@ -298,6 +307,7 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
       lang: progLang,
       problem: problemId,
       source: source,
+      tleKnockout: tleKnockout,
     });
   };
 
@@ -308,35 +318,77 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
       </Typography>
 
       <form onSubmit={handleSubmit}>
-        <FormControl fullWidth>
-          <SourceEditor
-            value={source}
-            language={progLang}
-            onChange={(e) => {
-              setSource(e);
-            }}
-            readOnly={false}
-            height={400}
-          />
-        </FormControl>
-        <FormControl>
-          <Select
-            displayEmpty
-            required
-            value={progLang}
-            onChange={(e) => setProgLang(e.target.value as string)}
-          >
-            <MenuItem value="">Lang</MenuItem>
-            {langListQuery.data.langs.map((e) => (
-              <MenuItem key={e.id} value={e.id}>
-                {e.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Button color="primary" type="submit">
-          Submit
-        </Button>
+        <Stack spacing={3}>
+          {/* Language Selection */}
+          <FormControl fullWidth>
+            <InputLabel id="language-select-label">
+              {t("languageLabel")}
+            </InputLabel>
+            <Select
+              labelId="language-select-label"
+              displayEmpty
+              required
+              value={progLang}
+              onChange={(e) => setProgLang(e.target.value as string)}
+              label={t("languageLabel")}
+            >
+              <MenuItem value="">{t("language")}</MenuItem>
+              {langListQuery.data.langs.map((e) => (
+                <MenuItem key={e.id} value={e.id}>
+                  {e.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* TLE Knockout Option */}
+          <FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={tleKnockout}
+                  onChange={(e) => setTleKnockout(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={t("tleKnockoutLabel")}
+            />
+          </FormControl>
+
+          {/* Source Code Editor */}
+          <FormControl fullWidth>
+            <SourceEditor
+              value={source}
+              language={progLang}
+              onChange={(e) => {
+                setSource(e);
+              }}
+              readOnly={false}
+              height={400}
+            />
+          </FormControl>
+
+          {/* Submit Button */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              type="submit"
+              size="large"
+              sx={{ 
+                px: 4, 
+                py: 1.5,
+                fontWeight: 'bold',
+                borderWidth: 2,
+                '&:hover': {
+                  borderWidth: 2
+                }
+              }}
+            >
+              {t("submit")}
+            </Button>
+          </Box>
+        </Stack>
       </form>
     </Box>
   );
