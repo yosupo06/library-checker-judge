@@ -55,13 +55,13 @@ services:
       timeout: 1s
       retries: 10      
   create-minio-bucket:
-    image: minio/mc
+    image: minio/mc:RELEASE.2025-05-21T01-59-54Z
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc config host add myminio http://minio:9000 minio miniopass;
+      /usr/bin/mc alias set myminio http://minio:9000 minio miniopass;
       /usr/bin/mc rm --recursive --force myminio/testcase;
       /usr/bin/mc rm --recursive --force myminio/testcase-public;
       /usr/bin/mc mb myminio/testcase;
