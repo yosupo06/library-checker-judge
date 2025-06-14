@@ -69,7 +69,7 @@ func (s *server) Submit(ctx context.Context, in *pb.SubmitRequest) (*pb.SubmitRe
 	if currentUser != nil {
 		priority = submissionPriority
 	}
-	submissionData := database.SubmissionData{ID: id}
+	submissionData := database.SubmissionData{ID: id, TleKnockout: in.TleKnockout}
 	if err := database.PushSubmissionTask(s.db, submissionData, int32(priority)); err != nil {
 		log.Print(err)
 		return nil, errors.New("inserting to judge queue is failed")
@@ -87,7 +87,7 @@ func (s *server) Rejudge(ctx context.Context, in *pb.RejudgeRequest) (*pb.Rejudg
 		return nil, errors.New("no permission")
 	}
 
-	submissionData := database.SubmissionData{ID: in.Id}
+	submissionData := database.SubmissionData{ID: in.Id, TleKnockout: false} // rejudge always tests all cases
 	if err := database.PushSubmissionTask(s.db, submissionData, rejudgePriority); err != nil {
 		log.Print("rejudge failed:", err)
 		return nil, errors.New("rejudge failed")

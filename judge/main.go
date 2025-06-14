@@ -51,7 +51,7 @@ func main() {
 				slog.Error("Failed to cast to SubmissionData", "taskID", taskID)
 				continue
 			}
-			if err := execSubmissionTask(db, downloader, taskID, submissionData.ID); err != nil {
+			if err := execSubmissionTask(db, downloader, taskID, submissionData); err != nil {
 				slog.Error("Failed to judge Submission", "taskID", taskID, "err", err)
 				continue
 			}
