@@ -20,10 +20,32 @@ const (
 	JudgeHack
 )
 
+// TaskPayload is the interface that all task data must implement
+type TaskPayload interface {
+	GetTaskType() TaskType
+}
+
+// SubmissionData contains submission information for judge tasks
+type SubmissionData struct {
+	ID int32
+}
+
+func (s SubmissionData) GetTaskType() TaskType {
+	return JudgeSubmission
+}
+
+// HackData contains hack information for judge tasks
+type HackData struct {
+	ID int32
+}
+
+func (h HackData) GetTaskType() TaskType {
+	return JudgeHack
+}
+
 type TaskData struct {
-	TaskType   TaskType
-	Submission int32
-	Hack       int32
+	TaskType TaskType
+	Data     TaskPayload
 }
 
 // Task is db table
@@ -33,6 +55,12 @@ type Task struct {
 	Available time.Time
 	Enqueue   time.Time
 	TaskData  []byte
+}
+
+func init() {
+	// Register concrete types for gob encoding
+	gob.Register(SubmissionData{})
+	gob.Register(HackData{})
 }
 
 func encode(data TaskData) ([]byte, error) {
@@ -47,17 +75,17 @@ func decode(data []byte) (TaskData, error) {
 	return taskData, err
 }
 
-func PushSubmissionTask(db *gorm.DB, id, priority int32) error {
+func PushSubmissionTask(db *gorm.DB, submissionData SubmissionData, priority int32) error {
 	return pushTask(db, TaskData{
-		TaskType:   JudgeSubmission,
-		Submission: id,
+		TaskType: JudgeSubmission,
+		Data:     submissionData,
 	}, priority)
 }
 
-func PushHackTask(db *gorm.DB, id, priority int32) error {
+func PushHackTask(db *gorm.DB, hackData HackData, priority int32) error {
 	return pushTask(db, TaskData{
 		TaskType: JudgeHack,
-		Hack:     id,
+		Data:     hackData,
 	}, priority)
 }
 

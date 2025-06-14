@@ -57,7 +57,8 @@ func (s *server) Hack(ctx context.Context, in *pb.HackRequest) (*pb.HackResponse
 
 	slog.Info("Create new hack", "id", id)
 
-	if err := database.PushHackTask(s.db, id, hackPriority); err != nil {
+	hackData := database.HackData{ID: id}
+	if err := database.PushHackTask(s.db, hackData, hackPriority); err != nil {
 		return nil, err
 	}
 
