@@ -93,6 +93,9 @@ const NavBarElements: React.FC = () => {
       <ButtonLink LinkComponent={Link} color="inherit" to="/submissions">
         Submissions
       </ButtonLink>
+      <ButtonLink LinkComponent={Link} color="inherit" to="/hacks">
+        Hacks
+      </ButtonLink>
       <ButtonLink LinkComponent={Link} color="inherit" to="/ranking">
         Ranking
       </ButtonLink>

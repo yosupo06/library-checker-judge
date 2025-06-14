@@ -11,6 +11,7 @@ import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 import {
   ChangeCurrentUserInfoRequest,
   HackInfoResponse,
+  HackListResponse,
   HackRequest,
   HackResponse,
   LangListResponse,
@@ -253,5 +254,30 @@ export const useHackInfo = (
         bearer.data ?? undefined,
       ).response,
     ...options,
+  });
+};
+
+export const useHackList = (
+  user: string,
+  status: string,
+  order: string,
+  skip: number,
+  limit: number,
+): UseQueryResult<HackListResponse> => {
+  const bearer = useBearer();
+  return useQuery({
+    queryKey: ["hackList", user, status, order, skip, limit],
+    queryFn: async () =>
+      await client.hackList(
+        {
+          user: user,
+          status: status,
+          order: order,
+          skip: skip,
+          limit: limit,
+        },
+        bearer.data ?? undefined,
+      ).response,
+    structuralSharing: false,
   });
 };
