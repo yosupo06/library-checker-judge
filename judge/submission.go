@@ -49,7 +49,7 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 	if err := data.judge(); err != nil {
 		data.s.Status = "IE"
 		if err := data.updateSubmission(); err != nil {
-			slog.Error("Deep error", "err", err)
+			slog.Error("Deep error", "taskID", taskID, "err", err)
 		}
 		return err
 	}

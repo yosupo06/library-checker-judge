@@ -48,21 +48,21 @@ func main() {
 		case database.JudgeSubmission:
 			submissionData, ok := taskData.Data.(database.SubmissionData)
 			if !ok {
-				slog.Error("Failed to cast to SubmissionData")
+				slog.Error("Failed to cast to SubmissionData", "taskID", taskID)
 				continue
 			}
 			if err := execSubmissionTask(db, downloader, taskID, submissionData.ID); err != nil {
-				slog.Error("Failed to judge Submission", "err", err)
+				slog.Error("Failed to judge Submission", "taskID", taskID, "err", err)
 				continue
 			}
 		case database.JudgeHack:
 			hackData, ok := taskData.Data.(database.HackData)
 			if !ok {
-				slog.Error("Failed to cast to HackData")
+				slog.Error("Failed to cast to HackData", "taskID", taskID)
 				continue
 			}
 			if err := execHackTask(db, downloader, taskID, hackData.ID); err != nil {
-				slog.Error("Failed to judge Hack", "err", err)
+				slog.Error("Failed to judge Hack", "taskID", taskID, "err", err)
 				continue
 			}
 		}
