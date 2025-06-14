@@ -93,7 +93,26 @@ go run .
 
 - library-checker-problems / library-chcker-judge は同じディレクトリにcloneしておくこと
 
-### API Server のテスト
+### 全体テスト（推奨）
+
+全モジュールのテストを一括実行。PostgreSQL等の環境も自動で起動/停止します。
+
+```sh
+./test-all.sh
+```
+
+このスクリプトは以下を実行します：
+- `./launch_local.sh` による環境起動（必要に応じて）
+- Database, API, Storage モジュールのテスト
+- 静的解析（go vet, gofmt）
+- ビルド確認
+- 環境のクリーンアップ（必要に応じて）
+
+### 個別モジュールテスト
+
+全てのテストには `./launch_local.sh` でPostgreSQL等を起動しておく必要がある
+
+#### API Server のテスト
 
 今のgo sourceではなく、今立ち上がってるAPIサーバーに対してテストすることに注意
 
@@ -102,7 +121,23 @@ cd library-checker-judge/api
 go test . -v
 ```
 
-### Judge Server のテスト
+#### Database のテスト
+
+データベーステストはPostgreSQLが必要。`./launch_local.sh`を先に起動しておくこと。
+
+```sh
+cd library-checker-judge/database
+go test . -v
+```
+
+#### Storage のテスト
+
+```sh
+cd library-checker-judge/storage
+go test . -v
+```
+
+#### Judge Server のテスト
 
 ```sh
 cd library-checker-judge/judge

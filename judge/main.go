@@ -46,13 +46,23 @@ func main() {
 		slog.Info("Start task", "ID", taskID)
 		switch taskData.TaskType {
 		case database.JudgeSubmission:
-			if err := execSubmissionTask(db, downloader, taskID, taskData.Submission); err != nil {
-				slog.Error("Failed to judge Submission", "err", err)
+			submissionData, ok := taskData.Data.(database.SubmissionData)
+			if !ok {
+				slog.Error("Failed to cast to SubmissionData", "taskID", taskID)
+				continue
+			}
+			if err := execSubmissionTask(db, downloader, taskID, submissionData.ID); err != nil {
+				slog.Error("Failed to judge Submission", "taskID", taskID, "err", err)
 				continue
 			}
 		case database.JudgeHack:
-			if err := execHackTask(db, downloader, taskID, taskData.Hack); err != nil {
-				slog.Error("Failed to judge Hack", "err", err)
+			hackData, ok := taskData.Data.(database.HackData)
+			if !ok {
+				slog.Error("Failed to cast to HackData", "taskID", taskID)
+				continue
+			}
+			if err := execHackTask(db, downloader, taskID, hackData.ID); err != nil {
+				slog.Error("Failed to judge Hack", "taskID", taskID, "err", err)
 				continue
 			}
 		}

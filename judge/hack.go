@@ -54,7 +54,7 @@ func execHackTask(db *gorm.DB, downloader storage.TestCaseDownloader, taskID int
 	if err := data.judge(); err != nil {
 		data.h.Status = "IE"
 		if err := data.updateHack(); err != nil {
-			slog.Error("Deep error", "err", err)
+			slog.Error("Deep error", "taskID", taskID, "err", err)
 		}
 		return err
 	}
