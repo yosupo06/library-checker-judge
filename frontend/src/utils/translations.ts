@@ -7,34 +7,34 @@ export const uiTranslations: { [key: string]: { [lang in Lang]: string } } = {
     en: "TLE Knockout",
     ja: "TLEノックアウト",
   },
-  
+
   // Common UI elements
   submit: {
     en: "Submit",
     ja: "提出",
   },
-  
+
   language: {
     en: "Language",
     ja: "言語",
   },
-  
+
   languageLabel: {
     en: "Language:",
     ja: "言語:",
   },
-  
+
   // Navigation (for future use)
   submissions: {
-    en: "Submissions", 
+    en: "Submissions",
     ja: "提出",
   },
-  
+
   ranking: {
     en: "Ranking",
     ja: "ランキング",
   },
-  
+
   help: {
     en: "Help",
     ja: "ヘルプ",

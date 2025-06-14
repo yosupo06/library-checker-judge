@@ -266,7 +266,7 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
   const [source, setSource] = useState("");
   const [progLang, setProgLang] = useLocalStorage("programming-lang", "");
   const [tleKnockout, setTleKnockout] = useState(true);
-  
+
   const lang = useLang();
   const t = useTranslation(lang);
 
@@ -369,20 +369,20 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
           </FormControl>
 
           {/* Submit Button */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Button 
-              variant="outlined" 
-              color="primary" 
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Button
+              variant="outlined"
+              color="primary"
               type="submit"
               size="large"
-              sx={{ 
-                px: 4, 
+              sx={{
+                px: 4,
                 py: 1.5,
-                fontWeight: 'bold',
+                fontWeight: "bold",
                 borderWidth: 2,
-                '&:hover': {
-                  borderWidth: 2
-                }
+                "&:hover": {
+                  borderWidth: 2,
+                },
               }}
             >
               {t("submit")}
