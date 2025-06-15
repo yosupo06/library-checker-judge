@@ -57,8 +57,8 @@ func compileModelSolution(dir storage.ProblemFiles) (langs.Volume, langs.TaskRes
 func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Volume, t langs.TaskResult, err error) {
 	slog.Info("Compile", "lang", l.ID, "src", srcPath)
 
-	// Use shared CompileSourceWithFiles function with directories
-	return langs.CompileSourceWithFiles(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, dir.PublicFiles, dir.PublicFiles)
+	// Use shared CompileSource function with directories
+	return langs.CompileSource(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, dir.PublicFiles, dir.PublicFiles)
 }
 
 func runTestCase(sourceVolume, checkerVolume langs.Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {

@@ -80,7 +80,7 @@ func getTestDefaultOptions() []TaskInfoOption {
 func compileSource(srcFile string, lang Lang, t *testing.T) (Volume, TaskResult) {
 	t.Logf("Compiling %s source: %s", lang.ID, srcFile)
 
-	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, nil)
+	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, "", "")
 	if err != nil {
 		if volume.Name != "" {
 			volume.Remove()
