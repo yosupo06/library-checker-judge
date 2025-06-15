@@ -121,7 +121,7 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 	}
 
 	taskInfo, err := NewTaskInfo(lang.ImageName, append(
-		getDefaultOptions(),
+		getTestDefaultOptions(),
 		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, lang.Exec...)...),
 		WithWorkDir("/workdir"),
 		WithVolume(&volume, "/workdir"),
@@ -145,7 +145,7 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 	defer outFile.Close()
 
 	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
-		getDefaultOptions(),
+		getTestDefaultOptions(),
 		WithArguments("cat", "/casedir/actual.out"),
 		WithTimeout(COMPILE_TIMEOUT),
 		WithVolume(&caseVolume, "/casedir"),

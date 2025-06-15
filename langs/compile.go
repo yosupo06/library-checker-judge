@@ -10,12 +10,18 @@ import (
 // CompileSource compiles source code and returns the volume and result
 // extraFilePaths is a map from filename to full path for additional files
 func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeout time.Duration, extraFilePaths map[string]string) (Volume, TaskResult, error) {
-	// Set defaults
-	if options == nil {
-		options = getDefaultOptions()
+	// Validate arguments
+	if sourcePath == "" {
+		return Volume{}, TaskResult{}, errors.New("sourcePath cannot be empty")
 	}
-	if timeout == 0 {
-		timeout = 30 * time.Second
+	if options == nil {
+		return Volume{}, TaskResult{}, errors.New("options cannot be nil")
+	}
+	if timeout <= 0 {
+		return Volume{}, TaskResult{}, errors.New("timeout must be positive")
+	}
+	if extraFilePaths == nil {
+		return Volume{}, TaskResult{}, errors.New("extraFilePaths cannot be nil")
 	}
 
 	// Create volume
@@ -106,18 +112,4 @@ func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeo
 	}
 
 	return volume, result, nil
-}
-
-// getDefaultOptions returns the default TaskInfo options
-// This is used internally when no options are provided
-func getDefaultOptions() []TaskInfoOption {
-	options := []TaskInfoOption{
-		WithPidsLimit(100),            // DEFAULT_PID_LIMIT
-		WithUnlimitedStackLimit(),     // unlimited
-		WithMemoryLimitMB(1024),       // DEFAULT_MEMORY_LIMIT_MB
-	}
-	if c := os.Getenv("CGROUP_PARENT"); c != "" {
-		options = append(options, WithCgroupParent(c))
-	}
-	return options
 }
