@@ -154,52 +154,52 @@ func (data *HackTaskData) judge() error {
 	return data.updateHack()
 }
 
-func (data *HackTaskData) compileSource() (Volume, TaskResult, error) {
+func (data *HackTaskData) compileSource() (langs.Volume, langs.TaskResult, error) {
 	// write source to tempfile
 	sourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
 	defer os.RemoveAll(sourceDir)
 
 	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
 	if _, err := sourceFile.WriteString(data.h.Submission.Source); err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
 	sourceFile.Close()
 
 	return compile(data.files, sourceFile.Name(), data.lang)
 }
 
-func (data *HackTaskData) compileSolution() (Volume, error) {
+func (data *HackTaskData) compileSolution() (langs.Volume, error) {
 	slog.Info("Compile solution")
 	v, r, err := compileModelSolution(data.files)
 	if err != nil {
-		return Volume{}, err
+		return langs.Volume{}, err
 	}
 	if r.ExitCode != 0 {
 		if err := v.Remove(); err != nil {
-			return Volume{}, err
+			return langs.Volume{}, err
 		}
-		return Volume{}, fmt.Errorf("compile failed of model solution")
+		return langs.Volume{}, fmt.Errorf("compile failed of model solution")
 	}
 	return v, nil
 }
 
-func (data *HackTaskData) compileVerifier() (Volume, error) {
+func (data *HackTaskData) compileVerifier() (langs.Volume, error) {
 	slog.Info("Compile verifier")
 	v, r, err := compileVerifier(data.files)
 	if err != nil {
-		return Volume{}, err
+		return langs.Volume{}, err
 	}
 	if r.ExitCode != 0 {
 		if err := v.Remove(); err != nil {
-			return Volume{}, err
+			return langs.Volume{}, err
 		}
-		return Volume{}, fmt.Errorf("compile failed of verifier")
+		return langs.Volume{}, fmt.Errorf("compile failed of verifier")
 	}
 	return v, nil
 }
@@ -255,7 +255,7 @@ func (data *HackTaskData) generateTestCase() (string, error) {
 	}
 }
 
-func (data *HackTaskData) runModelSolution(v Volume, inFilePath string) (string, error) {
+func (data *HackTaskData) runModelSolution(v langs.Volume, inFilePath string) (string, error) {
 	slog.Info("Generate model output")
 	path, r, err := runSource(v, langs.LANG_MODEL_SOLUTION, data.info.TimeLimit, inFilePath)
 	if err != nil {

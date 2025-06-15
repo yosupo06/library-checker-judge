@@ -231,20 +231,20 @@ func (data *SubmissionTaskData) updateSubmission() error {
 	return nil
 }
 
-func (data *SubmissionTaskData) compileSource() (Volume, TaskResult, error) {
+func (data *SubmissionTaskData) compileSource() (langs.Volume, langs.TaskResult, error) {
 	// write source to tempfile
 	sourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
 	defer os.RemoveAll(sourceDir)
 
 	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
 	if _, err := sourceFile.WriteString(data.s.Source); err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
 	sourceFile.Close()
 
