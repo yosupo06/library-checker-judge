@@ -32,6 +32,9 @@ jobs:
           judge:
             - 'judge/**'
             - '.github/workflows/test.yml'
+          langs:
+            - 'langs/**'
+            - '.github/workflows/test.yml'
 
     - run: ./run_protoc.sh
 
@@ -84,3 +87,8 @@ jobs:
       if: steps.changes.outputs.judge == 'true'
       run: go test -v .
       working-directory: ./judge
+
+    - name: Langs module test
+      if: steps.changes.outputs.langs == 'true'
+      run: go test -v .
+      working-directory: ./langs
