@@ -10,8 +10,6 @@ import (
 
 var (
 	APLUSB_DIR                 = path.Join("sources", "aplusb")
-	SAMPLE_IN_PATH             = path.Join(APLUSB_DIR, "sample.in")
-	SAMPLE_OUT_PATH            = path.Join(APLUSB_DIR, "sample.out")
 	DEFAULT_PID_LIMIT          = 100
 	DEFAULT_MEMORY_LIMIT_MB    = 1024
 	COMPILE_TIMEOUT            = 30 * time.Second
@@ -235,60 +233,32 @@ func testCompileAndRun(t *testing.T, langID, srcName, expectedOutput string) {
 	t.Logf("Execution successful for %s: input=%q, output=%q", langID, inputContent, output)
 }
 
-func TestCppLangSupport(t *testing.T) {
-	testLangSupport(t, "cpp", "ac.cpp")
-}
+func TestLangSupport(t *testing.T) {
+	testCases := []struct {
+		langID  string
+		srcName string
+	}{
+		{"cpp", "ac.cpp"},
+		{"cpp", "ac_acl.cpp"},
+		{"rust", "ac.rs"},
+		{"haskell", "ac.hs"},
+		{"haskell", "ac_cabal.hs"},
+		{"csharp", "ac.cs"},
+		{"lisp", "ac.lisp"},
+		{"python3", "ac_numpy.py"},
+		{"pypy3", "ac.py"},
+		{"d", "ac.d"},
+		{"java", "ac.java"},
+		{"go", "go/ac.go"},
+		{"crystal", "ac.cr"},
+		{"ruby", "ac.rb"},
+	}
 
-func TestCppAclLangSupport(t *testing.T) {
-	testLangSupport(t, "cpp", "ac_acl.cpp")
-}
-
-func TestRustLangSupport(t *testing.T) {
-	testLangSupport(t, "rust", "ac.rs")
-}
-
-func TestHaskellLangSupport(t *testing.T) {
-	testLangSupport(t, "haskell", "ac.hs")
-}
-
-func TestHaskellCabalLangSupport(t *testing.T) {
-	testLangSupport(t, "haskell", "ac_cabal.hs")
-}
-
-func TestCSharpLangSupport(t *testing.T) {
-	testLangSupport(t, "csharp", "ac.cs")
-}
-
-func TestLispLangSupport(t *testing.T) {
-	testLangSupport(t, "lisp", "ac.lisp")
-}
-
-func TestPython3LangSupport(t *testing.T) {
-	testLangSupport(t, "python3", "ac_numpy.py")
-}
-
-func TestPyPy3LangSupport(t *testing.T) {
-	testLangSupport(t, "pypy3", "ac.py")
-}
-
-func TestDLangSupport(t *testing.T) {
-	testLangSupport(t, "d", "ac.d")
-}
-
-func TestJavaLangSupport(t *testing.T) {
-	testLangSupport(t, "java", "ac.java")
-}
-
-func TestGoLangSupport(t *testing.T) {
-	testLangSupport(t, "go", "go/ac.go")
-}
-
-func TestCrystalLangSupport(t *testing.T) {
-	testLangSupport(t, "crystal", "ac.cr")
-}
-
-func TestRubyLangSupport(t *testing.T) {
-	testLangSupport(t, "ruby", "ac.rb")
+	for _, tc := range testCases {
+		t.Run(tc.langID+"_"+path.Base(tc.srcName), func(t *testing.T) {
+			testLangSupport(t, tc.langID, tc.srcName)
+		})
+	}
 }
 
 func TestAllSupportedLangs(t *testing.T) {
@@ -328,22 +298,22 @@ func TestAllSupportedLangs(t *testing.T) {
 }
 
 // Compile and run tests
-func TestCppCompileAndRun(t *testing.T) {
-	testCompileAndRun(t, "cpp", "ac.cpp", "3\n")
-}
+func TestCompileAndRun(t *testing.T) {
+	testCases := []struct {
+		langID         string
+		srcName        string
+		expectedOutput string
+	}{
+		{"cpp", "ac.cpp", "3\n"},
+		{"rust", "ac.rs", "3\n"},
+		{"python3", "ac_numpy.py", "3\n"},
+		{"go", "go/ac.go", "3\n"},
+		{"java", "ac.java", "3\n"},
+	}
 
-func TestRustCompileAndRun(t *testing.T) {
-	testCompileAndRun(t, "rust", "ac.rs", "3\n")
-}
-
-func TestPython3CompileAndRun(t *testing.T) {
-	testCompileAndRun(t, "python3", "ac_numpy.py", "3\n")
-}
-
-func TestGoCompileAndRun(t *testing.T) {
-	testCompileAndRun(t, "go", "go/ac.go", "3\n")
-}
-
-func TestJavaCompileAndRun(t *testing.T) {
-	testCompileAndRun(t, "java", "ac.java", "3\n")
+	for _, tc := range testCases {
+		t.Run(tc.langID+"_"+path.Base(tc.srcName), func(t *testing.T) {
+			testCompileAndRun(t, tc.langID, tc.srcName, tc.expectedOutput)
+		})
+	}
 }
