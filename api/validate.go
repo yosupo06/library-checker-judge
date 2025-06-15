@@ -13,8 +13,12 @@ var validate *validator.Validate // Make it a pointer to initialize in init
 
 func init() {
 	validate = validator.New()
-	validate.RegisterValidation("source", sourceValidator)
-	validate.RegisterValidation("lang", langValidator)
+	if err := validate.RegisterValidation("source", sourceValidator); err != nil {
+		panic("Failed to register source validation: " + err.Error())
+	}
+	if err := validate.RegisterValidation("lang", langValidator); err != nil {
+		panic("Failed to register lang validation: " + err.Error())
+	}
 }
 
 func sourceValidator(fl validator.FieldLevel) bool {

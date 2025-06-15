@@ -12,7 +12,9 @@ import (
 
 func TestSubmit(t *testing.T) {
 	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
-		database.SaveProblem(db, DUMMY_PROBLEM)
+		if err := database.SaveProblem(db, DUMMY_PROBLEM); err != nil {
+			t.Fatal("Failed to save problem:", err)
+		}
 	})
 
 	ctx := context.Background()
@@ -54,7 +56,9 @@ func TestSubmissionSortOrderList(t *testing.T) {
 
 func TestSubmitBig(t *testing.T) {
 	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
-		database.SaveProblem(db, DUMMY_PROBLEM)
+		if err := database.SaveProblem(db, DUMMY_PROBLEM); err != nil {
+			t.Fatal("Failed to save problem:", err)
+		}
 	})
 
 	ctx := context.Background()
@@ -72,7 +76,9 @@ func TestSubmitBig(t *testing.T) {
 
 func TestSubmitUnknownLang(t *testing.T) {
 	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
-		database.SaveProblem(db, DUMMY_PROBLEM)
+		if err := database.SaveProblem(db, DUMMY_PROBLEM); err != nil {
+			t.Fatal("Failed to save problem:", err)
+		}
 	})
 
 	ctx := context.Background()
@@ -91,7 +97,9 @@ func TestSubmitUnknownLang(t *testing.T) {
 
 func TestAnonymousRejudge(t *testing.T) {
 	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
-		database.SaveProblem(db, DUMMY_PROBLEM)
+		if err := database.SaveProblem(db, DUMMY_PROBLEM); err != nil {
+			t.Fatal("Failed to save problem:", err)
+		}
 	})
 
 	ctx := context.Background()

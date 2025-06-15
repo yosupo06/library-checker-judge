@@ -75,13 +75,17 @@ func main() {
 	s := NewGRPCServer(db, firebaseAuth)
 	wrappedGrpc := grpcweb.WrapServer(s, grpcweb.WithOriginFunc(func(origin string) bool { return true }))
 	http.HandleFunc("/health", func(resp http.ResponseWriter, req *http.Request) {
-		io.WriteString(resp, "SERVING")
+		if _, err := io.WriteString(resp, "SERVING"); err != nil {
+			slog.Error("Failed to write health response", "error", err)
+		}
 	})
-	http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+	if err := http.ListenAndServe(":"+port, http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		if wrappedGrpc.IsAcceptableGrpcCorsRequest(req) || wrappedGrpc.IsGrpcWebRequest(req) {
 			wrappedGrpc.ServeHTTP(resp, req)
 			return
 		}
 		http.DefaultServeMux.ServeHTTP(resp, req)
-	}))
+	})); err != nil {
+		log.Fatalln("Failed to start server:", err)
+	}
 }

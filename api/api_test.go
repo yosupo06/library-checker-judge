@@ -66,7 +66,9 @@ func TestChangeCurrentUserInfo(t *testing.T) {
 
 func TestProblemInfo(t *testing.T) {
 	client := createTestAPIClientWithSetup(t, func(db *gorm.DB, authClient *DummyAuthClient) {
-		database.SaveProblem(db, DUMMY_PROBLEM)
+		if err := database.SaveProblem(db, DUMMY_PROBLEM); err != nil {
+			t.Fatal("Failed to save problem:", err)
+		}
 	})
 
 	ctx := context.Background()
@@ -158,9 +160,8 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 		}
 	}()
 
-	options := []grpc.DialOption{grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials())}
-	conn, err := grpc.DialContext(
-		context.Background(),
+	options := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	conn, err := grpc.NewClient(
 		"localhost:50053",
 		options...,
 	)

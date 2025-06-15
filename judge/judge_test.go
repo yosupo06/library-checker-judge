@@ -153,7 +153,7 @@ func TestJavaAplusBAC(t *testing.T) {
 	testAplusBAC(t, "java", "ac.java")
 }
 func TestGoAplusBAC(t *testing.T) {
-	testAplusBAC(t, "go", "ac.go")
+	testAplusBAC(t, "go", "go/ac.go")
 }
 func TestCrystalAplusBAC(t *testing.T) {
 	testAplusBAC(t, "crystal", "ac.cr")

@@ -13,7 +13,36 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - run: ./gen_protoc.sh
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    # - name: golangci-lint (api)
+    #   uses: golangci/golangci-lint-action@v8
+    #   with:
+    #     version: latest
+    #     working-directory: ./api
+
+    # - name: golangci-lint (database)
+    #   uses: golangci/golangci-lint-action@v8
+    #   with:
+    #     version: latest
+    #     working-directory: ./database
+
+    # - name: golangci-lint (storage)
+    #   uses: golangci/golangci-lint-action@v8
+    #   with:
+    #     version: latest
+    #     working-directory: ./storage
+
+    # - name: golangci-lint (uploader)
+    #   uses: golangci/golangci-lint-action@v8
+    #   with:
+    #     version: latest
+    #     working-directory: ./uploader
 
     - id: run-docker-compose
       name: Run docker compose
