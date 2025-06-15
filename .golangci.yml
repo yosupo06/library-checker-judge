@@ -1,15 +1,22 @@
 run:
   # Exclude test source files from linting
   skip-dirs:
-    - judge/sources
+    - sources
+  # Skip files matching these patterns
+  skip-files:
+    - ".*\\.cpp$"
+    - ".*\\.h$"
 
 issues:
   # Exclude specific linters for certain paths
   exclude-rules:
-    - path: judge/sources/
+    - path: sources/
       linters:
         - typecheck
     - path: ".*\\.cpp$"
+      linters:
+        - typecheck
+    - path: ".*\\.h$"
       linters:
         - typecheck
 
