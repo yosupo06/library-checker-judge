@@ -67,3 +67,10 @@ jobs:
     #   with:
     #     version: latest
     #     working-directory: ./uploader
+
+    - name: golangci-lint (judge)
+      if: steps.changes.outputs.judge == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./judge
