@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 	"path"
@@ -160,7 +161,11 @@ func (data *HackTaskData) compileSource() (langs.Volume, langs.TaskResult, error
 	if err != nil {
 		return langs.Volume{}, langs.TaskResult{}, err
 	}
-	defer os.RemoveAll(sourceDir)
+	defer func() {
+		if err := os.RemoveAll(sourceDir); err != nil {
+			log.Printf("Failed to remove source directory: %v", err)
+		}
+	}()
 
 	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
 	if err != nil {
@@ -169,7 +174,9 @@ func (data *HackTaskData) compileSource() (langs.Volume, langs.TaskResult, error
 	if _, err := sourceFile.WriteString(data.h.Submission.Source); err != nil {
 		return langs.Volume{}, langs.TaskResult{}, err
 	}
-	sourceFile.Close()
+	if err := sourceFile.Close(); err != nil {
+		return langs.Volume{}, langs.TaskResult{}, err
+	}
 
 	return compile(data.files, sourceFile.Name(), data.lang)
 }
