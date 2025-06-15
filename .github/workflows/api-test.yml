@@ -20,10 +20,29 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: golangci-lint
+    - name: golangci-lint (api)
       uses: golangci/golangci-lint-action@v3
       with:
         version: latest
+        working-directory: ./api
+
+    - name: golangci-lint (database)
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: ./database
+
+    - name: golangci-lint (storage)
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: ./storage
+
+    - name: golangci-lint (uploader)
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: ./uploader
 
     - id: run-docker-compose
       name: Run docker compose
