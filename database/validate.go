@@ -22,9 +22,7 @@ func init() {
 	if err := validate.RegisterValidation("username", userNameValidator); err != nil {
 		panic("Failed to register username validation: " + err.Error())
 	}
-	if err := validate.RegisterAlias("libraryURL", "omitempty,url,lt=200"); err != nil {
-		panic("Failed to register libraryURL alias: " + err.Error())
-	}
+	validate.RegisterAlias("libraryURL", "omitempty,url,lt=200")
 	if err := validate.RegisterValidation("source", sourceValidator); err != nil {
 		panic("Failed to register source validation: " + err.Error())
 	}
