@@ -57,19 +57,8 @@ func compileModelSolution(dir storage.ProblemFiles) (langs.Volume, langs.TaskRes
 func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Volume, t langs.TaskResult, err error) {
 	slog.Info("Compile", "lang", l.ID, "src", srcPath)
 
-	// Prepare additional files
-	paths := []string{}
-	for _, key := range l.AdditionalFiles {
-		paths = append(paths, dir.PublicFilePath(key))
-	}
-	if ps, err := dir.IncludeFilePaths(); err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
-	} else {
-		paths = append(paths, ps...)
-	}
-
-	// Use shared CompileSource function
-	return langs.CompileSource(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, paths)
+	// Use shared CompileSourceWithFiles function with directories
+	return langs.CompileSourceWithFiles(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, dir.PublicFiles, dir.PublicFiles)
 }
 
 func runTestCase(sourceVolume, checkerVolume langs.Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {

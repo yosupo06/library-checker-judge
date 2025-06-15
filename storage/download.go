@@ -114,7 +114,15 @@ func (p ProblemFiles) SolutionPath() string {
 	return p.PublicFilePath(path.Join("sol", "correct.cpp"))
 }
 
-func (p ProblemFiles) IncludeFilePaths() ([]string, error) {
+func (p ProblemFiles) GetAdditionalFilePaths(additionalFiles []string) []string {
+	paths := []string{}
+	for _, key := range additionalFiles {
+		paths = append(paths, p.PublicFilePath(key))
+	}
+	return paths
+}
+
+func (p ProblemFiles) GetIncludeFilePaths() ([]string, error) {
 	filePaths := []string{
 		p.PublicFilePath("params.h"),
 	}
@@ -128,6 +136,11 @@ func (p ProblemFiles) IncludeFilePaths() ([]string, error) {
 	}
 
 	return filePaths, nil
+}
+
+// IncludeFilePaths is kept for backward compatibility
+func (p ProblemFiles) IncludeFilePaths() ([]string, error) {
+	return p.GetIncludeFilePaths()
 }
 
 func (p ProblemFiles) InfoTomlPath() string {
