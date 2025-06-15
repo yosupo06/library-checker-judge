@@ -1,4 +1,4 @@
-package main
+package langs
 
 // Writer that stores string at most N bytes
 type LimitedWriter struct {

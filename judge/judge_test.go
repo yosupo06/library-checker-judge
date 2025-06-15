@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"io"
 	"os"
 	"path"
 	"testing"
@@ -24,6 +25,30 @@ var (
 
 //go:embed sources/*
 var sources embed.FS
+
+func toRealFile(src io.Reader, name string, t *testing.T) string {
+	tmpDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	outFile, err := os.Create(path.Join(tmpDir, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(outFile, src); err != nil {
+		t.Fatal(err)
+	}
+	if err := outFile.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return outFile.Name()
+}
 
 func TestMain(m *testing.M) {
 	flag.Parse()

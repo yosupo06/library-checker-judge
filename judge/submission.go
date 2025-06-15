@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 	"path"
@@ -121,7 +122,11 @@ func (data *SubmissionTaskData) judge() error {
 	if err != nil {
 		return err
 	}
-	defer checkerVolume.Remove()
+	defer func() {
+		if err := checkerVolume.Remove(); err != nil {
+			log.Printf("Failed to remove checker volume: %v", err)
+		}
+	}()
 	if taskResult.ExitCode != 0 {
 		data.s.Status = "ICE"
 		data.s.CompileError = taskResult.Stderr
@@ -132,7 +137,11 @@ func (data *SubmissionTaskData) judge() error {
 	if err != nil {
 		return err
 	}
-	defer sourceVolume.Remove()
+	defer func() {
+		if err := sourceVolume.Remove(); err != nil {
+			log.Printf("Failed to remove source volume: %v", err)
+		}
+	}()
 	if taskResult.ExitCode != 0 {
 		data.s.Status = "CE"
 		data.s.CompileError = taskResult.Stderr
@@ -231,22 +240,28 @@ func (data *SubmissionTaskData) updateSubmission() error {
 	return nil
 }
 
-func (data *SubmissionTaskData) compileSource() (Volume, TaskResult, error) {
+func (data *SubmissionTaskData) compileSource() (langs.Volume, langs.TaskResult, error) {
 	// write source to tempfile
 	sourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
-	defer os.RemoveAll(sourceDir)
+	defer func() {
+		if err := os.RemoveAll(sourceDir); err != nil {
+			log.Printf("Failed to remove source directory: %v", err)
+		}
+	}()
 
 	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
 	if _, err := sourceFile.WriteString(data.s.Source); err != nil {
-		return Volume{}, TaskResult{}, err
+		return langs.Volume{}, langs.TaskResult{}, err
 	}
-	sourceFile.Close()
+	if err := sourceFile.Close(); err != nil {
+		return langs.Volume{}, langs.TaskResult{}, err
+	}
 
 	return compile(data.files, sourceFile.Name(), data.lang)
 }

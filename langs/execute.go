@@ -1,11 +1,10 @@
-package main
+package langs
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -63,7 +62,11 @@ func (v *Volume) CopyFile(srcPath string, dstPath string) error {
 	if err != nil {
 		return err
 	}
-	defer ci.Remove()
+	defer func() {
+		if err := ci.Remove(); err != nil {
+			log.Printf("Failed to remove container: %v", err)
+		}
+	}()
 
 	return ci.CopyFile(srcPath, path.Join("/workdir", dstPath))
 }
@@ -593,7 +596,7 @@ func (c *containerInfo) Remove() error {
 }
 
 func readCGroupTasksFromFile(filePath string) ([]string, error) {
-	bytes, err := ioutil.ReadFile(filePath)
+	bytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return []string{}, err
 	}
@@ -638,7 +641,7 @@ func (c *containerInfo) readCGroupTasks() ([]string, error) {
 }
 
 func readUsedMemoryFromFile(filePath string) (int64, error) {
-	bytes, err := ioutil.ReadFile(filePath)
+	bytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return 0, err
 	}
