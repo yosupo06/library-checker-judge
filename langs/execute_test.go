@@ -1,4 +1,4 @@
-package main
+package langs
 
 import (
 	"bytes"
@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/yosupo06/library-checker-judge/langs"
 )
 
 func toRealFile(src io.Reader, name string, t *testing.T) string {
@@ -35,7 +33,7 @@ func toRealFile(src io.Reader, name string, t *testing.T) string {
 }
 
 func TestRunHelloWorld(t *testing.T) {
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("echo", "hello-world"))
+	task, err := NewTaskInfo("ubuntu", WithArguments("echo", "hello-world"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +50,7 @@ func TestRunHelloWorld(t *testing.T) {
 }
 
 func TestExitCode(t *testing.T) {
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("sh", "-c", "exit 123"))
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "exit 123"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +67,7 @@ func TestExitCode(t *testing.T) {
 }
 
 func TestStdin(t *testing.T) {
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("sh", "-c", "read input; test $input = dummy"), langs.WithStdin(strings.NewReader("dummy")))
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "read input; test $input = dummy"), WithStdin(strings.NewReader("dummy")))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +87,7 @@ func TestStdin(t *testing.T) {
 
 func TestStdout(t *testing.T) {
 	output := new(bytes.Buffer)
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("echo", "dummy"), langs.WithStdout(output))
+	task, err := NewTaskInfo("ubuntu", WithArguments("echo", "dummy"), WithStdout(output))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +110,7 @@ func TestStdout(t *testing.T) {
 }
 
 func TestStderr(t *testing.T) {
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("sh", "-c", "echo dummy >&2"))
+	task, err := NewTaskInfo("ubuntu", WithArguments("sh", "-c", "echo dummy >&2"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +133,7 @@ func TestStderr(t *testing.T) {
 }
 
 func TestSleepTime(t *testing.T) {
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("sleep", "3"))
+	task, err := NewTaskInfo("ubuntu", WithArguments("sleep", "3"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +150,7 @@ func TestSleepTime(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("sleep", "5"), langs.WithTimeout(3*time.Second))
+	task, err := NewTaskInfo("ubuntu", WithArguments("sleep", "5"), WithTimeout(3*time.Second))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +172,7 @@ func TestTimeout(t *testing.T) {
 
 func TestMemoryLimit(t *testing.T) {
 	// this command consumes 800M memory
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("dd", "if=/dev/zero", "of=/dev/null", "bs=800M"), langs.WithTimeout(3*time.Second), langs.WithMemoryLimitMB(500))
+	task, err := NewTaskInfo("ubuntu", WithArguments("dd", "if=/dev/zero", "of=/dev/null", "bs=800M"), WithTimeout(3*time.Second), WithMemoryLimitMB(500))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +192,7 @@ func TestMemoryLimit(t *testing.T) {
 }
 
 func TestVolume(t *testing.T) {
-	volume, err := langs.CreateVolume()
+	volume, err := CreateVolume()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +205,7 @@ func TestVolume(t *testing.T) {
 	}
 	output := new(bytes.Buffer)
 
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("cat", "/workdir/test.txt"), langs.WithWorkDir("/workdir"), langs.WithVolume(&volume, "/workdir"), langs.WithStdout(output))
+	task, err := NewTaskInfo("ubuntu", WithArguments("cat", "/workdir/test.txt"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithStdout(output))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +228,7 @@ func TestVolume(t *testing.T) {
 }
 
 func TestNetworkDisable(t *testing.T) {
-	task, err := langs.NewTaskInfo("ibmcom/ping", langs.WithArguments("ping", "-c", "5", "google.com"))
+	task, err := NewTaskInfo("ibmcom/ping", WithArguments("ping", "-c", "5", "google.com"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +245,7 @@ func TestNetworkDisable(t *testing.T) {
 }
 
 func TestForkBomb(t *testing.T) {
-	volume, err := langs.CreateVolume()
+	volume, err := CreateVolume()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +263,7 @@ func TestForkBomb(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	task, err := langs.NewTaskInfo("ubuntu", langs.WithArguments("./fork_bomb.sh"), langs.WithPidsLimit(100), langs.WithWorkDir("/workdir"), langs.WithVolume(&volume, "/workdir"), langs.WithTimeout(3*time.Second))
+	task, err := NewTaskInfo("ubuntu", WithArguments("./fork_bomb.sh"), WithPidsLimit(100), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithTimeout(3*time.Second))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +276,7 @@ func TestForkBomb(t *testing.T) {
 }
 
 func TestUseManyStack(t *testing.T) {
-	volume, err := langs.CreateVolume()
+	volume, err := CreateVolume()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +294,7 @@ func TestUseManyStack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	compileTask, err := langs.NewTaskInfo("gcc:12.1", langs.WithArguments("g++", "use_many_stack.cpp"), langs.WithWorkDir("/workdir"), langs.WithVolume(&volume, "/workdir"))
+	compileTask, err := NewTaskInfo("gcc:12.1", WithArguments("g++", "use_many_stack.cpp"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +303,7 @@ func TestUseManyStack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	task, err := langs.NewTaskInfo("gcc:12.1", langs.WithArguments("./a.out"), langs.WithWorkDir("/workdir"), langs.WithVolume(&volume, "/workdir"), langs.WithStackLimitKB(-1))
+	task, err := NewTaskInfo("gcc:12.1", WithArguments("./a.out"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithStackLimitKB(-1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +319,7 @@ func TestUseManyStack(t *testing.T) {
 }
 
 func TestInvalidFileCopy(t *testing.T) {
-	volume, err := langs.CreateVolume()
+	volume, err := CreateVolume()
 	if err != nil {
 		t.Fatal(err)
 	}
