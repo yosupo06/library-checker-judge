@@ -96,13 +96,14 @@ func FetchHackList(db *gorm.DB, skip, limit int, user, status, order string) ([]
 	if order == "" {
 		order = "-id"
 	}
-	if order == "-id" {
+	switch order {
+	case "-id":
 		query = query.Order("id DESC")
-	} else if order == "id" {
+	case "id":
 		query = query.Order("id ASC")
-	} else if order == "time" {
+	case "time":
 		query = query.Order("hack_time ASC")
-	} else if order == "-time" {
+	case "-time":
 		query = query.Order("hack_time DESC")
 	}
 	
