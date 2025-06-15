@@ -1,35 +1,16 @@
 run:
-  # Exclude test source files from linting
   skip-dirs:
-    - sources
-  # Skip files matching these patterns
-  skip-files:
-    - ".*\\.cpp$"
-    - ".*\\.h$"
+    - judge/sources # Test sources of the judge
 
 issues:
-  # Exclude specific linters for certain paths
-  exclude-rules:
-    - path: sources/
-      linters:
-        - typecheck
-    - path: ".*\\.cpp$"
-      linters:
-        - typecheck
-    - path: ".*\\.h$"
-      linters:
-        - typecheck
+  exclude-rules: []
 
 linters:
   enable:
     - errcheck
-    - staticcheck
-    - unused
     - gosimple
-    - ineffassign
-    - typecheck
     - govet
-  disable:
-    - deadcode  # deprecated
-    - varcheck  # deprecated
-    - structcheck  # deprecated
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
