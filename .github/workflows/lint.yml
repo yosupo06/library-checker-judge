@@ -1,0 +1,76 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'database/**'
+      - 'api/**'
+      - 'storage/**'
+      - 'uploader/**'
+      - 'judge/**'
+  pull_request:
+    paths:
+      - 'database/**'
+      - 'api/**'
+      - 'storage/**'
+      - 'uploader/**'
+      - 'judge/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Detect changed files
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          database:
+            - 'database/**'
+          api:
+            - 'api/**'
+          storage:
+            - 'storage/**'
+          uploader:
+            - 'uploader/**'
+          judge:
+            - 'judge/**'
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: golangci-lint (database)
+      if: steps.changes.outputs.database == 'true'
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: ./database
+
+    # - name: golangci-lint (api)
+    #   if: steps.changes.outputs.api == 'true'
+    #   uses: golangci/golangci-lint-action@v3
+    #   with:
+    #     version: latest
+    #     working-directory: ./api
+
+    # - name: golangci-lint (storage)
+    #   if: steps.changes.outputs.storage == 'true'
+    #   uses: golangci/golangci-lint-action@v3
+    #   with:
+    #     version: latest
+    #     working-directory: ./storage
+
+    # - name: golangci-lint (uploader)
+    #   if: steps.changes.outputs.uploader == 'true'
+    #   uses: golangci/golangci-lint-action@v3
+    #   with:
+    #     version: latest
+    #     working-directory: ./uploader

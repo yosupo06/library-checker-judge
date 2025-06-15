@@ -1,0 +1,71 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'database/**'
+      - 'api/**'
+      - 'storage/**'
+      - 'uploader/**'
+      - 'judge/**'
+  pull_request:
+    paths:
+      - 'database/**'
+      - 'api/**'
+      - 'storage/**'
+      - 'uploader/**'
+      - 'judge/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Detect changed files
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          database:
+            - 'database/**'
+          api:
+            - 'api/**'
+          storage:
+            - 'storage/**'
+          uploader:
+            - 'uploader/**'
+          judge:
+            - 'judge/**'
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Run docker compose
+      run: docker compose up -d --build --wait
+
+    - name: Database module test
+      if: steps.changes.outputs.database == 'true'
+      run: go test . -v
+      working-directory: ./database
+
+    - name: API module test
+      if: steps.changes.outputs.api == 'true'
+      run: go test . -v
+      working-directory: ./api
+
+    - name: Storage module test
+      if: steps.changes.outputs.storage == 'true'
+      run: go test . -v
+      working-directory: ./storage
+
+    - name: Uploader module test
+      if: steps.changes.outputs.uploader == 'true'
+      run: go test . -v
+      working-directory: ./uploader
