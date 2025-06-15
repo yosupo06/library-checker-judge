@@ -10,6 +10,7 @@ import (
 
 var (
 	APLUSB_DIR                 = path.Join("sources", "aplusb")
+	CPPFUNC_GRADER_DIR        = path.Join("sources", "aplusb", "cpp-func")
 	DEFAULT_PID_LIMIT          = 100
 	DEFAULT_MEMORY_LIMIT_MB    = 1024
 	COMPILE_TIMEOUT            = 30 * time.Second
@@ -37,6 +38,19 @@ func langToRealFile(src io.Reader, name string, t *testing.T) string {
 		t.Fatal(err)
 	}
 	return outFile.Name()
+}
+
+func createAdditionalFilesMap(langID string) map[string]string {
+	extraFiles := make(map[string]string)
+	
+	if langID == "cpp-func" {
+		// Add the grader files for cpp-func
+		extraFiles["grader.cpp"] = path.Join(CPPFUNC_GRADER_DIR, "grader.cpp")
+		extraFiles["solve.hpp"] = path.Join(CPPFUNC_GRADER_DIR, "solve.hpp")
+		extraFiles["fastio.h"] = path.Join(CPPFUNC_GRADER_DIR, "fastio.h")
+	}
+	
+	return extraFiles
 }
 
 func testLangSupport(t *testing.T, langID, srcName string) {
@@ -80,7 +94,8 @@ func getTestDefaultOptions() []TaskInfoOption {
 func compileSource(srcFile string, lang Lang, t *testing.T) (Volume, TaskResult) {
 	t.Logf("Compiling %s source: %s", lang.ID, srcFile)
 
-	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, map[string]string{})
+	extraFiles := createAdditionalFilesMap(lang.ID)
+	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, extraFiles)
 	if err != nil {
 		if volume.Name != "" {
 			volume.Remove()
@@ -220,6 +235,7 @@ func TestLangSupport(t *testing.T) {
 	}{
 		{"cpp", "ac.cpp"},
 		{"cpp", "ac_acl.cpp"},
+		{"cpp-func", "ac_func.cpp"},
 		{"rust", "ac.rs"},
 		{"haskell", "ac.hs"},
 		{"haskell", "ac_cabal.hs"},
@@ -243,7 +259,7 @@ func TestLangSupport(t *testing.T) {
 
 func TestAllSupportedLangs(t *testing.T) {
 	expectedLangs := []string{
-		"cpp", "rust", "haskell", "csharp", "lisp", 
+		"cpp", "cpp-func", "rust", "haskell", "csharp", "lisp", 
 		"python3", "pypy3", "d", "java", "go", "crystal", "ruby",
 	}
 
@@ -285,6 +301,7 @@ func TestCompileAndRun(t *testing.T) {
 		expectedOutput string
 	}{
 		{"cpp", "ac.cpp", "3\n"},
+		{"cpp-func", "ac_func.cpp", "3\n"},
 		{"rust", "ac.rs", "3\n"},
 		{"python3", "ac_numpy.py", "3\n"},
 		{"go", "go/ac.go", "3\n"},
