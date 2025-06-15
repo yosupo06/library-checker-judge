@@ -4,19 +4,7 @@ on:
   push:
     branches:
       - master
-    paths:
-      - 'database/**'
-      - 'api/**'
-      - 'storage/**'
-      - 'uploader/**'
-      - 'judge/**'
   pull_request:
-    paths:
-      - 'database/**'
-      - 'api/**'
-      - 'storage/**'
-      - 'uploader/**'
-      - 'judge/**'
 
 jobs:
   lint:
