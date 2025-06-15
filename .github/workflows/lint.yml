@@ -32,6 +32,9 @@ jobs:
           judge:
             - 'judge/**'
             - '.github/workflows/lint.yml'
+          langs:
+            - 'langs/**'
+            - '.github/workflows/lint.yml'
 
     - run: ./run_protoc.sh
 
@@ -74,3 +77,10 @@ jobs:
     #   with:
     #     version: latest
     #     working-directory: ./judge
+
+    - name: golangci-lint (langs)
+      if: steps.changes.outputs.langs == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./langs
