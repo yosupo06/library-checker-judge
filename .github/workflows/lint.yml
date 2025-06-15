@@ -54,12 +54,12 @@ jobs:
         version: latest
         working-directory: ./api
 
-    # - name: golangci-lint (storage)
-    #   if: steps.changes.outputs.storage == 'true'
-    #   uses: golangci/golangci-lint-action@v3
-    #   with:
-    #     version: latest
-    #     working-directory: ./storage
+    - name: golangci-lint (storage)
+      if: steps.changes.outputs.storage == 'true'
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: ./storage
 
     # - name: golangci-lint (uploader)
     #   if: steps.changes.outputs.uploader == 'true'
