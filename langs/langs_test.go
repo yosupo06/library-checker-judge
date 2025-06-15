@@ -10,6 +10,7 @@ import (
 
 var (
 	APLUSB_DIR                 = path.Join("sources", "aplusb")
+	CPPFUNC_GRADER_DIR        = path.Join("sources", "aplusb", "cpp-func")
 	DEFAULT_PID_LIMIT          = 100
 	DEFAULT_MEMORY_LIMIT_MB    = 1024
 	COMPILE_TIMEOUT            = 30 * time.Second
@@ -39,6 +40,19 @@ func langToRealFile(src io.Reader, name string, t *testing.T) string {
 	return outFile.Name()
 }
 
+func createAdditionalFilesMap(langID string) map[string]string {
+	extraFiles := make(map[string]string)
+	
+	if langID == "cpp-func" {
+		// Add the grader files for cpp-func
+		extraFiles["grader.cpp"] = path.Join(CPPFUNC_GRADER_DIR, "grader.cpp")
+		extraFiles["solve.hpp"] = path.Join(CPPFUNC_GRADER_DIR, "solve.hpp")
+		extraFiles["fastio.h"] = path.Join(CPPFUNC_GRADER_DIR, "fastio.h")
+	}
+	
+	return extraFiles
+}
+
 func testLangSupport(t *testing.T, langID, srcName string) {
 	t.Log("Testing language support for", langID, "with", srcName)
 
@@ -65,10 +79,10 @@ func testLangSupport(t *testing.T, langID, srcName string) {
 	t.Logf("Successfully created source file for %s: %s", langID, srcFile)
 }
 
-func getDefaultOptions() []TaskInfoOption {
+func getTestDefaultOptions() []TaskInfoOption {
 	options := []TaskInfoOption{
 		WithPidsLimit(DEFAULT_PID_LIMIT),
-		WithStackLimitKB(-1),
+		WithUnlimitedStackLimit(),
 		WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
 	}
 	if c := os.Getenv("CGROUP_PARENT"); c != "" {
@@ -80,32 +94,13 @@ func getDefaultOptions() []TaskInfoOption {
 func compileSource(srcFile string, lang Lang, t *testing.T) (Volume, TaskResult) {
 	t.Logf("Compiling %s source: %s", lang.ID, srcFile)
 
-	volume, err := CreateVolume()
+	extraFiles := createAdditionalFilesMap(lang.ID)
+	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, extraFiles)
 	if err != nil {
-		t.Fatal("Failed to create volume:", err)
-	}
-
-	if err = volume.CopyFile(srcFile, lang.Source); err != nil {
-		volume.Remove()
-		t.Fatal("Failed to copy source file:", err)
-	}
-
-	ti, err := NewTaskInfo(lang.ImageName, append(
-		getDefaultOptions(),
-		WithArguments(lang.Compile...),
-		WithWorkDir("/workdir"),
-		WithVolume(&volume, "/workdir"),
-		WithTimeout(COMPILE_TIMEOUT),
-	)...)
-	if err != nil {
-		volume.Remove()
-		t.Fatal("Failed to create compile task:", err)
-	}
-
-	result, err := ti.Run()
-	if err != nil {
-		volume.Remove()
-		t.Fatal("Failed to run compile task:", err)
+		if volume.Name != "" {
+			volume.Remove()
+		}
+		t.Fatal("Failed to compile source:", err)
 	}
 
 	return volume, result
@@ -141,7 +136,7 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 	}
 
 	taskInfo, err := NewTaskInfo(lang.ImageName, append(
-		getDefaultOptions(),
+		getTestDefaultOptions(),
 		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, lang.Exec...)...),
 		WithWorkDir("/workdir"),
 		WithVolume(&volume, "/workdir"),
@@ -165,7 +160,7 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 	defer outFile.Close()
 
 	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
-		getDefaultOptions(),
+		getTestDefaultOptions(),
 		WithArguments("cat", "/casedir/actual.out"),
 		WithTimeout(COMPILE_TIMEOUT),
 		WithVolume(&caseVolume, "/casedir"),
@@ -240,6 +235,7 @@ func TestLangSupport(t *testing.T) {
 	}{
 		{"cpp", "ac.cpp"},
 		{"cpp", "ac_acl.cpp"},
+		{"cpp-func", "ac_func.cpp"},
 		{"rust", "ac.rs"},
 		{"haskell", "ac.hs"},
 		{"haskell", "ac_cabal.hs"},
@@ -263,7 +259,7 @@ func TestLangSupport(t *testing.T) {
 
 func TestAllSupportedLangs(t *testing.T) {
 	expectedLangs := []string{
-		"cpp", "rust", "haskell", "csharp", "lisp", 
+		"cpp", "cpp-func", "rust", "haskell", "csharp", "lisp", 
 		"python3", "pypy3", "d", "java", "go", "crystal", "ruby",
 	}
 
@@ -305,6 +301,7 @@ func TestCompileAndRun(t *testing.T) {
 		expectedOutput string
 	}{
 		{"cpp", "ac.cpp", "3\n"},
+		{"cpp-func", "ac_func.cpp", "3\n"},
 		{"rust", "ac.rs", "3\n"},
 		{"python3", "ac_numpy.py", "3\n"},
 		{"go", "go/ac.go", "3\n"},

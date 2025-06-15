@@ -115,7 +115,7 @@ type TaskInfo struct {
 	Timeout             time.Duration
 	Cpuset              []int
 	MemoryLimitMB       int
-	StackLimitKB        int // -1: unlimited
+	StackLimitBytes     int // -1: unlimited
 	PidsLimit           int
 	EnableNetwork       bool
 	EnableLoggingDriver bool
@@ -159,9 +159,24 @@ func WithMemoryLimitMB(limitMB int) TaskInfoOption {
 	}
 }
 
-func WithStackLimitKB(limitKB int) TaskInfoOption {
+func WithStackLimitBytes(limitBytes int) TaskInfoOption {
 	return func(ti *TaskInfo) error {
-		ti.StackLimitKB = limitKB
+		ti.StackLimitBytes = limitBytes
+		return nil
+	}
+}
+
+func WithUnlimitedStackLimit() TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.StackLimitBytes = -1
+		return nil
+	}
+}
+
+// Convenience function for common stack sizes
+func WithStackLimitMB(limitMB int) TaskInfoOption {
+	return func(ti *TaskInfo) error {
+		ti.StackLimitBytes = limitMB * 1024 * 1024 // Convert MB to bytes
 		return nil
 	}
 }
@@ -306,9 +321,9 @@ func (t *TaskInfo) create() (containerInfo, error) {
 	}
 
 	// stack size
-	if t.StackLimitKB != 0 {
+	if t.StackLimitBytes != 0 {
 		args = append(args, "--ulimit")
-		args = append(args, fmt.Sprintf("stack=%d:%d", t.StackLimitKB, t.StackLimitKB))
+		args = append(args, fmt.Sprintf("stack=%d:%d", t.StackLimitBytes, t.StackLimitBytes))
 	}
 
 	// workdir

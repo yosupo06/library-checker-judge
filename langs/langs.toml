@@ -6,7 +6,7 @@
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
-    additional_files = ["common/fastio.h", "grader/grader.cpp", "grader/solve.hpp"]
+    additional_files = ["fastio.h", "grader.cpp", "solve.hpp"]
 [[langs]]
     id = "cpp"
     name = "C++23"
