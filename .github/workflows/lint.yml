@@ -42,12 +42,12 @@ jobs:
         version: latest
         working-directory: ./database
 
-    # - name: golangci-lint (api)
-    #   if: steps.changes.outputs.api == 'true'
-    #   uses: golangci/golangci-lint-action@v3
-    #   with:
-    #     version: latest
-    #     working-directory: ./api
+    - name: golangci-lint (api)
+      if: steps.changes.outputs.api == 'true'
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: ./api
 
     # - name: golangci-lint (storage)
     #   if: steps.changes.outputs.storage == 'true'
