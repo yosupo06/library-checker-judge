@@ -12,6 +12,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
     
     - id: install-crun
       name: Install crun
@@ -29,8 +36,6 @@ jobs:
       name: Build lang images
       run: ./build.sh
       working-directory: ./langs
-
-    - run: ./gen_protoc.sh
 
     - id: test-judge
       name: Test judge

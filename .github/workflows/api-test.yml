@@ -13,7 +13,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - run: ./gen_protoc.sh
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
 
     - id: run-docker-compose
       name: Run docker compose
