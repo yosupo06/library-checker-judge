@@ -1,9 +1,6 @@
-run:
-  skip-dirs:
-    - judge/sources # Test sources of the judge
-
 issues:
-  exclude-rules: []
+  exclude-dirs:
+    - judge/sources # Test sources of the judge
 
 linters:
   enable:
