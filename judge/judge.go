@@ -1,11 +1,9 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"log/slog"
 	"os"
-	"path"
 	"time"
 
 	"github.com/yosupo06/library-checker-judge/langs"
@@ -26,7 +24,7 @@ var DEFAULT_OPTIONS []langs.TaskInfoOption
 func init() {
 	DEFAULT_OPTIONS = []langs.TaskInfoOption{
 		langs.WithPidsLimit(DEFAULT_PID_LIMIT),
-		langs.WithStackLimitKB(-1),
+		langs.WithUnlimitedStackLimit(),
 		langs.WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
 	}
 	if c := os.Getenv("CGROUP_PARENT"); c != "" {
@@ -59,6 +57,7 @@ func compileModelSolution(dir storage.ProblemFiles) (langs.Volume, langs.TaskRes
 func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Volume, t langs.TaskResult, err error) {
 	slog.Info("Compile", "lang", l.ID, "src", srcPath)
 
+	// Prepare additional files
 	paths := []string{}
 	for _, key := range l.AdditionalFiles {
 		paths = append(paths, dir.PublicFilePath(key))
@@ -69,45 +68,8 @@ func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Vo
 		paths = append(paths, ps...)
 	}
 
-	v, err = langs.CreateVolume()
-	if err != nil {
-		return
-	}
-	defer func() {
-		if err != nil {
-			if err := v.Remove(); err != nil {
-				log.Println("Volume remove failed:", err)
-			}
-		}
-	}()
-
-	if err = v.CopyFile(srcPath, l.Source); err != nil {
-		return
-	}
-	for _, p := range paths {
-		if _, err = os.Stat(p); err == nil {
-			if err = v.CopyFile(p, path.Base(p)); err != nil {
-				return
-			}
-		} else if errors.Is(err, os.ErrNotExist) {
-			log.Println(p, "is not found, skip")
-		} else {
-			return
-		}
-	}
-
-	ti, err := langs.NewTaskInfo(l.ImageName, append(
-		DEFAULT_OPTIONS,
-		langs.WithArguments(l.Compile...),
-		langs.WithWorkDir("/workdir"),
-		langs.WithVolume(&v, "/workdir"),
-		langs.WithTimeout(COMPILE_TIMEOUT),
-	)...)
-	if err != nil {
-		return
-	}
-	t, err = ti.Run()
-	return
+	// Use shared CompileSource function
+	return langs.CompileSource(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, paths)
 }
 
 func runTestCase(sourceVolume, checkerVolume langs.Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {

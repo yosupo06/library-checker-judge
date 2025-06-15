@@ -303,7 +303,7 @@ func TestUseManyStack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	task, err := NewTaskInfo("gcc:12.1", WithArguments("./a.out"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithStackLimitKB(-1))
+	task, err := NewTaskInfo("gcc:12.1", WithArguments("./a.out"), WithWorkDir("/workdir"), WithVolume(&volume, "/workdir"), WithUnlimitedStackLimit())
 	if err != nil {
 		t.Fatal(err)
 	}

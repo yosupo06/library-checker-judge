@@ -65,10 +65,10 @@ func testLangSupport(t *testing.T, langID, srcName string) {
 	t.Logf("Successfully created source file for %s: %s", langID, srcFile)
 }
 
-func getDefaultOptions() []TaskInfoOption {
+func getTestDefaultOptions() []TaskInfoOption {
 	options := []TaskInfoOption{
 		WithPidsLimit(DEFAULT_PID_LIMIT),
-		WithStackLimitKB(-1),
+		WithUnlimitedStackLimit(),
 		WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
 	}
 	if c := os.Getenv("CGROUP_PARENT"); c != "" {
@@ -80,32 +80,12 @@ func getDefaultOptions() []TaskInfoOption {
 func compileSource(srcFile string, lang Lang, t *testing.T) (Volume, TaskResult) {
 	t.Logf("Compiling %s source: %s", lang.ID, srcFile)
 
-	volume, err := CreateVolume()
+	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, nil)
 	if err != nil {
-		t.Fatal("Failed to create volume:", err)
-	}
-
-	if err = volume.CopyFile(srcFile, lang.Source); err != nil {
-		volume.Remove()
-		t.Fatal("Failed to copy source file:", err)
-	}
-
-	ti, err := NewTaskInfo(lang.ImageName, append(
-		getDefaultOptions(),
-		WithArguments(lang.Compile...),
-		WithWorkDir("/workdir"),
-		WithVolume(&volume, "/workdir"),
-		WithTimeout(COMPILE_TIMEOUT),
-	)...)
-	if err != nil {
-		volume.Remove()
-		t.Fatal("Failed to create compile task:", err)
-	}
-
-	result, err := ti.Run()
-	if err != nil {
-		volume.Remove()
-		t.Fatal("Failed to run compile task:", err)
+		if volume.Name != "" {
+			volume.Remove()
+		}
+		t.Fatal("Failed to compile source:", err)
 	}
 
 	return volume, result
