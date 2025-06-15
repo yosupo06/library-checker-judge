@@ -63,18 +63,16 @@ func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Vo
 		"fastio.h":   dir.PublicFilePath("common/fastio.h"),
 		"grader.cpp": dir.PublicFilePath("grader/grader.cpp"),
 		"solve.hpp":  dir.PublicFilePath("grader/solve.hpp"),
-		"params.h":   dir.PublicFilePath("params.h"),
 	}
 
-	// Add common directory files
-	if files, err := os.ReadDir(dir.PublicFilePath("common")); err == nil {
-		for _, file := range files {
-			filename := file.Name()
-			// Skip fastio.h as it's already added above
-			if filename != "fastio.h" {
-				extraFilePaths[filename] = dir.PublicFilePath(path.Join("common", filename))
-			}
-		}
+	// Add include files (params.h and common directory files) using existing method
+	includeFiles, err := dir.GetIncludeFilePaths()
+	if err != nil {
+		return langs.Volume{}, langs.TaskResult{}, err
+	}
+	for _, filePath := range includeFiles {
+		filename := path.Base(filePath)
+		extraFilePaths[filename] = filePath
 	}
 
 	// Use shared CompileSource function with file map
