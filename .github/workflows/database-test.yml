@@ -1,0 +1,33 @@
+name: Database-Test
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'database/**'
+      - '.github/workflows/database-test.yml'
+  pull_request:
+    paths:
+      - 'database/**'
+      - '.github/workflows/database-test.yml'
+
+jobs:
+  database-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - id: run-docker-compose
+      name: Run docker compose
+      run: docker compose up -d --build --wait
+
+    - name: Database module test
+      run: go test . -v
+      working-directory: ./database

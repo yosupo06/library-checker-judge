@@ -26,11 +26,6 @@ jobs:
     #     version: latest
     #     working-directory: ./api
 
-    # - name: golangci-lint (database)
-    #   uses: golangci/golangci-lint-action@v8
-    #   with:
-    #     version: latest
-    #     working-directory: ./database
 
     # - name: golangci-lint (storage)
     #   uses: golangci/golangci-lint-action@v8
@@ -52,9 +47,6 @@ jobs:
       run: go test .
       working-directory: ./uploader
 
-    - name: Database module test
-      run: go test .
-      working-directory: ./database
 
     - name: Storage module test
       run: go test .
