@@ -4,6 +4,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"path"
 	"time"
 
 	"github.com/yosupo06/library-checker-judge/langs"
@@ -57,8 +58,27 @@ func compileModelSolution(dir storage.ProblemFiles) (langs.Volume, langs.TaskRes
 func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Volume, t langs.TaskResult, err error) {
 	slog.Info("Compile", "lang", l.ID, "src", srcPath)
 
-	// Use shared CompileSource function with directories
-	return langs.CompileSource(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, dir.PublicFiles, dir.PublicFiles)
+	// Create map of extra files - always include these 3 files for all languages
+	extraFilePaths := map[string]string{
+		"fastio.h":   dir.PublicFilePath("common/fastio.h"),
+		"grader.cpp": dir.PublicFilePath("grader/grader.cpp"),
+		"solve.hpp":  dir.PublicFilePath("grader/solve.hpp"),
+		"params.h":   dir.PublicFilePath("params.h"),
+	}
+
+	// Add common directory files
+	if files, err := os.ReadDir(dir.PublicFilePath("common")); err == nil {
+		for _, file := range files {
+			filename := file.Name()
+			// Skip fastio.h as it's already added above
+			if filename != "fastio.h" {
+				extraFilePaths[filename] = dir.PublicFilePath(path.Join("common", filename))
+			}
+		}
+	}
+
+	// Use shared CompileSource function with file map
+	return langs.CompileSource(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, extraFilePaths)
 }
 
 func runTestCase(sourceVolume, checkerVolume langs.Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {

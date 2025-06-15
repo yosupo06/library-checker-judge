@@ -4,14 +4,12 @@ import (
 	"errors"
 	"log"
 	"os"
-	"path"
 	"time"
 )
 
 // CompileSource compiles source code and returns the volume and result
-// For simple compilation without additional files, pass empty strings for directories
-// For full judge compilation, pass additionalFilesDir and extraFilesDir
-func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeout time.Duration, additionalFilesDir, extraFilesDir string) (Volume, TaskResult, error) {
+// extraFilePaths is a map from filename to full path for additional files
+func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeout time.Duration, extraFilePaths map[string]string) (Volume, TaskResult, error) {
 	// Set defaults
 	if options == nil {
 		options = getDefaultOptions()
@@ -40,47 +38,51 @@ func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeo
 		return Volume{}, TaskResult{}, err
 	}
 
-	// Copy additional files specified by the language from additionalFilesDir
-	if additionalFilesDir != "" {
-		for _, key := range lang.AdditionalFiles {
-			filePath := path.Join(additionalFilesDir, key)
-			if _, statErr := os.Stat(filePath); statErr == nil {
-				if err = volume.CopyFile(filePath, path.Base(filePath)); err != nil {
-					return Volume{}, TaskResult{}, err
-				}
-			} else if errors.Is(statErr, os.ErrNotExist) {
-				log.Println(filePath, "is not found, skipping")
-			} else {
-				err = statErr
-				return Volume{}, TaskResult{}, err
-			}
+	// Validate that all required additional files are provided
+	for _, filename := range lang.AdditionalFiles {
+		if _, exists := extraFilePaths[filename]; !exists {
+			err = errors.New("required additional file not provided: " + filename)
+			return Volume{}, TaskResult{}, err
 		}
 	}
 
-	// Copy extra files (common include files, params.h, etc.)
-	if extraFilesDir != "" {
-		// Copy params.h
-		paramsPath := path.Join(extraFilesDir, "params.h")
-		if _, statErr := os.Stat(paramsPath); statErr == nil {
-			if err = volume.CopyFile(paramsPath, "params.h"); err != nil {
+	// Copy additional files specified by the language
+	for _, filename := range lang.AdditionalFiles {
+		filePath := extraFilePaths[filename]
+		if _, statErr := os.Stat(filePath); statErr == nil {
+			if err = volume.CopyFile(filePath, filename); err != nil {
 				return Volume{}, TaskResult{}, err
 			}
-		} else if !errors.Is(statErr, os.ErrNotExist) {
+		} else if errors.Is(statErr, os.ErrNotExist) {
+			log.Println(filePath, "is not found, skipping")
+		} else {
 			err = statErr
 			return Volume{}, TaskResult{}, err
 		}
+	}
 
-		// Copy common directory files
-		commonDir := path.Join(extraFilesDir, "common")
-		if files, readErr := os.ReadDir(commonDir); readErr == nil {
-			for _, file := range files {
-				filePath := path.Join(commonDir, file.Name())
-				if err = volume.CopyFile(filePath, file.Name()); err != nil {
-					return Volume{}, TaskResult{}, err
-				}
+	// Copy other extra files (params.h, common files, etc.) if provided
+	for filename, filePath := range extraFilePaths {
+		// Skip files already handled as additional files
+		isAdditionalFile := false
+		for _, additionalFile := range lang.AdditionalFiles {
+			if additionalFile == filename {
+				isAdditionalFile = true
+				break
 			}
-		} else if !errors.Is(readErr, os.ErrNotExist) {
-			err = readErr
+		}
+		if isAdditionalFile {
+			continue
+		}
+
+		if _, statErr := os.Stat(filePath); statErr == nil {
+			if err = volume.CopyFile(filePath, filename); err != nil {
+				return Volume{}, TaskResult{}, err
+			}
+		} else if errors.Is(statErr, os.ErrNotExist) {
+			log.Println(filePath, "is not found, skipping")
+		} else {
+			err = statErr
 			return Volume{}, TaskResult{}, err
 		}
 	}
