@@ -19,14 +19,19 @@ jobs:
         filters: |
           database:
             - 'database/**'
+            - '.github/workflows/test.yml'
           api:
             - 'api/**'
+            - '.github/workflows/test.yml'
           storage:
             - 'storage/**'
+            - '.github/workflows/test.yml'
           uploader:
             - 'uploader/**'
+            - '.github/workflows/test.yml'
           judge:
             - 'judge/**'
+            - '.github/workflows/test.yml'
 
     - run: ./run_protoc.sh
 

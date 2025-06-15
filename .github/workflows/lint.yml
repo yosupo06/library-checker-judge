@@ -19,14 +19,19 @@ jobs:
         filters: |
           database:
             - 'database/**'
+            - '.github/workflows/lint.yml'
           api:
             - 'api/**'
+            - '.github/workflows/lint.yml'
           storage:
             - 'storage/**'
+            - '.github/workflows/lint.yml'
           uploader:
             - 'uploader/**'
+            - '.github/workflows/lint.yml'
           judge:
             - 'judge/**'
+            - '.github/workflows/lint.yml'
 
     - run: ./run_protoc.sh
 
