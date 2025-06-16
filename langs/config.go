@@ -44,7 +44,7 @@ var LANG_GENERATOR = Lang{
 }
 var LANG_MODEL_SOLUTION Lang
 
-//go:embed langs.toml
+//go:embed configs/langs.toml
 var langToml string
 
 func init() {

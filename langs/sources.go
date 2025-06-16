@@ -2,5 +2,5 @@ package langs
 
 import "embed"
 
-//go:embed sources/*
+//go:embed testdata/sources/*
 var sources embed.FS

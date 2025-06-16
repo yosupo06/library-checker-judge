@@ -251,7 +251,7 @@ func TestForkBomb(t *testing.T) {
 	}
 	defer func() { _ = volume.Remove() }()
 
-	src, err := sources.Open("sources/badcode/fork_bomb.sh")
+	src, err := sources.Open("testdata/sources/badcode/fork_bomb.sh")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -282,7 +282,7 @@ func TestUseManyStack(t *testing.T) {
 	}
 	defer func() { _ = volume.Remove() }()
 
-	src, err := sources.Open("sources/badcode/use_many_stack.cpp")
+	src, err := sources.Open("testdata/sources/badcode/use_many_stack.cpp")
 	if err != nil {
 		t.Fatal(err)
 	}

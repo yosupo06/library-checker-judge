@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	APLUSB_DIR                 = path.Join("sources", "aplusb")
-	CPPFUNC_GRADER_DIR        = path.Join("sources", "aplusb", "cpp-func")
+	APLUSB_DIR                 = path.Join("testdata", "sources", "aplusb")
+	CPPFUNC_GRADER_DIR        = path.Join("testdata", "sources", "aplusb", "cpp-func")
 	DEFAULT_PID_LIMIT          = 100
 	DEFAULT_MEMORY_LIMIT_MB    = 1024
 	COMPILE_TIMEOUT            = 30 * time.Second

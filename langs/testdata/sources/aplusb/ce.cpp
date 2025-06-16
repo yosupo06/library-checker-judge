@@ -1,11 +1,10 @@
 #include <iostream>
-#include <atcoder/dsu>
-
 using namespace std;
 
 int main() {
     int a, b;
     cin >> a >> b;
     cout << a + b << endl;
-    return 0;
+    // CE (Compile Error) - missing brace and semicolon
+    return 0
 }

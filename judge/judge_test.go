@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"flag"
 	"io"
 	"os"
@@ -13,8 +12,8 @@ import (
 )
 
 var (
-	TESTLIB_PATH       = path.Join("sources", "testlib.h")
-	APLUSB_DIR         = path.Join("sources", "aplusb")
+	TESTLIB_PATH       = path.Join("..", "langs", "testdata", "sources", "testlib.h")
+	APLUSB_DIR         = path.Join("..", "langs", "testdata", "sources", "aplusb")
 	CHECKER_PATH       = path.Join(APLUSB_DIR, "checker.cpp")
 	PARAMS_H_PATH      = path.Join(APLUSB_DIR, "params.h")
 	SAMPLE_IN_PATH     = path.Join(APLUSB_DIR, "sample.in")
@@ -23,8 +22,8 @@ var (
 	DUMMY_CASE_NAME    = "case_00"
 )
 
-//go:embed sources/*
-var sources embed.FS
+// Use langs module's test sources instead of embedding our own
+// var sources embed.FS
 
 func toRealFile(src io.Reader, name string, t *testing.T) string {
 	tmpDir, err := os.MkdirTemp("", "")
@@ -77,7 +76,7 @@ func prepareProblemFiles(t *testing.T, inFilePath, outFilePath string) storage.P
 		{src: inFilePath, dst: dir.InFilePath(DUMMY_CASE_NAME)},
 		{src: outFilePath, dst: dir.OutFilePath(DUMMY_CASE_NAME)},
 	} {
-		checker, err := sources.ReadFile(info.src)
+		checker, err := os.ReadFile(info.src)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -97,7 +96,7 @@ func testAplusB(t *testing.T, langID, srcName, inFilePath, outFilePath, expected
 
 	files := prepareProblemFiles(t, inFilePath, outFilePath)
 
-	src, err := sources.Open(path.Join(APLUSB_DIR, srcName))
+	src, err := os.Open(path.Join(APLUSB_DIR, srcName))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
@@ -210,7 +209,7 @@ func TestCppAplusBFail(t *testing.T) {
 func TestAplusBCE(t *testing.T) {
 	files := prepareProblemFiles(t, SAMPLE_IN_PATH, SAMPLE_OUT_PATH)
 
-	src, err := sources.Open(path.Join(APLUSB_DIR, "ce.cpp"))
+	src, err := os.Open(path.Join(APLUSB_DIR, "ce.cpp"))
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}

@@ -81,7 +81,7 @@ jobs:
           
     - name: Build lang images
       if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true'
-      run: ./build.sh
+      run: ./docker/build.sh
       working-directory: ./langs
 
     - name: Judge module test
