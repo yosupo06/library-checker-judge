@@ -36,6 +36,9 @@ jobs:
           langs:
             - 'langs/**'
             - '.github/workflows/test.yml'
+          executor:
+            - 'executor/**'
+            - '.github/workflows/test.yml'
 
     - run: ./run_protoc.sh
 
@@ -68,19 +71,19 @@ jobs:
       working-directory: ./uploader
 
     - name: Install crun
-      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true'
+      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true' || steps.changes.outputs.executor == 'true'
       run: sudo ./packer/base/crun-install.sh
 
     - name: Prepare docker config
-      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true'
+      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true' || steps.changes.outputs.executor == 'true'
       run: sudo cp ./packer/base/docker-daemon.json /etc/docker/daemon.json
 
     - name: Restart docker
-      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true'
+      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true' || steps.changes.outputs.executor == 'true'
       run: sudo service docker restart
           
     - name: Build lang images
-      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true'
+      if: steps.changes.outputs.judge == 'true' || steps.changes.outputs.langs == 'true' || steps.changes.outputs.executor == 'true'
       run: ./build.sh
       working-directory: ./langs
 
@@ -93,3 +96,8 @@ jobs:
       if: steps.changes.outputs.langs == 'true'
       run: go test -v .
       working-directory: ./langs
+
+    - name: Executor module test
+      if: steps.changes.outputs.executor == 'true'
+      run: go test -v .
+      working-directory: ./executor
