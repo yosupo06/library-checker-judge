@@ -2,6 +2,7 @@ package langs
 
 import (
 	"bytes"
+	"embed"
 	"io"
 	"os"
 	"path"
@@ -9,6 +10,9 @@ import (
 	"testing"
 	"time"
 )
+
+//go:embed testdata/sources/*
+var sources embed.FS
 
 func toRealFile(src io.Reader, name string, t *testing.T) string {
 	tmpDir, err := os.MkdirTemp("", "")
