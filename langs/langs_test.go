@@ -97,7 +97,7 @@ func compileSource(srcFile string, lang Lang, t *testing.T) (executor.Volume, ex
 	t.Logf("Compiling %s source: %s", lang.ID, srcFile)
 
 	extraFiles := createAdditionalFilesMap(lang.ID)
-	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, extraFiles)
+	volume, result, err := executor.CompileSource(srcFile, executor.Lang{ID: lang.ID, Name: lang.Name, Version: lang.Version, Source: lang.Source, Compile: lang.Compile, Exec: lang.Exec, ImageName: lang.ImageName, AdditionalFiles: lang.AdditionalFiles}, getTestDefaultOptions(), COMPILE_TIMEOUT, extraFiles)
 	if err != nil {
 		if volume.Name != "" {
 			_ = volume.Remove()
