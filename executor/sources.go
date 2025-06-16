@@ -1,6 +1,6 @@
-package langs
+package executor
 
 import "embed"
 
 //go:embed sources/*
-var sources embed.FS
+var Sources embed.FS
