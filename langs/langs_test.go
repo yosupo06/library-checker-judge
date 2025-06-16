@@ -6,6 +6,8 @@ import (
 	"path"
 	"testing"
 	"time"
+
+	"github.com/yosupo06/library-checker-judge/executor"
 )
 
 var (
@@ -79,19 +81,19 @@ func testLangSupport(t *testing.T, langID, srcName string) {
 	t.Logf("Successfully created source file for %s: %s", langID, srcFile)
 }
 
-func getTestDefaultOptions() []TaskInfoOption {
-	options := []TaskInfoOption{
-		WithPidsLimit(DEFAULT_PID_LIMIT),
-		WithUnlimitedStackLimit(),
-		WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
+func getTestDefaultOptions() []executor.TaskInfoOption {
+	options := []executor.TaskInfoOption{
+		executor.WithPidsLimit(DEFAULT_PID_LIMIT),
+		executor.WithUnlimitedStackLimit(),
+		executor.WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
 	}
 	if c := os.Getenv("CGROUP_PARENT"); c != "" {
-		options = append(options, WithCgroupParent(c))
+		options = append(options, executor.WithCgroupParent(c))
 	}
 	return options
 }
 
-func compileSource(srcFile string, lang Lang, t *testing.T) (Volume, TaskResult) {
+func compileSource(srcFile string, lang Lang, t *testing.T) (executor.Volume, executor.TaskResult) {
 	t.Logf("Compiling %s source: %s", lang.ID, srcFile)
 
 	extraFiles := createAdditionalFilesMap(lang.ID)
@@ -106,10 +108,10 @@ func compileSource(srcFile string, lang Lang, t *testing.T) (Volume, TaskResult)
 	return volume, result
 }
 
-func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string, t *testing.T) (string, TaskResult) {
+func runSource(volume executor.Volume, lang Lang, timeLimit float64, inputContent string, t *testing.T) (string, executor.TaskResult) {
 	t.Logf("Running %s source with input: %s", lang.ID, inputContent)
 
-	caseVolume, err := CreateVolume()
+	caseVolume, err := executor.CreateVolume()
 	if err != nil {
 		t.Fatal("Failed to create case volume:", err)
 	}
@@ -135,13 +137,13 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 		t.Fatal("Failed to copy input file to volume:", err)
 	}
 
-	taskInfo, err := NewTaskInfo(lang.ImageName, append(
+	taskInfo, err := executor.NewTaskInfo(lang.ImageName, append(
 		getTestDefaultOptions(),
-		WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, lang.Exec...)...),
-		WithWorkDir("/workdir"),
-		WithVolume(&volume, "/workdir"),
-		WithVolume(&caseVolume, "/casedir"),
-		WithTimeout(time.Duration(timeLimit*1000*1000*1000)*time.Nanosecond),
+		executor.WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, lang.Exec...)...),
+		executor.WithWorkDir("/workdir"),
+		executor.WithVolume(&volume, "/workdir"),
+		executor.WithVolume(&caseVolume, "/casedir"),
+		executor.WithTimeout(time.Duration(timeLimit*1000*1000*1000)*time.Nanosecond),
 	)...)
 	if err != nil {
 		t.Fatal("Failed to create run task:", err)
@@ -159,12 +161,12 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 	}
 	defer func() { _ = outFile.Close() }()
 
-	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
+	genOutputFileTaskInfo, err := executor.NewTaskInfo("ubuntu", append(
 		getTestDefaultOptions(),
-		WithArguments("cat", "/casedir/actual.out"),
-		WithTimeout(COMPILE_TIMEOUT),
-		WithVolume(&caseVolume, "/casedir"),
-		WithStdout(outFile),
+		executor.WithArguments("cat", "/casedir/actual.out"),
+		executor.WithTimeout(COMPILE_TIMEOUT),
+		executor.WithVolume(&caseVolume, "/casedir"),
+		executor.WithStdout(outFile),
 	)...)
 	if err != nil {
 		t.Fatal("Failed to create output extraction task:", err)
