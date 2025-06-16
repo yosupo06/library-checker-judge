@@ -76,7 +76,10 @@ func (s *server) HackInfo(ctx context.Context, in *pb.HackInfoRequest) (*pb.Hack
 		Status:       h.Status,
 		HackTime:     toProtoTimestamp(h.HackTime),
 	}
-	if h.UserName.Valid {
+	// Use User.Name from preloaded relation if available, otherwise fall back to UserName field
+	if h.User != nil && h.User.Name != "" {
+		overView.UserName = &h.User.Name
+	} else if h.UserName.Valid {
 		overView.UserName = &h.UserName.String
 	}
 	if h.Time.Valid {
@@ -125,7 +128,10 @@ func (s *server) HackList(ctx context.Context, in *pb.HackListRequest) (*pb.Hack
 			Status:       h.Status,
 			HackTime:     toProtoTimestamp(h.HackTime),
 		}
-		if h.UserName.Valid {
+		// Use User.Name from preloaded relation if available, otherwise fall back to UserName field
+		if h.User != nil && h.User.Name != "" {
+			overView.UserName = &h.User.Name
+		} else if h.UserName.Valid {
 			overView.UserName = &h.UserName.String
 		}
 		if h.Time.Valid {

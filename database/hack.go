@@ -14,7 +14,7 @@ type Hack struct {
 	HackTime     time.Time  `gorm:"not null"`
 	Submission   Submission `gorm:"foreignKey:SubmissionID"`
 	SubmissionID int32
-	User         User `gorm:"foreignKey:UserName"`
+	User         *User `gorm:"foreignKey:UserName"`
 	UserName     sql.NullString
 
 	// Test case, exactly one item is not nil
