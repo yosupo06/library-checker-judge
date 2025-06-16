@@ -10,6 +10,7 @@ import (
 	"path"
 
 	"github.com/yosupo06/library-checker-judge/database"
+	"github.com/yosupo06/library-checker-judge/executor"
 	"github.com/yosupo06/library-checker-judge/langs"
 	"github.com/yosupo06/library-checker-judge/storage"
 	"gorm.io/gorm"
@@ -155,11 +156,11 @@ func (data *HackTaskData) judge() error {
 	return data.updateHack()
 }
 
-func (data *HackTaskData) compileSource() (langs.Volume, langs.TaskResult, error) {
+func (data *HackTaskData) compileSource() (executor.Volume, executor.TaskResult, error) {
 	// write source to tempfile
 	sourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 	defer func() {
 		if err := os.RemoveAll(sourceDir); err != nil {
@@ -169,44 +170,44 @@ func (data *HackTaskData) compileSource() (langs.Volume, langs.TaskResult, error
 
 	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
 	if err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 	if _, err := sourceFile.WriteString(data.h.Submission.Source); err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 	if err := sourceFile.Close(); err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 
 	return compile(data.files, sourceFile.Name(), data.lang)
 }
 
-func (data *HackTaskData) compileSolution() (langs.Volume, error) {
+func (data *HackTaskData) compileSolution() (executor.Volume, error) {
 	slog.Info("Compile solution")
 	v, r, err := compileModelSolution(data.files)
 	if err != nil {
-		return langs.Volume{}, err
+		return executor.Volume{}, err
 	}
 	if r.ExitCode != 0 {
 		if err := v.Remove(); err != nil {
-			return langs.Volume{}, err
+			return executor.Volume{}, err
 		}
-		return langs.Volume{}, fmt.Errorf("compile failed of model solution")
+		return executor.Volume{}, fmt.Errorf("compile failed of model solution")
 	}
 	return v, nil
 }
 
-func (data *HackTaskData) compileVerifier() (langs.Volume, error) {
+func (data *HackTaskData) compileVerifier() (executor.Volume, error) {
 	slog.Info("Compile verifier")
 	v, r, err := compileVerifier(data.files)
 	if err != nil {
-		return langs.Volume{}, err
+		return executor.Volume{}, err
 	}
 	if r.ExitCode != 0 {
 		if err := v.Remove(); err != nil {
-			return langs.Volume{}, err
+			return executor.Volume{}, err
 		}
-		return langs.Volume{}, fmt.Errorf("compile failed of verifier")
+		return executor.Volume{}, fmt.Errorf("compile failed of verifier")
 	}
 	return v, nil
 }
@@ -262,7 +263,7 @@ func (data *HackTaskData) generateTestCase() (string, error) {
 	}
 }
 
-func (data *HackTaskData) runModelSolution(v langs.Volume, inFilePath string) (string, error) {
+func (data *HackTaskData) runModelSolution(v executor.Volume, inFilePath string) (string, error) {
 	slog.Info("Generate model output")
 	path, r, err := runSource(v, langs.LANG_MODEL_SOLUTION, data.info.TimeLimit, inFilePath)
 	if err != nil {

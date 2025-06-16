@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/yosupo06/library-checker-judge/database"
+	"github.com/yosupo06/library-checker-judge/executor"
 	"github.com/yosupo06/library-checker-judge/langs"
 	"github.com/yosupo06/library-checker-judge/storage"
 )
@@ -240,11 +241,11 @@ func (data *SubmissionTaskData) updateSubmission() error {
 	return nil
 }
 
-func (data *SubmissionTaskData) compileSource() (langs.Volume, langs.TaskResult, error) {
+func (data *SubmissionTaskData) compileSource() (executor.Volume, executor.TaskResult, error) {
 	// write source to tempfile
 	sourceDir, err := os.MkdirTemp("", "source")
 	if err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 	defer func() {
 		if err := os.RemoveAll(sourceDir); err != nil {
@@ -254,13 +255,13 @@ func (data *SubmissionTaskData) compileSource() (langs.Volume, langs.TaskResult,
 
 	sourceFile, err := os.Create(path.Join(sourceDir, data.lang.Source))
 	if err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 	if _, err := sourceFile.WriteString(data.s.Source); err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 	if err := sourceFile.Close(); err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 
 	return compile(data.files, sourceFile.Name(), data.lang)
