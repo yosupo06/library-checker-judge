@@ -5,29 +5,31 @@ import (
 	"log"
 	"os"
 	"time"
+	
+	"github.com/yosupo06/library-checker-judge/executor"
 )
 
 // CompileSource compiles source code and returns the volume and result
 // extraFilePaths is a map from filename to full path for additional files
-func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeout time.Duration, extraFilePaths map[string]string) (Volume, TaskResult, error) {
+func CompileSource(sourcePath string, lang Lang, options []executor.TaskInfoOption, timeout time.Duration, extraFilePaths map[string]string) (executor.Volume, executor.TaskResult, error) {
 	// Validate arguments
 	if sourcePath == "" {
-		return Volume{}, TaskResult{}, errors.New("sourcePath cannot be empty")
+		return executor.Volume{}, executor.TaskResult{}, errors.New("sourcePath cannot be empty")
 	}
 	if options == nil {
-		return Volume{}, TaskResult{}, errors.New("options cannot be nil")
+		return executor.Volume{}, executor.TaskResult{}, errors.New("options cannot be nil")
 	}
 	if timeout <= 0 {
-		return Volume{}, TaskResult{}, errors.New("timeout must be positive")
+		return executor.Volume{}, executor.TaskResult{}, errors.New("timeout must be positive")
 	}
 	if extraFilePaths == nil {
-		return Volume{}, TaskResult{}, errors.New("extraFilePaths cannot be nil")
+		return executor.Volume{}, executor.TaskResult{}, errors.New("extraFilePaths cannot be nil")
 	}
 
 	// Create volume
-	volume, err := CreateVolume()
+	volume, err := executor.CreateVolume()
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 
 	// Cleanup on error
@@ -41,14 +43,14 @@ func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeo
 
 	// Copy source file
 	if err = volume.CopyFile(sourcePath, lang.Source); err != nil {
-		return Volume{}, TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 
 	// Validate that all required additional files are provided
 	for _, filename := range lang.AdditionalFiles {
 		if _, exists := extraFilePaths[filename]; !exists {
 			err = errors.New("required additional file not provided: " + filename)
-			return Volume{}, TaskResult{}, err
+			return executor.Volume{}, executor.TaskResult{}, err
 		}
 	}
 
@@ -57,13 +59,13 @@ func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeo
 		filePath := extraFilePaths[filename]
 		if _, statErr := os.Stat(filePath); statErr == nil {
 			if err = volume.CopyFile(filePath, filename); err != nil {
-				return Volume{}, TaskResult{}, err
+				return executor.Volume{}, executor.TaskResult{}, err
 			}
 		} else if errors.Is(statErr, os.ErrNotExist) {
 			log.Println(filePath, "is not found, skipping")
 		} else {
 			err = statErr
-			return Volume{}, TaskResult{}, err
+			return executor.Volume{}, executor.TaskResult{}, err
 		}
 	}
 
@@ -83,32 +85,32 @@ func CompileSource(sourcePath string, lang Lang, options []TaskInfoOption, timeo
 
 		if _, statErr := os.Stat(filePath); statErr == nil {
 			if err = volume.CopyFile(filePath, filename); err != nil {
-				return Volume{}, TaskResult{}, err
+				return executor.Volume{}, executor.TaskResult{}, err
 			}
 		} else if errors.Is(statErr, os.ErrNotExist) {
 			log.Println(filePath, "is not found, skipping")
 		} else {
 			err = statErr
-			return Volume{}, TaskResult{}, err
+			return executor.Volume{}, executor.TaskResult{}, err
 		}
 	}
 
 	// Create compilation task
-	taskInfo, err := NewTaskInfo(lang.ImageName, append(
+	taskInfo, err := executor.NewTaskInfo(lang.ImageName, append(
 		options,
-		WithArguments(lang.Compile...),
-		WithWorkDir("/workdir"),
-		WithVolume(&volume, "/workdir"),
-		WithTimeout(timeout),
+		executor.WithArguments(lang.Compile...),
+		executor.WithWorkDir("/workdir"),
+		executor.WithVolume(&volume, "/workdir"),
+		executor.WithTimeout(timeout),
 	)...)
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 
 	// Run compilation
 	result, err := taskInfo.Run()
 	if err != nil {
-		return Volume{}, TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 
 	return volume, result, nil
