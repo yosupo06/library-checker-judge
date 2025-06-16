@@ -29,15 +29,8 @@ jobs:
           uploader:
             - 'uploader/**'
             - '.github/workflows/lint.yml'
-          judge:
-            - 'judge/**'
-            - 'langs/**'  # judge depends on langs
-            - '.github/workflows/lint.yml'
           langs:
             - 'langs/**'
-            - '.github/workflows/lint.yml'
-          executor:
-            - 'executor/**'
             - '.github/workflows/lint.yml'
 
     - run: ./run_protoc.sh
@@ -75,23 +68,9 @@ jobs:
         version: latest
         working-directory: ./uploader
 
-    - name: golangci-lint (judge)
-      if: steps.changes.outputs.judge == 'true'
-      uses: golangci/golangci-lint-action@v8
-      with:
-        version: latest
-        working-directory: ./judge
-
     - name: golangci-lint (langs)
       if: steps.changes.outputs.langs == 'true'
       uses: golangci/golangci-lint-action@v8
       with:
         version: latest
         working-directory: ./langs
-
-    - name: golangci-lint (executor)
-      if: steps.changes.outputs.executor == 'true'
-      uses: golangci/golangci-lint-action@v8
-      with:
-        version: latest
-        working-directory: ./executor
