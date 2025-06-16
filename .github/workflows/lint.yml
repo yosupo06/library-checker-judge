@@ -36,6 +36,9 @@ jobs:
           langs:
             - 'langs/**'
             - '.github/workflows/lint.yml'
+          executor:
+            - 'executor/**'
+            - '.github/workflows/lint.yml'
 
     - run: ./run_protoc.sh
 
@@ -85,3 +88,10 @@ jobs:
       with:
         version: latest
         working-directory: ./langs
+
+    - name: golangci-lint (executor)
+      if: steps.changes.outputs.executor == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./executor

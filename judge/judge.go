@@ -123,10 +123,10 @@ func runTestCase(sourceVolume, checkerVolume executor.Volume, lang langs.Lang, t
 	return baseResult, nil
 }
 
-func runSource(volume langs.Volume, lang langs.Lang, timeLimit float64, inFilePath string) (string, langs.TaskResult, error) {
-	caseVolume, err := langs.CreateVolume()
+func runSource(volume executor.Volume, lang langs.Lang, timeLimit float64, inFilePath string) (string, executor.TaskResult, error) {
+	caseVolume, err := executor.CreateVolume()
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 	defer func() {
 		if err := caseVolume.Remove(); err != nil {
@@ -135,92 +135,92 @@ func runSource(volume langs.Volume, lang langs.Lang, timeLimit float64, inFilePa
 	}()
 
 	if err := caseVolume.CopyFile(inFilePath, "input.in"); err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 
 	// TODO: make volume read only
-	taskInfo, err := langs.NewTaskInfo(lang.ImageName, append(
+	taskInfo, err := executor.NewTaskInfo(lang.ImageName, append(
 		DEFAULT_OPTIONS,
-		langs.WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, lang.Exec...)...),
-		langs.WithWorkDir("/workdir"),
-		langs.WithVolume(&volume, "/workdir"),
-		langs.WithVolume(&caseVolume, "/casedir"),
-		langs.WithTimeout(time.Duration(timeLimit*1000*1000*1000)*time.Nanosecond),
+		executor.WithArguments(append([]string{"library-checker-init", "/casedir/input.in", "/casedir/actual.out"}, lang.Exec...)...),
+		executor.WithWorkDir("/workdir"),
+		executor.WithVolume(&volume, "/workdir"),
+		executor.WithVolume(&caseVolume, "/casedir"),
+		executor.WithTimeout(time.Duration(timeLimit*1000*1000*1000)*time.Nanosecond),
 	)...)
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 
 	result, err := taskInfo.Run()
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 
 	outFile, err := os.CreateTemp("", "")
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 	defer func() { _ = outFile.Close() }()
 
 	// TODO: find faster way to copy actual.out
-	genOutputFileTaskInfo, err := langs.NewTaskInfo("ubuntu", append(
+	genOutputFileTaskInfo, err := executor.NewTaskInfo("ubuntu", append(
 		DEFAULT_OPTIONS,
-		langs.WithArguments("cat", "/casedir/actual.out"),
-		langs.WithTimeout(COMPILE_TIMEOUT),
-		langs.WithVolume(&caseVolume, "/casedir"),
-		langs.WithStdout(outFile),
+		executor.WithArguments("cat", "/casedir/actual.out"),
+		executor.WithTimeout(COMPILE_TIMEOUT),
+		executor.WithVolume(&caseVolume, "/casedir"),
+		executor.WithStdout(outFile),
 	)...)
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 
 	if _, err := genOutputFileTaskInfo.Run(); err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 
 	return outFile.Name(), result, err
 }
 
-func runChecker(volume langs.Volume, inFilePath, expectFilePath, actualFilePath string) (langs.TaskResult, error) {
-	checkerTaskInfo, err := langs.NewTaskInfo(langs.LANG_CHECKER.ImageName, append(
+func runChecker(volume executor.Volume, inFilePath, expectFilePath, actualFilePath string) (executor.TaskResult, error) {
+	checkerTaskInfo, err := executor.NewTaskInfo(langs.LANG_CHECKER.ImageName, append(
 		DEFAULT_OPTIONS,
-		langs.WithArguments(langs.LANG_CHECKER.Exec...),
-		langs.WithWorkDir("/workdir"),
-		langs.WithTimeout(CHECKER_TIMEOUT),
-		langs.WithVolume(&volume, "/workdir"),
-		langs.WithBindMount(inFilePath, "/workdir/input.in", true),
-		langs.WithBindMount(expectFilePath, "/workdir/expect.out", true),
-		langs.WithBindMount(actualFilePath, "/workdir/actual.out", true),
+		executor.WithArguments(langs.LANG_CHECKER.Exec...),
+		executor.WithWorkDir("/workdir"),
+		executor.WithTimeout(CHECKER_TIMEOUT),
+		executor.WithVolume(&volume, "/workdir"),
+		executor.WithBindMount(inFilePath, "/workdir/input.in", true),
+		executor.WithBindMount(expectFilePath, "/workdir/expect.out", true),
+		executor.WithBindMount(actualFilePath, "/workdir/actual.out", true),
 	)...)
 	if err != nil {
-		return langs.TaskResult{}, err
+		return executor.TaskResult{}, err
 	}
 
 	return checkerTaskInfo.Run()
 }
 
-func runGenerator(v langs.Volume) (string, langs.TaskResult, error) {
+func runGenerator(v executor.Volume) (string, executor.TaskResult, error) {
 	outFile, err := os.CreateTemp("", "")
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 	defer func() { _ = outFile.Close() }()
 
-	ti, err := langs.NewTaskInfo(langs.LANG_GENERATOR.ImageName, append(
+	ti, err := executor.NewTaskInfo(langs.LANG_GENERATOR.ImageName, append(
 		DEFAULT_OPTIONS,
-		langs.WithArguments(langs.LANG_GENERATOR.Exec...),
-		langs.WithWorkDir("/workdir"),
-		langs.WithTimeout(VERIFIER_TIMEOUT),
-		langs.WithVolume(&v, "/workdir"),
-		langs.WithStdout(outFile),
+		executor.WithArguments(langs.LANG_GENERATOR.Exec...),
+		executor.WithWorkDir("/workdir"),
+		executor.WithTimeout(VERIFIER_TIMEOUT),
+		executor.WithVolume(&v, "/workdir"),
+		executor.WithStdout(outFile),
 	)...)
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 
 	result, err := ti.Run()
 	if err != nil {
-		return "", langs.TaskResult{}, err
+		return "", executor.TaskResult{}, err
 	}
 	return outFile.Name(), result, nil
 }
