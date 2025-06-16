@@ -1,0 +1,36 @@
+name: Lint Uploader
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'uploader/**'
+      - 'database/**'  # uploader depends on database
+      - 'storage/**'   # uploader depends on storage
+      - '.github/workflows/lint-uploader.yml'
+  pull_request:
+    paths:
+      - 'uploader/**'
+      - 'database/**'  # uploader depends on database
+      - 'storage/**'   # uploader depends on storage
+      - '.github/workflows/lint-uploader.yml'
+
+jobs:
+  lint-uploader:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: golangci-lint (uploader)
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./uploader

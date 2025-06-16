@@ -1,0 +1,34 @@
+name: Lint Utils
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'utils/**'
+      - 'database/**'  # utils depends on database
+      - '.github/workflows/lint-utils.yml'
+  pull_request:
+    paths:
+      - 'utils/**'
+      - 'database/**'  # utils depends on database
+      - '.github/workflows/lint-utils.yml'
+
+jobs:
+  lint-utils:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: golangci-lint (utils)
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./utils

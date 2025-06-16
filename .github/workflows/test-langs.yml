@@ -1,0 +1,33 @@
+name: Test Langs
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'langs/**'
+      - '.github/workflows/test-langs.yml'
+  pull_request:
+    paths:
+      - 'langs/**'
+      - '.github/workflows/test-langs.yml'
+
+jobs:
+  test-langs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Run docker compose
+      run: docker compose up -d --build --wait
+
+    - name: Langs module test
+      run: go test -v .
+      working-directory: ./langs

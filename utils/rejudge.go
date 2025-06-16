@@ -16,9 +16,8 @@ func execRejudgeCmd() {
 
 	for _, id := range *rejudgeSubmissions {
 		log.Print("rejudge:", id)
-		if err := database.PushTask(db, database.TaskData{
-			TaskType:   database.JUDGE_SUBMISSION,
-			Submission: id,
+		if err := database.PushSubmissionTask(db, database.SubmissionData{
+			ID: id,
 		}, 45); err != nil {
 			log.Print("rejudge failed:", err)
 		}
