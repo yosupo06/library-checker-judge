@@ -172,7 +172,7 @@ func createTestAPIClientWithSetup(t *testing.T, setUp func(db *gorm.DB, authClie
 	setUp(db, authClient)
 
 	t.Cleanup(func() {
-		conn.Close()
+		_ = conn.Close()
 		s.Stop()
 	})
 

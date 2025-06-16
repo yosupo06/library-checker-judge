@@ -28,7 +28,7 @@ func toRealFile(src io.Reader, name string, t *testing.T) string {
 	if _, err := io.Copy(outFile, src); err != nil {
 		t.Fatal(err)
 	}
-	outFile.Close()
+	_ = outFile.Close()
 	return outFile.Name()
 }
 
@@ -144,7 +144,7 @@ func TestSleepTime(t *testing.T) {
 	}
 	t.Logf("task result: %v\n", result)
 
-	if !(2*time.Second < result.Time && result.Time < 4*time.Second) {
+	if result.Time <= 2*time.Second || result.Time >= 4*time.Second {
 		t.Error("invalid consumed\n")
 	}
 }
@@ -198,7 +198,7 @@ func TestVolume(t *testing.T) {
 	}
 
 	file := toRealFile(bytes.NewBufferString("dummy"), "dummy", t)
-	defer os.Remove(file)
+	defer func() { _ = os.Remove(file) }()
 
 	if err := volume.CopyFile(file, "test.txt"); err != nil {
 		t.Fatal(err)
@@ -249,7 +249,7 @@ func TestForkBomb(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer volume.Remove()
+	defer func() { _ = volume.Remove() }()
 
 	src, err := sources.Open("sources/badcode/fork_bomb.sh")
 	if err != nil {
@@ -257,7 +257,7 @@ func TestForkBomb(t *testing.T) {
 	}
 
 	file := toRealFile(src, "fork_bomb.sh", t)
-	defer os.Remove(file)
+	defer func() { _ = os.Remove(file) }()
 
 	if err := volume.CopyFile(file, "fork_bomb.sh"); err != nil {
 		t.Fatal(err)
@@ -280,7 +280,7 @@ func TestUseManyStack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer volume.Remove()
+	defer func() { _ = volume.Remove() }()
 
 	src, err := sources.Open("sources/badcode/use_many_stack.cpp")
 	if err != nil {
@@ -288,7 +288,7 @@ func TestUseManyStack(t *testing.T) {
 	}
 
 	file := toRealFile(src, "use_many_stack.cpp", t)
-	defer os.Remove(file)
+	defer func() { _ = os.Remove(file) }()
 
 	if err := volume.CopyFile(file, "use_many_stack.cpp"); err != nil {
 		t.Fatal(err)

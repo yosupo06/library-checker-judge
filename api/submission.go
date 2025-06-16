@@ -149,11 +149,12 @@ func (s *server) SubmissionList(ctx context.Context, in *pb.SubmissionListReques
 	}
 
 	var order []database.SubmissionOrder
-	if in.Order == "" || in.Order == "-id" {
+	switch in.Order {
+	case "", "-id":
 		order = []database.SubmissionOrder{database.ID_DESC}
-	} else if in.Order == "+time" {
+	case "+time":
 		order = []database.SubmissionOrder{database.MAX_TIME_ASC, database.ID_DESC}
-	} else {
+	default:
 		return nil, errors.New("unknown sort order")
 	}
 

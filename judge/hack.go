@@ -83,7 +83,7 @@ func (data *HackTaskData) judge() error {
 		slog.Info("Failed to generate test case")
 		return nil
 	}
-	defer os.Remove(inFilePath)
+	defer func() { _ = os.Remove(inFilePath) }()
 
 	if err := data.updateHackStatus("Compiling"); err != nil {
 		return err
@@ -93,7 +93,7 @@ func (data *HackTaskData) judge() error {
 	if err != nil {
 		return err
 	}
-	defer sourceVolume.Remove()
+	defer func() { _ = sourceVolume.Remove() }()
 	if taskResult.ExitCode != 0 {
 		return data.updateHackStatus("CE")
 	}
@@ -102,7 +102,7 @@ func (data *HackTaskData) judge() error {
 	if err != nil {
 		return err
 	}
-	defer checkerVolume.Remove()
+	defer func() { _ = checkerVolume.Remove() }()
 	if taskResult.ExitCode != 0 {
 		return data.updateHackStatus("ICE")
 	}
@@ -111,13 +111,13 @@ func (data *HackTaskData) judge() error {
 	if err != nil {
 		return err
 	}
-	defer solutionVolume.Remove()
+	defer func() { _ = solutionVolume.Remove() }()
 	slog.Info("Compile verifier")
 	verifierVolume, err := data.compileVerifier()
 	if err != nil {
 		return err
 	}
-	defer verifierVolume.Remove()
+	defer func() { _ = verifierVolume.Remove() }()
 
 	slog.Info("Verify input")
 	if err := data.updateHackStatus("Verifying"); err != nil {
@@ -140,7 +140,7 @@ func (data *HackTaskData) judge() error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(expectedFilePath)
+	defer func() { _ = os.Remove(expectedFilePath) }()
 
 	slog.Info("Start executing")
 	result, err := runTestCase(sourceVolume, checkerVolume, data.lang, data.info.TimeLimit, inFilePath, expectedFilePath)
@@ -224,7 +224,7 @@ func (data *HackTaskData) generateTestCase() (string, error) {
 		if err := tempFile.Close(); err != nil {
 			return "", err
 		}
-		defer os.Remove(tempFile.Name())
+		defer func() { _ = os.Remove(tempFile.Name()) }()
 
 		v, r, err := compile(data.files, tempFile.Name(), langs.LANG_GENERATOR)
 		if err != nil {

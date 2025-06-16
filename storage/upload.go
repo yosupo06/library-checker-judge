@@ -155,7 +155,7 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tarGz)
+	defer func() { _ = os.Remove(tarGz) }()
 
 	if err := p.Problem.UploadTestCases(context.Background(), client, tarGz); err != nil {
 		return err
@@ -183,7 +183,7 @@ func (p UploadTarget) BuildTestCaseTarGz() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer tempFile.Close()
+	defer func() { _ = tempFile.Close() }()
 
 	gzipWriter := gzip.NewWriter(tempFile)
 	tarWriter := tar.NewWriter(gzipWriter)
@@ -195,7 +195,7 @@ func (p UploadTarget) BuildTestCaseTarGz() (string, error) {
 				if err != nil {
 					return err
 				}
-				defer file.Close()
+				defer func() { _ = file.Close() }()
 
 				fileInfo, err := file.Stat()
 				if err != nil {

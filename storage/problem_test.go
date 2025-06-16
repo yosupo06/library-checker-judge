@@ -16,7 +16,7 @@ func TestParseInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	file, err := os.Create(path.Join(tempDir, "info.toml"))
 	if err != nil {
@@ -25,7 +25,7 @@ func TestParseInfo(t *testing.T) {
 	if _, err := file.WriteString(infoToml); err != nil {
 		t.Fatal(err)
 	}
-	file.Close()
+	_ = file.Close()
 
 	info, err := ParseInfo(file.Name())
 	if err != nil {
