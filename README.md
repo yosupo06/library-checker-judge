@@ -4,25 +4,11 @@ Judge server / API server のソースコードです
 
 ## Requirements
 
-- docker
-- Ubuntu 22.04(Judge Server)
-
+- Docker
+- Ubuntu 22.04 (Judge Server)
+- Go 1.21+
 
 ## API Server
-
-### 準備
-
-dockerグループに自分を登録することでsudoなしでdockerが使えるようになる [Reference](https://qiita.com/DQNEO/items/da5df074c48b012152ee)
-sudoをつけて実行してもいいが、色んなところにrootでフォルダが作られて面倒な事になるので、非推奨
-
-```sh
-sudo gpasswd -a $USER docker
-sudo systemctl restart docker
-```
-
-APIサーバー(localhost:50051)とSQL(Postgre SQL)がdocker-composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
-
-APIサーバーへは gRPC でアクセスします。例えばクライアントとして [evans](https://github.com/ktr0731/evans) を使うなら、以下のようにアクセス
 
 ### 起動
 
@@ -30,19 +16,22 @@ APIサーバーへは gRPC でアクセスします。例えばクライアン�
 ./launch_local.sh
 ```
 
-`launch_local.sh` は default だと `aplusb` しかデプロイしないので、必要ならば `deploy/problems_deploy.py` も叩くとよい。
+APIサーバー(localhost:50051)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
 
 ### 動作確認
 
-grpc-web のAPIサーバーが建つ
+gRPC-web のAPIサーバーが起動します。
+
+- gRPC API: localhost:50051
+- gRPC-web API: localhost:12380
 
 ```sh
-evans --host localhost --port 18080 api/proto/library_checker.proto --web
+evans --host localhost --port 50051 api/proto/library_checker.proto
 ```
 
 ## Judge Server
 
-Judge serverはgoで書かれたAPIサーバーと通信するクライアント(`/judge`)と、このクライアントが呼び出す軽量コンテナ(`/executor`)からなる。
+Judge serverはGoで書かれたAPIサーバーと通信するクライアント(`/judge`)と、実行環境(`/executor`)からなる。
 
 ### 準備
 
@@ -55,32 +44,10 @@ pip3 install -r ../library-checker-problems/requirements.txt
 
 など
 
-#### executorをinstallする
+#### 実行環境の準備
 
-executorの[README](./executor/README.md)を参照。Ubuntu以外で動作確認をしていない、かつ色々準備が必要なので注意。
-`executor` をビルドして PATH の通ったところに置く。
+Judge serverは各種プログラミング言語の実行環境が必要です。詳細は[langs/langs.toml](./langs/langs.toml)を参照してください。
 
-```sh
-cd library-checker-judge/executor
-cargo install --path . --features sandbox
-# or: cargo build --release --features sandbox && cp target/release/executor_rust path/to/...
-```
-
-#### 実行環境を作る
-
-設定情報が書かれたファイル `judge/secret.toml` を作る。
-
-```
-cd library-checker-judge/judge
-./make_secret.sh
-```
-
-ユーザの提出を実行するための処理系をインストールする。
-[api/langs.toml](https://github.com/yosupo06/library-checker-judge/blob/master/api/langs.toml) を見ながら適当にする。
-
-```
-sudo apt install g++ clang++ python3.8 pypy3 openjdk-11-jdk haskell-stack sbcl ...
-```
 
 ### 起動
 
@@ -110,41 +77,38 @@ go run .
 
 ### 個別モジュールテスト
 
-全てのテストには `./launch_local.sh` でPostgreSQL等を起動しておく必要がある
+個別モジュールテストを実行する場合は、事前に `./launch_local.sh` でPostgreSQL等を起動しておく必要があります。
 
 #### API Server のテスト
 
-今のgo sourceではなく、今立ち上がってるAPIサーバーに対してテストすることに注意
+実行中のAPIサーバーに対してテストを実行します。
 
 ```sh
-cd library-checker-judge/api
+cd api
 go test . -v
 ```
 
 #### Database のテスト
 
-データベーステストはPostgreSQLが必要。`./launch_local.sh`を先に起動しておくこと。
-
 ```sh
-cd library-checker-judge/database
+cd database
 go test . -v
 ```
 
 #### Storage のテスト
 
 ```sh
-cd library-checker-judge/storage
+cd storage
 go test . -v
 ```
 
 #### Judge Server のテスト
 
 ```sh
-cd library-checker-judge/judge
-sudo go run *.go
+cd judge
+go test . -v
 ```
 
-各種機能をガンガン使うのでrootじゃないと動かない　多分
 
 ### Build Judge Image for GCP
 
