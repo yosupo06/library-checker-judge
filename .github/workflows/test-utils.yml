@@ -1,21 +1,22 @@
-name: Database-Test
+name: Test Utils
 
 on:
   push:
     branches:
       - master
     paths:
-      - 'database/**'
-      - '.github/workflows/database-test.yml'
+      - 'utils/**'
+      - 'database/**'  # utils depends on database
+      - '.github/workflows/test-utils.yml'
   pull_request:
     paths:
-      - 'database/**'
-      - '.github/workflows/database-test.yml'
+      - 'utils/**'
+      - 'database/**'  # utils depends on database
+      - '.github/workflows/test-utils.yml'
 
 jobs:
-  database-test:
+  test-utils:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
 
@@ -26,10 +27,9 @@ jobs:
       with:
         go-version: '1.21'
 
-    - id: run-docker-compose
-      name: Run docker compose
+    - name: Run docker compose
       run: docker compose up -d --build --wait
 
-    - name: Database module test
+    - name: Utils module test
       run: go test . -v
-      working-directory: ./database
+      working-directory: ./utils

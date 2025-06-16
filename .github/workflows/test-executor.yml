@@ -1,0 +1,48 @@
+name: Test Executor
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'executor/**'
+      - 'langs/**'  # executor uses langs for testing
+      - '.github/workflows/test-executor.yml'
+  pull_request:
+    paths:
+      - 'executor/**'
+      - 'langs/**'  # executor uses langs for testing
+      - '.github/workflows/test-executor.yml'
+
+jobs:
+  test-executor:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Run docker compose
+      run: docker compose up -d --build --wait
+
+    - name: Install crun
+      run: sudo ./packer/base/crun-install.sh
+
+    - name: Prepare docker config
+      run: sudo cp ./packer/base/docker-daemon.json /etc/docker/daemon.json
+
+    - name: Restart docker
+      run: sudo service docker restart
+          
+    - name: Build lang images
+      run: ./build.sh
+      working-directory: ./langs
+
+    - name: Executor module test
+      run: go test -v .
+      working-directory: ./executor
