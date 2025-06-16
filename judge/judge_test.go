@@ -101,26 +101,26 @@ func testAplusB(t *testing.T, langID, srcName, inFilePath, outFilePath, expected
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	lang, ok := langs.GetLang(langID)
 	if !ok {
 		t.Fatal("Unknown lang", langID)
 	}
 	srcFile := toRealFile(src, lang.Source, t)
-	defer os.Remove(srcFile)
+	defer func() { _ = os.Remove(srcFile) }()
 
 	checkerVolume, checkerResult, err := compileChecker(files)
 	if err != nil || checkerResult.ExitCode != 0 {
 		t.Fatal("Error CompileChecker", err)
 	}
-	t.Cleanup(func() { checkerVolume.Remove() })
+	t.Cleanup(func() { _ = checkerVolume.Remove() })
 
 	sourceVolume, sourceResult, err := compile(files, srcFile, lang)
 	if err != nil || sourceResult.ExitCode != 0 {
 		t.Fatal("Error CompileSource", err)
 	}
-	t.Cleanup(func() { sourceVolume.Remove() })
+	t.Cleanup(func() { _ = sourceVolume.Remove() })
 
 	result, err := runTestCase(sourceVolume, checkerVolume, lang, 2.0, files.InFilePath(DUMMY_CASE_NAME), files.OutFilePath(DUMMY_CASE_NAME))
 	if err != nil {
@@ -214,14 +214,14 @@ func TestAplusBCE(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed: Source", err)
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	lang, ok := langs.GetLang("cpp")
 	if !ok {
 		t.Fatal("Unknown lang cpp")
 	}
 	srcFile := toRealFile(src, lang.Source, t)
-	defer os.Remove(srcFile)
+	defer func() { _ = os.Remove(srcFile) }()
 
 	volume, result, err := compile(files, srcFile, lang)
 	if err != nil {
@@ -230,5 +230,5 @@ func TestAplusBCE(t *testing.T) {
 	if result.ExitCode == 0 {
 		t.Fatal("Success CompileChecker", result)
 	}
-	t.Cleanup(func() { volume.Remove() })
+	t.Cleanup(func() { _ = volume.Remove() })
 }

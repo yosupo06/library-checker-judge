@@ -85,7 +85,7 @@ func runTestCase(sourceVolume, checkerVolume langs.Volume, lang langs.Lang, time
 	if err != nil {
 		return CaseResult{}, err
 	}
-	defer os.Remove(outFilePath)
+	defer func() { _ = os.Remove(outFilePath) }()
 
 	baseResult := CaseResult{Time: result.Time, Memory: result.Memory, TLE: result.TLE, Stderr: result.Stderr, CheckerOut: []byte{}}
 	if result.TLE {
@@ -159,7 +159,7 @@ func runSource(volume langs.Volume, lang langs.Lang, timeLimit float64, inFilePa
 	if err != nil {
 		return "", langs.TaskResult{}, err
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	// TODO: find faster way to copy actual.out
 	genOutputFileTaskInfo, err := langs.NewTaskInfo("ubuntu", append(
@@ -203,7 +203,7 @@ func runGenerator(v langs.Volume) (string, langs.TaskResult, error) {
 	if err != nil {
 		return "", langs.TaskResult{}, err
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	ti, err := langs.NewTaskInfo(langs.LANG_GENERATOR.ImageName, append(
 		DEFAULT_OPTIONS,

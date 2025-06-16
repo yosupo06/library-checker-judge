@@ -51,37 +51,37 @@ jobs:
         version: latest
         working-directory: ./database
 
-    # - name: golangci-lint (api)
-    #   if: steps.changes.outputs.api == 'true'
-    #   uses: golangci/golangci-lint-action@v8
-    #   with:
-    #     version: latest
-    #     working-directory: ./api
+    - name: golangci-lint (api)
+      if: steps.changes.outputs.api == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./api
 
-    # - name: golangci-lint (storage)
-    #   if: steps.changes.outputs.storage == 'true'
-    #   uses: golangci/golangci-lint-action@v8
-    #   with:
-    #     version: latest
-    #     working-directory: ./storage
+    - name: golangci-lint (storage)
+      if: steps.changes.outputs.storage == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./storage
 
-    # - name: golangci-lint (uploader)
-    #   if: steps.changes.outputs.uploader == 'true'
-    #   uses: golangci/golangci-lint-action@v3
-    #   with:
-    #     version: latest
-    #     working-directory: ./uploader
+    - name: golangci-lint (uploader)
+      if: steps.changes.outputs.uploader == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./uploader
 
-    # - name: golangci-lint (judge)
-    #   if: steps.changes.outputs.judge == 'true'
-    #   uses: golangci/golangci-lint-action@v8
-    #   with:
-    #     version: latest
-    #     working-directory: ./judge
+    - name: golangci-lint (judge)
+      if: steps.changes.outputs.judge == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./judge
 
-    # - name: golangci-lint (langs)
-    #   if: steps.changes.outputs.langs == 'true'
-    #   uses: golangci/golangci-lint-action@v8
-    #   with:
-    #     version: latest
-    #     working-directory: ./langs
+    - name: golangci-lint (langs)
+      if: steps.changes.outputs.langs == 'true'
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./langs

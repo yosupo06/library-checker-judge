@@ -66,10 +66,10 @@ func testLangSupport(t *testing.T, langID, srcName string) {
 	if err != nil {
 		t.Fatal("Failed to open source", err)
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	srcFile := langToRealFile(src, lang.Source, t)
-	defer os.Remove(srcFile)
+	defer func() { _ = os.Remove(srcFile) }()
 
 	// Check if source file exists and is readable
 	if _, err := os.Stat(srcFile); err != nil {
@@ -98,7 +98,7 @@ func compileSource(srcFile string, lang Lang, t *testing.T) (Volume, TaskResult)
 	volume, result, err := CompileSource(srcFile, lang, getTestDefaultOptions(), COMPILE_TIMEOUT, extraFiles)
 	if err != nil {
 		if volume.Name != "" {
-			volume.Remove()
+			_ = volume.Remove()
 		}
 		t.Fatal("Failed to compile source:", err)
 	}
@@ -124,12 +124,12 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 	if err != nil {
 		t.Fatal("Failed to create input file:", err)
 	}
-	defer os.Remove(inputFile.Name())
+	defer func() { _ = os.Remove(inputFile.Name()) }()
 
 	if _, err := inputFile.WriteString(inputContent); err != nil {
 		t.Fatal("Failed to write input content:", err)
 	}
-	inputFile.Close()
+	_ = inputFile.Close()
 
 	if err := caseVolume.CopyFile(inputFile.Name(), "input.in"); err != nil {
 		t.Fatal("Failed to copy input file to volume:", err)
@@ -157,7 +157,7 @@ func runSource(volume Volume, lang Lang, timeLimit float64, inputContent string,
 	if err != nil {
 		t.Fatal("Failed to create output file:", err)
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	genOutputFileTaskInfo, err := NewTaskInfo("ubuntu", append(
 		getTestDefaultOptions(),
@@ -190,13 +190,13 @@ func testCompileAndRun(t *testing.T, langID, srcName, expectedOutput string) {
 	if err != nil {
 		t.Fatal("Failed to open source", err)
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	srcFile := langToRealFile(src, lang.Source, t)
-	defer os.Remove(srcFile)
+	defer func() { _ = os.Remove(srcFile) }()
 
 	volume, compileResult := compileSource(srcFile, lang, t)
-	defer volume.Remove()
+	defer func() { _ = volume.Remove() }()
 
 	if compileResult.ExitCode != 0 {
 		t.Fatalf("Compilation failed with exit code %d: %s", compileResult.ExitCode, string(compileResult.Stderr))
@@ -205,7 +205,7 @@ func testCompileAndRun(t *testing.T, langID, srcName, expectedOutput string) {
 
 	inputContent := "1 2\n"
 	outFile, runResult := runSource(volume, lang, 2.0, inputContent, t)
-	defer os.Remove(outFile)
+	defer func() { _ = os.Remove(outFile) }()
 
 	if runResult.TLE {
 		t.Fatal("Execution timed out")

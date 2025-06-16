@@ -28,7 +28,7 @@ func main() {
 		slog.Error("Failed to create TestCaseDownloader", "err", err)
 		os.Exit(1)
 	}
-	defer downloader.Close()
+	defer func() { _ = downloader.Close() }()
 
 	slog.Info("Start pooling")
 	for {
@@ -67,6 +67,6 @@ func main() {
 			}
 		}
 		slog.Info("Finish task", "ID", taskID)
-		database.FinishTask(db, taskID)
+		_ = database.FinishTask(db, taskID)
 	}
 }
