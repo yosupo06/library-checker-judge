@@ -1,4 +1,4 @@
-package langs
+package executor
 
 import (
 	"testing"
