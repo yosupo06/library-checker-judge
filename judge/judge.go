@@ -7,6 +7,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/yosupo06/library-checker-judge/executor"
 	"github.com/yosupo06/library-checker-judge/langs"
 	"github.com/yosupo06/library-checker-judge/storage"
 )
@@ -20,16 +21,16 @@ const (
 	GENERATOR_TIMEOUT       = 10 * time.Second
 )
 
-var DEFAULT_OPTIONS []langs.TaskInfoOption
+var DEFAULT_OPTIONS []executor.TaskInfoOption
 
 func init() {
-	DEFAULT_OPTIONS = []langs.TaskInfoOption{
-		langs.WithPidsLimit(DEFAULT_PID_LIMIT),
-		langs.WithUnlimitedStackLimit(),
-		langs.WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
+	DEFAULT_OPTIONS = []executor.TaskInfoOption{
+		executor.WithPidsLimit(DEFAULT_PID_LIMIT),
+		executor.WithUnlimitedStackLimit(),
+		executor.WithMemoryLimitMB(DEFAULT_MEMORY_LIMIT_MB),
 	}
 	if c := os.Getenv("CGROUP_PARENT"); c != "" {
-		DEFAULT_OPTIONS = append(DEFAULT_OPTIONS, langs.WithCgroupParent(c))
+		DEFAULT_OPTIONS = append(DEFAULT_OPTIONS, executor.WithCgroupParent(c))
 	}
 }
 
@@ -43,19 +44,19 @@ type CaseResult struct {
 	CheckerOut []byte
 }
 
-func compileChecker(dir storage.ProblemFiles) (langs.Volume, langs.TaskResult, error) {
+func compileChecker(dir storage.ProblemFiles) (executor.Volume, executor.TaskResult, error) {
 	return compile(dir, dir.CheckerPath(), langs.LANG_CHECKER)
 }
 
-func compileVerifier(dir storage.ProblemFiles) (langs.Volume, langs.TaskResult, error) {
+func compileVerifier(dir storage.ProblemFiles) (executor.Volume, executor.TaskResult, error) {
 	return compile(dir, dir.VerifierPath(), langs.LANG_VERIFIER)
 }
 
-func compileModelSolution(dir storage.ProblemFiles) (langs.Volume, langs.TaskResult, error) {
+func compileModelSolution(dir storage.ProblemFiles) (executor.Volume, executor.TaskResult, error) {
 	return compile(dir, dir.SolutionPath(), langs.LANG_MODEL_SOLUTION)
 }
 
-func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Volume, t langs.TaskResult, err error) {
+func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v executor.Volume, t executor.TaskResult, err error) {
 	slog.Info("Compile", "lang", l.ID, "src", srcPath)
 
 	// Create map of extra files - always include these 3 files for all languages
@@ -68,7 +69,7 @@ func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Vo
 	// Add include files (params.h and common directory files) using existing method
 	includeFiles, err := dir.GetIncludeFilePaths()
 	if err != nil {
-		return langs.Volume{}, langs.TaskResult{}, err
+		return executor.Volume{}, executor.TaskResult{}, err
 	}
 	for _, filePath := range includeFiles {
 		filename := path.Base(filePath)
@@ -76,10 +77,10 @@ func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v langs.Vo
 	}
 
 	// Use shared CompileSource function with file map
-	return langs.CompileSource(srcPath, l, DEFAULT_OPTIONS, COMPILE_TIMEOUT, extraFilePaths)
+	return executor.CompileSource(srcPath, executor.Lang{ID: l.ID, Name: l.Name, Version: l.Version, Source: l.Source, Compile: l.Compile, Exec: l.Exec, ImageName: l.ImageName, AdditionalFiles: l.AdditionalFiles}, DEFAULT_OPTIONS, COMPILE_TIMEOUT, extraFilePaths)
 }
 
-func runTestCase(sourceVolume, checkerVolume langs.Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {
+func runTestCase(sourceVolume, checkerVolume executor.Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {
 	slog.Info("TestCase", "lang", lang.ID, "in", inFilePath, "expect", expectFilePath)
 	outFilePath, result, err := runSource(sourceVolume, lang, timeLimit, inFilePath)
 	if err != nil {
