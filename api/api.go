@@ -163,38 +163,15 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 	}
 	skip := in.Skip
 
-	type Result struct {
-		UserName string
-		AcCount  int
-	}
-	
-	// Get total count for pagination
-	var totalCount int64
-	if err := s.db.
-		Model(&database.Submission{}).
-		Select("count(distinct user_name)").
-		Where("status = 'AC' and user_name is not null").
-		Count(&totalCount).Error; err != nil {
+	// Fetch ranking data from database layer
+	results, totalCount, err := database.FetchRanking(s.db, int(skip), int(limit))
+	if err != nil {
 		log.Print(err)
-		return nil, errors.New("failed to count users")
+		return nil, errors.New("failed to fetch ranking data")
 	}
 
-	// Get paginated results with sorting
-	var results = make([]Result, 0)
-	if err := s.db.
-		Model(&database.Submission{}).
-		Select("user_name, count(distinct problem_name) as ac_count").
-		Where("status = 'AC' and user_name is not null").
-		Group("user_name").
-		Order("ac_count desc, user_name asc").
-		Limit(int(limit)).
-		Offset(int(skip)).
-		Find(&results).Error; err != nil {
-		log.Print(err)
-		return nil, errors.New("failed sql query")
-	}
-
-	stats := make([]*pb.UserStatistics, 0)
+	// Convert to protobuf format
+	stats := make([]*pb.UserStatistics, 0, len(results))
 	for _, result := range results {
 		stats = append(stats, &pb.UserStatistics{
 			Name:  result.UserName,
