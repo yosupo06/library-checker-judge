@@ -28,6 +28,7 @@ service LibraryCheckerService {
 
     rpc LangList (LangListRequest) returns (LangListResponse) {}
     rpc Ranking (RankingRequest) returns (RankingResponse) {} // used by another product
+    rpc Monitoring (MonitoringRequest) returns (MonitoringResponse) {}
 }
 
 // --- Auth, User ---
@@ -256,4 +257,21 @@ message RankingRequest {
 message RankingResponse {
     repeated UserStatistics statistics = 1;
     int32 count = 2; // total # of users (skip/limit don't affect this)
+}
+
+// --- Monitoring ---
+
+message MonitoringRequest {
+}
+
+message TaskQueueInfo {
+    int32 pending_tasks = 1; // number of pending tasks
+    int32 running_tasks = 2; // number of running tasks
+    int32 total_tasks = 3; // total number of tasks in queue
+}
+
+message MonitoringResponse {
+    int32 total_users = 1; // total number of users
+    int32 total_submissions = 2; // total number of submissions
+    TaskQueueInfo task_queue = 3; // judge queue information
 }

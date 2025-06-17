@@ -186,6 +186,26 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 	return &res, nil
 }
 
+func (s *server) Monitoring(ctx context.Context, in *pb.MonitoringRequest) (*pb.MonitoringResponse, error) {
+	// Fetch monitoring data from database layer
+	monitoringData, err := database.FetchMonitoringData(s.db)
+	if err != nil {
+		log.Print(err)
+		return nil, errors.New("failed to fetch monitoring data")
+	}
+
+	res := pb.MonitoringResponse{
+		TotalUsers:       int32(monitoringData.TotalUsers),
+		TotalSubmissions: int32(monitoringData.TotalSubmissions),
+		TaskQueue: &pb.TaskQueueInfo{
+			PendingTasks: int32(monitoringData.TaskQueue.PendingTasks),
+			RunningTasks: int32(monitoringData.TaskQueue.RunningTasks),
+			TotalTasks:   int32(monitoringData.TaskQueue.TotalTasks),
+		},
+	}
+	return &res, nil
+}
+
 func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategoriesRequest) (*pb.ProblemCategoriesResponse, error) {
 	categories, err := database.FetchProblemCategories(s.db)
 	if err != nil {
