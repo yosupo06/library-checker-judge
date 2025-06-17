@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"sort"
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
@@ -154,35 +153,35 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 }
 
 func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.RankingResponse, error) {
-	type Result struct {
-		UserName string
-		AcCount  int
+	// Validate pagination parameters
+	limit := in.Limit
+	if limit == 0 {
+		limit = 100 // default
 	}
-	var results = make([]Result, 0)
-	if err := s.db.
-		Model(&database.Submission{}).
-		Select("user_name, count(distinct problem_name) as ac_count").
-		Where("status = 'AC' and user_name is not null").
-		Group("user_name").
-		Find(&results).Error; err != nil {
+	if limit > 1000 {
+		return nil, errors.New("limit must not be greater than 1000")
+	}
+	skip := in.Skip
+
+	// Fetch ranking data from database layer
+	results, totalCount, err := database.FetchRanking(s.db, int(skip), int(limit))
+	if err != nil {
 		log.Print(err)
-		return nil, errors.New("failed sql query")
+		return nil, errors.New("failed to fetch ranking data")
 	}
-	stats := make([]*pb.UserStatistics, 0)
+
+	// Convert to protobuf format
+	stats := make([]*pb.UserStatistics, 0, len(results))
 	for _, result := range results {
 		stats = append(stats, &pb.UserStatistics{
 			Name:  result.UserName,
 			Count: int32(result.AcCount),
 		})
 	}
-	sort.Slice(stats, func(i, j int) bool {
-		if stats[i].Count != stats[j].Count {
-			return stats[i].Count > stats[j].Count
-		}
-		return stats[i].Name < stats[j].Name
-	})
+
 	res := pb.RankingResponse{
 		Statistics: stats,
+		Count:      int32(totalCount),
 	}
 	return &res, nil
 }
