@@ -70,7 +70,7 @@ const MonitoringPage: React.FC = () => {
                 <Typography
                   variant="h6"
                   color={
-                    data.taskQueue?.pendingTasks > 10
+                    (data.taskQueue?.pendingTasks ?? 0) > 10
                       ? "warning.main"
                       : "text.primary"
                   }
