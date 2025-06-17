@@ -15,6 +15,7 @@ import {
   HackRequest,
   HackResponse,
   LangListResponse,
+  MonitoringResponse,
   ProblemCategoriesResponse,
   ProblemInfoResponse,
   ProblemListResponse,
@@ -90,6 +91,13 @@ export const useRanking = (
   useQuery({
     queryKey: ["ranking", skip, limit],
     queryFn: async () => await client.ranking({ skip, limit }, {}).response,
+  });
+
+export const useMonitoring = (): UseQueryResult<MonitoringResponse> =>
+  useQuery({
+    queryKey: ["monitoring"],
+    queryFn: async () => await client.monitoring({}, {}).response,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time monitoring
   });
 
 export const useProblemInfo = (
