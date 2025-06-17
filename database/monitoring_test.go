@@ -36,11 +36,11 @@ func TestFetchMonitoringData(t *testing.T) {
 
 	// Test with sample data
 	t.Run("WithSampleData", func(t *testing.T) {
-		// Clean up any existing data
-		db.Exec("DELETE FROM users")
-		db.Exec("DELETE FROM submissions")
-		db.Exec("DELETE FROM tasks")
-		db.Exec("DELETE FROM problems")
+		// Clean up any existing data using GORM
+		db.Where("1 = 1").Delete(&User{})
+		db.Where("1 = 1").Delete(&Submission{})
+		db.Where("1 = 1").Delete(&Task{})
+		db.Where("1 = 1").Delete(&Problem{})
 
 		// Create test problems first
 		problems := []Problem{
@@ -139,8 +139,8 @@ func TestFetchMonitoringData(t *testing.T) {
 func TestFetchTaskQueueInfo(t *testing.T) {
 	db := CreateTestDB(t)
 
-	// Clean up any existing tasks
-	db.Exec("DELETE FROM tasks")
+	// Clean up any existing tasks using GORM
+	db.Where("1 = 1").Delete(&Task{})
 
 	t.Run("EmptyTaskQueue", func(t *testing.T) {
 		info, err := fetchTaskQueueInfo(db)
@@ -162,8 +162,8 @@ func TestFetchTaskQueueInfo(t *testing.T) {
 	})
 
 	t.Run("WithTasks", func(t *testing.T) {
-		// Clean up
-		db.Exec("DELETE FROM tasks")
+		// Clean up using GORM
+		db.Where("1 = 1").Delete(&Task{})
 
 		// Create tasks using the PushSubmissionTask function
 		submissionData1 := SubmissionData{ID: 1, TleKnockout: false}
@@ -203,11 +203,11 @@ func TestFetchTaskQueueInfo(t *testing.T) {
 func TestMonitoringDataIntegration(t *testing.T) {
 	db := CreateTestDB(t)
 
-	// Clean up all tables
-	db.Exec("DELETE FROM users")
-	db.Exec("DELETE FROM submissions")
-	db.Exec("DELETE FROM tasks")
-	db.Exec("DELETE FROM problems")
+	// Clean up all tables using GORM
+	db.Where("1 = 1").Delete(&User{})
+	db.Where("1 = 1").Delete(&Submission{})
+	db.Where("1 = 1").Delete(&Task{})
+	db.Where("1 = 1").Delete(&Problem{})
 
 	t.Run("Integration", func(t *testing.T) {
 		// Create test problems first
