@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"sort"
 	"time"
 
 	pb "github.com/yosupo06/library-checker-judge/api/proto"
@@ -125,9 +124,7 @@ func (s *server) SubmissionInfo(ctx context.Context, in *pb.SubmissionInfoReques
 		CanRejudge:   rej,
 	}
 
-	sort.Slice(cases, func(i, j int) bool {
-		return cases[i].Testcase < cases[j].Testcase
-	})
+	// Cases are already sorted by DisplayOrder in FetchTestcaseResults
 
 	for _, c := range cases {
 		res.CaseResults = append(res.CaseResults, &pb.SubmissionCaseResult{
