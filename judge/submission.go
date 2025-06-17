@@ -85,6 +85,7 @@ func (data *SubmissionTaskData) init() error {
 		data.results[i].Submission = data.s.ID
 		data.results[i].Testcase = testCases[i]
 		data.results[i].Status = "-"
+		data.results[i].DisplayOrder = int32(i)
 	}
 
 	data.s.MaxTime = -1
