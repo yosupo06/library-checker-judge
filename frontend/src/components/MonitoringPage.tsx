@@ -69,7 +69,11 @@ const MonitoringPage: React.FC = () => {
                 <Typography variant="body1">Pending Tasks:</Typography>
                 <Typography
                   variant="h6"
-                  color={data.taskQueue?.pendingTasks > 10 ? "warning.main" : "text.primary"}
+                  color={
+                    data.taskQueue?.pendingTasks > 10
+                      ? "warning.main"
+                      : "text.primary"
+                  }
                 >
                   {data.taskQueue?.pendingTasks ?? 0}
                 </Typography>
@@ -108,7 +112,8 @@ const MonitoringPage: React.FC = () => {
                   </Alert>
                 ) : (
                   <Alert severity="success" sx={{ py: 0 }}>
-                    Normal load - {data.taskQueue?.pendingTasks ?? 0} pending tasks
+                    Normal load - {data.taskQueue?.pendingTasks ?? 0} pending
+                    tasks
                   </Alert>
                 )}
               </Box>
