@@ -83,10 +83,13 @@ export const useLangList = (): UseQueryResult<LangListResponse> =>
     queryFn: async () => await client.langList({}, {}).response,
   });
 
-export const useRanking = (): UseQueryResult<RankingResponse> =>
+export const useRanking = (
+  skip: number = 0,
+  limit: number = 100,
+): UseQueryResult<RankingResponse> =>
   useQuery({
-    queryKey: ["ranking"],
-    queryFn: async () => await client.ranking({}, {}).response,
+    queryKey: ["ranking", skip, limit],
+    queryFn: async () => await client.ranking({ skip, limit }, {}).response,
   });
 
 export const useProblemInfo = (
