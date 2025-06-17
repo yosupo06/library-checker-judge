@@ -48,13 +48,15 @@ func fetchTaskQueueInfo(db *gorm.DB) (*TaskQueueInfo, error) {
 	var runningTasks int64
 	var totalTasks int64
 
-	// Count pending tasks (status = 'waiting')
-	if err := db.Model(&Task{}).Where("status = ?", "waiting").Count(&pendingTasks).Error; err != nil {
+	// Count pending tasks (available <= now, which means they are waiting to be processed)
+	// Tasks that are available for processing are considered "pending"
+	if err := db.Model(&Task{}).Where("available <= ?", "NOW()").Count(&pendingTasks).Error; err != nil {
 		return nil, err
 	}
 
-	// Count running tasks (status = 'running')
-	if err := db.Model(&Task{}).Where("status = ?", "running").Count(&runningTasks).Error; err != nil {
+	// Count running tasks (available > now, which means they are currently being processed)
+	// Tasks with future availability are currently being processed (running)
+	if err := db.Model(&Task{}).Where("available > ?", "NOW()").Count(&runningTasks).Error; err != nil {
 		return nil, err
 	}
 
