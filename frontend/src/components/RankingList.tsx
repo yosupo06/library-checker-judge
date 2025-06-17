@@ -15,7 +15,7 @@ const RankingList: React.FC = () => {
   const [page, setPage] = useState(1);
   const limit = 50; // Users per page
   const skip = (page - 1) * limit;
-  
+
   const rankingQuery = useRanking(skip, limit);
 
   if (rankingQuery.isPending) {
@@ -35,7 +35,7 @@ const RankingList: React.FC = () => {
 
   const totalCount = rankingQuery.data.count;
   const totalPages = Math.ceil(totalCount / limit);
-  
+
   const rows = rankingQuery.data.statistics.map((e, index) => {
     return {
       id: index,
@@ -45,7 +45,10 @@ const RankingList: React.FC = () => {
     };
   });
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (
+    event: React.ChangeEvent<unknown>,
+    value: number,
+  ) => {
     setPage(value);
   };
 
@@ -54,7 +57,7 @@ const RankingList: React.FC = () => {
       <Typography variant="h6" gutterBottom>
         Total Users: {totalCount}
       </Typography>
-      
+
       <TableContainer>
         <Table>
           <TableHead>
