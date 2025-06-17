@@ -249,8 +249,11 @@ message UserStatistics {
     string name = 1; // "admin"
     int32 count = 2; // 12 (AC)
 }
-message RankingRequest {    
+message RankingRequest {
+    uint32 skip = 1; // fetch [skip, skip + limit)-th users
+    uint32 limit = 2; // # of users (max 1000, default 100)
 }
 message RankingResponse {
     repeated UserStatistics statistics = 1;
+    int32 count = 2; // total # of users (skip/limit don't affect this)
 }

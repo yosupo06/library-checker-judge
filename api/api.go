@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"sort"
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
@@ -154,20 +153,47 @@ func (s *server) LangList(ctx context.Context, in *pb.LangListRequest) (*pb.Lang
 }
 
 func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.RankingResponse, error) {
+	// Validate pagination parameters
+	limit := in.Limit
+	if limit == 0 {
+		limit = 100 // default
+	}
+	if limit > 1000 {
+		return nil, errors.New("limit must not be greater than 1000")
+	}
+	skip := in.Skip
+
 	type Result struct {
 		UserName string
 		AcCount  int
 	}
+	
+	// Get total count for pagination
+	var totalCount int64
+	if err := s.db.
+		Model(&database.Submission{}).
+		Select("count(distinct user_name)").
+		Where("status = 'AC' and user_name is not null").
+		Count(&totalCount).Error; err != nil {
+		log.Print(err)
+		return nil, errors.New("failed to count users")
+	}
+
+	// Get paginated results with sorting
 	var results = make([]Result, 0)
 	if err := s.db.
 		Model(&database.Submission{}).
 		Select("user_name, count(distinct problem_name) as ac_count").
 		Where("status = 'AC' and user_name is not null").
 		Group("user_name").
+		Order("ac_count desc, user_name asc").
+		Limit(int(limit)).
+		Offset(int(skip)).
 		Find(&results).Error; err != nil {
 		log.Print(err)
 		return nil, errors.New("failed sql query")
 	}
+
 	stats := make([]*pb.UserStatistics, 0)
 	for _, result := range results {
 		stats = append(stats, &pb.UserStatistics{
@@ -175,14 +201,10 @@ func (s *server) Ranking(ctx context.Context, in *pb.RankingRequest) (*pb.Rankin
 			Count: int32(result.AcCount),
 		})
 	}
-	sort.Slice(stats, func(i, j int) bool {
-		if stats[i].Count != stats[j].Count {
-			return stats[i].Count > stats[j].Count
-		}
-		return stats[i].Name < stats[j].Name
-	})
+
 	res := pb.RankingResponse{
 		Statistics: stats,
+		Count:      int32(totalCount),
 	}
 	return &res, nil
 }
