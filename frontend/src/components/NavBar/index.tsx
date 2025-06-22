@@ -203,10 +203,10 @@ const ToolsMenu: React.FC = () => {
         open={Boolean(anchorEl)}
         onClose={handleClose}
       >
-        <MenuItem>
+        <MenuItem onClick={handleClose}>
           <NavbarLink to={`/tool/statementviewer`}>Statement Viewer</NavbarLink>
         </MenuItem>
-        <MenuItem>
+        <MenuItem onClick={handleClose}>
           <NavbarLink to={`/tool/monitoring`}>Monitoring</NavbarLink>
         </MenuItem>
       </Menu>
