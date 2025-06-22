@@ -34,7 +34,7 @@
     "grpc-web": "~1.2.1",
     "katex": "^0.16.11",
     "liquidjs": "^10.9.4",
-    "monaco-editor": "^0.31.1",
+    "monaco-editor": "^0.52.2",
     "prettier": "^3.3.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

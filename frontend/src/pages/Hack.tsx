@@ -80,6 +80,7 @@ const Hack: React.FC = () => {
               }}
               readOnly={false}
               height={600}
+              placeholder="Enter test case input data..."
             />
             <Typography variant="caption">
               Max length: 1MiB(=2<sup>20</sup>Byte)
@@ -96,6 +97,7 @@ const Hack: React.FC = () => {
               readOnly={false}
               language="cpp"
               height={600}
+              placeholder="Enter C++ test generator code..."
             />
             <Typography variant="caption">
               Max length: 1MiB(=2<sup>20</sup>Byte)

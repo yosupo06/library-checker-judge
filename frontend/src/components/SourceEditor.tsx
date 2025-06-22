@@ -10,6 +10,7 @@ interface Props {
   onChange?: (value: string) => void;
   readOnly: boolean;
   height?: number;
+  placeholder?: string;
 }
 
 const editorMode = (lang?: string) => {
@@ -52,7 +53,7 @@ const editorMode = (lang?: string) => {
 const MIN_EDITOR_HEIGHT = 100;
 
 const SourceEditor: React.FC<Props> = (props) => {
-  const { value, language, onChange, readOnly, height } = props;
+  const { value, language, onChange, readOnly, height, placeholder } = props;
   const [editorHeight, setEditorHeight] = useState(height ?? MIN_EDITOR_HEIGHT);
 
   const mode = editorMode(language);
@@ -82,6 +83,7 @@ const SourceEditor: React.FC<Props> = (props) => {
           readOnly: readOnly,
           scrollBeyondLastColumn: 0,
           scrollBeyondLastLine: false,
+          placeholder: placeholder,
           minimap: {
             enabled: false,
           },
