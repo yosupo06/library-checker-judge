@@ -190,6 +190,9 @@ const ToolsMenu: React.FC = () => {
         <MenuItem>
           <NavbarLink to={`/tool/statementviewer`}>Statement Viewer</NavbarLink>
         </MenuItem>
+        <MenuItem>
+          <NavbarLink to={`/tool/monitoring`}>Monitoring</NavbarLink>
+        </MenuItem>
       </Menu>
     </>
   );

@@ -25,6 +25,7 @@ import UserInfo from "./pages/UserInfo";
 import Hack from "./pages/Hack";
 import HackInfo from "./pages/HackInfo";
 import Hacks from "./pages/Hacks";
+import MonitoringPage from "./components/MonitoringPage";
 const theme = createTheme({
   typography: {
     button: {
@@ -94,6 +95,7 @@ function App(): JSX.Element {
                   path="/tool/statementviewer"
                   element={<StatementViewer />}
                 />
+                <Route path="/tool/monitoring" element={<MonitoringPage />} />
                 <Route path="/hack" element={<Hack />} />
                 <Route path="/hack/:id" element={<HackInfo />} />
                 <Route path="/hacks" element={<Hacks />} />
