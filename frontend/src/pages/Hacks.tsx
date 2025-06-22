@@ -12,7 +12,7 @@ import { useLocation } from "react-use";
 import CachedIcon from "@mui/icons-material/Cached";
 import { useHackList } from "../api/client_wrapper";
 import HackTable from "../components/HackTable";
-import { styled } from "@mui/system";
+import { styled } from "@mui/material/styles";
 import { InputLabel } from "@mui/material";
 import MainContainer from "../components/MainContainer";
 

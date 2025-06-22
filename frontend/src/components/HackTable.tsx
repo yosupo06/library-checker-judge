@@ -7,7 +7,7 @@ import TableRow from "@mui/material/TableRow";
 import React from "react";
 import { Link } from "react-router-dom";
 import { HackOverview } from "../proto/library_checker";
-import { styled } from "@mui/system";
+import { styled } from "@mui/material/styles";
 import { Timestamp } from "../proto/google/protobuf/timestamp";
 
 interface Props {
