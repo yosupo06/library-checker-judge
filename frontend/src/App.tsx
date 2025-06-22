@@ -45,7 +45,7 @@ const theme = createTheme({
   },
 });
 
-function App(): JSX.Element {
+function App(): React.JSX.Element {
   const savedLangState = localStorage.getItem("lang");
   let initialLangState: LangState = {
     lang: "en",
