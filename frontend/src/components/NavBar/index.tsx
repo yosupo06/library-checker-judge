@@ -12,7 +12,7 @@ import { Link, LinkProps, useNavigate } from "react-router-dom";
 import { useLangContext } from "../../contexts/LangContext";
 import flagJA from "./flag_ja.svg";
 import flagUS from "./flag_us.svg";
-import { styled } from "@mui/system";
+import { styled } from "@mui/material/styles";
 import { useCurrentUser } from "../../api/client_wrapper";
 import { Drawer, IconButton } from "@mui/material";
 import { useSignOutMutation } from "../../auth/auth";

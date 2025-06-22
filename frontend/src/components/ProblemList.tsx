@@ -9,7 +9,7 @@ import { Problem } from "../proto/library_checker";
 import { Link } from "react-router-dom";
 import { lightGreen, cyan } from "@mui/material/colors";
 import KatexTypography from "./katex/KatexTypography";
-import { styled } from "@mui/system";
+import { styled } from "@mui/material/styles";
 interface Props {
   problems: Problem[];
   solvedStatus?: {

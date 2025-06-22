@@ -19,7 +19,7 @@ import {
 } from "../api/client_wrapper";
 import SubmissionTable from "../components/SubmissionTable";
 import { categoriseProblems } from "../utils/problem.categorizer";
-import { styled } from "@mui/system";
+import { styled } from "@mui/material/styles";
 import KatexTypography from "../components/katex/KatexTypography";
 import { Checkbox, FormControlLabel, InputLabel } from "@mui/material";
 import MainContainer from "../components/MainContainer";

@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import { useLangList } from "../api/client_wrapper";
 import { SubmissionOverview } from "../proto/library_checker";
 import KatexTypography from "./katex/KatexTypography";
-import { styled } from "@mui/system";
+import { styled } from "@mui/material/styles";
 import { Timestamp } from "../proto/google/protobuf/timestamp";
 
 interface Props {

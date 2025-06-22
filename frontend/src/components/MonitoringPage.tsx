@@ -37,7 +37,7 @@ const MonitoringPage: React.FC = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" color="primary" gutterBottom>
               User Statistics
@@ -59,7 +59,7 @@ const MonitoringPage: React.FC = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" color="primary" gutterBottom>
               Judge Queue Status
@@ -94,7 +94,7 @@ const MonitoringPage: React.FC = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" color="primary" gutterBottom>
               System Health

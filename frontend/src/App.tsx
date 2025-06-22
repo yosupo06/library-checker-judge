@@ -19,7 +19,7 @@ import NotFound from "./pages/NotFound";
 import Register from "./pages/Register";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import StatementViewer from "./pages/StatementViewer";
-import { Box } from "@mui/system";
+import Box from "@mui/material/Box";
 import { registerQueryClient } from "./auth/auth";
 import UserInfo from "./pages/UserInfo";
 import Hack from "./pages/Hack";
