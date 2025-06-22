@@ -365,6 +365,7 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
               }}
               readOnly={false}
               height={400}
+              placeholder="Enter your solution code here..."
             />
           </FormControl>
 
