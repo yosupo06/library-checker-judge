@@ -44,7 +44,7 @@ const MonitoringPage: React.FC = () => {
             </Typography>
             <Box display="flex" flexDirection="column" gap={1}>
               <Box display="flex" justifyContent="space-between">
-                <Typography variant="body1">Total Users:</Typography>
+                <Typography variant="body1">Registered Users:</Typography>
                 <Typography variant="h6" color="text.primary">
                   {data.totalUsers.toLocaleString()}
                 </Typography>

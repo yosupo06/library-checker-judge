@@ -55,7 +55,7 @@ const RankingList: React.FC = () => {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Total Users: {totalCount}
+        Ranked Users: {totalCount}
       </Typography>
 
       <TableContainer>
