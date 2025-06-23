@@ -1,3 +1,4 @@
+import React from "react";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -6,7 +7,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import TableHead from "@mui/material/TableHead";
 
-const JudgeStatusList = (): JSX.Element => {
+const JudgeStatusList = (): React.JSX.Element => {
   const judge_status = [
     {
       name: "AC",

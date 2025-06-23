@@ -1,6 +1,6 @@
+import React, { useEffect, useReducer } from "react";
 import Toolbar from "@mui/material/Toolbar";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { useEffect, useReducer } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./App.css";
 import NavBar from "./components/NavBar";
@@ -45,7 +45,7 @@ const theme = createTheme({
   },
 });
 
-function App(): JSX.Element {
+function App(): React.JSX.Element {
   const savedLangState = localStorage.getItem("lang");
   let initialLangState: LangState = {
     lang: "en",
