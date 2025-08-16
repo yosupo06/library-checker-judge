@@ -119,3 +119,11 @@
     image_name = "library-checker-images-ruby"
     compile = ["ruby", "-w", "-c", "main.rb"]
     exec = ["ruby", "main.rb"]
+[[langs]]
+    id = "swift"
+    name = "Swift"
+    version = "swift 6.1.2"
+    source = "main.swift"
+    image_name = "library-checker-images-swift"
+    compile = ["swiftc", "-O", "-o", "a.out", "main.swift"]
+    exec = ["./a.out"]
