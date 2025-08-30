@@ -134,7 +134,7 @@ jobs:
       - run: ./run_protoc.sh
       - name: Build uploadcategories
         working-directory: ./uploader
-        run: go build ./categories
+        run: go build -o uploadcategories ./categories
       - name: Download Cloud SQL Proxy
         working-directory: ./uploader
         run: |
