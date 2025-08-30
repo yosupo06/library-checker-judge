@@ -1,0 +1,8 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - gofmt
+
+# Keep defaults for other linters via action; this only turns on gofmt checks.

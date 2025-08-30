@@ -27,17 +27,6 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: gofmt (migrator)
-      working-directory: ./migrator
-      run: |
-        out=$(gofmt -l -s .)
-        if [ -n "$out" ]; then
-          echo 'The following files are not gofmt-ed:'
-          echo "$out"
-          echo
-          echo 'Please run: gofmt -s -w ./migrator'
-          exit 1
-        fi
 
     - name: golangci-lint (migrator)
       uses: golangci/golangci-lint-action@v8

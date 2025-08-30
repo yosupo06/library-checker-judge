@@ -29,17 +29,6 @@ jobs:
       with:
         go-version: '1.21'
     
-    - name: gofmt (api)
-      working-directory: ./api
-      run: |
-        out=$(gofmt -l -s .)
-        if [ -n "$out" ]; then
-          echo 'The following files are not gofmt-ed:'
-          echo "$out"
-          echo
-          echo 'Please run: gofmt -s -w ./api'
-          exit 1
-        fi
 
     - name: golangci-lint (api)
       uses: golangci/golangci-lint-action@v8
