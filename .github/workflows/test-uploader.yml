@@ -33,5 +33,5 @@ jobs:
       run: docker compose up -d --build --wait
 
     - name: Uploader module test
-      run: go test . -v
+      run: go test ./... -v
       working-directory: ./uploader
