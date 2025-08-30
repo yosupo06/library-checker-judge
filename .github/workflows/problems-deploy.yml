@@ -88,6 +88,7 @@ jobs:
         working-directory: ./uploader
         run: >
           ./cloud-sql-proxy --auto-iam-authn ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
+          sleep 5 &&
           SHARD_TOTAL=10 SHARD_INDEX=${{ matrix.shard }} python3 ./problems/upload.py
         env:
           PGUSER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_db_name.value }}"
