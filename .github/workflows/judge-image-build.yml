@@ -21,6 +21,7 @@ env:
 jobs:
   base:
     if: ${{ inputs.build-base }}
+    environment: ${{ inputs.env }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -63,6 +64,7 @@ jobs:
   judge:
     if: ${{ !cancelled() && !failure() }}
     needs: [base]
+    environment: ${{ inputs.env }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
