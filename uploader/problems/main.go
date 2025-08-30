@@ -8,12 +8,10 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/BurntSushi/toml"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/webhook"
 	"github.com/yosupo06/library-checker-judge/database"
 	"github.com/yosupo06/library-checker-judge/storage"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -163,10 +161,7 @@ func main() {
 		}
 	}
 
-	if err := uploadCategories(*problemsDir, db); err != nil {
-		slog.Error("Failed to update categories", "err", err)
-		os.Exit(1)
-	}
+	// Note: Category upload is handled by separate CLI: ./categories
 }
 
 func generate(problemsDir, tomlPath string) error {
@@ -186,22 +181,4 @@ func clean(problemsDir, tomlPath string) error {
 func toSourceURL(tomlPath string) string {
 	dir := path.Dir(tomlPath)
 	return fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(dir)), path.Base(dir))
-}
-
-func uploadCategories(dir string, db *gorm.DB) error {
-	var data struct {
-		Categories []struct {
-			Name     string
-			Problems []string
-		}
-	}
-	if _, err := toml.DecodeFile(path.Join(dir, "categories.toml"), &data); err != nil {
-		return err
-	}
-
-	cs := []database.ProblemCategory{}
-	for _, c := range data.Categories {
-		cs = append(cs, database.ProblemCategory{Title: c.Name, Problems: c.Problems})
-	}
-	return database.SaveProblemCategories(db, cs)
 }

@@ -39,13 +39,15 @@ env:
   TF_WORKSPACE: "${{ inputs.env }}-library-checker"  
 
 jobs:
-  problems-deploy:
-    environment: ${{ inputs.env }}
+  problems-deploy-sharded:
+    # First job in the workflow: shard-based deploy
+    strategy:
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -54,7 +56,6 @@ jobs:
           path: library-checker-problems
           ref: ${{ inputs.problems-branch }}
       - run: pip3 install -r ./library-checker-problems/requirements.txt
-
       - uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
@@ -63,39 +64,31 @@ jobs:
       - id: tf-output
         run: terraform output --json
         working-directory: ./terraform
-
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
           service_account: ${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_email.value }}
           token_format: access_token
-
-      - run: ./run_protoc.sh
-
       - id: secrets
         uses: google-github-actions/get-secretmanager-secrets@v1
         with:
           secrets: |-
             minio-secret:${{ inputs.env }}-library-checker-project/storage-hmac-key/latest
             discord-webhook:${{ inputs.env }}-library-checker-project/discord-announcement-webhook/latest
-
-      - id: build-uploader
-        name: Build Uploader
+      - run: ./run_protoc.sh
+      - name: Build Uploader
         working-directory: ./uploader
-        run: go build .
-
-      - id: download-cloud-sql-proxy
+        run: go build -o uploader ./problems
+      - name: Download Cloud SQL Proxy
         working-directory: ./uploader
         run: |
           curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.2/cloud-sql-proxy.linux.amd64
           chmod +x ./cloud-sql-proxy
-
-      - id: deploy-problems
-        name: Deploy Problems
+      - name: Deploy Shard ${{ matrix.shard }}
         working-directory: ./uploader
         run: >
           ./cloud-sql-proxy --auto-iam-authn ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
-          python3 upload.py
+          SHARD_TOTAL=10 SHARD_INDEX=${{ matrix.shard }} python3 ./problems/upload.py
         env:
           PGUSER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_db_name.value }}"
           MINIO_HOST: storage.googleapis.com
@@ -105,4 +98,52 @@ jobs:
           MINIO_PUBLIC_BUCKET: "${{ fromJson(steps.tf-output.outputs.stdout).public_bucket_name.value }}"
           MINIO_USE_TLE: "true"
           DISCORD_WEBHOOK: "${{ steps.secrets.outputs.discord-webhook }}"
-          FORCE_UPLOAD: "${{ inputs.force }}" 
+          FORCE_UPLOAD: "${{ inputs.force }}"
+
+  upload-categories:
+    needs: problems-deploy-sharded
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: yosupo06/library-checker-problems
+          path: library-checker-problems
+          ref: ${{ inputs.problems-branch }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - id: tf-output
+        run: terraform output --json
+        working-directory: ./terraform
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+          service_account: ${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_email.value }}
+          token_format: access_token
+      - id: secrets
+        uses: google-github-actions/get-secretmanager-secrets@v1
+        with:
+          secrets: |-
+            minio-secret:${{ inputs.env }}-library-checker-project/storage-hmac-key/latest
+      - run: ./run_protoc.sh
+      - name: Build uploadcategories
+        working-directory: ./uploader
+        run: go build ./categories
+      - name: Download Cloud SQL Proxy
+        working-directory: ./uploader
+        run: |
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.2/cloud-sql-proxy.linux.amd64
+          chmod +x ./cloud-sql-proxy
+      - name: Upload Categories
+        working-directory: ./uploader
+        run: >
+          ./cloud-sql-proxy --auto-iam-authn ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
+          ./uploadcategories -dir ../library-checker-problems
+        env:
+          PGUSER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_db_name.value }}"
