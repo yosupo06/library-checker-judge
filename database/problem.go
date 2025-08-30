@@ -15,6 +15,7 @@ type Problem struct {
 	Timelimit        int32
 	TestCasesVersion string
 	Version          string
+	OverallVersion   string
 }
 
 func FetchProblem(db *gorm.DB, name string) (Problem, error) {

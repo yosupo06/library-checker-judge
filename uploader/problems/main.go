@@ -63,8 +63,9 @@ func main() {
 		}
 		name := target.Problem.Name
 		v := target.Problem.Version
+		ov := target.Problem.OverallVersion
 		h := target.Problem.TestCaseVersion
-		slog.Info("Problem info", "name", name, "version", v, "hash", h)
+		slog.Info("Problem info", "name", name, "version", v, "overall_version", ov, "hash", h)
 
 		// fetch problem info from database
 		dbP, err := database.FetchProblem(db, name)
@@ -87,6 +88,7 @@ func main() {
 		}
 
 		versionUpdated := (v != dbP.Version)
+		overallVersionUpdated := (ov != dbP.OverallVersion)
 		testcaseUpdated := (h != dbP.TestCasesVersion)
 
 		// update problem fields
@@ -94,6 +96,7 @@ func main() {
 		dbP.Timelimit = int32(info.TimeLimit * 1000)
 		dbP.SourceUrl = toSourceURL(t)
 		dbP.Version = v
+		dbP.OverallVersion = ov
 		dbP.TestCasesVersion = h
 
 		// upload test cases
@@ -112,11 +115,19 @@ func main() {
 
 		// upload public files
 		if versionUpdated || *forceUpload {
-			if err := target.UploadPublicFiles(storageClient); err != nil {
+			if err := target.UploadPublicFilesV3(storageClient); err != nil {
 				slog.Error("Failed to upload public files", "err", err)
 				os.Exit(1)
 			}
-		} else {
+		}
+
+		if overallVersionUpdated || *forceUpload {
+			if err := target.UploadPublicFilesV4(storageClient); err != nil {
+				slog.Error("Failed to upload public files (v4)", "err", err)
+				os.Exit(1)
+			}
+		}
+		if !versionUpdated && !overallVersionUpdated && !*forceUpload {
 			slog.Info("Skip to upload public files")
 		}
 

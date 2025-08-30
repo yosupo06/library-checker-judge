@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -101,6 +102,10 @@ func NewUploadTarget(base, root string) (UploadTarget, error) {
 	if err != nil {
 		return UploadTarget{}, err
 	}
+	ov, err := overallVersion(base, root)
+	if err != nil {
+		return UploadTarget{}, err
+	}
 	return UploadTarget{
 		Root: root,
 		Base: base,
@@ -108,6 +113,7 @@ func NewUploadTarget(base, root string) (UploadTarget, error) {
 			Name:            path.Base(base),
 			TestCaseVersion: h,
 			Version:         v,
+			OverallVersion:  ov,
 		},
 	}, nil
 }
@@ -150,6 +156,44 @@ func version(base, root string) (string, error) {
 	return joinHashes(hashes), nil
 }
 
+// overallVersion computes the v4 OverallVersion.
+// It includes TestCaseVersion and the content hash of all files under:
+//   - root/common/** (files only)
+//   - base/** (the entire problem dir; files only)
+func overallVersion(base, root string) (string, error) {
+	hashes := []string{}
+
+	if h, err := testCaseHash(base); err != nil {
+		return "", err
+	} else {
+		hashes = append(hashes, h)
+	}
+
+	commonFiles, problemFiles, err := gitTrackedFiles(base, root)
+	if err != nil {
+		return "", err
+	}
+
+	for _, rel := range commonFiles {
+		fp := path.Join(root, "common", rel)
+		h, err := fileHash(fp)
+		if err != nil {
+			return "", err
+		}
+		hashes = append(hashes, h)
+	}
+	for _, rel := range problemFiles {
+		fp := path.Join(root, rel)
+		h, err := fileHash(fp)
+		if err != nil {
+			return "", err
+		}
+		hashes = append(hashes, h)
+	}
+
+	return joinHashes(hashes), nil
+}
+
 func (p UploadTarget) UploadTestcases(client Client) error {
 	tarGz, err := p.BuildTestCaseTarGz()
 	if err != nil {
@@ -157,7 +201,13 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 	}
 	defer func() { _ = os.Remove(tarGz) }()
 
+	// v3 upload
 	if err := p.Problem.UploadTestCases(context.Background(), client, tarGz); err != nil {
+		return err
+	}
+
+	// v4 upload (private)
+	if err := p.Problem.UploadTestCasesV4(context.Background(), client, tarGz); err != nil {
 		return err
 	}
 
@@ -165,7 +215,12 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 	for _, ext := range []string{"in", "out"} {
 		if err := filepath.Walk(path.Join(p.Base, ext), func(fpath string, info fs.FileInfo, err error) error {
 			if strings.Contains(fpath, "example") {
+				// v3
 				if err := p.Problem.UploadPublicTestCase(context.Background(), client, fpath, path.Join(ext, path.Base(fpath))); err != nil {
+					return err
+				}
+				// v4
+				if err := p.Problem.UploadPublicTestCaseV4(context.Background(), client, fpath, path.Join(ext, path.Base(fpath))); err != nil {
 					return err
 				}
 			}
@@ -234,7 +289,7 @@ func (p UploadTarget) BuildTestCaseTarGz() (string, error) {
 	return tempFile.Name(), nil
 }
 
-func (p UploadTarget) UploadPublicFiles(client Client) error {
+func (p UploadTarget) UploadPublicFilesV3(client Client) error {
 	for _, info := range fileInfos(p.Base, p.Root) {
 		src := path.Join(info.base, info.path)
 		if _, err := os.Stat(src); err != nil {
@@ -249,6 +304,70 @@ func (p UploadTarget) UploadPublicFiles(client Client) error {
 		}
 	}
 	return nil
+}
+
+func (p UploadTarget) UploadPublicFilesV4(client Client) error {
+	commonFiles, problemFiles, err := gitTrackedFiles(p.Base, p.Root)
+	if err != nil {
+		return err
+	}
+
+	for _, relCommon := range commonFiles {
+		local := path.Join(p.Root, "common", relCommon)
+		remote := p.Problem.v4FilesCommonKey(relCommon)
+		if err := p.Problem.UploadPublicFileTo(context.Background(), client, local, remote); err != nil {
+			return err
+		}
+	}
+
+	relProblemDir, err := filepath.Rel(p.Root, p.Base)
+	if err != nil {
+		return err
+	}
+	relProblemDir = filepath.ToSlash(relProblemDir)
+	prefix := relProblemDir + "/"
+
+	for _, rel := range problemFiles {
+		local := path.Join(p.Root, rel)
+		sub := strings.TrimPrefix(filepath.ToSlash(rel), prefix)
+		remote := p.Problem.v4FilesProblemKey(sub)
+		if err := p.Problem.UploadPublicFileTo(context.Background(), client, local, remote); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func gitTrackedFiles(base, root string) ([]string, []string, error) {
+	relProblemDir, err := filepath.Rel(root, base)
+	if err != nil {
+		return nil, nil, err
+	}
+	relProblemDir = filepath.ToSlash(relProblemDir)
+
+	cmd := exec.Command("git", "-C", root, "ls-files")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, nil, fmt.Errorf("git ls-files failed: %w", err)
+	}
+	lines := strings.Split(strings.ReplaceAll(string(out), "\r\n", "\n"), "\n")
+	commonFiles := []string{}
+	problemFiles := []string{}
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		p := filepath.ToSlash(line)
+		if strings.HasPrefix(p, "common/") {
+			commonFiles = append(commonFiles, strings.TrimPrefix(p, "common/"))
+			continue
+		}
+		if p == relProblemDir || strings.HasPrefix(p, relProblemDir+"/") {
+			problemFiles = append(problemFiles, p)
+			continue
+		}
+	}
+	return commonFiles, problemFiles, nil
 }
 
 func fileHash(path string) (string, error) {
