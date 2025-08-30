@@ -30,6 +30,15 @@ resource "google_storage_bucket" "internal" {
   public_access_prevention = "enforced"
 }
 
+resource "google_storage_bucket" "private" {
+  name                        = "v2-${var.env}-library-checker-data-private"
+  location                    = local.region
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = "true"
+
+  public_access_prevention = "enforced"
+}
+
 resource "google_storage_hmac_key" "main" {
   service_account_email = google_service_account.storage_editor.email
 }
