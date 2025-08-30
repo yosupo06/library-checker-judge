@@ -86,12 +86,8 @@ jobs:
           chmod +x ./cloud-sql-proxy
       - name: Deploy Shard ${{ matrix.shard }}
         working-directory: ./uploader
-        run: |
+        run: >
           ./cloud-sql-proxy --auto-iam-authn ${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }} &
-          for i in $(seq 1 30); do
-            nc -z 127.0.0.1 5432 && break
-            sleep 1
-          done
           SHARD_TOTAL=10 SHARD_INDEX=${{ matrix.shard }} python3 ./problems/upload.py
         env:
           PGUSER: "${{ fromJson(steps.tf-output.outputs.stdout).uploader_sa_db_name.value }}"
