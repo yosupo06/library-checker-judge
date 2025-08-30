@@ -120,7 +120,7 @@ func NewUploadTarget(base, root string) (UploadTarget, error) {
 		Root: abRoot,
 		Base: abBase,
 		Problem: Problem{
-			Name:            path.Base(abBase),
+			Name:            filepath.Base(abBase),
 			TestCaseVersion: h,
 			Version:         v,
 			OverallVersion:  ov,
