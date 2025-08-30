@@ -33,3 +33,4 @@ jobs:
       with:
         version: latest
         working-directory: ./storage
+        args: --config ../.golangci.yml

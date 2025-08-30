@@ -35,3 +35,4 @@ jobs:
       with:
         version: latest
         working-directory: ./api
+        args: --config ../.golangci.yml

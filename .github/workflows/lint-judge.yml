@@ -39,3 +39,4 @@ jobs:
       with:
         version: latest
         working-directory: ./judge
+        args: --config ../.golangci.yml

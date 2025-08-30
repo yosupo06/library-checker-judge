@@ -33,3 +33,4 @@ jobs:
       with:
         version: latest
         working-directory: ./migrator
+        args: --config ../.golangci.yml

@@ -32,3 +32,4 @@ jobs:
       with:
         version: latest
         working-directory: ./utils
+        args: --config ../.golangci.yml

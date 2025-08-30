@@ -31,3 +31,4 @@ jobs:
       with:
         version: latest
         working-directory: ./database
+        args: --config ../.golangci.yml
