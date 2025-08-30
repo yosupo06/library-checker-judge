@@ -186,6 +186,9 @@ func TestCrystalAplusBAC(t *testing.T) {
 func TestRubyAplusBAC(t *testing.T) {
 	testAplusBAC(t, "ruby", "ac.rb")
 }
+func TestSwiftAplusBAC(t *testing.T) {
+	testAplusBAC(t, "swift", "ac.swift")
+}
 
 func TestCppAplusBWA(t *testing.T) {
 	testAplusB(t, "cpp", "wa.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "WA")
