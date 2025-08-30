@@ -27,6 +27,18 @@ jobs:
       with:
         go-version: '1.21'
 
+    - name: gofmt (storage)
+      working-directory: ./storage
+      run: |
+        out=$(gofmt -l -s .)
+        if [ -n "$out" ]; then
+          echo 'The following files are not gofmt-ed:'
+          echo "$out"
+          echo
+          echo 'Please run: gofmt -s -w ./storage'
+          exit 1
+        fi
+
     - name: golangci-lint (storage)
       uses: golangci/golangci-lint-action@v8
       with:
