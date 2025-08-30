@@ -127,7 +127,7 @@ func main() {
 				os.Exit(1)
 			}
 		}
-		if !(versionUpdated || overallVersionUpdated || *forceUpload) {
+		if !versionUpdated && !overallVersionUpdated && !*forceUpload {
 			slog.Info("Skip to upload public files")
 		}
 

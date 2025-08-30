@@ -95,9 +95,7 @@ func (p Problem) v4ExamplesKey(key string) string {
 func (p Problem) v4FilesCommonKey(key string) string {
 	// key is like "common/xxx" or just file under common. We accept both.
 	commonPath := key
-	if strings.HasPrefix(commonPath, "common/") {
-		commonPath = strings.TrimPrefix(commonPath, "common/")
-	}
+	commonPath = strings.TrimPrefix(commonPath, "common/")
 	return fmt.Sprintf("v4/files/%s/%s/common/%s", p.Name, p.OverallVersion, commonPath)
 }
 
@@ -106,13 +104,7 @@ func (p Problem) v4FilesProblemKey(rel string) string {
 	return fmt.Sprintf("v4/files/%s/%s/%s/%s", p.Name, p.OverallVersion, p.Name, rel)
 }
 
-// publicCommonV4Key returns the v4 path for common/* files only.
-// v4/files/{problem}/{overall_version}/common/{path_under_common}
-func (p Problem) publicCommonV4Key(key string) string {
-	// key is expected like "common/fastio.h"
-	trimmed := strings.TrimPrefix(key, "common/")
-	return fmt.Sprintf("v4/files/%s/%s/common/%s", p.Name, p.OverallVersion, trimmed)
-}
+// Note: publicCommonV4Key removed as unused (use v4FilesCommonKey instead).
 
 type Info struct {
 	Title     string
