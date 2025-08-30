@@ -4,11 +4,12 @@ run:
 
 linters:
   default: standard
+
+formatters:
   enable:
     - gofmt
-
-linters-settings:
-  gofmt:
-    simplify: true
+  settings:
+    gofmt:
+      simplify: true
 
 # Keep defaults for other linters via action; this only turns on gofmt checks.
