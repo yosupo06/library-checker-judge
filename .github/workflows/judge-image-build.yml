@@ -9,6 +9,19 @@ on:
       build-base:
         type: boolean
         default: true
+  workflow_dispatch:
+    inputs:
+      env:
+        type: choice
+        default: dev
+        options:
+          - dev
+          - prod
+        description: environment of deploy
+      build-base:
+        type: boolean
+        default: true
+        description: Build a base image of judge or not
 
 concurrency:
   group: ${{ inputs.env }}-judge-image-build
@@ -111,7 +124,7 @@ jobs:
         -var 'minio_host=storage.googleapis.com'
         -var 'minio_id=${{ fromJson(steps.tf-output.outputs.stdout).storage_hmac_id.value }}'
         -var 'minio_secret=${{ steps.secrets.outputs.minio-secret }}'
-        -var 'minio_bucket=${{ fromJson(steps.tf-output.outputs.stdout).internal_bucket_name.value }}'
+        -var 'minio_bucket=${{ fromJson(steps.tf-output.outputs.stdout).private_bucket_name.value }}'
         -var 'minio_public_bucket=${{ fromJson(steps.tf-output.outputs.stdout).public_bucket_name.value }}'
         -var 'db_connection_name=${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }}'
         -var 'pg_user=${{ fromJson(steps.tf-output.outputs.stdout).judge_sa_db_name.value }}'
