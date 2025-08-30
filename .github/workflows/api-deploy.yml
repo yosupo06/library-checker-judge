@@ -9,8 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       env:
-        type: string
+        type: choice
         default: dev
+        options:
+          - dev
+          - prod
         description: environment of deploy
 
 concurrency:
@@ -23,6 +26,7 @@ env:
 
 jobs:
   deploy:
+    environment: ${{ inputs.env }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

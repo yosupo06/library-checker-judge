@@ -1,0 +1,40 @@
+name: Terraform Apply
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      env:
+        type: choice
+        default: dev
+        options:
+          - dev
+          - prod
+        description: Environment of deploy
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
+
+jobs:
+  terraform-apply:
+    environment: ${{ inputs.env }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - run: terraform init
+        working-directory: ./terraform
+      - run: terraform apply --auto-approve
+        working-directory: ./terraform
+
