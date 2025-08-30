@@ -9,13 +9,13 @@ import (
 
 // Problem is db table
 type Problem struct {
-    Name             string `gorm:"primaryKey"`
-    Title            string
-    SourceUrl        string
-    Timelimit        int32
-    TestCasesVersion string
-    Version          string
-    OverallVersion   string
+	Name             string `gorm:"primaryKey"`
+	Title            string
+	SourceUrl        string
+	Timelimit        int32
+	TestCasesVersion string
+	Version          string
+	OverallVersion   string
 }
 
 func FetchProblem(db *gorm.DB, name string) (Problem, error) {

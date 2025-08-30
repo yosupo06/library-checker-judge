@@ -61,11 +61,11 @@ func main() {
 			slog.Error("Failed to build UploadTarget", "err", err)
 			os.Exit(1)
 		}
-        name := target.Problem.Name
-        v := target.Problem.Version
-        ov := target.Problem.OverallVersion
-        h := target.Problem.TestCaseVersion
-        slog.Info("Problem info", "name", name, "version", v, "overall_version", ov, "hash", h)
+		name := target.Problem.Name
+		v := target.Problem.Version
+		ov := target.Problem.OverallVersion
+		h := target.Problem.TestCaseVersion
+		slog.Info("Problem info", "name", name, "version", v, "overall_version", ov, "hash", h)
 
 		// fetch problem info from database
 		dbP, err := database.FetchProblem(db, name)
@@ -87,49 +87,49 @@ func main() {
 			os.Exit(1)
 		}
 
-        versionUpdated := (v != dbP.Version)
-        overallVersionUpdated := (ov != dbP.OverallVersion)
-        testcaseUpdated := (h != dbP.TestCasesVersion)
+		versionUpdated := (v != dbP.Version)
+		overallVersionUpdated := (ov != dbP.OverallVersion)
+		testcaseUpdated := (h != dbP.TestCasesVersion)
 
 		// update problem fields
 		dbP.Title = info.Title
 		dbP.Timelimit = int32(info.TimeLimit * 1000)
-        dbP.SourceUrl = toSourceURL(t)
-        dbP.Version = v
-        dbP.OverallVersion = ov
-        dbP.TestCasesVersion = h
+		dbP.SourceUrl = toSourceURL(t)
+		dbP.Version = v
+		dbP.OverallVersion = ov
+		dbP.TestCasesVersion = h
 
 		// upload test cases
-        if testcaseUpdated || *forceUpload {
-            if err := generate(*problemsDir, t); err != nil {
-                slog.Error("Failed to generate", "err", err)
-                os.Exit(1)
-            }
-            if err := target.UploadTestcases(storageClient); err != nil {
-                slog.Error("Failed to upload test cases", "err", err)
-                os.Exit(1)
-            }
-        } else {
-            slog.Info("Skip to upload test cases")
-        }
+		if testcaseUpdated || *forceUpload {
+			if err := generate(*problemsDir, t); err != nil {
+				slog.Error("Failed to generate", "err", err)
+				os.Exit(1)
+			}
+			if err := target.UploadTestcases(storageClient); err != nil {
+				slog.Error("Failed to upload test cases", "err", err)
+				os.Exit(1)
+			}
+		} else {
+			slog.Info("Skip to upload test cases")
+		}
 
 		// upload public files
-        if versionUpdated || *forceUpload {
-            if err := target.UploadPublicFilesV3(storageClient); err != nil {
-                slog.Error("Failed to upload public files", "err", err)
-                os.Exit(1)
-            }
-        }
+		if versionUpdated || *forceUpload {
+			if err := target.UploadPublicFilesV3(storageClient); err != nil {
+				slog.Error("Failed to upload public files", "err", err)
+				os.Exit(1)
+			}
+		}
 
-        if overallVersionUpdated || *forceUpload {
-            if err := target.UploadPublicFilesV4(storageClient); err != nil {
-                slog.Error("Failed to upload public files (v4)", "err", err)
-                os.Exit(1)
-            }
-        }
-        if !(versionUpdated || overallVersionUpdated || *forceUpload) {
-            slog.Info("Skip to upload public files")
-        }
+		if overallVersionUpdated || *forceUpload {
+			if err := target.UploadPublicFilesV4(storageClient); err != nil {
+				slog.Error("Failed to upload public files (v4)", "err", err)
+				os.Exit(1)
+			}
+		}
+		if !(versionUpdated || overallVersionUpdated || *forceUpload) {
+			slog.Info("Skip to upload public files")
+		}
 
 		if err := clean(*problemsDir, t); err != nil {
 			slog.Error("Failed to clean", "err", err)
