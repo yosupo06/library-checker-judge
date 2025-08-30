@@ -183,6 +183,11 @@ func clean(problemsDir, tomlPath string) error {
 	return cmd.Run()
 }
 
+func toSourceURL(tomlPath string) string {
+	dir := path.Dir(tomlPath)
+	return fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(dir)), path.Base(dir))
+}
+
 func uploadCategories(dir string, db *gorm.DB) error {
 	var data struct {
 		Categories []struct {
@@ -195,19 +200,8 @@ func uploadCategories(dir string, db *gorm.DB) error {
 	}
 
 	cs := []database.ProblemCategory{}
-
 	for _, c := range data.Categories {
-		cs = append(cs,
-			database.ProblemCategory{
-				Title:    c.Name,
-				Problems: c.Problems,
-			})
+		cs = append(cs, database.ProblemCategory{Title: c.Name, Problems: c.Problems})
 	}
-
 	return database.SaveProblemCategories(db, cs)
-}
-
-func toSourceURL(tomlPath string) string {
-	dir := path.Dir(tomlPath)
-	return fmt.Sprintf("https://github.com/yosupo06/library-checker-problems/tree/master/%v/%v", path.Base(path.Dir(dir)), path.Base(dir))
 }

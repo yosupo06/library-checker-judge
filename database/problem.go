@@ -60,7 +60,6 @@ func FetchProblemCategories(db *gorm.DB) ([]ProblemCategory, error) {
 	if err := json.Unmarshal([]byte(*data), &categories); err != nil {
 		return nil, err
 	}
-
 	return categories, nil
 }
 
