@@ -31,6 +31,10 @@ output "main_db_connection_name" {
     value = google_sql_database_instance.main.connection_name
 }
 
+output "private_bucket_name" {
+    value = google_storage_bucket.private.name
+}
+
 output "public_bucket_name" {
     value = google_storage_bucket.public.name
 }
