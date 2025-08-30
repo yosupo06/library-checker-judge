@@ -61,7 +61,8 @@ func (t TestCaseDownloader) fetchTestCases(problem Problem) (string, error) {
 
 	tarGzPath := path.Join(t.localDir, problem.TestCaseVersion+".tar.gz")
 	localDir := path.Join(t.localDir, problem.TestCaseVersion)
-	key := problem.testCasesKey()
+	// Phase 2: use v4 path for private testcases tarball
+	key := problem.v4TestCasesKey()
 
 	if _, err := os.Stat(tarGzPath); err != nil {
 		slog.Info("Download test cases", "remote", key)
@@ -82,13 +83,25 @@ func (t TestCaseDownloader) fetchTestCases(problem Problem) (string, error) {
 }
 
 func (t TestCaseDownloader) fetchPublicFiles(problem Problem) (string, error) {
-	prefix := problem.publicFileKeyPrefix()
+	// Phase 2: switch to v4 public files
+	prefix := problem.v4PublicFilesKeyPrefix()
+	// ensure trailing slash to avoid absolute-join surprises
+	if !strings.HasSuffix(prefix, "/") {
+		prefix += "/"
+	}
 
-	destDir := path.Join(t.localDir, problem.Version)
+	destDir := path.Join(t.localDir, problem.OverallVersion)
 	if _, err := os.Stat(destDir); err != nil {
-		slog.Info("Download public files", "name", problem.Name, "version", problem.Version)
+		slog.Info("Download public files", "name", problem.Name, "overall_version", problem.OverallVersion)
 		for object := range t.client.client.ListObjects(context.Background(), t.client.publicBucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true}) {
-			destPath := path.Join(destDir, strings.TrimPrefix(object.Key, prefix))
+			rel := strings.TrimPrefix(object.Key, prefix)
+			// v4 layout includes either "common/..." or "{problem}/..."; flatten the latter
+			if strings.HasPrefix(rel, problem.Name+"/") {
+				rel = strings.TrimPrefix(rel, problem.Name+"/")
+			}
+			// guard: strip any leading slashes
+			rel = strings.TrimLeft(rel, "/")
+			destPath := path.Join(destDir, rel)
 			slog.Info("Download public file", "key", object.Key, "to", destPath)
 			if err := t.client.client.FGetObject(context.Background(), t.client.publicBucket, object.Key, destPath, minio.GetObjectOptions{}); err != nil {
 				return "", err
