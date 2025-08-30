@@ -32,13 +32,14 @@ func toProtoTimestamp(t time.Time) *timestamppb.Timestamp {
 }
 
 func toProtoProblemInfo(p database.Problem) *pb.ProblemInfoResponse {
-	return &pb.ProblemInfoResponse{
-		Title:            p.Title,
-		TimeLimit:        float64(p.Timelimit) / 1000.0,
-		SourceUrl:        p.SourceUrl,
-		Version:          p.Version,
-		TestcasesVersion: p.TestCasesVersion,
-	}
+    return &pb.ProblemInfoResponse{
+        Title:            p.Title,
+        TimeLimit:        float64(p.Timelimit) / 1000.0,
+        SourceUrl:        p.SourceUrl,
+        Version:          p.Version,
+        OverallVersion:   p.OverallVersion,
+        TestcasesVersion: p.TestCasesVersion,
+    }
 }
 
 func toProtoUser(user *database.User) *pb.User {

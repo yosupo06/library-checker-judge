@@ -100,6 +100,7 @@ message ProblemInfoResponse {
     double time_limit = 3; // 2.0 = 2 seconds
     string version = 6; // problem version
     string testcases_version = 7; // testcases version
+    string overall_version = 8; // v4 overall version
 }
 
 // --- Category ---
