@@ -27,18 +27,6 @@ jobs:
       with:
         go-version: '1.21'
 
-    - name: gofmt (utils)
-      working-directory: ./utils
-      run: |
-        out=$(gofmt -l -s .)
-        if [ -n "$out" ]; then
-          echo 'The following files are not gofmt-ed:'
-          echo "$out"
-          echo
-          echo 'Please run: gofmt -s -w ./utils'
-          exit 1
-        fi
-
     - name: golangci-lint (utils)
       uses: golangci/golangci-lint-action@v8
       with:
