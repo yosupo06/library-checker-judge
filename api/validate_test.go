@@ -13,7 +13,7 @@ func TestSourceValidate(t *testing.T) {
 
 	// Valid cases
 	validSources := []string{
-		"a",                                  // Minimum valid length (not empty)
+		"a",                                // Minimum valid length (not empty)
 		strings.Repeat("a", maxSourceSize), // Maximum valid length
 	}
 	for _, source := range validSources {
@@ -29,7 +29,7 @@ func TestSourceValidate(t *testing.T) {
 
 	// Invalid cases
 	invalidSources := []string{
-		"",                                    // Empty source
+		"",                                   // Empty source
 		strings.Repeat("a", maxSourceSize+1), // Exceeds max length
 	}
 	for _, source := range invalidSources {

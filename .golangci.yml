@@ -1,0 +1,15 @@
+version: "2"
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+
+formatters:
+  enable:
+    - gofmt
+  settings:
+    gofmt:
+      simplify: true
+
+# Keep defaults for other linters via action; this only turns on gofmt checks.

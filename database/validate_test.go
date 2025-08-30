@@ -68,5 +68,5 @@ func TestSourceValidate(t *testing.T) {
 		}); err == nil {
 			t.Fatalf("%v should not be valid source", source)
 		}
-	}	
+	}
 }

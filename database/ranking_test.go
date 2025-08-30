@@ -31,7 +31,7 @@ func TestFetchRanking(t *testing.T) {
 
 	// Create test submissions with different AC counts
 	// alice: 3 ACs (aplusb, amodb, unionfind)
-	// bob: 2 ACs (aplusb, amodb)  
+	// bob: 2 ACs (aplusb, amodb)
 	// charlie: 1 AC (aplusb)
 	// david: 0 ACs (only WA submissions)
 	submissions := []Submission{
@@ -39,19 +39,19 @@ func TestFetchRanking(t *testing.T) {
 		{ProblemName: "aplusb", UserName: sql.NullString{Valid: true, String: "alice"}, Status: "AC", Source: "alice_aplusb", SubmissionTime: time.Now()},
 		{ProblemName: "amodb", UserName: sql.NullString{Valid: true, String: "alice"}, Status: "AC", Source: "alice_amodb", SubmissionTime: time.Now()},
 		{ProblemName: "unionfind", UserName: sql.NullString{Valid: true, String: "alice"}, Status: "AC", Source: "alice_unionfind", SubmissionTime: time.Now()},
-		
+
 		// bob's submissions
 		{ProblemName: "aplusb", UserName: sql.NullString{Valid: true, String: "bob"}, Status: "AC", Source: "bob_aplusb", SubmissionTime: time.Now()},
 		{ProblemName: "amodb", UserName: sql.NullString{Valid: true, String: "bob"}, Status: "AC", Source: "bob_amodb", SubmissionTime: time.Now()},
 		{ProblemName: "unionfind", UserName: sql.NullString{Valid: true, String: "bob"}, Status: "WA", Source: "bob_unionfind_wa", SubmissionTime: time.Now()},
-		
+
 		// charlie's submissions
 		{ProblemName: "aplusb", UserName: sql.NullString{Valid: true, String: "charlie"}, Status: "AC", Source: "charlie_aplusb", SubmissionTime: time.Now()},
 		{ProblemName: "amodb", UserName: sql.NullString{Valid: true, String: "charlie"}, Status: "WA", Source: "charlie_amodb_wa", SubmissionTime: time.Now()},
-		
+
 		// david's submissions
 		{ProblemName: "aplusb", UserName: sql.NullString{Valid: true, String: "david"}, Status: "WA", Source: "david_aplusb_wa", SubmissionTime: time.Now()},
-		
+
 		// anonymous submission (should be excluded)
 		{ProblemName: "aplusb", UserName: sql.NullString{Valid: false}, Status: "AC", Source: "anon_aplusb", SubmissionTime: time.Now()},
 	}

@@ -27,8 +27,10 @@ jobs:
       with:
         go-version: '1.21'
 
+
     - name: golangci-lint (executor)
       uses: golangci/golangci-lint-action@v8
       with:
         version: latest
         working-directory: ./executor
+        args: --config ../.golangci.yml

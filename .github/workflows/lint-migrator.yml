@@ -27,8 +27,10 @@ jobs:
       with:
         go-version: '1.21'
 
+
     - name: golangci-lint (migrator)
       uses: golangci/golangci-lint-action@v8
       with:
         version: latest
         working-directory: ./migrator
+        args: --config ../.golangci.yml

@@ -244,7 +244,7 @@ func TestFetchHackList(t *testing.T) {
 
 	// Create hacks: 2 by user1, 1 by user2, 1 anonymous
 	hackIDs := make([]int32, 4)
-	
+
 	// Hack by user1
 	hackIDs[0], err = SaveHack(db, Hack{
 		SubmissionID: subID1,
@@ -306,7 +306,7 @@ func TestFetchHackList(t *testing.T) {
 				t.Fatalf("Hack %d: Expected User relation to be populated", i)
 			}
 			if hack.User.Name != hack.UserName.String {
-				t.Fatalf("Hack %d: User.Name (%s) doesn't match UserName.String (%s)", 
+				t.Fatalf("Hack %d: User.Name (%s) doesn't match UserName.String (%s)",
 					i, hack.User.Name, hack.UserName.String)
 			}
 		} else {

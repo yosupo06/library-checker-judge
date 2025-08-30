@@ -108,17 +108,17 @@ func TestTaskDataSerialize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// Compare the decoded data
 	if task2.TaskType != task.TaskType {
 		t.Fatal("TaskType mismatch:", task2.TaskType, "!=", task.TaskType)
 	}
-	
+
 	decodedSubmission, ok := task2.Data.(SubmissionData)
 	if !ok {
 		t.Fatal("Failed to decode SubmissionData")
 	}
-	
+
 	if decodedSubmission != submissionData {
 		t.Fatal("SubmissionData mismatch:", decodedSubmission, "!=", submissionData)
 	}
