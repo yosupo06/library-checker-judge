@@ -24,19 +24,14 @@ import SourceEditor from "../components/SourceEditor";
 import { GitHub, FlashOn, Person, Forum } from "@mui/icons-material";
 import { useTranslation } from "../utils/translations";
 import { Alert, Container } from "@mui/material";
-import Statement, {
-  useExamples,
-  useProblemInfoTomlQuery,
-  useSolveHpp,
-  useStatement,
-} from "../components/Statement";
+import Statement from "../components/Statement";
 import { useLang } from "../contexts/LangContext";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 import NotFound from "./NotFound";
 import { Link as RouterLink } from "react-router-dom";
 import { ProblemInfoToml } from "../utils/problem.info";
-import { ProblemVersion, toProblemVersion } from "../utils/problem.storage";
+import { ProblemVersion, toProblemVersion, useProblemAssets } from "../utils/problem.storage";
 import MainContainer from "../components/MainContainer";
 import { LinkButton, ExternalLinkButton } from "../components/LinkButton";
 
@@ -91,9 +86,9 @@ const ProblemInfoBody: React.FC<{
     testcasesVersion: problemInfo.testcasesVersion,
   });
 
-  const infoTomlQuery = useProblemInfoTomlQuery(baseURL, problemVersion);
+  const assets = useProblemAssets(baseURL, problemId, problemInfo);
 
-  if (infoTomlQuery.isPending) {
+  if (assets.isPending || !assets.info) {
     return (
       <Box>
         <CircularProgress />
@@ -101,11 +96,11 @@ const ProblemInfoBody: React.FC<{
     );
   }
 
-  if (infoTomlQuery.isError) {
+  if (assets.error) {
     return (
       <Box>
         <Alert severity="error">
-          {(infoTomlQuery.error as RpcError).toString()}
+          {String(assets.error)}
         </Alert>
       </Box>
     );
@@ -120,15 +115,11 @@ const ProblemInfoBody: React.FC<{
       <UsefulLinks
         problemId={problemId}
         problemInfo={problemInfo}
-        infoToml={infoTomlQuery.data}
+        infoToml={assets.info}
       />
       <Divider />
 
-      <StatementBody
-        baseUrl={baseURL}
-        problemVersion={problemVersion}
-        infoToml={infoTomlQuery.data}
-      />
+      <StatementBody info={assets.info} statement={assets.statement ?? ""} examples={assets.examples} />
 
       <Divider
         sx={{
@@ -136,7 +127,7 @@ const ProblemInfoBody: React.FC<{
         }}
       />
 
-      <SolveHpp baseUrl={baseURL} problemVersion={problemVersion} />
+      <SolveHpp solveHpp={assets.solveHpp ?? null} />
 
       <Divider
         sx={{
@@ -150,28 +141,13 @@ const ProblemInfoBody: React.FC<{
 };
 
 export const StatementBody: React.FC<{
-  baseUrl: URL;
-  problemVersion: ProblemVersion;
-  infoToml: ProblemInfoToml;
+  info: ProblemInfoToml;
+  statement: string;
+  examples: { [name: string]: string };
 }> = (props) => {
-  const { baseUrl, problemVersion, infoToml } = props;
-
+  const { info, statement, examples } = props;
   const lang = useLang();
-
-  const statement = useStatement(baseUrl, problemVersion);
-
-  const examples = useExamples(infoToml, baseUrl, problemVersion);
-
-  return (
-    <Statement
-      lang={lang}
-      data={{
-        info: infoToml,
-        statement: statement.isSuccess ? statement.data : "",
-        examples: examples,
-      }}
-    />
-  );
+  return <Statement lang={lang} data={{ info, statement, examples }} />;
 };
 
 const UsefulLinks: React.FC<{
