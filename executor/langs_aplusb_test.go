@@ -78,7 +78,8 @@ func samplePathFor(langID string) (string, map[string]string) {
 	}
 }
 
-func TestAllLangsAplusB_Smoke(t *testing.T) {
+// Basic per-language compile+run conformance test for A+B
+func TestAllLangsAplusb(t *testing.T) {
 	// Load sample IO
 	inBytes, err := Sources.ReadFile("sources/aplusb/sample.in")
 	if err != nil {
