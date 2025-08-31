@@ -1,0 +1,17 @@
+repos:
+  - repo: local
+    hooks:
+      - id: prettier-check
+        name: prettier check (src)
+        language: system
+        entry: npm run prettier:check
+        pass_filenames: false
+        files: ^src/.*\.(ts|tsx|js|jsx)$
+        stages: [commit]
+      - id: eslint-lint
+        name: eslint lint (src)
+        language: system
+        entry: npm run lint
+        pass_filenames: false
+        files: ^src/.*\.(ts|tsx|js|jsx)$
+        stages: [commit]
