@@ -24,19 +24,14 @@ import SourceEditor from "../components/SourceEditor";
 import { GitHub, FlashOn, Person, Forum } from "@mui/icons-material";
 import { useTranslation } from "../utils/translations";
 import { Alert, Container } from "@mui/material";
-import Statement, {
-  useExamples,
-  useProblemInfoTomlQuery,
-  useSolveHpp,
-  useStatement,
-} from "../components/Statement";
+import Statement from "../components/Statement";
 import { useLang } from "../contexts/LangContext";
 import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 import NotFound from "./NotFound";
 import { Link as RouterLink } from "react-router-dom";
 import { ProblemInfoToml } from "../utils/problem.info";
-import { ProblemVersion } from "../utils/problem.storage";
+import { useProblemAssets } from "../utils/problem.storage";
 import MainContainer from "../components/MainContainer";
 import { LinkButton, ExternalLinkButton } from "../components/LinkButton";
 
@@ -85,15 +80,9 @@ const ProblemInfoBody: React.FC<{
 }> = (props) => {
   const { problemId, problemInfo } = props;
 
-  const problemVersion = {
-    name: problemId,
-    version: problemInfo.version,
-    testCasesVersion: problemInfo.testcasesVersion,
-  };
+  const assets = useProblemAssets(baseURL, problemId, problemInfo);
 
-  const infoTomlQuery = useProblemInfoTomlQuery(baseURL, problemVersion);
-
-  if (infoTomlQuery.isPending) {
+  if (assets.isPending || !assets.info) {
     return (
       <Box>
         <CircularProgress />
@@ -101,12 +90,10 @@ const ProblemInfoBody: React.FC<{
     );
   }
 
-  if (infoTomlQuery.isError) {
+  if (assets.error) {
     return (
       <Box>
-        <Alert severity="error">
-          {(infoTomlQuery.error as RpcError).toString()}
-        </Alert>
+        <Alert severity="error">{String(assets.error)}</Alert>
       </Box>
     );
   }
@@ -120,14 +107,14 @@ const ProblemInfoBody: React.FC<{
       <UsefulLinks
         problemId={problemId}
         problemInfo={problemInfo}
-        infoToml={infoTomlQuery.data}
+        infoToml={assets.info}
       />
       <Divider />
 
       <StatementBody
-        baseUrl={baseURL}
-        problemVersion={problemVersion}
-        infoToml={infoTomlQuery.data}
+        info={assets.info}
+        statement={assets.statement ?? ""}
+        examples={assets.examples}
       />
 
       <Divider
@@ -136,7 +123,7 @@ const ProblemInfoBody: React.FC<{
         }}
       />
 
-      <SolveHpp baseUrl={baseURL} problemVersion={problemVersion} />
+      <SolveHpp solveHpp={assets.solveHpp ?? null} />
 
       <Divider
         sx={{
@@ -150,28 +137,13 @@ const ProblemInfoBody: React.FC<{
 };
 
 export const StatementBody: React.FC<{
-  baseUrl: URL;
-  problemVersion: ProblemVersion;
-  infoToml: ProblemInfoToml;
+  info: ProblemInfoToml;
+  statement: string;
+  examples: { [name: string]: string };
 }> = (props) => {
-  const { baseUrl, problemVersion, infoToml } = props;
-
+  const { info, statement, examples } = props;
   const lang = useLang();
-
-  const statement = useStatement(baseUrl, problemVersion);
-
-  const examples = useExamples(infoToml, baseUrl, problemVersion);
-
-  return (
-    <Statement
-      lang={lang}
-      data={{
-        info: infoToml,
-        statement: statement.isSuccess ? statement.data : "",
-        examples: examples,
-      }}
-    />
-  );
+  return <Statement lang={lang} data={{ info, statement, examples }} />;
 };
 
 const UsefulLinks: React.FC<{
@@ -225,33 +197,22 @@ const UsefulLinks: React.FC<{
   );
 };
 
-const SolveHpp: React.FC<{
-  baseUrl: URL;
-  problemVersion: ProblemVersion;
-}> = (props) => {
-  const { baseUrl, problemVersion } = props;
-
-  const solveHppQuery = useSolveHpp(baseUrl, problemVersion);
-
+const SolveHpp: React.FC<{ solveHpp: string | null }> = (props) => {
+  const { solveHpp } = props;
   return (
     <Box>
       <Typography variant="h4" paragraph={true}>
         C++(Function) header
       </Typography>
-
-      {solveHppQuery.isSuccess && solveHppQuery.data && (
+      {solveHpp && (
         <>
           <Typography variant="h6" paragraph={true}>
             solve.hpp
           </Typography>
-          <SourceEditor
-            value={solveHppQuery.data}
-            language="cpp"
-            readOnly={true}
-          />
+          <SourceEditor value={solveHpp} language="cpp" readOnly={true} />
         </>
       )}
-      {solveHppQuery.isSuccess && !solveHppQuery.data && (
+      {solveHpp === null && (
         <Typography variant="body1" paragraph={true}>
           Unsupported
         </Typography>
