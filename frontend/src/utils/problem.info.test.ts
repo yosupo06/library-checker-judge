@@ -22,7 +22,7 @@ function = true
 
 [params]
 A_AND_B_MAX = 1_000_000_000
-LONG_LONG_PARAM = 1_000_000_000_000_000_000
+LONG_LONG_PARAM = 9_007_199_254_740_993
 `;
 
 it("parse", () => {
@@ -44,7 +44,8 @@ it("parse", () => {
   ]);
   expect(data.params).toStrictEqual({
     A_AND_B_MAX: 1_000_000_000n,
-    LONG_LONG_PARAM: 1_000_000_000_000_000_000n,
+    // 2^53 + 1 must not be representable as a JS Number
+    LONG_LONG_PARAM: 9_007_199_254_740_993n,
   });
 });
 
