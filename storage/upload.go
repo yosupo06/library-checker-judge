@@ -345,6 +345,14 @@ func (p UploadTarget) UploadPublicFilesV4(client Client) error {
 			return err
 		}
 	}
+	// Also upload params.h (generated, not always tracked by git)
+	paramsLocal := path.Join(p.Base, "params.h")
+	if _, err := os.Stat(paramsLocal); err == nil {
+		paramsRemote := p.Problem.v4FilesProblemKey("params.h")
+		if err := p.Problem.UploadPublicFileTo(context.Background(), client, paramsLocal, paramsRemote); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
