@@ -22,6 +22,17 @@ npm run dev -- --mode production
 
 なんでも歓迎
 
+### pre-commit hooks
+
+このリポジトリはコミット前に Prettier/ESLint を実行する pre-commit をサポートします。
+
+1. pre-commit をインストール: `pip install pre-commit`
+2. Git フックを有効化: `pre-commit install`
+
+以後、コミット時に常に以下を実行し、失敗時はコミットを中断します。
+- `npm run prettier:check`
+- `npm run lint`
+
 ## library-checker-project
 
 - problems: [library-checker-problems](https://github.com/yosupo06/library-checker-problems)
