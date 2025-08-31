@@ -36,7 +36,7 @@ import { RpcError } from "@protobuf-ts/runtime-rpc";
 import NotFound from "./NotFound";
 import { Link as RouterLink } from "react-router-dom";
 import { ProblemInfoToml } from "../utils/problem.info";
-import { ProblemVersion } from "../utils/problem.storage";
+import { ProblemVersion, toProblemVersion } from "../utils/problem.storage";
 import MainContainer from "../components/MainContainer";
 import { LinkButton, ExternalLinkButton } from "../components/LinkButton";
 
@@ -85,12 +85,11 @@ const ProblemInfoBody: React.FC<{
 }> = (props) => {
   const { problemId, problemInfo } = props;
 
-  const problemVersion = {
-    name: problemId,
+  const problemVersion = toProblemVersion(problemId, {
     version: problemInfo.version,
     overallVersion: problemInfo.overallVersion,
-    testCasesVersion: problemInfo.testcasesVersion,
-  };
+    testcasesVersion: problemInfo.testcasesVersion,
+  });
 
   const infoTomlQuery = useProblemInfoTomlQuery(baseURL, problemVersion);
 
