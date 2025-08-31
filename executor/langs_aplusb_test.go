@@ -126,7 +126,7 @@ func TestAllLangsAplusB_Smoke(t *testing.T) {
 			}
 			defer func() { _ = vol.Remove() }()
 
-			// Execute
+			// Execute with sample input
 			stdout := new(bytes.Buffer)
 			runTask, err := NewTaskInfo(lang.ImageName,
 				WithArguments(lang.Exec...),
@@ -149,6 +149,31 @@ func TestAllLangsAplusB_Smoke(t *testing.T) {
 			got := strings.TrimSpace(stdout.String())
 			if got != expected {
 				t.Fatalf("wrong output: want %q, got %q", expected, got)
+			}
+
+			// Execute with a simple custom input (123 456 -> 579)
+			stdout2 := new(bytes.Buffer)
+			runTask2, err := NewTaskInfo(lang.ImageName,
+				WithArguments(lang.Exec...),
+				WithWorkDir("/workdir"),
+				WithVolume(&vol, "/workdir"),
+				WithStdout(stdout2),
+				WithStdin(bytes.NewReader([]byte("123 456\n"))),
+				WithTimeout(30*time.Second),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res2, err := runTask2.Run()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if res2.ExitCode != 0 {
+				t.Fatalf("custom run failed: exit=%d, stderr=%s", res2.ExitCode, string(res2.Stderr))
+			}
+			got2 := strings.TrimSpace(stdout2.String())
+			if got2 != "579" {
+				t.Fatalf("wrong custom output: want %q, got %q", "579", got2)
 			}
 		})
 	}
