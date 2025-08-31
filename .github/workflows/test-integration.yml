@@ -45,8 +45,8 @@ jobs:
         with:
           go-version: '1.21'
 
-    - name: Generate protobufs
-      run: ./run_protoc.sh
+      - name: Generate protobufs
+        run: ./run_protoc.sh
 
       # Use the same docker runtime tuning as judge workflow
       # Install crun and configure Docker daemon for cgroupfs
