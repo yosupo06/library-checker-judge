@@ -211,12 +211,7 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 	}
 	defer func() { _ = os.Remove(tarGz) }()
 
-	// v3 upload
-	if err := p.Problem.UploadTestCases(context.Background(), client, tarGz); err != nil {
-		return err
-	}
-
-	// v4 upload (private)
+	// v4 upload (private) only
 	if err := p.Problem.UploadTestCasesV4(context.Background(), client, tarGz); err != nil {
 		return err
 	}
@@ -225,11 +220,7 @@ func (p UploadTarget) UploadTestcases(client Client) error {
 	for _, ext := range []string{"in", "out"} {
 		if err := filepath.Walk(path.Join(p.Base, ext), func(fpath string, info fs.FileInfo, err error) error {
 			if strings.Contains(fpath, "example") {
-				// v3
-				if err := p.Problem.UploadPublicTestCase(context.Background(), client, fpath, path.Join(ext, path.Base(fpath))); err != nil {
-					return err
-				}
-				// v4
+				// v4 only
 				if err := p.Problem.UploadPublicTestCaseV4(context.Background(), client, fpath, path.Join(ext, path.Base(fpath))); err != nil {
 					return err
 				}

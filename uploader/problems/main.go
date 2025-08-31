@@ -99,7 +99,7 @@ func main() {
 		dbP.OverallVersion = ov
 		dbP.TestCasesVersion = h
 
-		// upload test cases
+		// upload test cases (v4 only)
 		if testcaseUpdated || *forceUpload {
 			if err := generate(*problemsDir, t); err != nil {
 				slog.Error("Failed to generate", "err", err)
@@ -113,15 +113,9 @@ func main() {
 			slog.Info("Skip to upload test cases")
 		}
 
-		// upload public files
-		if versionUpdated || *forceUpload {
-			if err := target.UploadPublicFilesV3(storageClient); err != nil {
-				slog.Error("Failed to upload public files", "err", err)
-				os.Exit(1)
-			}
-		}
-
-		if overallVersionUpdated || *forceUpload {
+		// upload public files (v4 only)
+		// Trigger v4 upload when either Version or OverallVersion changed, or forced
+		if versionUpdated || overallVersionUpdated || *forceUpload {
 			if err := target.UploadPublicFilesV4(storageClient); err != nil {
 				slog.Error("Failed to upload public files (v4)", "err", err)
 				os.Exit(1)
