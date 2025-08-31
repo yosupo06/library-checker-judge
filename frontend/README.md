@@ -29,7 +29,7 @@ npm run dev -- --mode production
 1. pre-commit をインストール: `pip install pre-commit`
 2. Git フックを有効化: `pre-commit install`
 
-以後、`src/**/*.ts(x)|js(x)` に変更があるコミットでは以下を実行し、失敗時はコミットが中断されます。
+以後、コミット時に常に以下を実行し、失敗時はコミットを中断します。
 - `npm run prettier:check`
 - `npm run lint`
 
