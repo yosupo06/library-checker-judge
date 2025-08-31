@@ -99,31 +99,31 @@ func main() {
 		dbP.OverallVersion = ov
 		dbP.TestCasesVersion = h
 
-        // upload test cases (v4 only)
-        if testcaseUpdated || *forceUpload {
-            if err := generate(*problemsDir, t); err != nil {
-                slog.Error("Failed to generate", "err", err)
-                os.Exit(1)
-            }
-            if err := target.UploadTestcases(storageClient); err != nil {
-                slog.Error("Failed to upload test cases", "err", err)
-                os.Exit(1)
-            }
-        } else {
-            slog.Info("Skip to upload test cases")
-        }
+		// upload test cases (v4 only)
+		if testcaseUpdated || *forceUpload {
+			if err := generate(*problemsDir, t); err != nil {
+				slog.Error("Failed to generate", "err", err)
+				os.Exit(1)
+			}
+			if err := target.UploadTestcases(storageClient); err != nil {
+				slog.Error("Failed to upload test cases", "err", err)
+				os.Exit(1)
+			}
+		} else {
+			slog.Info("Skip to upload test cases")
+		}
 
-        // upload public files (v4 only)
-        // Trigger v4 upload when either Version or OverallVersion changed, or forced
-        if versionUpdated || overallVersionUpdated || *forceUpload {
-            if err := target.UploadPublicFilesV4(storageClient); err != nil {
-                slog.Error("Failed to upload public files (v4)", "err", err)
-                os.Exit(1)
-            }
-        }
-        if !versionUpdated && !overallVersionUpdated && !*forceUpload {
-            slog.Info("Skip to upload public files")
-        }
+		// upload public files (v4 only)
+		// Trigger v4 upload when either Version or OverallVersion changed, or forced
+		if versionUpdated || overallVersionUpdated || *forceUpload {
+			if err := target.UploadPublicFilesV4(storageClient); err != nil {
+				slog.Error("Failed to upload public files (v4)", "err", err)
+				os.Exit(1)
+			}
+		}
+		if !versionUpdated && !overallVersionUpdated && !*forceUpload {
+			slog.Info("Skip to upload public files")
+		}
 
 		if err := clean(*problemsDir, t); err != nil {
 			slog.Error("Failed to clean", "err", err)
