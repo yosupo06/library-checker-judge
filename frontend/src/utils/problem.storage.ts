@@ -134,7 +134,8 @@ export const useProblemAssets = (
   });
 
   const exampleNames: string[] = (() => {
-    const n = parsedInfoQ.data?.tests.find((v) => v.name === "example.in")?.number ?? 0;
+    const n =
+      parsedInfoQ.data?.tests.find((v) => v.name === "example.in")?.number ?? 0;
     return Array.from(Array(n), (_, k) => `example_0${k}`);
   })();
 
@@ -165,8 +166,10 @@ export const useProblemAssets = (
 
   const examples: { [name: string]: string } = {};
   exampleNames.forEach((name, i) => {
-    if (inQueries[i]?.isSuccess) examples[`${name}.in`] = inQueries[i].data as string;
-    if (outQueries[i]?.isSuccess) examples[`${name}.out`] = outQueries[i].data as string;
+    if (inQueries[i]?.isSuccess)
+      examples[`${name}.in`] = inQueries[i].data as string;
+    if (outQueries[i]?.isSuccess)
+      examples[`${name}.out`] = outQueries[i].data as string;
   });
 
   return {

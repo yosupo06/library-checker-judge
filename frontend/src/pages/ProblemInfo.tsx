@@ -93,9 +93,7 @@ const ProblemInfoBody: React.FC<{
   if (assets.error) {
     return (
       <Box>
-        <Alert severity="error">
-          {String(assets.error)}
-        </Alert>
+        <Alert severity="error">{String(assets.error)}</Alert>
       </Box>
     );
   }
@@ -113,7 +111,11 @@ const ProblemInfoBody: React.FC<{
       />
       <Divider />
 
-      <StatementBody info={assets.info} statement={assets.statement ?? ""} examples={assets.examples} />
+      <StatementBody
+        info={assets.info}
+        statement={assets.statement ?? ""}
+        examples={assets.examples}
+      />
 
       <Divider
         sx={{
