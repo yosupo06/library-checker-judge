@@ -1,0 +1,23 @@
+FROM golang:1.21 AS builder
+
+WORKDIR /go/src/github.com/yosupo06/library-checker-judge
+
+# Set up Go modules for all local packages used by judge
+COPY ./judge/go.mod ./judge/go.sum ./executor/go.mod ./executor/go.sum ./database/go.mod ./database/go.sum ./storage/go.mod ./storage/go.sum ./langs/go.mod ./langs/go.sum ./
+RUN go mod download
+
+# Copy sources
+COPY ./judge ./judge
+COPY ./executor ./executor
+COPY ./database ./database
+COPY ./storage ./storage
+COPY ./langs ./langs
+
+WORKDIR /go/src/github.com/yosupo06/library-checker-judge/judge
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/judge .
+
+# Use docker CLI image so the judge can call `docker` against the host daemon
+FROM docker:27-cli
+COPY --from=builder /out/judge /usr/local/bin/judge
+ENTRYPOINT ["judge"]
+

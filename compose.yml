@@ -84,3 +84,50 @@ services:
     working_dir: /opt/firebase
     command: firebase emulators:start --project dev-library-checker-project
     tty: true
+
+  # Build language images used by judge (runs each `up` after a `down`).
+  # This service exits successfully after building, and `judge` depends on it.
+  build-langs:
+    image: docker:27-cli
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/src
+    working_dir: /src/langs
+    entrypoint: ["/bin/sh","-lc","sh ./build.sh"]
+    # No restart; this should complete then stop
+    restart: "no"
+
+  # Judge worker: polls DB tasks and runs Docker containers for submissions
+  judge:
+    build:
+      dockerfile: Dockerfile.JUDGE
+    environment:
+      - PGHOST=db
+      - PGPORT=5432
+      - PGDATABASE=librarychecker
+      - PGUSER=postgres
+      - PGPASSWORD=lcdummypassword
+      - MINIO_HOST=minio:9000
+      - MINIO_ID=minio
+      - MINIO_SECRET=miniopass
+      - MINIO_BUCKET=testcase
+      - MINIO_PUBLIC_BUCKET=testcase-public
+      - LIBRARY_CHECKER_JUDGE=1
+      # Uncomment and set if you need a specific cgroup parent
+      # - CGROUP_PARENT=system.slice
+    # Needs access to host Docker daemon and cgroup FS for resource metrics
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      # Ensure host and container share the same temp directory so bind mounts work
+      - /tmp:/tmp
+    depends_on:
+      db:
+        condition: service_healthy
+      create-minio-bucket:
+        condition: service_completed_successfully
+      api:
+        condition: service_healthy
+      build-langs:
+        condition: service_completed_successfully
+    restart: unless-stopped
