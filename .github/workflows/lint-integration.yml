@@ -1,0 +1,34 @@
+name: Lint Integration
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'integration/**'
+      - '.github/workflows/lint-integration.yml'
+  pull_request:
+    paths:
+      - 'integration/**'
+      - '.github/workflows/lint-integration.yml'
+
+jobs:
+  lint-integration:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: golangci-lint (integration)
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./integration
+        args: --config ../.golangci.yml
+

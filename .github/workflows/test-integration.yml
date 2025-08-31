@@ -1,0 +1,94 @@
+name: Test Integration
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'integration/**'
+      - 'compose.yml'
+      - 'uploader/**'
+      - 'judge/**'
+      - 'api/**'
+      - 'executor/**'
+      - 'langs/**'
+      - 'storage/**'
+      - 'database/**'
+      - 'packer/**'
+      - 'Dockerfile.*'
+      - 'run_protoc.sh'
+      - '.github/workflows/test-integration.yml'
+  pull_request:
+    paths:
+      - 'integration/**'
+      - 'compose.yml'
+      - 'uploader/**'
+      - 'judge/**'
+      - 'api/**'
+      - 'executor/**'
+      - 'langs/**'
+      - 'storage/**'
+      - 'database/**'
+      - 'packer/**'
+      - 'Dockerfile.*'
+      - 'run_protoc.sh'
+      - '.github/workflows/test-integration.yml'
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+    - name: Generate protobufs
+      run: ./run_protoc.sh
+
+      # Use the same docker runtime tuning as judge workflow
+      # Install crun and configure Docker daemon for cgroupfs
+      - name: Install crun
+        run: sudo ./packer/base/crun-install.sh
+
+      - name: Prepare docker config
+        run: sudo cp ./packer/base/docker-daemon.json /etc/docker/daemon.json
+
+      - name: Restart docker
+        run: sudo service docker restart
+
+      - name: Pre-build language images
+        run: ./langs/build.sh
+
+      - name: Clone library-checker-problems
+        run: |
+          git clone --depth 1 https://github.com/yosupo06/library-checker-problems ../library-checker-problems
+
+      - name: Start Docker Compose
+        run: |
+          docker compose down -v || true
+          docker compose up -d --build --wait
+
+      - name: Seed sample problems (aplusb, unionfind)
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGDATABASE: librarychecker
+          PGUSER: postgres
+          PGPASSWORD: lcdummypassword
+        run: |
+          PROBLEMS_PATH="$(realpath ../library-checker-problems)"
+          (cd uploader && go run ./problems -dir "$PROBLEMS_PATH" "$PROBLEMS_PATH/sample/aplusb/info.toml")
+          (cd uploader && go run ./categories -dir "$PROBLEMS_PATH")
+
+      - name: Run integration tests
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGDATABASE: librarychecker
+          PGUSER: postgres
+          PGPASSWORD: lcdummypassword
+        run: |
+          go test ./integration -v -timeout 20m
