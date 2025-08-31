@@ -59,8 +59,8 @@ jobs:
       - name: Restart docker
         run: sudo service docker restart
 
-      - name: Pre-build language images
-        run: ./langs/build.sh
+      - name: Pre-build minimal language images (gcc + python3)
+        run: python3 ./langs/build.py gcc python3
 
       - name: Clone library-checker-problems
         run: |
