@@ -31,7 +31,7 @@ import { RpcError } from "@protobuf-ts/runtime-rpc";
 import NotFound from "./NotFound";
 import { Link as RouterLink } from "react-router-dom";
 import { ProblemInfoToml } from "../utils/problem.info";
-import { ProblemVersion, toProblemVersion, useProblemAssets } from "../utils/problem.storage";
+import { useProblemAssets } from "../utils/problem.storage";
 import MainContainer from "../components/MainContainer";
 import { LinkButton, ExternalLinkButton } from "../components/LinkButton";
 
@@ -79,12 +79,6 @@ const ProblemInfoBody: React.FC<{
   problemInfo: ProblemInfoResponse;
 }> = (props) => {
   const { problemId, problemInfo } = props;
-
-  const problemVersion = toProblemVersion(problemId, {
-    version: problemInfo.version,
-    overallVersion: problemInfo.overallVersion,
-    testcasesVersion: problemInfo.testcasesVersion,
-  });
 
   const assets = useProblemAssets(baseURL, problemId, problemInfo);
 
@@ -201,33 +195,22 @@ const UsefulLinks: React.FC<{
   );
 };
 
-const SolveHpp: React.FC<{
-  baseUrl: URL;
-  problemVersion: ProblemVersion;
-}> = (props) => {
-  const { baseUrl, problemVersion } = props;
-
-  const solveHppQuery = useSolveHpp(baseUrl, problemVersion);
-
+const SolveHpp: React.FC<{ solveHpp: string | null }> = (props) => {
+  const { solveHpp } = props;
   return (
     <Box>
       <Typography variant="h4" paragraph={true}>
         C++(Function) header
       </Typography>
-
-      {solveHppQuery.isSuccess && solveHppQuery.data && (
+      {solveHpp && (
         <>
           <Typography variant="h6" paragraph={true}>
             solve.hpp
           </Typography>
-          <SourceEditor
-            value={solveHppQuery.data}
-            language="cpp"
-            readOnly={true}
-          />
+          <SourceEditor value={solveHpp} language="cpp" readOnly={true} />
         </>
       )}
-      {solveHppQuery.isSuccess && !solveHppQuery.data && (
+      {solveHpp === null && (
         <Typography variant="body1" paragraph={true}>
           Unsupported
         </Typography>
