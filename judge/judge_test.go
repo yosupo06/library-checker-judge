@@ -149,7 +149,6 @@ func TestPython3AplusBAC(t *testing.T) {
 	testAplusBAC(t, "python3", "ac_numpy.py")
 }
 
-
 func TestCppAplusBWA(t *testing.T) {
 	testAplusB(t, "cpp", "wa.cpp", SAMPLE_IN_PATH, SAMPLE_OUT_PATH, "WA")
 }

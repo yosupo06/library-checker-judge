@@ -1,3 +1,6 @@
+//go:build langs_all
+// +build langs_all
+
 package executor
 
 import (
