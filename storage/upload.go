@@ -337,23 +337,23 @@ func (p UploadTarget) UploadPublicFilesV4(client Client) error {
 	relProblemDir = filepath.ToSlash(relProblemDir)
 	prefix := relProblemDir + "/"
 
-    for _, rel := range problemFiles {
-        local := path.Join(p.Root, rel)
-        sub := strings.TrimPrefix(filepath.ToSlash(rel), prefix)
-        remote := p.Problem.v4FilesProblemKey(sub)
-        if err := p.Problem.UploadPublicFileTo(context.Background(), client, local, remote); err != nil {
-            return err
-        }
-    }
-    // Also upload params.h (generated, not always tracked by git)
-    paramsLocal := path.Join(p.Base, "params.h")
-    if _, err := os.Stat(paramsLocal); err == nil {
-        paramsRemote := p.Problem.v4FilesProblemKey("params.h")
-        if err := p.Problem.UploadPublicFileTo(context.Background(), client, paramsLocal, paramsRemote); err != nil {
-            return err
-        }
-    }
-    return nil
+	for _, rel := range problemFiles {
+		local := path.Join(p.Root, rel)
+		sub := strings.TrimPrefix(filepath.ToSlash(rel), prefix)
+		remote := p.Problem.v4FilesProblemKey(sub)
+		if err := p.Problem.UploadPublicFileTo(context.Background(), client, local, remote); err != nil {
+			return err
+		}
+	}
+	// Also upload params.h (generated, not always tracked by git)
+	paramsLocal := path.Join(p.Base, "params.h")
+	if _, err := os.Stat(paramsLocal); err == nil {
+		paramsRemote := p.Problem.v4FilesProblemKey("params.h")
+		if err := p.Problem.UploadPublicFileTo(context.Background(), client, paramsLocal, paramsRemote); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func gitTrackedFiles(base, root string) ([]string, []string, error) {
