@@ -14,7 +14,10 @@ export type ProblemInfoToml = {
 
 export const parseProblemInfoToml = (toml: string): ProblemInfoToml => {
   // Use BigInt for all integers to preserve precision
-  const infoJsonMap = parse(toml, { integersAsBigInt: true }) as Record<string, unknown>;
+  const infoJsonMap = parse(toml, { integersAsBigInt: true }) as Record<
+    string,
+    unknown
+  >;
 
   const tests = (() => {
     const data = readField(infoJsonMap, "tests");
