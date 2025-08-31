@@ -94,6 +94,16 @@ func fileInfos(base, root string) []FileInfo {
 }
 
 func NewUploadTarget(base, root string) (UploadTarget, error) {
+	// Normalize to absolute paths to avoid Rel errors when root is relative and base is absolute.
+	base, err := filepath.Abs(base)
+	if err != nil {
+		return UploadTarget{}, err
+	}
+	root, err = filepath.Abs(root)
+	if err != nil {
+		return UploadTarget{}, err
+	}
+
 	h, err := testCaseHash(base)
 	if err != nil {
 		return UploadTarget{}, err
@@ -110,7 +120,7 @@ func NewUploadTarget(base, root string) (UploadTarget, error) {
 		Root: root,
 		Base: base,
 		Problem: Problem{
-			Name:            path.Base(base),
+			Name:            filepath.Base(base),
 			TestCaseVersion: h,
 			Version:         v,
 			OverallVersion:  ov,
