@@ -84,6 +84,7 @@ jobs:
           (cd uploader && go run ./categories -dir "$PROBLEMS_PATH")
 
       - name: Run integration tests
+        working-directory: ./integration
         env:
           PGHOST: localhost
           PGPORT: "5432"
@@ -91,4 +92,4 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: lcdummypassword
         run: |
-          go test ./integration -v -timeout 20m
+          go test -v -timeout 20m ./...
