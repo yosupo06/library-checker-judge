@@ -53,7 +53,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 1s
       timeout: 1s
-      retries: 10      
+      retries: 10
   create-minio-bucket:
     image: minio/mc:RELEASE.2025-05-21T01-59-54Z
     depends_on:
@@ -93,7 +93,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/src
     working_dir: /src/langs
-    entrypoint: ["/bin/sh","-lc","sh ./build.sh"]
+    # Install python3 in the lightweight docker:cli image, then run build.py
+    entrypoint: ["/bin/sh","-lc","apk add --no-cache python3 >/dev/null 2>&1 || true; python3 ./build.py"]
     # No restart; this should complete then stop
     restart: "no"
 

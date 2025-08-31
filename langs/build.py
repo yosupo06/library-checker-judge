@@ -24,32 +24,19 @@ IMAGES = {
     "swift": ("SWIFT", "library-checker-images-swift"),
 }
 
-# Aliases for convenience
-ALIASES = {
-    "d": "ldc",
-    "go": "golang",
-    "pypy3": "pypy",
-    # cpp-related languages use gcc image but are not images themselves
-    # expose a helper so users can say `cpp` and we still build gcc
-    "cpp": "gcc",
-}
 
 
 def normalize_keys(keys):
+    # exact keys only; no aliases
     result = []
-    for k in keys:
-        norm = ALIASES.get(k, k)
-        if norm not in IMAGES:
-            raise SystemExit(f"Unknown image key: {k}")
-        result.append(norm)
-    # de-duplicate while preserving order
     seen = set()
-    deduped = []
-    for k in result:
+    for k in keys:
+        if k not in IMAGES:
+            raise SystemExit(f"Unknown image key: {k}")
         if k not in seen:
-            deduped.append(k)
+            result.append(k)
             seen.add(k)
-    return deduped
+    return result
 
 
 def build_one(key):
@@ -72,7 +59,7 @@ def main(argv):
         nargs="*",
         help=(
             "Image keys to build (default: all). "
-            "Examples: gcc python3 | all. Aliases: d->ldc, go->golang, pypy3->pypy, cpp->gcc"
+            "Examples: gcc python3 | all."
         ),
     )
     parser.add_argument(
@@ -86,9 +73,6 @@ def main(argv):
         print("Available images:")
         for k in IMAGES:
             print(" -", k)
-        print("Aliases:")
-        for a, t in ALIASES.items():
-            print(f" - {a} -> {t}")
         return 0
 
     if not args.images or (len(args.images) == 1 and args.images[0] == "all"):
