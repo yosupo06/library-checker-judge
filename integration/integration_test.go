@@ -2,7 +2,6 @@ package integration
 
 import (
     "context"
-    "os"
     "testing"
     "time"
 
@@ -11,7 +10,7 @@ import (
 )
 
 // waitForProblem waits until a problem exists in DB (uploaded by uploader CLI)
-func waitForProblem(t *testing.T, db *gorm.DB, name string, timeout time.Duration) error {
+func waitForProblem(db *gorm.DB, name string, timeout time.Duration) error {
     deadline := time.Now().Add(timeout)
     for time.Now().Before(deadline) {
         if _, err := database.FetchProblem(db, name); err == nil {
@@ -24,17 +23,17 @@ func waitForProblem(t *testing.T, db *gorm.DB, name string, timeout time.Duratio
 
 func TestAplusB_AC(t *testing.T) {
     // Ensure default connection to local compose
-    _ = os.Setenv("PGHOST", "localhost")
-    _ = os.Setenv("PGPORT", "5432")
-    _ = os.Setenv("PGDATABASE", "librarychecker")
-    _ = os.Setenv("PGUSER", "postgres")
-    _ = os.Setenv("PGPASSWORD", "lcdummypassword")
+    t.Setenv("PGHOST", "localhost")
+    t.Setenv("PGPORT", "5432")
+    t.Setenv("PGDATABASE", "librarychecker")
+    t.Setenv("PGUSER", "postgres")
+    t.Setenv("PGPASSWORD", "lcdummypassword")
 
     dsn := database.GetDSNFromEnv()
     db := database.Connect(dsn, false)
 
     // Make sure problem is already uploaded by uploader step
-    if err := waitForProblem(t, db, "aplusb", 2*time.Minute); err != nil {
+    if err := waitForProblem(db, "aplusb", 2*time.Minute); err != nil {
         t.Fatalf("aplusb problem not found in DB (did uploader run?): %v", err)
     }
 
