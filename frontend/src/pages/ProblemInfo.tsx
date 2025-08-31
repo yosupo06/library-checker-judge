@@ -88,6 +88,7 @@ const ProblemInfoBody: React.FC<{
   const problemVersion = {
     name: problemId,
     version: problemInfo.version,
+    overallVersion: problemInfo.overallVersion,
     testCasesVersion: problemInfo.testcasesVersion,
   };
 
