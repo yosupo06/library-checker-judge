@@ -104,6 +104,12 @@ func (p Problem) v4FilesProblemKey(rel string) string {
 	return fmt.Sprintf("v4/files/%s/%s/%s/%s", p.Name, p.OverallVersion, p.Name, rel)
 }
 
+// v4PublicFilesKeyPrefix returns the v4 prefix that contains both common/ and problem dir.
+// v4/files/{problem}/{overall_version}
+func (p Problem) v4PublicFilesKeyPrefix() string {
+	return fmt.Sprintf("v4/files/%s/%s", p.Name, p.OverallVersion)
+}
+
 // Note: publicCommonV4Key removed as unused (use v4FilesCommonKey instead).
 
 type Info struct {

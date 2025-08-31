@@ -37,6 +37,7 @@ func toProtoProblemInfo(p database.Problem) *pb.ProblemInfoResponse {
 		TimeLimit:        float64(p.Timelimit) / 1000.0,
 		SourceUrl:        p.SourceUrl,
 		Version:          p.Version,
+		OverallVersion:   p.OverallVersion,
 		TestcasesVersion: p.TestCasesVersion,
 	}
 }

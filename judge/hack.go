@@ -34,6 +34,7 @@ func execHackTask(db *gorm.DB, downloader storage.TestCaseDownloader, taskID int
 	p := storage.Problem{
 		Name:            s.Problem.Name,
 		Version:         s.Problem.Version,
+		OverallVersion:  s.Problem.OverallVersion,
 		TestCaseVersion: s.Problem.TestCasesVersion,
 	}
 	files, err := downloader.Fetch(p)
