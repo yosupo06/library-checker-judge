@@ -44,9 +44,9 @@ jobs:
 
     - name: Restart docker
       run: sudo service docker restart
-          
-    - name: Build lang images
-      run: ./build.sh
+
+    - name: Build minimal lang images (gcc + python3)
+      run: python3 ./build.py gcc python3
       working-directory: ./langs
 
     - name: Judge module test

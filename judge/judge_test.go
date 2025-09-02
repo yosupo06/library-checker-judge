@@ -144,50 +144,9 @@ func TestCppAplusBAC(t *testing.T) {
 func TestCppAclAplusBAC(t *testing.T) {
 	testAplusBAC(t, "cpp", "ac_acl.cpp")
 }
-func TestRustAplusBAC(t *testing.T) {
-	testAplusBAC(t, "rust", "ac.rs")
-}
-
-func TestHaskellAplusBAC(t *testing.T) {
-	testAplusBAC(t, "haskell", "ac.hs")
-}
-
-func TestHaskellCabalAplusBAC(t *testing.T) {
-	testAplusBAC(t, "haskell", "ac_cabal.hs")
-}
-
-func TestCSharpAplusBAC(t *testing.T) {
-	testAplusBAC(t, "csharp", "ac.cs")
-}
-
-func TestLispAplusBAC(t *testing.T) {
-	testAplusBAC(t, "lisp", "ac.lisp")
-}
 
 func TestPython3AplusBAC(t *testing.T) {
 	testAplusBAC(t, "python3", "ac_numpy.py")
-}
-
-func TestPyPy3AplusBAC(t *testing.T) {
-	testAplusBAC(t, "pypy3", "ac.py")
-}
-func TestDAplusBAC(t *testing.T) {
-	testAplusBAC(t, "d", "ac.d")
-}
-func TestJavaAplusBAC(t *testing.T) {
-	testAplusBAC(t, "java", "ac.java")
-}
-func TestGoAplusBAC(t *testing.T) {
-	testAplusBAC(t, "go", "go/ac.go")
-}
-func TestCrystalAplusBAC(t *testing.T) {
-	testAplusBAC(t, "crystal", "ac.cr")
-}
-func TestRubyAplusBAC(t *testing.T) {
-	testAplusBAC(t, "ruby", "ac.rb")
-}
-func TestSwiftAplusBAC(t *testing.T) {
-	testAplusBAC(t, "swift", "ac.swift")
 }
 
 func TestCppAplusBWA(t *testing.T) {

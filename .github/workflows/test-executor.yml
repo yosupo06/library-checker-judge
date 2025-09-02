@@ -38,11 +38,11 @@ jobs:
 
     - name: Restart docker
       run: sudo service docker restart
-          
-    - name: Build lang images
-      run: ./build.sh
+
+    - name: Build lang images (all)
+      run: python3 ./build.py
       working-directory: ./langs
 
-    - name: Executor module test
-      run: go test -v .
+    - name: Executor module test (with langs tests)
+      run: go test -v -tags=langs_all .
       working-directory: ./executor
