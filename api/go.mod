@@ -1,6 +1,6 @@
 module github.com/yosupo06/library-checker-judge/api
 
-go 1.21
+go 1.24
 
 require (
 	firebase.google.com/go/v4 v4.14.1

@@ -1,6 +1,6 @@
 module github.com/yosupo06/library-checker-judge/migrator
 
-go 1.21
+go 1.24
 
 require github.com/yosupo06/library-checker-judge/database v0.0.0-20240720194232-699a76c34e8c
 

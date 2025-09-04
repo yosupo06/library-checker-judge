@@ -6,7 +6,7 @@ Judge server / API server のソースコードです
 
 - Docker
 - Ubuntu 22.04 (Judge Server)
-- Go 1.21+
+- Go 1.24+
 
 ## API Server
 
