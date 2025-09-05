@@ -1,6 +1,6 @@
 module github.com/yosupo06/library-checker-judge/judge
 
-go 1.21
+go 1.24
 
 require (
 	github.com/yosupo06/library-checker-judge/database v0.0.0-20240721222554-ee0d9b0cddd7

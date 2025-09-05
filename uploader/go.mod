@@ -1,6 +1,6 @@
 module github.com/yosupo06/library-checker-judge/uploader
 
-go 1.21
+go 1.24
 
 require (
 	github.com/BurntSushi/toml v1.4.0

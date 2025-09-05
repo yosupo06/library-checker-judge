@@ -23,7 +23,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24'
 
     - name: golangci-lint (integration)
       uses: golangci/golangci-lint-action@v8
@@ -31,4 +31,3 @@ jobs:
         version: latest
         working-directory: ./integration
         args: --config ../.golangci.yml
-

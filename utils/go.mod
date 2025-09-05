@@ -1,6 +1,6 @@
 module github.com/yosupo06/library-checker-judge/utils
 
-go 1.21
+go 1.24
 
 require github.com/alecthomas/kingpin/v2 v2.4.0
 
