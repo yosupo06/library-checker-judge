@@ -105,19 +105,6 @@ services:
     command: firebase emulators:start --project dev-library-checker-project
     tty: true
 
-  # Build language images used by judge (runs each `up` after a `down`).
-  # This service exits successfully after building, and `judge` depends on it.
-  build-langs:
-    image: docker:27-cli
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./:/src
-    working_dir: /src/langs
-    # Install python3 in the lightweight docker:cli image, then run build.py
-    entrypoint: ["/bin/sh","-lc","apk add --no-cache python3 >/dev/null 2>&1 || true; python3 ./build.py"]
-    # No restart; this should complete then stop
-    restart: "no"
-
   # Judge worker: polls DB tasks and runs Docker containers for submissions
   judge:
     build:
@@ -151,6 +138,4 @@ services:
         condition: service_healthy
       api-rest:
         condition: service_healthy
-      build-langs:
-        condition: service_completed_successfully
     restart: unless-stopped
