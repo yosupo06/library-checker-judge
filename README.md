@@ -18,6 +18,21 @@ Judge server / API server のソースコードです
 
 APIサーバー(localhost:50051)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
 
+言語イメージ（judge が使用）は起動前にビルドが必要です。`./launch_local.sh` は既定で最小セット（gcc + python3）をビルドしてから起動します。全言語や任意サブセットをビルドしたい場合は `LC_LANGS` を指定してください。
+
+例:
+
+```sh
+# 最小（既定）
+./launch_local.sh
+
+# 全言語（重量級を含む）
+LC_LANGS=all ./launch_local.sh
+
+# 任意サブセット
+LC_LANGS="gcc python3 rust" ./launch_local.sh
+```
+
 ### 動作確認
 
 gRPC-web のAPIサーバーが起動します。

@@ -1,15 +1,15 @@
 package main
 
 import (
-    "encoding/json"
-    "log/slog"
-    "net/http"
-    "os"
+	"encoding/json"
+	"log/slog"
+	"net/http"
+	"os"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/yosupo06/library-checker-judge/database"
-    restapi "github.com/yosupo06/library-checker-judge/restapi/internal/api"
-    "gorm.io/gorm"
+	"github.com/go-chi/chi/v5"
+	"github.com/yosupo06/library-checker-judge/database"
+	restapi "github.com/yosupo06/library-checker-judge/restapi/internal/api"
+	"gorm.io/gorm"
 )
 
 func getEnv(key, def string) string {
@@ -44,15 +44,58 @@ func (s *server) GetRanking(w http.ResponseWriter, r *http.Request, params resta
 	for _, rs := range results {
 		stats = append(stats, restapi.UserStatistics{Name: rs.UserName, Count: int32(rs.AcCount)})
 	}
-    resp := restapi.RankingResponse{Statistics: stats, Count: int32(total)}
-    w.Header().Set("Content-Type", "application/json")
-    _ = json.NewEncoder(w).Encode(resp)
+	resp := restapi.RankingResponse{Statistics: stats, Count: int32(total)}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// GetProblems handles GET /problems
+func (s *server) GetProblems(w http.ResponseWriter, r *http.Request) {
+	rows, err := database.FetchProblemList(s.db)
+	if err != nil {
+		http.Error(w, "failed to fetch problems", http.StatusInternalServerError)
+		return
+	}
+	problems := make([]restapi.Problem, 0, len(rows))
+	for _, p := range rows {
+		problems = append(problems, restapi.Problem{Name: p.Name, Title: p.Title})
+	}
+	resp := restapi.ProblemListResponse{Problems: problems}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// GetProblemInfo handles GET /problems/{name}
+func (s *server) GetProblemInfo(w http.ResponseWriter, r *http.Request, name string) {
+	if name == "" {
+		http.Error(w, "missing problem name", http.StatusBadRequest)
+		return
+	}
+	p, err := database.FetchProblem(s.db, name)
+	if err != nil {
+		if err == database.ErrNotExist {
+			http.Error(w, "problem not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "failed to fetch problem", http.StatusInternalServerError)
+		return
+	}
+	resp := restapi.ProblemInfoResponse{
+		Title:            p.Title,
+		SourceUrl:        p.SourceUrl,
+		TimeLimit:        float32(p.Timelimit) / 1000.0,
+		Version:          p.Version,
+		TestcasesVersion: p.TestCasesVersion,
+		OverallVersion:   p.OverallVersion,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func main() {
-    db := database.Connect(database.GetDSNFromEnv(), getEnv("API_DB_LOG", "") != "")
+	db := database.Connect(database.GetDSNFromEnv(), getEnv("API_DB_LOG", "") != "")
 
-    r := chi.NewRouter()
+	r := chi.NewRouter()
 	// CORS (dev)
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -67,10 +110,10 @@ func main() {
 		})
 	})
 
-    // Register OpenAPI handlers on chi router
-    _ = restapi.HandlerFromMux(&server{db: db}, r)
-    r.Get("/openapi.yaml", func(w http.ResponseWriter, req *http.Request) { http.ServeFile(w, req, "openapi/openapi.yaml") })
-    r.Get("/health", func(w http.ResponseWriter, req *http.Request) { _, _ = w.Write([]byte("SERVING")) })
+	// Register OpenAPI handlers on chi router
+	_ = restapi.HandlerFromMux(&server{db: db}, r)
+	r.Get("/openapi.yaml", func(w http.ResponseWriter, req *http.Request) { http.ServeFile(w, req, "openapi/openapi.yaml") })
+	r.Get("/health", func(w http.ResponseWriter, req *http.Request) { _, _ = w.Write([]byte("SERVING")) })
 
 	port := getEnv("PORT", "12381")
 	slog.Info("Launch REST server", "port", port)

@@ -29,6 +29,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RankingResponse'
+  /problems:
+    get:
+      summary: Get problems
+      operationId: getProblems
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemListResponse'
+  /problems/{name}:
+    get:
+      summary: Get problem info
+      operationId: getProblemInfo
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemInfoResponse'
 components:
   schemas:
     UserStatistics:
@@ -51,3 +79,36 @@ components:
           type: integer
           format: int32
       required: [statistics, count]
+    Problem:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+      required: [name, title]
+    ProblemListResponse:
+      type: object
+      properties:
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/Problem'
+      required: [problems]
+    ProblemInfoResponse:
+      type: object
+      properties:
+        title:
+          type: string
+        source_url:
+          type: string
+        time_limit:
+          type: number
+          format: float
+        version:
+          type: string
+        testcases_version:
+          type: string
+        overall_version:
+          type: string
+      required: [title, source_url, time_limit, version, testcases_version, overall_version]

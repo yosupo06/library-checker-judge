@@ -7,6 +7,8 @@
   - `GET /health` — ヘルスチェック（"SERVING" を返す）
   - `GET /openapi.yaml` — OpenAPI 定義
   - `GET /ranking?skip&limit` — ランキング取得（JSON）
+  - `GET /problems` — 問題一覧（name, title）
+  - `GET /problems/{name}` — 問題詳細（title, source_url, time_limit, version, testcases_version, overall_version）
 
 ## 1) Docker Compose で動かす（おすすめ）
 
@@ -25,6 +27,10 @@ curl http://localhost:12381/health
 
 # ランキング
 curl "http://localhost:12381/ranking?skip=0&limit=100"
+
+# 問題一覧 / 詳細
+curl http://localhost:12381/problems
+curl http://localhost:12381/problems/aplusb
 ```
 
 個別に REST だけ起動したい場合（依存は自動解決）:
