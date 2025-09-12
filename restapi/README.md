@@ -1,12 +1,12 @@
 # REST API (OpenAPI) — ranking only
 
-このディレクトリは、Library Checker の最小 REST API サーバーです。現状は Ranking API のみを実装しています（/api/ranking）。gRPC 本体とは別プロセスで動きます。
+このディレクトリは、Library Checker の最小 REST API サーバーです。現状は Ranking API のみを実装しています（/ranking）。gRPC 本体とは別プロセスで動きます。
 
 - デフォルトポート: `12381`（環境変数 `PORT` で変更可）
 - エンドポイント:
   - `GET /health` — ヘルスチェック（"SERVING" を返す）
   - `GET /openapi.yaml` — OpenAPI 定義
-  - `GET /api/ranking?skip&limit` — ランキング取得（JSON）
+  - `GET /ranking?skip&limit` — ランキング取得（JSON）
 
 ## 1) Docker Compose で動かす（おすすめ）
 
@@ -24,7 +24,7 @@ curl http://localhost:12381/health
 # => SERVING
 
 # ランキング
-curl "http://localhost:12381/api/ranking?skip=0&limit=100"
+curl "http://localhost:12381/ranking?skip=0&limit=100"
 ```
 
 個別に REST だけ起動したい場合（依存は自動解決）:
@@ -42,19 +42,20 @@ OpenAPI のコード生成が必要です。生成後は普通に `go run` で�
 - PostgreSQL が動いていること（DB 初期化が未実施なら後述のマイグレーションを実行）
 
 ### OpenAPI コード生成（補完を効かせたい人向け）
-エディタで補完を効かせるには、生成コード（`internal/api/api.gen.go`）が手元に存在する必要があります。Go 1.24+ の `go tool` を使って生成します。
+エディタで補完を効かせるには、生成コード（`internal/api/api.gen.go`）が手元に存在する必要があります。以下のいずれかを実行してください。
 
-手順:
+- シンプル: `make gen`
+
 ```bash
 cd library-checker-judge/restapi
+make gen   # = go generate ./... && go mod tidy
+```
 
-# 初回のみ: oapi-codegen を tool 依存として追加（バージョンは任意で固定）
-go get -tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.1
+- 直接 `go generate` を使う:
 
-# 生成（go:generate の中で `go tool oapi-codegen ...` を呼びます）
+```bash
+cd library-checker-judge/restapi
 go generate ./...
-
-# 依存解決（go.sum などを更新）
 go mod tidy
 ```
 
@@ -89,7 +90,7 @@ PGHOST=localhost PGPORT=5432 PGDATABASE=librarychecker PGUSER=postgres PGPASSWOR
 
 # 動作確認
 curl http://localhost:12381/health
-curl "http://localhost:12381/api/ranking?skip=0&limit=100"
+curl "http://localhost:12381/ranking?skip=0&limit=100"
 ```
 
 ## フロントエンドから叩く
