@@ -27,17 +27,6 @@ source "googlecompute" "judge" {
   temporary_key_pair_type = "ed25519"
   image_name = "${var.image_name}"
   preemptible = true
-  metadata = {
-    "user-data" = <<-EOT
-      #cloud-config
-      users:
-        - name: ubuntu
-          sudo: ALL=(ALL) NOPASSWD:ALL
-          groups: sudo
-          shell: /bin/bash
-      ssh_pwauth: false
-    EOT
-  }
 }
 
 build {
