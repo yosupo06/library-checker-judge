@@ -51,11 +51,8 @@ func (s *server) GetRanking(w http.ResponseWriter, r *http.Request, params resta
 
 // GetProblems handles GET /problems
 func (s *server) GetProblems(w http.ResponseWriter, r *http.Request) {
-    var rows []database.Problem
-    if err := s.db.Model(&database.Problem{}).
-        Select("name, title").
-        Order("name asc").
-        Find(&rows).Error; err != nil {
+    rows, err := database.FetchProblemList(s.db)
+    if err != nil {
         http.Error(w, "failed to fetch problems", http.StatusInternalServerError)
         return
     }

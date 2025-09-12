@@ -47,6 +47,15 @@ func SaveProblem(db *gorm.DB, problem Problem) error {
 	return nil
 }
 
+// FetchProblemList returns (name,title) for all problems ordered by name.
+func FetchProblemList(db *gorm.DB) ([]Problem, error) {
+    var rows []Problem
+    if err := db.Select("name, title").Order("name asc").Find(&rows).Error; err != nil {
+        return nil, err
+    }
+    return rows, nil
+}
+
 type ProblemCategory struct {
 	Title    string   `json:"title"`
 	Problems []string `json:"problems"`
