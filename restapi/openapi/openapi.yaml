@@ -1,0 +1,53 @@
+openapi: 3.0.3
+info:
+  title: Library Checker REST API (minimal)
+  version: 0.1.0
+servers:
+  - url: /
+paths:
+  /api/ranking:
+    get:
+      summary: Get ranking
+      operationId: getRanking
+      parameters:
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            format: int32
+            default: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RankingResponse'
+components:
+  schemas:
+    UserStatistics:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+          format: int32
+      required: [name, count]
+    RankingResponse:
+      type: object
+      properties:
+        statistics:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserStatistics'
+        count:
+          type: integer
+          format: int32
+      required: [statistics, count]

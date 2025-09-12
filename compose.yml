@@ -19,6 +19,26 @@ services:
         interval: 1s
         retries: 30
 
+  api-rest:
+    build:
+      dockerfile: Dockerfile.APIREST
+    ports:
+      - 12381:12381
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      create-minio-bucket:
+        condition: service_completed_successfully
+    environment:
+      - API_DB_LOG=true
+      - PGHOST=db
+      - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
+    healthcheck:
+      test: wget -q -O - localhost:12381/health || exit 1
+      timeout: 10s
+      interval: 1s
+      retries: 30
+
   db:
     image: postgres:11.3
     ports:
@@ -128,6 +148,8 @@ services:
       create-minio-bucket:
         condition: service_completed_successfully
       api:
+        condition: service_healthy
+      api-rest:
         condition: service_healthy
       build-langs:
         condition: service_completed_successfully

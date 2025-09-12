@@ -13,3 +13,5 @@ deploy/library_checker_pb2_grpc.py
 
 go.work
 uploader/uploader
+
+.gocache
