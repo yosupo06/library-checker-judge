@@ -50,11 +50,11 @@ func TestREST_ProblemsAndInfo(t *testing.T) {
 
 	// GET /api/problems
 	client := &http.Client{Timeout: 5 * time.Second}
-    resp, err := client.Get("http://localhost:12381/problems")
+	resp, err := client.Get("http://localhost:12381/problems")
 	if err != nil {
 		t.Fatalf("GET /api/problems failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 200 {
 		t.Fatalf("GET /api/problems status=%d", resp.StatusCode)
 	}
@@ -85,11 +85,11 @@ func TestREST_ProblemsAndInfo(t *testing.T) {
 	}
 
 	// GET /api/problems/aplusb
-    resp2, err := client.Get("http://localhost:12381/problems/aplusb")
+	resp2, err := client.Get("http://localhost:12381/problems/aplusb")
 	if err != nil {
 		t.Fatalf("GET /api/problems/aplusb failed: %v", err)
 	}
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	if resp2.StatusCode != 200 {
 		t.Fatalf("GET /api/problems/aplusb status=%d", resp2.StatusCode)
 	}
