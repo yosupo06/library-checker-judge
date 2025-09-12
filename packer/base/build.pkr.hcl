@@ -27,6 +27,17 @@ source "googlecompute" "judge" {
   temporary_key_pair_type = "ed25519"
   image_name = "${var.image_name}"
   preemptible = true
+  metadata = {
+    "user-data" = <<-EOT
+      #cloud-config
+      users:
+        - name: ubuntu
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          groups: sudo
+          shell: /bin/bash
+      ssh_pwauth: false
+    EOT
+  }
 }
 
 build {
@@ -86,7 +97,7 @@ build {
       "sudo sh /tmp/docker-install.sh"
     ]
   }
-  
+
   # build our images
   provisioner "file" {
     source = "../../langs"
@@ -94,7 +105,7 @@ build {
   }
   provisioner "shell" {
     inline = [
-      "sudo /tmp/langs/build.sh",
+      "sudo python3 /tmp/langs/build.py",
       "sudo docker image prune -f --all --filter=\"label!=library-checker-image=true\"",
       "sudo docker builder prune --force",
       "sudo docker image pull ubuntu:latest",
