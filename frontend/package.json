@@ -42,6 +42,7 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "prettier": "prettier --write \"src/**/*.{ts,js,tsx,jsx}\"",
     "prettier:check": "prettier --check \"src/**/*.{ts,js,tsx,jsx}\"",
+    "openapi:gen": "openapi-typescript ../library-checker-judge/restapi/openapi/openapi.yaml -o src/openapi/types.ts",
     "protoc": "protoc --ts_out src/proto --proto_path ${PROTO_PATH} ${PROTO_PATH}/library_checker.proto",
     "test": "vitest",
     "coverage": "vitest run --coverage"
@@ -62,6 +63,7 @@
     "protocVersion": "28.0"
   },
   "devDependencies": {
+    "openapi-typescript": "^6.7.6",
     "@protobuf-ts/plugin": "^2.11.1",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",

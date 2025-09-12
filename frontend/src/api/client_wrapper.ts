@@ -28,6 +28,7 @@ import {
   UserInfoResponse,
 } from "../proto/library_checker";
 import { useIdToken } from "../auth/auth";
+import { fetchRanking } from "./http_client";
 
 const currentUserKey = ["api", "currentUser"];
 export const useCurrentUser = () => {
@@ -90,7 +91,9 @@ export const useRanking = (
 ): UseQueryResult<RankingResponse> =>
   useQuery({
     queryKey: ["ranking", skip, limit],
-    queryFn: async () => await client.ranking({ skip, limit }, {}).response,
+    // Use REST for migrated endpoint
+    queryFn: async () =>
+      (await fetchRanking(skip, limit)) as unknown as RankingResponse,
   });
 
 export const useMonitoring = (): UseQueryResult<MonitoringResponse> =>
