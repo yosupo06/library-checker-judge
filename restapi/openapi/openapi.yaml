@@ -5,7 +5,7 @@ info:
 servers:
   - url: /
 paths:
-  /api/ranking:
+  /ranking:
     get:
       summary: Get ranking
       operationId: getRanking
