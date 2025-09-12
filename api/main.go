@@ -45,9 +45,7 @@ func NewGRPCServer(db *gorm.DB, authClient AuthClient) *grpc.Server {
 }
 
 func createFirebaseApp(ctx context.Context, projectID string) (*firebase.App, error) {
-	return firebase.NewApp(ctx, &firebase.Config{
-		ProjectID: projectID,
-	})
+	return firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID})
 }
 
 func main() {
@@ -74,6 +72,7 @@ func main() {
 	slog.Info("Launch gRPCWeb server", "port", port)
 	s := NewGRPCServer(db, firebaseAuth)
 	wrappedGrpc := grpcweb.WrapServer(s, grpcweb.WithOriginFunc(func(origin string) bool { return true }))
+
 	http.HandleFunc("/health", func(resp http.ResponseWriter, req *http.Request) {
 		if _, err := io.WriteString(resp, "SERVING"); err != nil {
 			slog.Error("Failed to write health response", "error", err)

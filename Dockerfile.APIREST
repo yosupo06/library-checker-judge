@@ -1,0 +1,34 @@
+FROM golang:1.24 as builder
+
+WORKDIR /go/src/github.com/yosupo06/library-checker-judge/restapi
+
+# Pre-copy go.mod/go.sum to leverage layer caching
+COPY ./restapi/go.mod /go/src/github.com/yosupo06/library-checker-judge/restapi/
+COPY ./restapi/go.sum /go/src/github.com/yosupo06/library-checker-judge/restapi/
+
+COPY ./database/go.mod /go/src/github.com/yosupo06/library-checker-judge/database/
+COPY ./database/go.sum /go/src/github.com/yosupo06/library-checker-judge/database/
+
+COPY ./langs/go.mod /go/src/github.com/yosupo06/library-checker-judge/langs/
+COPY ./langs/go.sum /go/src/github.com/yosupo06/library-checker-judge/langs/
+
+RUN go mod download
+
+# Copy sources
+COPY ./restapi/. /go/src/github.com/yosupo06/library-checker-judge/restapi/
+COPY ./database/. /go/src/github.com/yosupo06/library-checker-judge/database/
+COPY ./langs/. /go/src/github.com/yosupo06/library-checker-judge/langs/
+
+# Generate server/types from OpenAPI before build (single source of truth)
+RUN go generate ./... && go mod tidy
+
+# Build static binary
+RUN CGO_ENABLED=0 GOOS=linux go build .
+
+FROM alpine
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+COPY --from=builder /go/src/github.com/yosupo06/library-checker-judge/restapi/restapi .
+
+ENTRYPOINT ["./restapi"]

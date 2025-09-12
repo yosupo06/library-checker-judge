@@ -50,6 +50,10 @@ output "api_image" {
     value = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/api"
 }
 
+output "api_rest_image" {
+    value = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/api-rest"
+}
+
 output "judge_image_family" {
     value = local.judge_image_family
 }

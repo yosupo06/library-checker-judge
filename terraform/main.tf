@@ -19,6 +19,10 @@ locals {
     "dev" : "v2.api.dev.judge.yosupo.jp",
     "prod" : "v2.api.judge.yosupo.jp",
   }
+  api_rest_domain = {
+    "dev" : "v3.api.dev.judge.yosupo.jp",
+    "prod" : "v3.api.judge.yosupo.jp",
+  }
 
   region = "asia-northeast1"
   zone = "asia-northeast1-b"

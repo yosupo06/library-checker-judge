@@ -24,6 +24,14 @@ gRPC-web のAPIサーバーが起動します。
 
 - gRPC API: localhost:50051
 - gRPC-web API: localhost:12380
+ - REST API (separate service): localhost:12381
+ - REST (partial):
+   - GET http://localhost:12380/api/langs
+   - GET http://localhost:12380/api/problems
+
+OpenAPI (partial, for REST) is defined at:
+
+- restapi/openapi/openapi.yaml
 
 ```sh
 evans --host localhost --port 50051 api/proto/library_checker.proto
