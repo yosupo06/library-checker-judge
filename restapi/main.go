@@ -49,6 +49,52 @@ func (s *server) GetRanking(w http.ResponseWriter, r *http.Request, params resta
     _ = json.NewEncoder(w).Encode(resp)
 }
 
+// GetProblems handles GET /problems
+func (s *server) GetProblems(w http.ResponseWriter, r *http.Request) {
+    var rows []database.Problem
+    if err := s.db.Model(&database.Problem{}).
+        Select("name, title").
+        Order("name asc").
+        Find(&rows).Error; err != nil {
+        http.Error(w, "failed to fetch problems", http.StatusInternalServerError)
+        return
+    }
+    problems := make([]restapi.Problem, 0, len(rows))
+    for _, p := range rows {
+        problems = append(problems, restapi.Problem{Name: p.Name, Title: p.Title})
+    }
+    resp := restapi.ProblemListResponse{Problems: problems}
+    w.Header().Set("Content-Type", "application/json")
+    _ = json.NewEncoder(w).Encode(resp)
+}
+
+// GetProblemInfo handles GET /problems/{name}
+func (s *server) GetProblemInfo(w http.ResponseWriter, r *http.Request, name string) {
+    if name == "" {
+        http.Error(w, "missing problem name", http.StatusBadRequest)
+        return
+    }
+    p, err := database.FetchProblem(s.db, name)
+    if err != nil {
+        if err == database.ErrNotExist {
+            http.Error(w, "problem not found", http.StatusNotFound)
+            return
+        }
+        http.Error(w, "failed to fetch problem", http.StatusInternalServerError)
+        return
+    }
+    resp := restapi.ProblemInfoResponse{
+        Title:            p.Title,
+        SourceUrl:        p.SourceUrl,
+        TimeLimit:        float32(p.Timelimit) / 1000.0,
+        Version:          p.Version,
+        TestcasesVersion: p.TestCasesVersion,
+        OverallVersion:   p.OverallVersion,
+    }
+    w.Header().Set("Content-Type", "application/json")
+    _ = json.NewEncoder(w).Encode(resp)
+}
+
 func main() {
     db := database.Connect(database.GetDSNFromEnv(), getEnv("API_DB_LOG", "") != "")
 

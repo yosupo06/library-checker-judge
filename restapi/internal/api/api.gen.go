@@ -18,6 +18,27 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Problem defines model for Problem.
+type Problem struct {
+	Name  string `json:"name"`
+	Title string `json:"title"`
+}
+
+// ProblemInfoResponse defines model for ProblemInfoResponse.
+type ProblemInfoResponse struct {
+	OverallVersion   string  `json:"overall_version"`
+	SourceUrl        string  `json:"source_url"`
+	TestcasesVersion string  `json:"testcases_version"`
+	TimeLimit        float32 `json:"time_limit"`
+	Title            string  `json:"title"`
+	Version          string  `json:"version"`
+}
+
+// ProblemListResponse defines model for ProblemListResponse.
+type ProblemListResponse struct {
+	Problems []Problem `json:"problems"`
+}
+
 // RankingResponse defines model for RankingResponse.
 type RankingResponse struct {
 	Count      int32            `json:"count"`
@@ -38,8 +59,14 @@ type GetRankingParams struct {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get problems
+	// (GET /problems)
+	GetProblems(w http.ResponseWriter, r *http.Request)
+	// Get problem info
+	// (GET /problems/{name})
+	GetProblemInfo(w http.ResponseWriter, r *http.Request, name string)
 	// Get ranking
-	// (GET /api/ranking)
+	// (GET /ranking)
 	GetRanking(w http.ResponseWriter, r *http.Request, params GetRankingParams)
 }
 
@@ -47,8 +74,20 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
+// Get problems
+// (GET /problems)
+func (_ Unimplemented) GetProblems(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get problem info
+// (GET /problems/{name})
+func (_ Unimplemented) GetProblemInfo(w http.ResponseWriter, r *http.Request, name string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Get ranking
-// (GET /api/ranking)
+// (GET /ranking)
 func (_ Unimplemented) GetRanking(w http.ResponseWriter, r *http.Request, params GetRankingParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
@@ -61,6 +100,45 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetProblems operation middleware
+func (siw *ServerInterfaceWrapper) GetProblems(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProblems(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetProblemInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetProblemInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", chi.URLParam(r, "name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProblemInfo(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetRanking operation middleware
 func (siw *ServerInterfaceWrapper) GetRanking(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +289,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/ranking", wrapper.GetRanking)
+		r.Get(options.BaseURL+"/problems", wrapper.GetProblems)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/problems/{name}", wrapper.GetProblemInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/ranking", wrapper.GetRanking)
 	})
 
 	return r
@@ -220,13 +304,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/6RTS2vbQBD+K2LaQwuLpcS3vZVSSmihxWlPwYeJPLYn1j4yOwoIo/9ediUnIXUfkNuu",
-	"duab7zE6QhtcDJ68JrBHSO2eHJbjCv2B/W5FKQafKH+KEiKJMpWCNvRe82EbxKGCBfa6vAQDOkSarrQj",
-	"gdFAUlROym3pZCVXDm+FtmDhTf3Eop4p1D8TyfVT2/gIiyI4wDgaELrvWWgD9ub5BDNTWz+2hNs7ajVj",
-	"vEB9lSiPrtgyvyQV9rvfiJWqP1PK5ey3oQCxdvntK98KylB93FN7IKlWn65/VB++X1XvHHt22L0HAw8k",
-	"iYMHC83iYtFkQiGSx8hgYbloFkswEFH3RVeNkWuZIs33HRWVWToqB3+1AQufSefUS6ugIyVJYG+OwHnS",
-	"fU8ywEk5pANHMPPSZLgNbbHvFGxj/m3gaM6jduxYz8NeNP8FvM4JTGtbxF82zZStV5rSxRg7bovy+i5l",
-	"F4/P5v1tLV/+FiXADaVWOOqUx7cvZQlS7xzKMPlanbwv9Ynk4WRsLx1YqGFcj78CAAD//8jeGU6OAwAA",
+	"H4sIAAAAAAAC/7SVT2vbTBDGv4qZ9z20ICwluelWSimhgYakPYUQ1vLYmUT7J7OjgDH67mV3Lct2JMel",
+	"5OSFHc0+z++ZXa+hstpZg0Y8lGvw1SNqFZfXbGc16rB0bB2yEMYNozSGX1k5hBK8MJkltBkIST2002bA",
+	"+NIQ4xzKu/R9V32fddV29oSVhD6bky/Nwt6gd9Z4fKvCviKrun54RfZkzaAgbxuu8KHhelgveqmUR3+0",
+	"iZDGh5o0SdheWNZKoIRFbZXAVr1p9Az5GIUMxk85IJRa7Onf09G3GjKRvWFzBPIVeRmH7FJRXJNsFv8z",
+	"LqCE//J+dPLN3OTd0LTbExWzWr1xuG08JO1GmWcyy3FZlW3Mfhpk5OK8T4OM4DLF4UUJeaHqdBO/PfJt",
+	"/9l7XnZOyDbShlwddP0nUyNXcPiijUkK5WQWNjZKQwtXNGPFq8nXR6yekSc3325/Tb5cX04+aTKkVf15",
+	"Z/hKKKZn0yIIsg6NcgQlXEyL6QVk4JQ8Rl/57hAtMVoMvpWQNZdzKOE7ynVXExyk2GP9eVEkNkYw0VHO",
+	"1VTFj/Mnn25TCu7E2dyb+Ahhjr5icpI8/fwRQfpGa8WrJG+y9RC2to7ydUDcnmAsvGURCiuNguyhvFsD",
+	"hfMCKOgi7TLrYxRuMNtxeBj5/ccT23uI/5LYJE5YpMbpWh+jtbn5I6ReGuRVj8o/k4NdNHNcqKYWKIvs",
+	"/UvUZsNduxd2oO1ZcVLjj0zk8Gk8NY2Ofaz3yK8d2PjfCDm09+2fAAAA//8Bbn4oDAgAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
