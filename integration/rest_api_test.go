@@ -50,7 +50,7 @@ func TestREST_ProblemsAndInfo(t *testing.T) {
 
 	// GET /api/problems
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get("http://localhost:12381/api/problems")
+    resp, err := client.Get("http://localhost:12381/problems")
 	if err != nil {
 		t.Fatalf("GET /api/problems failed: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestREST_ProblemsAndInfo(t *testing.T) {
 	}
 
 	// GET /api/problems/aplusb
-	resp2, err := client.Get("http://localhost:12381/api/problems/aplusb")
+    resp2, err := client.Get("http://localhost:12381/problems/aplusb")
 	if err != nil {
 		t.Fatalf("GET /api/problems/aplusb failed: %v", err)
 	}
