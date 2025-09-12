@@ -86,7 +86,7 @@ build {
       "sudo sh /tmp/docker-install.sh"
     ]
   }
-  
+
   # build our images
   provisioner "file" {
     source = "../../langs"
@@ -94,7 +94,7 @@ build {
   }
   provisioner "shell" {
     inline = [
-      "sudo /tmp/langs/build.sh",
+      "sudo python3 /tmp/langs/build.py",
       "sudo docker image prune -f --all --filter=\"label!=library-checker-image=true\"",
       "sudo docker builder prune --force",
       "sudo docker image pull ubuntu:latest",
