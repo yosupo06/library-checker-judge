@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-  "/api/ranking": {
+  "/ranking": {
     /** Get ranking */
     get: operations["getRanking"];
   };

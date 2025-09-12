@@ -25,7 +25,7 @@ const getRestBaseUrl = (): string => {
 const REST_BASE = getRestBaseUrl();
 
 export async function fetchRanking(skip = 0, limit = 100) {
-  const url = new URL("/api/ranking", REST_BASE);
+  const url = new URL("/ranking", REST_BASE);
   url.searchParams.set("skip", String(skip));
   url.searchParams.set("limit", String(limit));
   const res = await fetch(url.toString(), {
@@ -35,7 +35,7 @@ export async function fetchRanking(skip = 0, limit = 100) {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `REST /api/ranking failed: ${res.status} ${res.statusText} ${text}`,
+      `REST /ranking failed: ${res.status} ${res.statusText} ${text}`,
     );
   }
   return res.json();
