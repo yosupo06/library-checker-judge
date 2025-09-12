@@ -49,9 +49,17 @@
   - 既定は「最小セット固定」: `gcc`（C++ + checker/verifier/generator）+ `python3`。
   - Langs/Executor の変更時のみ「全ビルド」（`test-executor.yml` 側で全言語をビルド）。
 - ビルドコマンド（Python スクリプト）
-  - 全ビルド: `python3 langs/build.py`
+  - 全言語: `python3 langs/build.py`
   - 最小: `python3 langs/build.py gcc python3`
-  - 利用可能なキー: `--list` で一覧表示（エイリアス: `d->ldc`, `go->golang`, `pypy3->pypy`, `cpp->gcc`）
+  - 任意サブセット: `python3 langs/build.py gcc python3 rust`
+  - 利用可能なキー: `python3 langs/build.py --list`（例: エイリアス `cpp->gcc`）
+
+- Python が手元にない場合の代替（一時コンテナで実行）
+  - `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/langs":/src -w /src python:3.12-alpine sh -lc "apk add --no-cache docker-cli >/dev/null 2>&1 && python3 build.py gcc python3"`
+
+- ローカル開発の起動スクリプト（`launch_local.sh`）
+  - 既定で最小セット（`gcc python3`）をビルドしてから Compose を起動します。
+  - 全言語やサブセットに切り替える場合は環境変数で指定: `LC_LANGS=all ./launch_local.sh`、`LC_LANGS="gcc python3 rust" ./launch_local.sh`
 - キャッシュの活用
   - まずは不要（buildx/GHCR は導入しない）。必要になったら将来検討する。
 
