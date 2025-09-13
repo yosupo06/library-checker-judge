@@ -17,9 +17,6 @@ import {
   LangListResponse,
   MonitoringResponse,
   ProblemCategoriesResponse,
-  ProblemInfoResponse,
-  ProblemListResponse,
-  RankingResponse,
   RejudgeRequest,
   SubmissionInfoResponse,
   SubmissionListResponse,
@@ -28,7 +25,12 @@ import {
   UserInfoResponse,
 } from "../proto/library_checker";
 import { useIdToken } from "../auth/auth";
-import { fetchRanking } from "./http_client";
+import {
+  fetchRanking,
+  fetchProblemInfo,
+  fetchProblemList,
+} from "./http_client";
+import type { components as OpenApi } from "../openapi/types";
 
 const currentUserKey = ["api", "currentUser"];
 export const useCurrentUser = () => {
@@ -88,12 +90,11 @@ export const useLangList = (): UseQueryResult<LangListResponse> =>
 export const useRanking = (
   skip: number = 0,
   limit: number = 100,
-): UseQueryResult<RankingResponse> =>
+): UseQueryResult<OpenApi["schemas"]["RankingResponse"]> =>
   useQuery({
     queryKey: ["ranking", skip, limit],
     // Use REST for migrated endpoint
-    queryFn: async () =>
-      (await fetchRanking(skip, limit)) as unknown as RankingResponse,
+    queryFn: async () => await fetchRanking(skip, limit),
   });
 
 export const useMonitoring = (): UseQueryResult<MonitoringResponse> =>
@@ -105,17 +106,21 @@ export const useMonitoring = (): UseQueryResult<MonitoringResponse> =>
 
 export const useProblemInfo = (
   name: string,
-): UseQueryResult<ProblemInfoResponse> =>
+): UseQueryResult<OpenApi["schemas"]["ProblemInfoResponse"]> =>
   useQuery({
     queryKey: ["problemInfo", name],
-    queryFn: async () => await client.problemInfo({ name: name }, {}).response,
+    // Use REST endpoint
+    queryFn: async () => await fetchProblemInfo(name),
     structuralSharing: false,
   });
 
-export const useProblemList = (): UseQueryResult<ProblemListResponse> =>
+export const useProblemList = (): UseQueryResult<
+  OpenApi["schemas"]["ProblemListResponse"]
+> =>
   useQuery({
     queryKey: ["problemList"],
-    queryFn: async () => await client.problemList({}, {}).response,
+    // Use REST endpoint
+    queryFn: async () => await fetchProblemList(),
   });
 
 export const useProblemCategories =

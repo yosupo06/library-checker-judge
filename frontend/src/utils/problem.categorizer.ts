@@ -1,21 +1,21 @@
-import { Problem, ProblemCategory } from "../proto/library_checker";
+import type { ProblemCategory } from "../proto/library_checker";
+import type { components as OpenApi } from "../openapi/types";
 
 export type CategorisedProblems = {
   name: string;
-  problems: Problem[];
+  problems: OpenApi["schemas"]["Problem"][];
 }[];
 
 export const categoriseProblems = (
-  problems: Problem[],
+  problems: OpenApi["schemas"]["Problem"][],
   categories: ProblemCategory[],
 ): CategorisedProblems => {
-  const nameToProblem = problems.reduce<{ [name: string]: Problem }>(
-    (dict, problem) => {
-      dict[problem.name] = problem;
-      return dict;
-    },
-    {},
-  );
+  const nameToProblem = problems.reduce<{
+    [name: string]: OpenApi["schemas"]["Problem"];
+  }>((dict, problem) => {
+    dict[problem.name] = problem;
+    return dict;
+  }, {});
 
   const problemNames = problems.map((e) => e.name);
   const problemNameSet = new Set(problemNames);

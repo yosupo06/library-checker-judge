@@ -73,7 +73,7 @@ export const toProblemVersion = (
 });
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { parseProblemInfoToml, type ProblemInfoToml } from "./problem.info";
-import type { ProblemInfoResponse } from "../proto/library_checker";
+import type { components as OpenApi } from "../openapi/types";
 
 export type ProblemAssets = {
   info?: ProblemInfoToml;
@@ -87,12 +87,12 @@ export type ProblemAssets = {
 export const useProblemAssets = (
   baseURL: URL,
   problemId: string,
-  problemInfo: ProblemInfoResponse,
+  problemInfo: OpenApi["schemas"]["ProblemInfoResponse"],
 ): ProblemAssets => {
   const pv = toProblemVersion(problemId, {
     version: problemInfo.version,
-    overallVersion: problemInfo.overallVersion,
-    testcasesVersion: problemInfo.testcasesVersion,
+    overallVersion: problemInfo.overall_version,
+    testcasesVersion: problemInfo.testcases_version,
   });
 
   const infoTomlQ = useQuery({

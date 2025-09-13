@@ -33,7 +33,8 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "unified": "^11.0.5",
-    "url-join": "^5.0.0"
+    "url-join": "^5.0.0",
+    "openapi-fetch": "^0.12.2"
   },
   "scripts": {
     "dev": "vite --host",
