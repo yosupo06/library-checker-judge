@@ -8,6 +8,14 @@ export interface paths {
     /** Get ranking */
     get: operations["getRanking"];
   };
+  "/problems": {
+    /** Get problems */
+    get: operations["getProblems"];
+  };
+  "/problems/{name}": {
+    /** Get problem info */
+    get: operations["getProblemInfo"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -23,6 +31,22 @@ export interface components {
       statistics: components["schemas"]["UserStatistics"][];
       /** Format: int32 */
       count: number;
+    };
+    Problem: {
+      name: string;
+      title: string;
+    };
+    ProblemListResponse: {
+      problems: components["schemas"]["Problem"][];
+    };
+    ProblemInfoResponse: {
+      title: string;
+      source_url: string;
+      /** Format: float */
+      time_limit: number;
+      version: string;
+      testcases_version: string;
+      overall_version: string;
     };
   };
   responses: never;
@@ -50,6 +74,33 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["RankingResponse"];
+        };
+      };
+    };
+  };
+  /** Get problems */
+  getProblems: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ProblemListResponse"];
+        };
+      };
+    };
+  };
+  /** Get problem info */
+  getProblemInfo: {
+    parameters: {
+      path: {
+        name: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ProblemInfoResponse"];
         };
       };
     };

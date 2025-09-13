@@ -5,13 +5,13 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
-import { Problem } from "../proto/library_checker";
+import type { components as OpenApi } from "../openapi/types";
 import { Link } from "react-router-dom";
 import { lightGreen, cyan } from "@mui/material/colors";
 import KatexTypography from "./katex/KatexTypography";
 import { styled } from "@mui/material/styles";
 interface Props {
-  problems: Problem[];
+  problems: OpenApi["schemas"]["Problem"][];
   solvedStatus?: {
     [problem: string]: "latest_ac" | "ac" | "unknown";
   };

@@ -19,7 +19,7 @@ import {
   useProblemInfo,
   useSubmitMutation,
 } from "../api/client_wrapper";
-import { ProblemInfoResponse } from "../proto/library_checker";
+import type { components as OpenApi } from "../openapi/types";
 import SourceEditor from "../components/SourceEditor";
 import { GitHub, FlashOn, Person, Forum } from "@mui/icons-material";
 import { useTranslation } from "../utils/translations";
@@ -76,7 +76,7 @@ const baseURL = new URL(import.meta.env.VITE_PUBLIC_BUCKET_URL);
 
 const ProblemInfoBody: React.FC<{
   problemId: string;
-  problemInfo: ProblemInfoResponse;
+  problemInfo: OpenApi["schemas"]["ProblemInfoResponse"];
 }> = (props) => {
   const { problemId, problemInfo } = props;
 
@@ -101,7 +101,7 @@ const ProblemInfoBody: React.FC<{
   return (
     <Box>
       <Typography variant="body1" paragraph={true}>
-        Time Limit: {problemInfo.timeLimit} sec
+        Time Limit: {problemInfo.time_limit} sec
       </Typography>
 
       <UsefulLinks
@@ -147,7 +147,7 @@ export const StatementBody: React.FC<{
 };
 
 const UsefulLinks: React.FC<{
-  problemInfo: ProblemInfoResponse;
+  problemInfo: OpenApi["schemas"]["ProblemInfoResponse"];
   problemId: string;
   infoToml: ProblemInfoToml;
 }> = (props) => {
@@ -185,7 +185,7 @@ const UsefulLinks: React.FC<{
       >
         Fastest
       </LinkButton>
-      <ExternalLinkButton startIcon={<GitHub />} href={problemInfo.sourceUrl}>
+      <ExternalLinkButton startIcon={<GitHub />} href={problemInfo.source_url}>
         GitHub
       </ExternalLinkButton>
       {infoToml.forum && (

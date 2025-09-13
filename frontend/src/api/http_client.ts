@@ -1,44 +1,51 @@
-// Lightweight HTTP client for REST endpoints migrated from gRPC-Web
+// Typed REST client using openapi-fetch + openapi-typescript types
+import createClient from "openapi-fetch";
+import type { components, paths } from "../openapi/types";
+// Use OpenAPI-generated types directly
 
 const getRestBaseUrl = (): string => {
-  const explicit = import.meta.env.VITE_REST_API_URL;
-  if (explicit) return explicit.replace(/\/$/, "");
-
-  // Fallback: try to derive from gRPC base URL if present
-  const api = import.meta.env.VITE_API_URL;
-  if (api) {
-    try {
-      const u = new URL(api);
-      // If port is 12380 (gRPC-web), use 12381 (REST)
-      if (u.port === "12380" || u.port === "") {
-        u.port = "12381";
-      }
-      return u.origin;
-    } catch {
-      // ignore
-    }
+  const url = import.meta.env.VITE_REST_API_URL as string | undefined;
+  if (!url) {
+    throw new Error(
+      "VITE_REST_API_URL is not set. Please configure REST API endpoint.",
+    );
   }
-  // Local default for dev
-  return "http://localhost:12381";
+  return url.replace(/\/$/, "");
 };
 
 const REST_BASE = getRestBaseUrl();
+const client = createClient<paths>({ baseUrl: REST_BASE });
+
+function unwrap<T>(r: { data?: T; error?: unknown; response: Response }) {
+  if (r.error) {
+    const status = `${r.response.status} ${r.response.statusText}`;
+    const msg = typeof r.error === "string" ? r.error : JSON.stringify(r.error);
+    throw new Error(`REST ${r.response.url} failed: ${status} ${msg}`);
+  }
+  return r.data as T;
+}
 
 export async function fetchRanking(skip = 0, limit = 100) {
-  const url = new URL("/ranking", REST_BASE);
-  url.searchParams.set("skip", String(skip));
-  url.searchParams.set("limit", String(limit));
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: { Accept: "application/json" },
+  const r = await client.GET("/ranking", {
+    params: { query: { skip, limit } },
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(
-      `REST /ranking failed: ${res.status} ${res.statusText} ${text}`,
-    );
-  }
-  return res.json();
+  return unwrap<components["schemas"]["RankingResponse"]>(r);
+}
+
+export async function fetchProblemList(): Promise<
+  components["schemas"]["ProblemListResponse"]
+> {
+  const r = await client.GET("/problems");
+  return unwrap<components["schemas"]["ProblemListResponse"]>(r);
+}
+
+export async function fetchProblemInfo(
+  name: string,
+): Promise<components["schemas"]["ProblemInfoResponse"]> {
+  const r = await client.GET("/problems/{name}", {
+    params: { path: { name } },
+  });
+  return unwrap<components["schemas"]["ProblemInfoResponse"]>(r);
 }
 
 export type {};
