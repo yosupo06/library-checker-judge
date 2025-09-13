@@ -57,6 +57,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemInfoResponse'
+  /langs:
+    get:
+      summary: Get language list
+      operationId: getLangList
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LangListResponse'
+  /categories:
+    get:
+      summary: Get problem categories
+      operationId: getProblemCategories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemCategoriesResponse'
 components:
   schemas:
     UserStatistics:
@@ -112,3 +134,39 @@ components:
         overall_version:
           type: string
       required: [title, source_url, time_limit, version, testcases_version, overall_version]
+    Lang:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+      required: [id, name, version]
+    LangListResponse:
+      type: object
+      properties:
+        langs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lang'
+      required: [langs]
+    ProblemCategory:
+      type: object
+      properties:
+        title:
+          type: string
+        problems:
+          type: array
+          items:
+            type: string
+      required: [title, problems]
+    ProblemCategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProblemCategory'
+      required: [categories]

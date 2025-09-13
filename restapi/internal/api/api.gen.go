@@ -18,10 +18,33 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Lang defines model for Lang.
+type Lang struct {
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+// LangListResponse defines model for LangListResponse.
+type LangListResponse struct {
+	Langs []Lang `json:"langs"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	Name  string `json:"name"`
 	Title string `json:"title"`
+}
+
+// ProblemCategoriesResponse defines model for ProblemCategoriesResponse.
+type ProblemCategoriesResponse struct {
+	Categories []ProblemCategory `json:"categories"`
+}
+
+// ProblemCategory defines model for ProblemCategory.
+type ProblemCategory struct {
+	Problems []string `json:"problems"`
+	Title    string   `json:"title"`
 }
 
 // ProblemInfoResponse defines model for ProblemInfoResponse.
@@ -59,6 +82,12 @@ type GetRankingParams struct {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get problem categories
+	// (GET /categories)
+	GetProblemCategories(w http.ResponseWriter, r *http.Request)
+	// Get language list
+	// (GET /langs)
+	GetLangList(w http.ResponseWriter, r *http.Request)
 	// Get problems
 	// (GET /problems)
 	GetProblems(w http.ResponseWriter, r *http.Request)
@@ -73,6 +102,18 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// Get problem categories
+// (GET /categories)
+func (_ Unimplemented) GetProblemCategories(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get language list
+// (GET /langs)
+func (_ Unimplemented) GetLangList(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // Get problems
 // (GET /problems)
@@ -100,6 +141,34 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetProblemCategories operation middleware
+func (siw *ServerInterfaceWrapper) GetProblemCategories(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProblemCategories(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetLangList operation middleware
+func (siw *ServerInterfaceWrapper) GetLangList(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLangList(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetProblems operation middleware
 func (siw *ServerInterfaceWrapper) GetProblems(w http.ResponseWriter, r *http.Request) {
@@ -289,6 +358,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/categories", wrapper.GetProblemCategories)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/langs", wrapper.GetLangList)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/problems", wrapper.GetProblems)
 	})
 	r.Group(func(r chi.Router) {
@@ -304,16 +379,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/7SVT2vbTBDGv4qZ9z20ICwluelWSimhgYakPYUQ1vLYmUT7J7OjgDH67mV3Lct2JMel",
-	"5OSFHc0+z++ZXa+hstpZg0Y8lGvw1SNqFZfXbGc16rB0bB2yEMYNozSGX1k5hBK8MJkltBkIST2002bA",
-	"+NIQ4xzKu/R9V32fddV29oSVhD6bky/Nwt6gd9Z4fKvCviKrun54RfZkzaAgbxuu8KHhelgveqmUR3+0",
-	"iZDGh5o0SdheWNZKoIRFbZXAVr1p9Az5GIUMxk85IJRa7Onf09G3GjKRvWFzBPIVeRmH7FJRXJNsFv8z",
-	"LqCE//J+dPLN3OTd0LTbExWzWr1xuG08JO1GmWcyy3FZlW3Mfhpk5OK8T4OM4DLF4UUJeaHqdBO/PfJt",
-	"/9l7XnZOyDbShlwddP0nUyNXcPiijUkK5WQWNjZKQwtXNGPFq8nXR6yekSc3325/Tb5cX04+aTKkVf15",
-	"Z/hKKKZn0yIIsg6NcgQlXEyL6QVk4JQ8Rl/57hAtMVoMvpWQNZdzKOE7ynVXExyk2GP9eVEkNkYw0VHO",
-	"1VTFj/Mnn25TCu7E2dyb+Ahhjr5icpI8/fwRQfpGa8WrJG+y9RC2to7ydUDcnmAsvGURCiuNguyhvFsD",
-	"hfMCKOgi7TLrYxRuMNtxeBj5/ccT23uI/5LYJE5YpMbpWh+jtbn5I6ReGuRVj8o/k4NdNHNcqKYWKIvs",
-	"/UvUZsNduxd2oO1ZcVLjj0zk8Gk8NY2Ofaz3yK8d2PjfCDm09+2fAAAA//8Bbn4oDAgAAA==",
+	"H4sIAAAAAAAC/7xWzWrcPBR9FXO/b9GCGTvJzrsSSgkNNCTtKoSg8dxxlFiSI10HhsHvXiSNx3b8m5bp",
+	"JjHjq6Nzzv3zHlIlCiVRkoFkDyZ9QsHc4zWTmf1faFWgJo7uV76xf2lXICRgSHOZQRWCZAIHX7yhNlzJ",
+	"gXdVCBpfS65xA8m9BT7ANIcewvqQWj9jShbQ0rrmhm7RFEoa7FPMmcw8V0LhHv7XuIUE/osasdFBaeRk",
+	"VseLmNZs1yPnIYfo3Gi1zlH0WYw6QpxynPfjYIWPnrj5khFmSnM0446kx5jFtnTRd7MOta6YJ7vrUyx8",
+	"QJdg37sOhcVe+rCwuWSC4pXcqnEn1RtqlueP42UdglGlTvGx1PmwBjSUMoNmEoS4wMecC0729VZpwQgS",
+	"2OaKERzZy1KsUU858YEOrF1q8e/waKCGRIQ9byZMnm7gwVpYUKyzRTqZ/1smX7jMJrpIlbKbDS7p4rzJ",
+	"BpeEmU+HIUbcEE+Xi/hlUN81x+a0tG4ID9SGVL1D/StRIyNteHCNUbLhXG6VA/JFC9d8rZneBZdPmL6g",
+	"Dm6/3v0MvtxcBZ8El1yw/HOr+BKIV2er2BJSBUpWcEjgYhWvLmyHM3pyuqLuzMvQibTKGXElrzaQwDek",
+	"3hAFK8ZXgDt4HsfeJknojWJFkfPUoUTPxjeWz+HHZmp7YjtXNmhSzQvyIn98d86aUghmB6ZlGxwKOGiJ",
+	"s0HRceWN6ay35inl9TbzUlWWfckyDHLL0Alqj4CZ3P2LlP2RrKOGjqJobxukWiDMbiJX0poJJNQGkvs9",
+	"cHufLfP6cympO65pQtIlhi2F7xv24fSOddboR8vbzQfnmvZDecqtw9weceq1RL1rrDIvvIC2NRvcsjIn",
+	"SOJwfgRW4TBqvR8HYM/iRcCnzMj7xbY0G7X3Lt6gfquNdV82EEH1UP0OAAD//3V94fRADAAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

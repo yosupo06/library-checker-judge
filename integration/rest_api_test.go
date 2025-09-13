@@ -108,3 +108,89 @@ func TestREST_ProblemsAndInfo(t *testing.T) {
 		t.Fatalf("invalid problem info: %+v", info)
 	}
 }
+
+func TestREST_LangsAndCategories(t *testing.T) {
+	// Ensure REST server is up
+	if err := waitForREST(t, "http://localhost:12381/health", 2*time.Minute); err != nil {
+		t.Fatalf("REST /health not ready: %v", err)
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	// GET /langs
+	resp, err := client.Get("http://localhost:12381/langs")
+	if err != nil {
+		t.Fatalf("GET /langs failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != 200 {
+		t.Fatalf("GET /langs status=%d", resp.StatusCode)
+	}
+	var langs struct {
+		Langs []struct {
+			ID      string `json:"id"`
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"langs"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&langs); err != nil {
+		t.Fatalf("decode /langs failed: %v", err)
+	}
+	if len(langs.Langs) == 0 {
+		t.Fatalf("/langs returned empty list")
+	}
+	foundCpp := false
+	for _, l := range langs.Langs {
+		if l.ID == "cpp" {
+			foundCpp = true
+		}
+		if l.ID == "" || l.Name == "" || l.Version == "" {
+			t.Fatalf("invalid lang entry: %+v", l)
+		}
+	}
+	if !foundCpp {
+		t.Fatalf("cpp not found in /langs")
+	}
+
+	// GET /categories (poll until non-empty because uploader populates metadata)
+	var catsResp *http.Response
+	var lastErr error
+	deadline := time.Now().Add(2 * time.Minute)
+	for time.Now().Before(deadline) {
+		catsResp, lastErr = client.Get("http://localhost:12381/categories")
+		if lastErr == nil && catsResp.StatusCode == 200 {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	if lastErr != nil {
+		t.Fatalf("GET /categories failed: %v", lastErr)
+	}
+	defer func() { _ = catsResp.Body.Close() }()
+	var categories struct {
+		Categories []struct {
+			Title    string   `json:"title"`
+			Problems []string `json:"problems"`
+		} `json:"categories"`
+	}
+	if err := json.NewDecoder(catsResp.Body).Decode(&categories); err != nil {
+		t.Fatalf("decode /categories failed: %v", err)
+	}
+	if len(categories.Categories) == 0 {
+		t.Fatalf("/categories returned empty list")
+	}
+	hasUnionFind := false
+	for _, c := range categories.Categories {
+		if c.Title == "" || len(c.Problems) == 0 {
+			t.Fatalf("invalid category: %+v", c)
+		}
+		for _, p := range c.Problems {
+			if p == "unionfind" {
+				hasUnionFind = true
+			}
+		}
+	}
+	if !hasUnionFind {
+		t.Fatalf("unionfind not present in any category list")
+	}
+}
