@@ -1,0 +1,35 @@
+name: Lint REST API
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'restapi/**'
+      - 'database/**'  # restapi depends on database
+      - '.github/workflows/lint-restapi.yml'
+  pull_request:
+    paths:
+      - 'restapi/**'
+      - 'database/**'  # restapi depends on database
+      - '.github/workflows/lint-restapi.yml'
+
+jobs:
+  lint-restapi:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: ./run_protoc.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: golangci-lint (restapi)
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: latest
+        working-directory: ./restapi
+        args: --config ../.golangci.yml
