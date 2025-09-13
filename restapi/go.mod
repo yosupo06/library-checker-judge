@@ -7,10 +7,12 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/yosupo06/library-checker-judge/database v0.0.0-00010101000000-000000000000
+	github.com/yosupo06/library-checker-judge/langs v0.0.0-00010101000000-000000000000
 	gorm.io/gorm v1.25.11
 )
 
 require (
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
@@ -49,5 +51,7 @@ require (
 )
 
 replace github.com/yosupo06/library-checker-judge/database => ../database
+
+replace github.com/yosupo06/library-checker-judge/langs => ../langs
 
 tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen
