@@ -20,28 +20,12 @@ var (
 
 func getFirebaseAuth() (*fbAuth.Client, error) {
 	fbOnce.Do(func() {
-		// Resolve project ID with fallbacks suitable for emulator
 		project := os.Getenv("FIREBASE_PROJECT")
 		if project == "" {
-			project = os.Getenv("GOOGLE_CLOUD_PROJECT")
+			fbErr = errors.New("FIREBASE_PROJECT is not set")
+			return
 		}
-		if project == "" {
-			project = os.Getenv("GCLOUD_PROJECT")
-		}
-		if project == "" && os.Getenv("FIREBASE_AUTH_EMULATOR_HOST") != "" {
-			// Emulator in use; default a project ID if none provided
-			project = "dev-library-checker-project"
-		}
-
-		var cfg *firebase.Config
-		if project != "" {
-			cfg = &firebase.Config{ProjectID: project}
-		} else {
-			// As a last resort, allow nil config (admin SDK may infer)
-			cfg = nil
-		}
-
-		app, err := firebase.NewApp(context.Background(), cfg)
+		app, err := firebase.NewApp(context.Background(), &firebase.Config{ProjectID: project})
 		if err != nil {
 			fbErr = err
 			return
