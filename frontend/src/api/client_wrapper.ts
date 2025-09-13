@@ -14,9 +14,7 @@ import {
   HackListResponse,
   HackRequest,
   HackResponse,
-  LangListResponse,
   MonitoringResponse,
-  ProblemCategoriesResponse,
   RejudgeRequest,
   SubmissionInfoResponse,
   SubmissionListResponse,
@@ -29,6 +27,8 @@ import {
   fetchRanking,
   fetchProblemInfo,
   fetchProblemList,
+  fetchLangList,
+  fetchProblemCategories,
 } from "./http_client";
 import type { components as OpenApi } from "../openapi/types";
 
@@ -81,10 +81,13 @@ const transport = new GrpcWebFetchTransport({
 const client = new LibraryCheckerServiceClient(transport);
 export default client;
 
-export const useLangList = (): UseQueryResult<LangListResponse> =>
+export const useLangList = (): UseQueryResult<
+  OpenApi["schemas"]["LangListResponse"]
+> =>
   useQuery({
     queryKey: ["langList"],
-    queryFn: async () => await client.langList({}, {}).response,
+    // Use REST endpoint
+    queryFn: async () => await fetchLangList(),
   });
 
 export const useRanking = (
@@ -123,12 +126,14 @@ export const useProblemList = (): UseQueryResult<
     queryFn: async () => await fetchProblemList(),
   });
 
-export const useProblemCategories =
-  (): UseQueryResult<ProblemCategoriesResponse> =>
-    useQuery({
-      queryKey: ["problemCategories"],
-      queryFn: async () => await client.problemCategories({}, {}).response,
-    });
+export const useProblemCategories = (): UseQueryResult<
+  OpenApi["schemas"]["ProblemCategoriesResponse"]
+> =>
+  useQuery({
+    queryKey: ["problemCategories"],
+    // Use REST endpoint
+    queryFn: async () => await fetchProblemCategories(),
+  });
 
 export const useUserInfo = (
   name: string,

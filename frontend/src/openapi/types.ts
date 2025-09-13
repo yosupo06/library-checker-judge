@@ -16,6 +16,14 @@ export interface paths {
     /** Get problem info */
     get: operations["getProblemInfo"];
   };
+  "/langs": {
+    /** Get language list */
+    get: operations["getLangList"];
+  };
+  "/categories": {
+    /** Get problem categories */
+    get: operations["getProblemCategories"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -47,6 +55,21 @@ export interface components {
       version: string;
       testcases_version: string;
       overall_version: string;
+    };
+    Lang: {
+      id: string;
+      name: string;
+      version: string;
+    };
+    LangListResponse: {
+      langs: components["schemas"]["Lang"][];
+    };
+    ProblemCategory: {
+      title: string;
+      problems: string[];
+    };
+    ProblemCategoriesResponse: {
+      categories: components["schemas"]["ProblemCategory"][];
     };
   };
   responses: never;
@@ -101,6 +124,28 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["ProblemInfoResponse"];
+        };
+      };
+    };
+  };
+  /** Get language list */
+  getLangList: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["LangListResponse"];
+        };
+      };
+    };
+  };
+  /** Get problem categories */
+  getProblemCategories: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ProblemCategoriesResponse"];
         };
       };
     };
