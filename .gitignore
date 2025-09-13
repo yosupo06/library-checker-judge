@@ -1,6 +1,8 @@
 *.pb.go
 
+# API
 api/api
+api/api.test
 
 # REST API
 restapi/restapi
@@ -10,6 +12,7 @@ restapi/restapi.test
 integration/integration
 integration/integration.test
 
+# Judge
 judge/judge
 judge/judge.test
 
@@ -19,7 +22,6 @@ deploy/__init__.py
 deploy/library_checker_pb2.py
 deploy/library_checker_pb2_grpc.py
 
-go.work
 uploader/uploader
 
 .gocache
