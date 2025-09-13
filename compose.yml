@@ -32,7 +32,6 @@ services:
     environment:
       - API_DB_LOG=true
       - PGHOST=db
-      - FIREBASE_PROJECT=dev-library-checker-project
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
     healthcheck:
       test: wget -q -O - localhost:12381/health || exit 1
