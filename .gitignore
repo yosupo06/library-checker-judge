@@ -2,6 +2,14 @@
 
 api/api
 
+# REST API
+restapi/restapi
+restapi/restapi.test
+
+# Integration test
+integration/integration
+integration/integration.test
+
 judge/judge
 judge/judge.test
 
