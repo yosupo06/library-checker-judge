@@ -1,0 +1,15 @@
+go 1.24.7
+
+use (
+	./api
+	./database
+	./executor
+	./integration
+	./judge
+	./langs
+	./migrator
+	./restapi
+	./storage
+	./uploader
+	./utils
+)
