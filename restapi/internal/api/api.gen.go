@@ -19,6 +19,27 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// ChangeCurrentUserInfoRequest defines model for ChangeCurrentUserInfoRequest.
+type ChangeCurrentUserInfoRequest struct {
+	User User `json:"user"`
+}
+
+// ChangeCurrentUserInfoResponse defines model for ChangeCurrentUserInfoResponse.
+type ChangeCurrentUserInfoResponse = map[string]interface{}
+
+// ChangeUserInfoRequest defines model for ChangeUserInfoRequest.
+type ChangeUserInfoRequest struct {
+	User User `json:"user"`
+}
+
+// ChangeUserInfoResponse defines model for ChangeUserInfoResponse.
+type ChangeUserInfoResponse = map[string]interface{}
+
+// CurrentUserInfoResponse defines model for CurrentUserInfoResponse.
+type CurrentUserInfoResponse struct {
+	User *User `json:"user,omitempty"`
+}
+
 // Lang defines model for Lang.
 type Lang struct {
 	Id      string `json:"id"`
@@ -68,6 +89,14 @@ type RankingResponse struct {
 	Count      int32            `json:"count"`
 	Statistics []UserStatistics `json:"statistics"`
 }
+
+// RegisterRequest defines model for RegisterRequest.
+type RegisterRequest struct {
+	Name string `json:"name"`
+}
+
+// RegisterResponse defines model for RegisterResponse.
+type RegisterResponse = map[string]interface{}
 
 // SubmissionCaseResult defines model for SubmissionCaseResult.
 type SubmissionCaseResult struct {
@@ -121,6 +150,19 @@ type SubmitResponse struct {
 	Id int32 `json:"id"`
 }
 
+// User defines model for User.
+type User struct {
+	IsDeveloper bool   `json:"is_developer"`
+	LibraryUrl  string `json:"library_url"`
+	Name        string `json:"name"`
+}
+
+// UserInfoResponse defines model for UserInfoResponse.
+type UserInfoResponse struct {
+	SolvedMap map[string]string `json:"solved_map"`
+	User      User              `json:"user"`
+}
+
 // UserStatistics defines model for UserStatistics.
 type UserStatistics struct {
 	Count int32  `json:"count"`
@@ -146,11 +188,29 @@ type GetSubmissionListParams struct {
 	Order     *string `form:"order,omitempty" json:"order,omitempty"`
 }
 
+// PatchCurrentUserInfoJSONRequestBody defines body for PatchCurrentUserInfo for application/json ContentType.
+type PatchCurrentUserInfoJSONRequestBody = ChangeCurrentUserInfoRequest
+
+// PostRegisterJSONRequestBody defines body for PostRegister for application/json ContentType.
+type PostRegisterJSONRequestBody = RegisterRequest
+
 // PostSubmitJSONRequestBody defines body for PostSubmit for application/json ContentType.
 type PostSubmitJSONRequestBody = SubmitRequest
 
+// PatchUserInfoJSONRequestBody defines body for PatchUserInfo for application/json ContentType.
+type PatchUserInfoJSONRequestBody = ChangeUserInfoRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get current user info
+	// (GET /auth/current_user)
+	GetCurrentUserInfo(w http.ResponseWriter, r *http.Request)
+	// Change current user info
+	// (PATCH /auth/current_user)
+	PatchCurrentUserInfo(w http.ResponseWriter, r *http.Request)
+	// Register user
+	// (POST /auth/register)
+	PostRegister(w http.ResponseWriter, r *http.Request)
 	// Get problem categories
 	// (GET /categories)
 	GetProblemCategories(w http.ResponseWriter, r *http.Request)
@@ -175,11 +235,35 @@ type ServerInterface interface {
 	// Submit a solution
 	// (POST /submit)
 	PostSubmit(w http.ResponseWriter, r *http.Request)
+	// Get user info
+	// (GET /users/{name})
+	GetUserInfo(w http.ResponseWriter, r *http.Request, name string)
+	// Change user info (self only)
+	// (PATCH /users/{name})
+	PatchUserInfo(w http.ResponseWriter, r *http.Request, name string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// Get current user info
+// (GET /auth/current_user)
+func (_ Unimplemented) GetCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Change current user info
+// (PATCH /auth/current_user)
+func (_ Unimplemented) PatchCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Register user
+// (POST /auth/register)
+func (_ Unimplemented) PostRegister(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // Get problem categories
 // (GET /categories)
@@ -229,6 +313,18 @@ func (_ Unimplemented) PostSubmit(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Get user info
+// (GET /users/{name})
+func (_ Unimplemented) GetUserInfo(w http.ResponseWriter, r *http.Request, name string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Change user info (self only)
+// (PATCH /users/{name})
+func (_ Unimplemented) PatchUserInfo(w http.ResponseWriter, r *http.Request, name string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler            ServerInterface
@@ -237,6 +333,48 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetCurrentUserInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCurrentUserInfo(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchCurrentUserInfo operation middleware
+func (siw *ServerInterfaceWrapper) PatchCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchCurrentUserInfo(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostRegister operation middleware
+func (siw *ServerInterfaceWrapper) PostRegister(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostRegister(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetProblemCategories operation middleware
 func (siw *ServerInterfaceWrapper) GetProblemCategories(w http.ResponseWriter, r *http.Request) {
@@ -470,6 +608,56 @@ func (siw *ServerInterfaceWrapper) PostSubmit(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// GetUserInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", chi.URLParam(r, "name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUserInfo(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchUserInfo operation middleware
+func (siw *ServerInterfaceWrapper) PatchUserInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", chi.URLParam(r, "name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchUserInfo(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -584,6 +772,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/current_user", wrapper.GetCurrentUserInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/auth/current_user", wrapper.PatchCurrentUserInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/register", wrapper.PostRegister)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/categories", wrapper.GetProblemCategories)
 	})
 	r.Group(func(r chi.Router) {
@@ -607,6 +804,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/submit", wrapper.PostSubmit)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/users/{name}", wrapper.GetUserInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/users/{name}", wrapper.PatchUserInfo)
+	})
 
 	return r
 }
@@ -614,26 +817,31 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RYXW/bNhT9KwK3hxZTY7cZ9qC3LRiGYgESOOtTEQi0dO0wlkiFpDIYhv/7QFIflEXK",
-	"VDpv6Esb2Lwf59x7Li99QBkrK0aBSoGSAxLZE5RY/3mL6Vb9X3FWAZcE9KckV//KfQUoQUJyQrfoGCOK",
-	"S3B+8QpcEEYd3x1jxOGlJhxylHxVjhs3vdFj3Bqx9TNkUjlUad0SIVcgKkYFjFMsMN2aXCWU+o8fOWxQ",
-	"gn5Y9GAXDdKFhnnsAmHO8X6UnHHpSuees3UB5TgLLyOSyALO89FQYU5PRL7BEraMExB+RrLuTDAtQ+/7",
-	"swxZIc4nux+nWJkDwwTH3A1SCObSHIv7IBMpfqYb5meSvQLHRZH62zpGgtU8g7TmhRsDCJlhAWLSiSQl",
-	"pAUpiVRfbxgvsUQJ2hQMS9RlT+tyDXyKiRkKbFmy8h/k0btygYhH3EyQPC1gZy8ENOvZJp2s/wrTHaHb",
-	"CRWxmg6rQai8/tRXg1AJW1MOIbEkQpIsHMQXAfyhNzuHxYoQN6m5UD3U65IIVY8bLGAFoi6ka0AId/Nk",
-	"T5DtgKesHiJf7yX0wPvzJZSNvG2SfvnZS1LtFrqQOXAeFFJ1aIhGRgNL6GY3OTRuOgDTVE7PiAzTlMNz",
-	"nW9tTteMFYCpJhULSLkuRXh7OAvpGInKlBSQAucsjECl21cCf4dncNdadNPu/HTponQm8YCpacanB8Ys",
-	"ZXY+38K9jXxanlaYMH3eWWVw7VwB2IhIC6xGs7vvimaj+zbVNkM09S447QH/lTQl/I6PdCTsHEv40Oj0",
-	"zWMgRrUA7svetZQOAJ/Ca1i1uZ8/VOQKXuqmbONddorkiQXEvVYUkO4oy3bNQD9tEveFaWtWZzSFxCfS",
-	"wC4eV8AV7OSy/KaJENYKTfV9SlbHCd0w7cg0Prola475Proxl2i0+v3hr+jX+8/Ru5JQUuLivbVTJWh5",
-	"9fFqqQdyBRRXBCXo+mp5da16DssnjWsxXOW3oEEq5FiqiylHCfoD5OhtgBQYUxlt+Gm5NDRRCYYoXFUF",
-	"ybSXxbMw+6KZf/OeCvZDRLOSg8g4qaQBefenZlbUZYnVyFHZRk2bRRY4dWjRveR8ONvH4CXhjR6coahU",
-	"9jXeQlSoDDUge7M9U7v/omRvgtVhGCBaHJRAjgHA1PKkW5rjEiRwgZKvB0RUPNXm7a8ASau4XoSS1xBb",
-	"CE8F+3h5xgab39z21vNBs8bNW2OKreY54mHqpQa+76kSO1Ihm5ocNlhv+ss4ZOS6vbbPPofbj8sgx5es",
-	"yOl7LbQaLfe6ECfboK8Yw0X0+66Jx7F11XsF5jHt1p3Zlk8420HusrQ2Erep2uLeEjKHvK6+eIzPRm2W",
-	"vdlRGc9PIg479QPJo3dNJd9HjEc/uffciyrK89wKFZalJevKsz5dHEh+DJNZ8CWhN3T/FfH/jijPLwbz",
-	"CbWuDv2heSkw4aDxngnDo2yIASF/Y/n+3wXVvViOwz1Z8X+8NKPzWtOYRDgSrKj1IW0lgL+2faV/qkUL",
-	"dHw8/hMAAP//WMw0SxEZAAA=",
+	"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",
+	"6BtdcoMjAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
