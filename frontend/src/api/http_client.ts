@@ -25,6 +25,13 @@ function unwrap<T>(r: { data?: T; error?: unknown; response: Response }) {
   return r.data as T;
 }
 
+function authHeaders(
+  idToken?: string | null,
+): Record<string, string> | undefined {
+  if (!idToken) return undefined;
+  return { Authorization: `Bearer ${idToken}` };
+}
+
 export async function fetchRanking(skip = 0, limit = 100) {
   const r = await client.GET("/ranking", {
     params: { query: { skip, limit } },
@@ -61,5 +68,67 @@ export async function fetchProblemCategories(): Promise<
   const r = await client.GET("/categories");
   return unwrap<components["schemas"]["ProblemCategoriesResponse"]>(r);
 }
+
+// Auth
+export async function fetchCurrentUserInfo(
+  idToken?: string | null,
+): Promise<components["schemas"]["CurrentUserInfoResponse"]> {
+  const r = await client.GET("/auth/current_user", {
+    headers: authHeaders(idToken),
+  });
+  return unwrap<components["schemas"]["CurrentUserInfoResponse"]>(r);
+}
+
+export async function registerUser(
+  name: string,
+  idToken?: string | null,
+): Promise<components["schemas"]["RegisterResponse"]> {
+  const r = await client.POST("/auth/register", {
+    body: { name },
+    headers: authHeaders(idToken),
+  });
+  return unwrap<components["schemas"]["RegisterResponse"]>(r);
+}
+
+export async function patchCurrentUserInfo(
+  user: components["schemas"]["User"],
+  idToken?: string | null,
+): Promise<components["schemas"]["ChangeCurrentUserInfoResponse"]> {
+  const r = await client.PATCH("/auth/current_user", {
+    body: { user },
+    headers: authHeaders(idToken),
+  });
+  return unwrap<components["schemas"]["ChangeCurrentUserInfoResponse"]>(r);
+}
+
+export async function fetchUserInfo(
+  name: string,
+): Promise<components["schemas"]["UserInfoResponse"]> {
+  const r = await client.GET("/users/{name}", { params: { path: { name } } });
+  return unwrap<components["schemas"]["UserInfoResponse"]>(r);
+}
+
+export async function patchUserInfo(
+  name: string,
+  user: components["schemas"]["User"],
+  idToken?: string | null,
+): Promise<components["schemas"]["ChangeUserInfoResponse"]> {
+  const r = await client.PATCH("/users/{name}", {
+    params: { path: { name } },
+    body: { user },
+    headers: authHeaders(idToken),
+  });
+  return unwrap<components["schemas"]["ChangeUserInfoResponse"]>(r);
+}
+
+// Submissions
+export type SubmitPayload = {
+  problem: string;
+  source: string;
+  lang: string;
+  tleKnockout?: boolean;
+};
+
+// Note: submission endpoints remain gRPC for now
 
 export type {};

@@ -10,6 +10,7 @@ import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 import {
   ChangeCurrentUserInfoRequest,
+  CurrentUserInfoResponse,
   HackInfoResponse,
   HackListResponse,
   HackRequest,
@@ -29,30 +30,38 @@ import {
   fetchProblemList,
   fetchLangList,
   fetchProblemCategories,
+  fetchCurrentUserInfo,
+  registerUser,
+  patchCurrentUserInfo,
+  fetchUserInfo as fetchUserInfoREST,
 } from "./http_client";
 import type { components as OpenApi } from "../openapi/types";
 
 const currentUserKey = ["api", "currentUser"];
 export const useCurrentUser = () => {
-  const bearer = useBearer();
-  return useQuery({
-    queryKey: ["api", "currentUser", bearer.data],
-    queryFn: async () =>
-      await client.currentUserInfo({}, bearer.data ?? undefined).response,
-    enabled: !bearer.isLoading,
+  const idToken = useIdToken();
+  return useQuery<CurrentUserInfoResponse>({
+    queryKey: ["api", "currentUser", idToken.data ?? ""],
+    queryFn: async () => {
+      const r = await fetchCurrentUserInfo(idToken.data ?? undefined);
+      const user = r.user
+        ? {
+            name: r.user.name,
+            libraryUrl: r.user.library_url,
+            isDeveloper: r.user.is_developer,
+          }
+        : undefined;
+      return { user } as CurrentUserInfoResponse;
+    },
+    enabled: !idToken.isLoading,
   });
 };
 export const useRegister = () => {
-  const bearer = useBearer();
+  const idToken = useIdToken();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (name: string) =>
-      await client.register(
-        {
-          name: name,
-        },
-        bearer.data ?? undefined,
-      ),
+      await registerUser(name, idToken.data ?? undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: currentUserKey,
@@ -61,12 +70,18 @@ export const useRegister = () => {
   });
 };
 export const useChangeCurrentUserInfoMutation = () => {
-  const bearer = useBearer();
+  const idToken = useIdToken();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (req: ChangeCurrentUserInfoRequest) =>
-      await client.changeCurrentUserInfo(req, bearer.data ?? undefined)
-        .response,
+      await patchCurrentUserInfo(
+        {
+          name: req.user!.name,
+          library_url: req.user!.libraryUrl,
+          is_developer: req.user!.isDeveloper,
+        },
+        idToken.data ?? undefined,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: currentUserKey,
@@ -139,11 +154,19 @@ export const useUserInfo = (
   name: string,
   options?: Omit<UseQueryOptions<UserInfoResponse>, "queryKey" | "queryFn">,
 ): UseQueryResult<UserInfoResponse> => {
-  const bearer = useBearer();
   return useQuery({
-    queryKey: ["api", "userInfo", name, bearer.data?.meta.authorization ?? ""],
-    queryFn: async () =>
-      await client.userInfo({ name: name }, bearer.data ?? undefined).response,
+    queryKey: ["api", "userInfo", name],
+    queryFn: async () => {
+      const r = await fetchUserInfoREST(name);
+      return {
+        user: {
+          name: r.user.name,
+          libraryUrl: r.user.library_url,
+          isDeveloper: r.user.is_developer,
+        },
+        solvedMap: (r.solved_map ?? {}) as Record<string, never>,
+      } as unknown as UserInfoResponse;
+    },
     ...options,
   });
 };
@@ -170,6 +193,7 @@ export const useSubmissionList = (
       skip,
       limit,
     ],
+    // Use REST endpoint
     queryFn: async () =>
       await client.submissionList(
         {
