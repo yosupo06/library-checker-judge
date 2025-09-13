@@ -20,7 +20,7 @@ service LibraryCheckerService {
     rpc Submit (SubmitRequest) returns (SubmitResponse) {}
     rpc Rejudge (RejudgeRequest) returns (RejudgeResponse) {}
     rpc SubmissionInfo (SubmissionInfoRequest) returns (SubmissionInfoResponse) {}
-    rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}    
+    rpc SubmissionList (SubmissionListRequest) returns (SubmissionListResponse) {}
 
     rpc Hack (HackRequest) returns (HackResponse) {}
     rpc HackInfo (HackInfoRequest) returns (HackInfoResponse) {}
@@ -40,7 +40,7 @@ message RegisterResponse {
 }
 
 message User {
-    string name = 1;    
+    string name = 1;
     string library_url = 4;
     bool is_developer = 5;
 }
@@ -85,7 +85,7 @@ message Problem {
     string title = 2; // "A + B"
 }
 
-message ProblemListRequest {    
+message ProblemListRequest {
 }
 message ProblemListResponse {
     repeated Problem problems = 1;

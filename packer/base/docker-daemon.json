@@ -1,6 +1,6 @@
 {
     "default-runtime": "crun",
-    "exec-opts": ["native.cgroupdriver=cgroupfs"],    
+    "exec-opts": ["native.cgroupdriver=cgroupfs"],
     "runtimes": {
         "crun": {
             "path": "/root/crun"

@@ -39,7 +39,7 @@ locals {
     minio_id = var.minio_id
     minio_secret = var.minio_secret
     minio_bucket = var.minio_bucket
-    minio_public_bucket = var.minio_public_bucket    
+    minio_public_bucket = var.minio_public_bucket
     pg_user = var.pg_user
   })
 }
@@ -118,5 +118,5 @@ build {
       "sudo systemctl daemon-reload",
       "sudo systemctl enable judge",
     ]
-  }  
+  }
 }

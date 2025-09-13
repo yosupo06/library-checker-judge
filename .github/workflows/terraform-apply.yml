@@ -37,4 +37,3 @@ jobs:
         working-directory: ./terraform
       - run: terraform apply --auto-approve
         working-directory: ./terraform
-

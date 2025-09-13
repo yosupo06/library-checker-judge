@@ -17,7 +17,7 @@ int main() {
     steady_clock::time_point begin = steady_clock::now();
     auto ans = solve(a, b);
     steady_clock::time_point end = steady_clock::now();
-    
+
     auto elapsed_time = duration_cast<milliseconds>(end - begin);
     std::cerr << "solve() consumes: " << elapsed_time.count() << "ms" << std::endl;
 
