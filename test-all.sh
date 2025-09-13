@@ -9,7 +9,7 @@ if ! docker ps | grep -q postgres; then
     echo "PostgreSQL not running, starting local environment..."
     ./launch_local.sh &
     LAUNCH_PID=$!
-    
+
     # Wait for PostgreSQL to be ready
     echo "Waiting for PostgreSQL to be ready..."
     timeout=60
@@ -17,12 +17,12 @@ if ! docker ps | grep -q postgres; then
         sleep 1
         ((timeout--))
     done
-    
+
     if [ $timeout -eq 0 ]; then
         echo "Timeout waiting for PostgreSQL to start"
         exit 1
     fi
-    
+
     # Additional wait for PostgreSQL to accept connections
     sleep 10
     echo "PostgreSQL is ready"

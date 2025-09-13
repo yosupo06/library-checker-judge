@@ -11,5 +11,5 @@ public class Main {
 		Scanner in = new Scanner(System.in);
 		int a = in.nextInt(), b = in.nextInt();
 		aplusb.exec(a, b);
-	}	
+	}
 }

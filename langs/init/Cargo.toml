@@ -10,4 +10,3 @@ sandbox = []
 
 [dependencies]
 nix = "0.24.1"
-

@@ -29,7 +29,7 @@ concurrency:
 
 env:
   TF_CLOUD_ORGANIZATION: "yosupo06-org"
-  TF_WORKSPACE: "${{ inputs.env }}-library-checker"  
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
 
 jobs:
   deploy:

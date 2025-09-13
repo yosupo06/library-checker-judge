@@ -29,8 +29,8 @@ concurrency:
 
 env:
   TF_CLOUD_ORGANIZATION: "yosupo06-org"
-  TF_WORKSPACE: "${{ inputs.env }}-library-checker"  
-  
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
+
 jobs:
   base:
     if: ${{ inputs.build-base }}
@@ -59,7 +59,7 @@ jobs:
         token_format: access_token
 
     - uses: google-github-actions/setup-gcloud@v2
-    
+
     - run: packer init build.pkr.hcl
       working-directory: ./packer/base
     - id: image-name
@@ -108,9 +108,9 @@ jobs:
           minio-secret:${{ inputs.env }}-library-checker-project/storage-hmac-key/latest
 
     - uses: google-github-actions/setup-gcloud@v2
-    
+
     - run: ./run_protoc.sh
-    
+
     - run: go build .
       working-directory: ./judge
 
