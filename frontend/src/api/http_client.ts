@@ -48,4 +48,18 @@ export async function fetchProblemInfo(
   return unwrap<components["schemas"]["ProblemInfoResponse"]>(r);
 }
 
+export async function fetchLangList(): Promise<
+  components["schemas"]["LangListResponse"]
+> {
+  const r = await client.GET("/langs");
+  return unwrap<components["schemas"]["LangListResponse"]>(r);
+}
+
+export async function fetchProblemCategories(): Promise<
+  components["schemas"]["ProblemCategoriesResponse"]
+> {
+  const r = await client.GET("/categories");
+  return unwrap<components["schemas"]["ProblemCategoriesResponse"]>(r);
+}
+
 export type {};
