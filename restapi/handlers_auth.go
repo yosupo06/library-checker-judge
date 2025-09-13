@@ -17,7 +17,7 @@ func (s *server) PostRegister(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	uid, err := parseUIDFromRequest(r)
+	uid, err := s.uidFromRequest(r)
 	if err != nil || uid == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -32,7 +32,7 @@ func (s *server) PostRegister(w http.ResponseWriter, r *http.Request) {
 
 // GetCurrentUserInfo handles GET /auth/current_user
 func (s *server) GetCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
-	uid, err := parseUIDFromRequest(r)
+	uid, err := s.uidFromRequest(r)
 	if err != nil || uid == "" {
 		// Return empty user (not logged in)
 		_ = json.NewEncoder(w).Encode(restapi.CurrentUserInfoResponse{})
@@ -59,7 +59,7 @@ func (s *server) PatchCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	uid, err := parseUIDFromRequest(r)
+	uid, err := s.uidFromRequest(r)
 	if err != nil || uid == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -113,7 +113,7 @@ func (s *server) PatchUserInfo(w http.ResponseWriter, r *http.Request, name stri
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	uid, err := parseUIDFromRequest(r)
+	uid, err := s.uidFromRequest(r)
 	if err != nil || uid == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return

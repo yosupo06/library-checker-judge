@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/go-chi/chi/v5"
 	"github.com/yosupo06/library-checker-judge/database"
 	restapi "github.com/yosupo06/library-checker-judge/restapi/internal/api"
@@ -12,7 +14,10 @@ import (
 )
 
 // server is REST server implementation for OpenAPI handlers.
-type server struct{ db *gorm.DB }
+type server struct {
+	db         *gorm.DB
+	authClient AuthClient
+}
 
 func getEnv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
@@ -21,8 +26,31 @@ func getEnv(key, def string) string {
 	return def
 }
 
+func createFirebaseApp(ctx context.Context, projectID string) (*firebase.App, error) {
+	return firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID})
+}
+
 func main() {
 	db := database.Connect(database.GetDSNFromEnv(), getEnv("API_DB_LOG", "") != "")
+
+	// connect firebase auth (required)
+	ctx := context.Background()
+	firebaseProject := os.Getenv("FIREBASE_PROJECT")
+	if firebaseProject == "" {
+		slog.Error("FIREBASE_PROJECT must be set")
+		os.Exit(1)
+	}
+	app, err := createFirebaseApp(ctx, firebaseProject)
+	if err != nil {
+		slog.Error("create firebase app failed", "error", err)
+		os.Exit(1)
+	}
+	authCli, err := app.Auth(ctx)
+	if err != nil {
+		slog.Error("connect firebase auth failed", "error", err)
+		os.Exit(1)
+	}
+	ac := &FirebaseAuthClient{client: authCli}
 
 	r := chi.NewRouter()
 	// CORS (dev)
@@ -40,7 +68,7 @@ func main() {
 	})
 
 	// Register OpenAPI handlers on chi router
-	_ = restapi.HandlerFromMux(&server{db: db}, r)
+	_ = restapi.HandlerFromMux(&server{db: db, authClient: ac}, r)
 	r.Get("/openapi.yaml", func(w http.ResponseWriter, req *http.Request) { http.ServeFile(w, req, "openapi/openapi.yaml") })
 	r.Get("/health", func(w http.ResponseWriter, req *http.Request) { _, _ = w.Write([]byte("SERVING")) })
 
