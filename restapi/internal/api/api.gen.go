@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -68,6 +69,58 @@ type RankingResponse struct {
 	Statistics []UserStatistics `json:"statistics"`
 }
 
+// SubmissionCaseResult defines model for SubmissionCaseResult.
+type SubmissionCaseResult struct {
+	Case       string  `json:"case"`
+	CheckerOut *[]byte `json:"checker_out,omitempty"`
+	Memory     int64   `json:"memory"`
+	Status     string  `json:"status"`
+	Stderr     *[]byte `json:"stderr,omitempty"`
+	Time       float32 `json:"time"`
+}
+
+// SubmissionInfoResponse defines model for SubmissionInfoResponse.
+type SubmissionInfoResponse struct {
+	CanRejudge   bool                    `json:"can_rejudge"`
+	CaseResults  *[]SubmissionCaseResult `json:"case_results,omitempty"`
+	CompileError *[]byte                 `json:"compile_error,omitempty"`
+	Overview     SubmissionOverview      `json:"overview"`
+	Source       string                  `json:"source"`
+}
+
+// SubmissionListResponse defines model for SubmissionListResponse.
+type SubmissionListResponse struct {
+	Count       int32                `json:"count"`
+	Submissions []SubmissionOverview `json:"submissions"`
+}
+
+// SubmissionOverview defines model for SubmissionOverview.
+type SubmissionOverview struct {
+	Id             int32      `json:"id"`
+	IsLatest       bool       `json:"is_latest"`
+	Lang           string     `json:"lang"`
+	Memory         int64      `json:"memory"`
+	ProblemName    string     `json:"problem_name"`
+	ProblemTitle   string     `json:"problem_title"`
+	Status         string     `json:"status"`
+	SubmissionTime *time.Time `json:"submission_time,omitempty"`
+	Time           float32    `json:"time"`
+	UserName       *string    `json:"user_name,omitempty"`
+}
+
+// SubmitRequest defines model for SubmitRequest.
+type SubmitRequest struct {
+	Lang        string `json:"lang"`
+	Problem     string `json:"problem"`
+	Source      string `json:"source"`
+	TleKnockout *bool  `json:"tle_knockout,omitempty"`
+}
+
+// SubmitResponse defines model for SubmitResponse.
+type SubmitResponse struct {
+	Id int32 `json:"id"`
+}
+
 // UserStatistics defines model for UserStatistics.
 type UserStatistics struct {
 	Count int32  `json:"count"`
@@ -79,6 +132,22 @@ type GetRankingParams struct {
 	Skip  *int32 `form:"skip,omitempty" json:"skip,omitempty"`
 	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// GetSubmissionListParams defines parameters for GetSubmissionList.
+type GetSubmissionListParams struct {
+	Skip      *int32  `form:"skip,omitempty" json:"skip,omitempty"`
+	Limit     *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Problem   *string `form:"problem,omitempty" json:"problem,omitempty"`
+	Status    *string `form:"status,omitempty" json:"status,omitempty"`
+	Hacked    *bool   `form:"hacked,omitempty" json:"hacked,omitempty"`
+	User      *string `form:"user,omitempty" json:"user,omitempty"`
+	DedupUser *bool   `form:"dedupUser,omitempty" json:"dedupUser,omitempty"`
+	Lang      *string `form:"lang,omitempty" json:"lang,omitempty"`
+	Order     *string `form:"order,omitempty" json:"order,omitempty"`
+}
+
+// PostSubmitJSONRequestBody defines body for PostSubmit for application/json ContentType.
+type PostSubmitJSONRequestBody = SubmitRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -97,6 +166,15 @@ type ServerInterface interface {
 	// Get ranking
 	// (GET /ranking)
 	GetRanking(w http.ResponseWriter, r *http.Request, params GetRankingParams)
+	// Get submissions list
+	// (GET /submissions)
+	GetSubmissionList(w http.ResponseWriter, r *http.Request, params GetSubmissionListParams)
+	// Get submission info
+	// (GET /submissions/{id})
+	GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id int32)
+	// Submit a solution
+	// (POST /submit)
+	PostSubmit(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -130,6 +208,24 @@ func (_ Unimplemented) GetProblemInfo(w http.ResponseWriter, r *http.Request, na
 // Get ranking
 // (GET /ranking)
 func (_ Unimplemented) GetRanking(w http.ResponseWriter, r *http.Request, params GetRankingParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get submissions list
+// (GET /submissions)
+func (_ Unimplemented) GetSubmissionList(w http.ResponseWriter, r *http.Request, params GetSubmissionListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get submission info
+// (GET /submissions/{id})
+func (_ Unimplemented) GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id int32) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Submit a solution
+// (POST /submit)
+func (_ Unimplemented) PostSubmit(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -235,6 +331,136 @@ func (siw *ServerInterfaceWrapper) GetRanking(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRanking(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSubmissionList operation middleware
+func (siw *ServerInterfaceWrapper) GetSubmissionList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSubmissionListParams
+
+	// ------------- Optional query parameter "skip" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "skip", r.URL.Query(), &params.Skip)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "skip", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "problem" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "problem", r.URL.Query(), &params.Problem)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "problem", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "hacked" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "hacked", r.URL.Query(), &params.Hacked)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "hacked", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "user" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "user", r.URL.Query(), &params.User)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "dedupUser" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "dedupUser", r.URL.Query(), &params.DedupUser)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dedupUser", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "lang" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "lang", r.URL.Query(), &params.Lang)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lang", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "order" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "order", r.URL.Query(), &params.Order)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSubmissionList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSubmissionInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetSubmissionInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int32
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSubmissionInfo(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostSubmit operation middleware
+func (siw *ServerInterfaceWrapper) PostSubmit(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSubmit(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -372,6 +598,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/ranking", wrapper.GetRanking)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/submissions", wrapper.GetSubmissionList)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/submissions/{id}", wrapper.GetSubmissionInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/submit", wrapper.PostSubmit)
+	})
 
 	return r
 }
@@ -379,18 +614,26 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/9RYXW/bNhT9KwK3hxZTY7cZ9qC3LRiGYgESOOtTEQi0dO0wlkiFpDIYhv/7QFIflEXK",
+	"VDpv6Esb2Lwf59x7Li99QBkrK0aBSoGSAxLZE5RY/3mL6Vb9X3FWAZcE9KckV//KfQUoQUJyQrfoGCOK",
+	"S3B+8QpcEEYd3x1jxOGlJhxylHxVjhs3vdFj3Bqx9TNkUjlUad0SIVcgKkYFjFMsMN2aXCWU+o8fOWxQ",
+	"gn5Y9GAXDdKFhnnsAmHO8X6UnHHpSuees3UB5TgLLyOSyALO89FQYU5PRL7BEraMExB+RrLuTDAtQ+/7",
+	"swxZIc4nux+nWJkDwwTH3A1SCObSHIv7IBMpfqYb5meSvQLHRZH62zpGgtU8g7TmhRsDCJlhAWLSiSQl",
+	"pAUpiVRfbxgvsUQJ2hQMS9RlT+tyDXyKiRkKbFmy8h/k0btygYhH3EyQPC1gZy8ENOvZJp2s/wrTHaHb",
+	"CRWxmg6rQai8/tRXg1AJW1MOIbEkQpIsHMQXAfyhNzuHxYoQN6m5UD3U65IIVY8bLGAFoi6ka0AId/Nk",
+	"T5DtgKesHiJf7yX0wPvzJZSNvG2SfvnZS1LtFrqQOXAeFFJ1aIhGRgNL6GY3OTRuOgDTVE7PiAzTlMNz",
+	"nW9tTteMFYCpJhULSLkuRXh7OAvpGInKlBSQAucsjECl21cCf4dncNdadNPu/HTponQm8YCpacanB8Ys",
+	"ZXY+38K9jXxanlaYMH3eWWVw7VwB2IhIC6xGs7vvimaj+zbVNkM09S447QH/lTQl/I6PdCTsHEv40Oj0",
+	"zWMgRrUA7svetZQOAJ/Ca1i1uZ8/VOQKXuqmbONddorkiQXEvVYUkO4oy3bNQD9tEveFaWtWZzSFxCfS",
+	"wC4eV8AV7OSy/KaJENYKTfV9SlbHCd0w7cg0Prola475Proxl2i0+v3hr+jX+8/Ru5JQUuLivbVTJWh5",
+	"9fFqqQdyBRRXBCXo+mp5da16DssnjWsxXOW3oEEq5FiqiylHCfoD5OhtgBQYUxlt+Gm5NDRRCYYoXFUF",
+	"ybSXxbMw+6KZf/OeCvZDRLOSg8g4qaQBefenZlbUZYnVyFHZRk2bRRY4dWjRveR8ONvH4CXhjR6coahU",
+	"9jXeQlSoDDUge7M9U7v/omRvgtVhGCBaHJRAjgHA1PKkW5rjEiRwgZKvB0RUPNXm7a8ASau4XoSS1xBb",
+	"CE8F+3h5xgab39z21vNBs8bNW2OKreY54mHqpQa+76kSO1Ihm5ocNlhv+ss4ZOS6vbbPPofbj8sgx5es",
+	"yOl7LbQaLfe6ECfboK8Yw0X0+66Jx7F11XsF5jHt1p3Zlk8420HusrQ2Erep2uLeEjKHvK6+eIzPRm2W",
+	"vdlRGc9PIg479QPJo3dNJd9HjEc/uffciyrK89wKFZalJevKsz5dHEh+DJNZ8CWhN3T/FfH/jijPLwbz",
+	"CbWuDv2heSkw4aDxngnDo2yIASF/Y/n+3wXVvViOwz1Z8X+8NKPzWtOYRDgSrKj1IW0lgL+2faV/qkUL",
+	"dHw8/hMAAP//WMw0SxEZAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

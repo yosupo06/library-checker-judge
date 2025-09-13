@@ -79,6 +79,94 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemCategoriesResponse'
+  /submit:
+    post:
+      summary: Submit a solution
+      operationId: postSubmit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitResponse'
+  /submissions:
+    get:
+      summary: Get submissions list
+      operationId: getSubmissionList
+      parameters:
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            format: int32
+            default: 100
+        - in: query
+          name: problem
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: hacked
+          schema:
+            type: boolean
+        - in: query
+          name: user
+          schema:
+            type: string
+        - in: query
+          name: dedupUser
+          schema:
+            type: boolean
+        - in: query
+          name: lang
+          schema:
+            type: string
+        - in: query
+          name: order
+          schema:
+            type: string
+            description: "-id (default) or +time"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionListResponse'
+  /submissions/{id}:
+    get:
+      summary: Get submission info
+      operationId: getSubmissionInfo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionInfoResponse'
 components:
   schemas:
     UserStatistics:
@@ -170,3 +258,98 @@ components:
           items:
             $ref: '#/components/schemas/ProblemCategory'
       required: [categories]
+    SubmitRequest:
+      type: object
+      properties:
+        problem:
+          type: string
+        source:
+          type: string
+        lang:
+          type: string
+        tle_knockout:
+          type: boolean
+      required: [problem, source, lang]
+    SubmitResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+      required: [id]
+    SubmissionOverview:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        problem_name:
+          type: string
+        problem_title:
+          type: string
+        user_name:
+          type: string
+        lang:
+          type: string
+        is_latest:
+          type: boolean
+        status:
+          type: string
+        time:
+          type: number
+          format: float
+        memory:
+          type: integer
+          format: int64
+        submission_time:
+          type: string
+          format: date-time
+      required: [id, problem_name, problem_title, lang, is_latest, status, time, memory]
+    SubmissionListResponse:
+      type: object
+      properties:
+        submissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionOverview'
+        count:
+          type: integer
+          format: int32
+      required: [submissions, count]
+    SubmissionCaseResult:
+      type: object
+      properties:
+        case:
+          type: string
+        status:
+          type: string
+        time:
+          type: number
+          format: float
+        memory:
+          type: integer
+          format: int64
+        stderr:
+          type: string
+          format: byte
+        checker_out:
+          type: string
+          format: byte
+      required: [case, status, time, memory]
+    SubmissionInfoResponse:
+      type: object
+      properties:
+        overview:
+          $ref: '#/components/schemas/SubmissionOverview'
+        source:
+          type: string
+        compile_error:
+          type: string
+          format: byte
+        can_rejudge:
+          type: boolean
+        case_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionCaseResult'
+      required: [overview, source, can_rejudge]
