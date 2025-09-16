@@ -79,6 +79,177 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemCategoriesResponse'
+  /submit:
+    post:
+      summary: Submit a solution
+      operationId: postSubmit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitResponse'
+  /submissions:
+    get:
+      summary: Get submissions list
+      operationId: getSubmissionList
+      parameters:
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            format: int32
+            default: 100
+        - in: query
+          name: problem
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: hacked
+          schema:
+            type: boolean
+        - in: query
+          name: user
+          schema:
+            type: string
+        - in: query
+          name: dedupUser
+          schema:
+            type: boolean
+        - in: query
+          name: lang
+          schema:
+            type: string
+        - in: query
+          name: order
+          schema:
+            type: string
+            description: "-id (default) or +time"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionListResponse'
+  /submissions/{id}:
+    get:
+      summary: Get submission info
+      operationId: getSubmissionInfo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionInfoResponse'
+  /auth/register:
+    post:
+      summary: Register user
+      operationId: postRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+  /auth/current_user:
+    get:
+      summary: Get current user info
+      operationId: getCurrentUserInfo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserInfoResponse'
+    patch:
+      summary: Change current user info
+      operationId: patchCurrentUserInfo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeCurrentUserInfoRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeCurrentUserInfoResponse'
+  /users/{name}:
+    get:
+      summary: Get user info
+      operationId: getUserInfo
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+    patch:
+      summary: Change user info (self only)
+      operationId: patchUserInfo
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeUserInfoRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeUserInfoResponse'
 components:
   schemas:
     UserStatistics:
@@ -170,3 +341,151 @@ components:
           items:
             $ref: '#/components/schemas/ProblemCategory'
       required: [categories]
+    User:
+      type: object
+      properties:
+        name:
+          type: string
+        library_url:
+          type: string
+        is_developer:
+          type: boolean
+      required: [name, library_url, is_developer]
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [name]
+    RegisterResponse:
+      type: object
+      properties: {}
+    CurrentUserInfoResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    ChangeCurrentUserInfoRequest:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+      required: [user]
+    ChangeCurrentUserInfoResponse:
+      type: object
+      properties: {}
+    UserInfoResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        solved_map:
+          type: object
+          additionalProperties:
+            type: string
+            description: One of UNKNOWN/LATEST_AC/AC
+      required: [user, solved_map]
+    ChangeUserInfoRequest:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+      required: [user]
+    ChangeUserInfoResponse:
+      type: object
+      properties: {}
+    SubmitRequest:
+      type: object
+      properties:
+        problem:
+          type: string
+        source:
+          type: string
+        lang:
+          type: string
+        tle_knockout:
+          type: boolean
+      required: [problem, source, lang]
+    SubmitResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+      required: [id]
+    SubmissionOverview:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        problem_name:
+          type: string
+        problem_title:
+          type: string
+        user_name:
+          type: string
+        lang:
+          type: string
+        is_latest:
+          type: boolean
+        status:
+          type: string
+        time:
+          type: number
+          format: float
+        memory:
+          type: integer
+          format: int64
+        submission_time:
+          type: string
+          format: date-time
+      required: [id, problem_name, problem_title, lang, is_latest, status, time, memory]
+    SubmissionListResponse:
+      type: object
+      properties:
+        submissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionOverview'
+        count:
+          type: integer
+          format: int32
+      required: [submissions, count]
+    SubmissionCaseResult:
+      type: object
+      properties:
+        case:
+          type: string
+        status:
+          type: string
+        time:
+          type: number
+          format: float
+        memory:
+          type: integer
+          format: int64
+        stderr:
+          type: string
+          format: byte
+        checker_out:
+          type: string
+          format: byte
+      required: [case, status, time, memory]
+    SubmissionInfoResponse:
+      type: object
+      properties:
+        overview:
+          $ref: '#/components/schemas/SubmissionOverview'
+        source:
+          type: string
+        compile_error:
+          type: string
+          format: byte
+        can_rejudge:
+          type: boolean
+        case_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionCaseResult'
+      required: [overview, source, can_rejudge]

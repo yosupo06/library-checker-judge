@@ -1,7 +1,12 @@
 package integration
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"testing"
 	"time"
 
@@ -22,7 +27,12 @@ func waitForProblem(db *gorm.DB, name string, timeout time.Duration) error {
 }
 
 func TestAplusB_AC(t *testing.T) {
-	// Ensure default connection to local compose
+	// Ensure REST server is up
+	if err := waitForREST(t, "http://localhost:12381/health", 2*time.Minute); err != nil {
+		t.Fatalf("REST /health not ready: %v", err)
+	}
+
+	// Ensure DB has problem (for uploader readiness)
 	t.Setenv("PGHOST", "localhost")
 	t.Setenv("PGPORT", "5432")
 	t.Setenv("PGDATABASE", "librarychecker")
@@ -31,10 +41,8 @@ func TestAplusB_AC(t *testing.T) {
 
 	dsn := database.GetDSNFromEnv()
 	db := database.Connect(dsn, false)
-
-	// Make sure problem is already uploaded by uploader step
 	if err := waitForProblem(db, "aplusb", 2*time.Minute); err != nil {
-		t.Fatalf("aplusb problem not found in DB (did uploader run?): %v", err)
+		t.Fatalf("aplusb problem not found in DB: %v", err)
 	}
 
 	// Minimal AC source for A+B (C++)
@@ -42,47 +50,65 @@ func TestAplusB_AC(t *testing.T) {
 using namespace std;
 int main(){ios::sync_with_stdio(false);cin.tie(nullptr); long long a,b; if(!(cin>>a>>b)) return 0; cout<<a+b<<"\n"; return 0;}`
 
-	// Create submission
-	sub := database.Submission{
-		SubmissionTime: time.Now(),
-		ProblemName:    "aplusb",
-		Lang:           "cpp",
-		Status:         "WJ",
-		Source:         src,
-		MaxTime:        -1,
-		MaxMemory:      -1,
+	// Submit via REST
+	body := map[string]any{
+		"problem":      "aplusb",
+		"source":       src,
+		"lang":         "cpp",
+		"tle_knockout": false,
 	}
-	id, err := database.SaveSubmission(db, sub)
+	b, _ := json.Marshal(body)
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Post("http://localhost:12381/submit", "application/json", bytes.NewReader(b))
 	if err != nil {
-		t.Fatalf("SaveSubmission failed: %v", err)
+		t.Fatalf("POST /submit failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != 200 {
+		bb, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST /submit status=%d, body=%s", resp.StatusCode, string(bb))
+	}
+	var submitRes struct {
+		Id int32 `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&submitRes); err != nil {
+		t.Fatalf("decode submit response: %v", err)
 	}
 
-	// Enqueue task for judge
-	if err := database.PushSubmissionTask(db, database.SubmissionData{ID: id, TleKnockout: false}, 50); err != nil {
-		t.Fatalf("PushSubmissionTask failed: %v", err)
-	}
-
-	// Poll for result
+	// Poll /submissions/{id}
 	deadline := time.Now().Add(10 * time.Minute)
 	lastStatus := ""
 	for time.Now().Before(deadline) {
-		sub2, err := database.FetchSubmission(db, id)
+		url := fmt.Sprintf("http://localhost:12381/submissions/%d", submitRes.Id)
+		r2, err := client.Get(url)
 		if err != nil {
-			t.Fatalf("FetchSubmission failed: %v", err)
+			t.Fatalf("GET %s failed: %v", url, err)
 		}
-		if sub2.Status != lastStatus {
-			t.Logf("submission %d status: %s", id, sub2.Status)
-			lastStatus = sub2.Status
+		var info struct {
+			Overview struct {
+				Status string  `json:"status"`
+				Time   float64 `json:"time"`
+				Memory int64   `json:"memory"`
+			} `json:"overview"`
 		}
-		switch sub2.Status {
+		if err := json.NewDecoder(r2.Body).Decode(&info); err != nil {
+			_ = r2.Body.Close()
+			t.Fatalf("decode submission info failed: %v", err)
+		}
+		_ = r2.Body.Close()
+		if info.Overview.Status != lastStatus {
+			t.Logf("submission %d status: %s", submitRes.Id, info.Overview.Status)
+			lastStatus = info.Overview.Status
+		}
+		switch info.Overview.Status {
 		case "AC":
-			t.Logf("AC confirmed. MaxTime=%d ms, MaxMemory=%d B", sub2.MaxTime, sub2.MaxMemory)
+			t.Logf("AC confirmed. Time=%.3f s, Memory=%d B", info.Overview.Time, info.Overview.Memory)
 			return
 		case "WA", "TLE", "MLE", "RE", "CE", "IE", "ICE":
-			t.Fatalf("Unexpected non-AC final status: %s", sub2.Status)
+			t.Fatalf("Unexpected non-AC final status: %s", info.Overview.Status)
 			return
 		}
 		time.Sleep(3 * time.Second)
 	}
-	t.Fatalf("Timeout waiting for judging result for submission %d", id)
+	t.Fatalf("Timeout waiting for judging result for submission %d", submitRes.Id)
 }
