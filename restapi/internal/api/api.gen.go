@@ -38,9 +38,47 @@ type ChangeCurrentUserInfoRequest struct {
 // ChangeCurrentUserInfoResponse defines model for ChangeCurrentUserInfoResponse.
 type ChangeCurrentUserInfoResponse = map[string]interface{}
 
+// CreateHackRequest defines model for CreateHackRequest.
+type CreateHackRequest struct {
+	Submission  int32   `json:"submission"`
+	TestCaseCpp *[]byte `json:"test_case_cpp,omitempty"`
+	TestCaseTxt *[]byte `json:"test_case_txt,omitempty"`
+}
+
 // CurrentUserInfoResponse defines model for CurrentUserInfoResponse.
 type CurrentUserInfoResponse struct {
 	User *User `json:"user,omitempty"`
+}
+
+// HackInfoResponse defines model for HackInfoResponse.
+type HackInfoResponse struct {
+	JudgeOutput *[]byte      `json:"judge_output,omitempty"`
+	Overview    HackOverview `json:"overview"`
+	Stderr      *[]byte      `json:"stderr,omitempty"`
+	TestCaseCpp *[]byte      `json:"test_case_cpp,omitempty"`
+	TestCaseTxt *[]byte      `json:"test_case_txt,omitempty"`
+}
+
+// HackListResponse defines model for HackListResponse.
+type HackListResponse struct {
+	Count int32          `json:"count"`
+	Hacks []HackOverview `json:"hacks"`
+}
+
+// HackOverview defines model for HackOverview.
+type HackOverview struct {
+	HackTime     time.Time `json:"hack_time"`
+	Id           int32     `json:"id"`
+	Memory       *int64    `json:"memory,omitempty"`
+	Status       string    `json:"status"`
+	SubmissionId int32     `json:"submission_id"`
+	Time         *float32  `json:"time,omitempty"`
+	UserName     *string   `json:"user_name,omitempty"`
+}
+
+// HackResponse defines model for HackResponse.
+type HackResponse struct {
+	Id int32 `json:"id"`
 }
 
 // Lang defines model for Lang.
@@ -198,6 +236,15 @@ type UserStatistics struct {
 // Username Unique user identifier consisting of letters, digits, hyphen, or underscore.
 type Username = string
 
+// HackId defines model for HackId.
+type HackId = int32
+
+// HackLimit defines model for HackLimit.
+type HackLimit = int32
+
+// HackSkip defines model for HackSkip.
+type HackSkip = int32
+
 // RankingLimit defines model for RankingLimit.
 type RankingLimit = int32
 
@@ -215,6 +262,18 @@ type SubmissionSkip = int32
 
 // UserNamePath Unique user identifier consisting of letters, digits, hyphen, or underscore.
 type UserNamePath = Username
+
+// GetHackListParams defines parameters for GetHackList.
+type GetHackListParams struct {
+	// Skip Number of hacks to skip before collecting results.
+	Skip *HackSkip `form:"skip,omitempty" json:"skip,omitempty"`
+
+	// Limit Maximum number of hacks to return (1-1000).
+	Limit  *HackLimit `form:"limit,omitempty" json:"limit,omitempty"`
+	User   *string    `form:"user,omitempty" json:"user,omitempty"`
+	Status *string    `form:"status,omitempty" json:"status,omitempty"`
+	Order  *string    `form:"order,omitempty" json:"order,omitempty"`
+}
 
 // GetRankingParams defines parameters for GetRanking.
 type GetRankingParams struct {
@@ -247,6 +306,9 @@ type PatchCurrentUserInfoJSONRequestBody = ChangeCurrentUserInfoRequest
 // PostRegisterJSONRequestBody defines body for PostRegister for application/json ContentType.
 type PostRegisterJSONRequestBody = RegisterRequest
 
+// PostHackJSONRequestBody defines body for PostHack for application/json ContentType.
+type PostHackJSONRequestBody = CreateHackRequest
+
 // PostSubmitJSONRequestBody defines body for PostSubmit for application/json ContentType.
 type PostSubmitJSONRequestBody = SubmitRequest
 
@@ -264,6 +326,15 @@ type ServerInterface interface {
 	// Get problem categories
 	// (GET /categories)
 	GetProblemCategories(w http.ResponseWriter, r *http.Request)
+	// List hacks
+	// (GET /hacks)
+	GetHackList(w http.ResponseWriter, r *http.Request, params GetHackListParams)
+	// Submit hack test case
+	// (POST /hacks)
+	PostHack(w http.ResponseWriter, r *http.Request)
+	// Get hack info
+	// (GET /hacks/{id})
+	GetHackInfo(w http.ResponseWriter, r *http.Request, id HackId)
 	// Get language list
 	// (GET /langs)
 	GetLangList(w http.ResponseWriter, r *http.Request)
@@ -315,6 +386,24 @@ func (_ Unimplemented) PostRegister(w http.ResponseWriter, r *http.Request) {
 // Get problem categories
 // (GET /categories)
 func (_ Unimplemented) GetProblemCategories(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List hacks
+// (GET /hacks)
+func (_ Unimplemented) GetHackList(w http.ResponseWriter, r *http.Request, params GetHackListParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Submit hack test case
+// (POST /hacks)
+func (_ Unimplemented) PostHack(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get hack info
+// (GET /hacks/{id})
+func (_ Unimplemented) GetHackInfo(w http.ResponseWriter, r *http.Request, id HackId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -434,6 +523,110 @@ func (siw *ServerInterfaceWrapper) GetProblemCategories(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetProblemCategories(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetHackList operation middleware
+func (siw *ServerInterfaceWrapper) GetHackList(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetHackListParams
+
+	// ------------- Optional query parameter "skip" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "skip", r.URL.Query(), &params.Skip)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "skip", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "user" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "user", r.URL.Query(), &params.User)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "order" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "order", r.URL.Query(), &params.Order)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "order", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHackList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostHack operation middleware
+func (siw *ServerInterfaceWrapper) PostHack(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, FirebaseAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostHack(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetHackInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetHackInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id HackId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetHackInfo(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -818,6 +1011,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/categories", wrapper.GetProblemCategories)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/hacks", wrapper.GetHackList)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/hacks", wrapper.PostHack)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/hacks/{id}", wrapper.GetHackInfo)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/langs", wrapper.GetLangList)
 	})
 	r.Group(func(r chi.Router) {
@@ -848,40 +1050,45 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"DKniMRfOjPDwBO/muz8DAAD//9VB1az+KwAA",
+	"H4sIAAAAAAAC/8xbe2/cuBH/KgR7QBOc7F0nadrufz4jbdPzJYYd44AarsCVZncZS6RCUr5sjf3uBUm9",
+	"RWkledfIX3fW8jHzm/cM84QDHiecAVMSL55wQgSJQYEwf/2LBA8fQ/1/IchA0ERRzvDCfEc0BKboioI4",
+	"xR6m+ntC1AZ7mJEY8ALTEHtYwLeUCgjxQokUPCyDDcREH7niIiZKr2Pq7Rvs4ZgyGqcxXsw9rLYJ2J9g",
+	"DQLvdp659JLGVLXp+Y181zsRS+MlCMRXaEOCB4kURwJUKhh6dXZyNp/PXxekfktBbEtaI3NwlbwQViSN",
+	"FF6czeeeg1h7pfl5XqH9rJP2mweatEn/1CZZPtAELWHFBaCARxEEirI1EiDTSMkuDvQuNwNO8vuxvhJ8",
+	"GUH8yRzdJDn7cb8CmP/0qcBPAlZ4gf80K5VwZn+VsyoJmqRrwh4oWw/WAGHXIwEBF+EPpAsZI/vUwUH/",
+	"D6AYN+kyplJSzlx+ofz1xb1DefVgDZHFlh9IO0o+9ilIg/wfQDluJQhtr1da0C3K9a9H9hn6CmYdxi7f",
+	"YwLZxYawNVykQgBTetVHtuLX8C0FaVSFhCHVZJLoSvAEhKIg8WJFIgkeTiqfnnAqQQyhwyBSsnFnN94X",
+	"wPHlVwgU3nldxMmEMwl7qWsfJ4Ao0BGnwmCdh1J1RpuahxVI5QdEgh8kSW3/cqu07LItUgnK1vUd6rsa",
+	"sKMBXIVaJ3wTgXuGWFs0mESpcXn9/K9puAafpypJ1SDQ+COIRwp/7CNKX/05X6u1XoUgxEi5vJAkC57u",
+	"OzC8pFJ1YxjwlCmnxra11GRTei1VEMuxIGbnESHItsWFPdrLyOli5XNFfnU29H5fUZtaFayERMGJ+erA",
+	"nYYTDDWGmIttc+P7d068pCIqNeS1Li/tz59ER4vVVcSJKqmwEVmv1Ebosyzp7Fclkz7UKSuY8CoQd4mn",
+	"W8sm8NimzXXtJWHrkV7J0tKSSAdEHn4EkXv1AfBlsTbf1EVz0yhH0B8Rth5uhQagfdZnj3TSSpeCiO2t",
+	"iNrJx+fEUoxury/RigukNoC0uv1ZosjuQ4ngKxrBKbqVgAhDECdqiyyAOsN6AEgQVShlEtSpzewuga11",
+	"svNmPneYbVbDjAQtl+7g6kibmIoGGE0mcLvaBWF27AVRsOaCgpwo96A4YLDw61dv9+pB5Yr9nGxH0p/Y",
+	"3aOpL+RRo3ywfOwyr7y+h7Nn5Do6DJMo8ru9hYclT0UAfuoypg/flc6zIyRgBQJYAIVJZZQj7YkhBmbs",
+	"xJlG6CxC9pKg/bcf5dVcK3o4HHIZSboAH+Eic2FUkKjRVB7lYshrodwjy2d42Kmaute+hujg0P4QCjiT",
+	"VJqClK9QxP8AoeFCESgFQnoopGuqpIe4QCkLQciAC5ANJ3uW1c/F354uHrUu4gX+7x05+d/85O/+/c8/",
+	"uXQua7tMdWidqWd/7qPtQDMeDBeQrjJuym375FS5oS8lvYY1lQrEtKJ3SEiqFN+OqNNP09Rat+yWXBAJ",
+	"16bX4agbiHT7gmADwQMIXZYNKn8OllGPqNEGJs+t6CihmhBnhUXGwH0vlP2FbECYL8CUsxXelpxHQJgB",
+	"VZeHWdtpsNI7BekIpHorjcAHIbg4aB1dUlCrpo3z3x8siluKLV4NqX7ED1f2VpqCE7AfXAJXr+nzOpWj",
+	"RWgbLEWDEZ+YIqTRQebCRgm93GQVlat0OACmfe1dtvnnRo1Xit3B1NBKr40qlX5EVOY22xofZYXd8/xF",
+	"FnD9zuIuX9Cd2wwr4se1Ho5XvdcYbrKXoVrFfrw7U9OiXS7PSurx/l0z8+gSz8hKoXQwTUPQ31HAQ9C1",
+	"p/Ei6FVMvqMz9Bv95XUrNXr3t7/89f1eIlUE/gPjwUMW8prK7E4Cq17NgNOH+KT86mhNl9usrzuGFumH",
+	"8AiR/tZh8LZjkFdHvT2NsilRadxMz6Pql3t1YrsAeEatKHn0CKEfk6R7Y6vZwkCn+beffv30+fdPs8vz",
+	"Lx9uvvjnF7PzC6eHaZL8vBGLV6W5C5GbWl7+AoXAISTfHWeLne2pG6PfUtvq6inImmXYZptsgDXKsYbL",
+	"edtbjJ2f/MfWYyfugky7PghSQdX2RrNv0V1RAUsi4Ty1E8QlEAHiHznU//79Sz6sNBZpfi3P3iiV2NEf",
+	"ZStuTNeGyrw1iC5swo+uP9x8QedXH9ErIzUSva6U8ws8Pz07nZvkMQFGEooX+O3p/PQtNjxuDKkzkqrN",
+	"LLDDJz9X2TUY5dAaQ1Q2Jcf/BNUYUpkJp7VHc9ib+dwqF1Ng1YskSUQDc8bsq7T9imFD0K55mAGmYai/",
+	"WkGkcUx0nqIpRRlLmcpoYneG7WDT5uxKf3bxZsLuLzzcHo6tvhHurm4xSqSwOybEvRPbHqAzjceLu6au",
+	"393v7quSsFe4hLHzMt0TWflsElsuHYp3xXVdka06jliafYUXlkSrhXAQ8PNTDewW8XpHu8vMW/3zYxp6",
+	"d7N+qKnn3doKc4bZYnjaxWc+qzUOsXwxeOcmuFwyKx7C7bxBa+1jHr3Y9Xolj/cFXK0g495X1BGjd5q6",
+	"tPFgplm/ZsXrqxMaoqza9RANPaSrFg+ZSuu1oy+udfBoytKarg/REb3Bvks0MaDTx+jDj+X2W69ZXtjD",
+	"1IbFB/EutlAyuCJd2CLTrCsNb/ZEw90+68si7Xjr+xjioyvapLzD4FGGuGJ03IVCPpo+pottjb+HMqOp",
+	"T8kaUESNynp4Vp3U7IkfLxE2JrFV8FDjaPakveNuAGOTtLbWMbk/PjKTtDcPpaUCZw94+1DJZlKjEak+",
+	"IR4QSGtPp4+KYHPINhS9HCsDXKOH3QVevX0+GsPGQ9sBMDafGHflCJWm2ZSX7odOWbRfhdC1s9L1G5hf",
+	"De1euI8LIUyT246cbS8xWT/4ACnbwGGI2XfcrKxjBDTUbKpPwMtAU/m6N5WoT/2eYUTHTis6xpPjkap4",
+	"aPNR9ZfPNlk7UnJbH1K8cGLb6NcfMrUlSPIoNacYoLUfGZIlVFpI4/Sw9i8PjqqHk9tq1Q6OAVU85syZ",
+	"MQKe4d397v8BAAD//80Yfl2QNwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

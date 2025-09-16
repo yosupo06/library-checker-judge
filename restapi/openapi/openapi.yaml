@@ -139,6 +139,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmissionInfoResponse'
+  /hacks:
+    get:
+      summary: List hacks
+      operationId: getHackList
+      parameters:
+        - $ref: '#/components/parameters/HackSkip'
+        - $ref: '#/components/parameters/HackLimit'
+        - in: query
+          name: user
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: order
+          schema:
+            type: string
+            description: "Sort order (-id default, id, time, -time)."
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HackListResponse'
+    post:
+      summary: Submit hack test case
+      operationId: postHack
+      security:
+        - firebaseAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHackRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HackResponse'
+  /hacks/{id}:
+    get:
+      summary: Get hack info
+      operationId: getHackInfo
+      parameters:
+        - $ref: '#/components/parameters/HackId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HackInfoResponse'
   /auth/register:
     post:
       summary: Register user
@@ -245,11 +303,39 @@ components:
         minimum: 1
         maximum: 1000
         default: 100
+    HackSkip:
+      name: skip
+      in: query
+      description: Number of hacks to skip before collecting results.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+    HackLimit:
+      name: limit
+      in: query
+      description: Maximum number of hacks to return (1-1000).
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 100
     SubmissionId:
       name: id
       in: path
       required: true
       description: Submission identifier.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    HackId:
+      name: id
+      in: path
+      required: true
+      description: Hack identifier.
       schema:
         type: integer
         format: int32
@@ -269,6 +355,82 @@ components:
       schema:
         $ref: '#/components/schemas/Username'
   schemas:
+    HackOverview:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+        submission_id:
+          type: integer
+          format: int32
+          minimum: 0
+        status:
+          type: string
+        user_name:
+          type: string
+        time:
+          type: number
+          format: float
+        memory:
+          type: integer
+          format: int64
+        hack_time:
+          type: string
+          format: date-time
+      required: [id, submission_id, status, hack_time]
+    HackListResponse:
+      type: object
+      properties:
+        hacks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HackOverview'
+        count:
+          type: integer
+          format: int32
+      required: [hacks, count]
+    HackInfoResponse:
+      type: object
+      properties:
+        overview:
+          $ref: '#/components/schemas/HackOverview'
+        test_case_txt:
+          type: string
+          format: byte
+        test_case_cpp:
+          type: string
+          format: byte
+        stderr:
+          type: string
+          format: byte
+        judge_output:
+          type: string
+          format: byte
+      required: [overview]
+    CreateHackRequest:
+      type: object
+      properties:
+        submission:
+          type: integer
+          format: int32
+          minimum: 0
+        test_case_txt:
+          type: string
+          format: byte
+        test_case_cpp:
+          type: string
+          format: byte
+      required: [submission]
+    HackResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 0
+      required: [id]
     LibraryUrl:
       type: string
       description: Optional URL for the user's library profile. Use an empty string to keep it unset.
