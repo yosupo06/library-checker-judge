@@ -24,6 +24,34 @@ export interface paths {
     /** Get problem categories */
     get: operations["getProblemCategories"];
   };
+  "/submit": {
+    /** Submit a solution */
+    post: operations["postSubmit"];
+  };
+  "/submissions": {
+    /** Get submissions list */
+    get: operations["getSubmissionList"];
+  };
+  "/submissions/{id}": {
+    /** Get submission info */
+    get: operations["getSubmissionInfo"];
+  };
+  "/auth/register": {
+    /** Register user */
+    post: operations["postRegister"];
+  };
+  "/auth/current_user": {
+    /** Get current user info */
+    get: operations["getCurrentUserInfo"];
+    /** Change current user info */
+    patch: operations["patchCurrentUserInfo"];
+  };
+  "/users/{name}": {
+    /** Get user info */
+    get: operations["getUserInfo"];
+    /** Change user info (self only) */
+    patch: operations["patchUserInfo"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -70,6 +98,83 @@ export interface components {
     };
     ProblemCategoriesResponse: {
       categories: components["schemas"]["ProblemCategory"][];
+    };
+    User: {
+      name: string;
+      library_url: string;
+      is_developer: boolean;
+    };
+    RegisterRequest: {
+      name: string;
+    };
+    RegisterResponse: Record<string, never>;
+    CurrentUserInfoResponse: {
+      user?: components["schemas"]["User"];
+    };
+    ChangeCurrentUserInfoRequest: {
+      user: components["schemas"]["User"];
+    };
+    ChangeCurrentUserInfoResponse: Record<string, never>;
+    UserInfoResponse: {
+      user: components["schemas"]["User"];
+      solved_map: {
+        [key: string]: string;
+      };
+    };
+    ChangeUserInfoRequest: {
+      user: components["schemas"]["User"];
+    };
+    ChangeUserInfoResponse: Record<string, never>;
+    SubmitRequest: {
+      problem: string;
+      source: string;
+      lang: string;
+      tle_knockout?: boolean;
+    };
+    SubmitResponse: {
+      /** Format: int32 */
+      id: number;
+    };
+    SubmissionOverview: {
+      /** Format: int32 */
+      id: number;
+      problem_name: string;
+      problem_title: string;
+      user_name?: string;
+      lang: string;
+      is_latest: boolean;
+      status: string;
+      /** Format: float */
+      time: number;
+      /** Format: int64 */
+      memory: number;
+      /** Format: date-time */
+      submission_time?: string;
+    };
+    SubmissionListResponse: {
+      submissions: components["schemas"]["SubmissionOverview"][];
+      /** Format: int32 */
+      count: number;
+    };
+    SubmissionCaseResult: {
+      case: string;
+      status: string;
+      /** Format: float */
+      time: number;
+      /** Format: int64 */
+      memory: number;
+      /** Format: byte */
+      stderr?: string;
+      /** Format: byte */
+      checker_out?: string;
+    };
+    SubmissionInfoResponse: {
+      overview: components["schemas"]["SubmissionOverview"];
+      source: string;
+      /** Format: byte */
+      compile_error?: string;
+      can_rejudge: boolean;
+      case_results?: components["schemas"]["SubmissionCaseResult"][];
     };
   };
   responses: never;
@@ -146,6 +251,142 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["ProblemCategoriesResponse"];
+        };
+      };
+    };
+  };
+  /** Submit a solution */
+  postSubmit: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SubmitRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SubmitResponse"];
+        };
+      };
+    };
+  };
+  /** Get submissions list */
+  getSubmissionList: {
+    parameters: {
+      query?: {
+        skip?: number;
+        limit?: number;
+        problem?: string;
+        status?: string;
+        hacked?: boolean;
+        user?: string;
+        dedupUser?: boolean;
+        lang?: string;
+        order?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SubmissionListResponse"];
+        };
+      };
+    };
+  };
+  /** Get submission info */
+  getSubmissionInfo: {
+    parameters: {
+      path: {
+        id: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["SubmissionInfoResponse"];
+        };
+      };
+    };
+  };
+  /** Register user */
+  postRegister: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RegisterRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["RegisterResponse"];
+        };
+      };
+    };
+  };
+  /** Get current user info */
+  getCurrentUserInfo: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["CurrentUserInfoResponse"];
+        };
+      };
+    };
+  };
+  /** Change current user info */
+  patchCurrentUserInfo: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ChangeCurrentUserInfoRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ChangeCurrentUserInfoResponse"];
+        };
+      };
+    };
+  };
+  /** Get user info */
+  getUserInfo: {
+    parameters: {
+      path: {
+        name: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserInfoResponse"];
+        };
+      };
+    };
+  };
+  /** Change user info (self only) */
+  patchUserInfo: {
+    parameters: {
+      path: {
+        name: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ChangeUserInfoRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ChangeUserInfoResponse"];
         };
       };
     };
