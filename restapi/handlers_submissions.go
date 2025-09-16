@@ -157,7 +157,7 @@ func (s *server) GetSubmissionList(w http.ResponseWriter, r *http.Request, param
 	}
 	order := ""
 	if params.Order != nil {
-		order = *params.Order
+		order = string(*params.Order)
 	}
 	var dbOrder []database.SubmissionOrder
 	switch order {

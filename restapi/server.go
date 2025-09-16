@@ -15,8 +15,9 @@ import (
 
 // server is REST server implementation for OpenAPI handlers.
 type server struct {
-	db         *gorm.DB
-	authClient AuthClient
+	db           *gorm.DB
+	authClient   AuthClient
+	updateUserFn func(*gorm.DB, database.User) error
 }
 
 func getEnv(key, def string) string {
@@ -28,6 +29,13 @@ func getEnv(key, def string) string {
 
 func createFirebaseApp(ctx context.Context, projectID string) (*firebase.App, error) {
 	return firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID})
+}
+
+func (s *server) updateUser(db *gorm.DB, user database.User) error {
+	if s != nil && s.updateUserFn != nil {
+		return s.updateUserFn(db, user)
+	}
+	return database.UpdateUser(db, user)
 }
 
 func main() {
@@ -57,7 +65,7 @@ func main() {
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			if req.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)

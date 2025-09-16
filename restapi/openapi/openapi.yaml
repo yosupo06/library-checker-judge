@@ -10,18 +10,8 @@ paths:
       summary: Get ranking
       operationId: getRanking
       parameters:
-        - in: query
-          name: skip
-          schema:
-            type: integer
-            format: int32
-            default: 0
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            format: int32
-            default: 100
+        - $ref: '#/components/parameters/RankingSkip'
+        - $ref: '#/components/parameters/RankingLimit'
       responses:
         '200':
           description: OK
@@ -45,11 +35,7 @@ paths:
       summary: Get problem info
       operationId: getProblemInfo
       parameters:
-        - in: path
-          name: name
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ProblemName'
       responses:
         '200':
           description: OK
@@ -83,6 +69,8 @@ paths:
     post:
       summary: Submit a solution
       operationId: postSubmit
+      security:
+        - firebaseAuth: []
       requestBody:
         required: true
         content:
@@ -101,22 +89,12 @@ paths:
       summary: Get submissions list
       operationId: getSubmissionList
       parameters:
-        - in: query
-          name: skip
-          schema:
-            type: integer
-            format: int32
-            default: 0
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            format: int32
-            default: 100
+        - $ref: '#/components/parameters/SubmissionSkip'
+        - $ref: '#/components/parameters/SubmissionLimit'
         - in: query
           name: problem
           schema:
-            type: string
+            $ref: '#/components/schemas/ProblemName'
         - in: query
           name: status
           schema:
@@ -128,7 +106,7 @@ paths:
         - in: query
           name: user
           schema:
-            type: string
+            $ref: '#/components/schemas/Username'
         - in: query
           name: dedupUser
           schema:
@@ -140,8 +118,7 @@ paths:
         - in: query
           name: order
           schema:
-            type: string
-            description: "-id (default) or +time"
+            $ref: '#/components/schemas/SubmissionOrder'
       responses:
         '200':
           description: OK
@@ -154,12 +131,7 @@ paths:
       summary: Get submission info
       operationId: getSubmissionInfo
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            format: int32
+        - $ref: '#/components/parameters/SubmissionId'
       responses:
         '200':
           description: OK
@@ -171,6 +143,8 @@ paths:
     post:
       summary: Register user
       operationId: postRegister
+      security:
+        - firebaseAuth: []
       requestBody:
         required: true
         content:
@@ -198,6 +172,8 @@ paths:
     patch:
       summary: Change current user info
       operationId: patchCurrentUserInfo
+      security:
+        - firebaseAuth: []
       requestBody:
         required: true
         content:
@@ -216,11 +192,7 @@ paths:
       summary: Get user info
       operationId: getUserInfo
       parameters:
-        - in: path
-          name: name
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/UserNamePath'
       responses:
         '200':
           description: OK
@@ -228,76 +200,154 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserInfoResponse'
-    patch:
-      summary: Change user info (self only)
-      operationId: patchUserInfo
-      parameters:
-        - in: path
-          name: name
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeUserInfoRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChangeUserInfoResponse'
 components:
+  securitySchemes:
+    firebaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    RankingSkip:
+      name: skip
+      in: query
+      description: Number of ranking records to skip before collecting results.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+    RankingLimit:
+      name: limit
+      in: query
+      description: Maximum number of ranking records to return (1-1000).
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 100
+    SubmissionSkip:
+      name: skip
+      in: query
+      description: Number of submissions to skip before collecting results.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+    SubmissionLimit:
+      name: limit
+      in: query
+      description: Maximum number of submissions to return (1-1000).
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 100
+    SubmissionId:
+      name: id
+      in: path
+      required: true
+      description: Submission identifier.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    ProblemName:
+      name: name
+      in: path
+      required: true
+      description: Problem identifier.
+      schema:
+        $ref: '#/components/schemas/ProblemName'
+    UserNamePath:
+      name: name
+      in: path
+      required: true
+      description: User identifier.
+      schema:
+        $ref: '#/components/schemas/Username'
   schemas:
+    LibraryUrl:
+      type: string
+      description: Optional URL for the user's library profile. Use an empty string to keep it unset.
+      minLength: 0
+      maxLength: 200
+    ProblemName:
+      type: string
+      description: Problem identifier consisting of lowercase letters, digits, or underscores.
+      pattern: '^[a-z0-9_]+$'
+      minLength: 1
+      maxLength: 100
+    SubmissionOrder:
+      type: string
+      description: Sorting order for submissions.
+      enum: ['-id', '+time']
+      default: '-id'
+    Username:
+      type: string
+      description: Unique user identifier consisting of letters, digits, hyphen, or underscore.
+      pattern: '^[A-Za-z0-9-_]+$'
+      minLength: 1
+      maxLength: 30
     UserStatistics:
       type: object
+      additionalProperties: false
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/Username'
         count:
           type: integer
           format: int32
+          minimum: 0
       required: [name, count]
     RankingResponse:
       type: object
+      additionalProperties: false
       properties:
         statistics:
           type: array
           items:
             $ref: '#/components/schemas/UserStatistics'
+          minItems: 0
         count:
           type: integer
           format: int32
+          minimum: 0
       required: [statistics, count]
     Problem:
       type: object
+      additionalProperties: false
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/ProblemName'
         title:
           type: string
       required: [name, title]
     ProblemListResponse:
       type: object
+      additionalProperties: false
       properties:
         problems:
           type: array
           items:
             $ref: '#/components/schemas/Problem'
+          minItems: 0
       required: [problems]
     ProblemInfoResponse:
       type: object
+      additionalProperties: false
       properties:
         title:
           type: string
         source_url:
           type: string
+          description: External reference for the problem statement.
         time_limit:
           type: number
           format: float
+          minimum: 0
         version:
           type: string
         testcases_version:
@@ -307,6 +357,7 @@ components:
       required: [title, source_url, time_limit, version, testcases_version, overall_version]
     Lang:
       type: object
+      additionalProperties: false
       properties:
         id:
           type: string
@@ -317,65 +368,78 @@ components:
       required: [id, name, version]
     LangListResponse:
       type: object
+      additionalProperties: false
       properties:
         langs:
           type: array
           items:
             $ref: '#/components/schemas/Lang'
+          minItems: 0
       required: [langs]
     ProblemCategory:
       type: object
+      additionalProperties: false
       properties:
         title:
           type: string
         problems:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/ProblemName'
+          minItems: 0
       required: [title, problems]
     ProblemCategoriesResponse:
       type: object
+      additionalProperties: false
       properties:
         categories:
           type: array
           items:
             $ref: '#/components/schemas/ProblemCategory'
+          minItems: 0
       required: [categories]
     User:
       type: object
+      additionalProperties: false
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/Username'
         library_url:
-          type: string
+          $ref: '#/components/schemas/LibraryUrl'
         is_developer:
           type: boolean
       required: [name, library_url, is_developer]
     RegisterRequest:
       type: object
+      additionalProperties: false
       properties:
         name:
-          type: string
+          $ref: '#/components/schemas/Username'
       required: [name]
     RegisterResponse:
       type: object
+      additionalProperties: false
       properties: {}
     CurrentUserInfoResponse:
       type: object
+      additionalProperties: false
       properties:
         user:
           $ref: '#/components/schemas/User'
     ChangeCurrentUserInfoRequest:
       type: object
+      additionalProperties: false
       properties:
         user:
           $ref: '#/components/schemas/User'
       required: [user]
     ChangeCurrentUserInfoResponse:
       type: object
+      additionalProperties: false
       properties: {}
     UserInfoResponse:
       type: object
+      additionalProperties: false
       properties:
         user:
           $ref: '#/components/schemas/User'
@@ -385,33 +449,32 @@ components:
             type: string
             description: One of UNKNOWN/LATEST_AC/AC
       required: [user, solved_map]
-    ChangeUserInfoRequest:
-      type: object
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-      required: [user]
-    ChangeUserInfoResponse:
-      type: object
-      properties: {}
     SubmitRequest:
       type: object
+      additionalProperties: false
       properties:
         problem:
-          type: string
+          $ref: '#/components/schemas/ProblemName'
         source:
           type: string
+          minLength: 1
+          maxLength: 1048576
+          description: Source code to judge (max 1 MiB).
         lang:
           type: string
+          minLength: 1
+          maxLength: 64
         tle_knockout:
           type: boolean
       required: [problem, source, lang]
     SubmitResponse:
       type: object
+      additionalProperties: false
       properties:
         id:
           type: integer
           format: int32
+          minimum: 0
       required: [id]
     SubmissionOverview:
       type: object

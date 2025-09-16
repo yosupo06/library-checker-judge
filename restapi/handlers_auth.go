@@ -64,7 +64,7 @@ func (s *server) PatchCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	if err := database.UpdateUser(s.db, database.User{
+	if err := s.updateUser(s.db, database.User{
 		Name:        req.User.Name,
 		UID:         uid,
 		LibraryURL:  req.User.LibraryUrl,
@@ -104,41 +104,6 @@ func (s *server) GetUserInfo(w http.ResponseWriter, r *http.Request, name string
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
-}
-
-// PatchUserInfo handles PATCH /users/{name}
-func (s *server) PatchUserInfo(w http.ResponseWriter, r *http.Request, name string) {
-	var req restapi.ChangeUserInfoRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
-	}
-	uid, err := s.uidFromRequest(r)
-	if err != nil || uid == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-	current, err := database.FetchUserFromUID(s.db, uid)
-	if err != nil || current == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-	if current.Name != name {
-		http.Error(w, "permission denied", http.StatusForbidden)
-		return
-	}
-	// Only allow updating library_url and is_developer
-	u := database.User{
-		Name:        name,
-		LibraryURL:  req.User.LibraryUrl,
-		IsDeveloper: req.User.IsDeveloper,
-	}
-	if err := database.UpdateUser(s.db, u); err != nil {
-		http.Error(w, "update failed", http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(restapi.ChangeUserInfoResponse{})
 }
 
 func fetchUserStatisticsREST(db *gorm.DB, userName string) (map[string]string, error) {
