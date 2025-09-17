@@ -2,19 +2,15 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"github.com/glebarez/sqlite"
 	"github.com/go-chi/chi/v5"
-	"gorm.io/gorm"
-
 	"github.com/yosupo06/library-checker-judge/database"
 	restapi "github.com/yosupo06/library-checker-judge/restapi/internal/api"
+	"gorm.io/gorm"
 )
 
 func TestParseBearerToken(t *testing.T) {
@@ -74,7 +70,7 @@ func TestPatchCurrentUserInfo_Succeeds(t *testing.T) {
 	}
 
 	body := `{"user":{"name":"alice","library_url":"https://example.com","is_developer":true}}`
-	req := httptest.NewRequest(http.MethodPatch, "/auth/current_user", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPatch, "/auth/current_user", bytes.NewReader([]byte(body)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer token")
 	w := httptest.NewRecorder()
@@ -96,28 +92,4 @@ func TestPatchCurrentUserInfo_Succeeds(t *testing.T) {
 	if !captured.IsDeveloper {
 		t.Fatalf("is_developer not propagated")
 	}
-}
-
-type fakeAuthClient struct {
-	uid string
-}
-
-func (f fakeAuthClient) parseUID(_ context.Context, token string) string {
-	if token == "" {
-		return ""
-	}
-	return f.uid
-}
-
-func setupTestDB(t *testing.T) *gorm.DB {
-	t.Helper()
-	dialector := sqlite.Open("file:restapi_test.db?mode=memory&cache=shared&_busy_timeout=5000&_journal_mode=WAL")
-	db, err := gorm.Open(dialector, &gorm.Config{SkipDefaultTransaction: true})
-	if err != nil {
-		t.Fatalf("open sqlite: %v", err)
-	}
-	if err := database.AutoMigrate(db); err != nil {
-		t.Fatalf("automigrate: %v", err)
-	}
-	return db
 }
