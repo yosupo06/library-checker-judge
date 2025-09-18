@@ -226,27 +226,17 @@ func (s *server) ProblemCategories(ctx context.Context, in *pb.ProblemCategories
 }
 
 func FetchUserStatistics(db *gorm.DB, userName string) (map[string]pb.SolvedStatus, error) {
-	type Result struct {
-		ProblemName string
-		LatestAC    bool
-	}
-	var results = make([]Result, 0)
-	if err := db.
-		Model(&database.Submission{}).
-		Joins("left join problems on submissions.problem_name = problems.name").
-		Select("problem_name, bool_or(submissions.test_cases_version=problems.test_cases_version) as latest_ac").
-		Where("status = 'AC' and user_name = ?", userName).
-		Group("problem_name").
-		Find(&results).Error; err != nil {
+	statuses, err := database.FetchUserSolvedStatuses(db, userName)
+	if err != nil {
 		log.Print(err)
 		return nil, errors.New("failed sql query")
 	}
-	stats := make(map[string]pb.SolvedStatus)
-	for _, result := range results {
-		if result.LatestAC {
-			stats[result.ProblemName] = pb.SolvedStatus_LATEST_AC
+	stats := make(map[string]pb.SolvedStatus, len(statuses))
+	for _, status := range statuses {
+		if status.LatestAC {
+			stats[status.ProblemName] = pb.SolvedStatus_LATEST_AC
 		} else {
-			stats[result.ProblemName] = pb.SolvedStatus_AC
+			stats[status.ProblemName] = pb.SolvedStatus_AC
 		}
 	}
 	return stats, nil

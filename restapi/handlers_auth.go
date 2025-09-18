@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/yosupo06/library-checker-judge/database"
@@ -107,26 +106,16 @@ func (s *server) GetUserInfo(w http.ResponseWriter, r *http.Request, name string
 }
 
 func fetchUserStatisticsREST(db *gorm.DB, userName string) (map[string]string, error) {
-	type Result struct {
-		ProblemName string
-		LatestAC    bool
+	statuses, err := database.FetchUserSolvedStatuses(db, userName)
+	if err != nil {
+		return nil, err
 	}
-	var results = make([]Result, 0)
-	if err := db.
-		Model(&database.Submission{}).
-		Joins("left join problems on submissions.problem_name = problems.name").
-		Select("problem_name, bool_or(submissions.test_cases_version=problems.test_cases_version) as latest_ac").
-		Where("status = 'AC' and user_name = ?", userName).
-		Group("problem_name").
-		Find(&results).Error; err != nil {
-		return nil, errors.New("failed sql query")
-	}
-	stats := make(map[string]string)
-	for _, result := range results {
-		if result.LatestAC {
-			stats[result.ProblemName] = "LATEST_AC"
+	stats := make(map[string]string, len(statuses))
+	for _, status := range statuses {
+		if status.LatestAC {
+			stats[status.ProblemName] = "LATEST_AC"
 		} else {
-			stats[result.ProblemName] = "AC"
+			stats[status.ProblemName] = "AC"
 		}
 	}
 	return stats, nil
