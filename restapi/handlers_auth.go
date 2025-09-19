@@ -87,35 +87,44 @@ func (s *server) GetUserInfo(w http.ResponseWriter, r *http.Request, name string
 		http.Error(w, "invalid user name", http.StatusBadRequest)
 		return
 	}
-	// Build solved_map similar to gRPC implementation
-	stats, err := fetchUserStatisticsREST(s.db, name)
-	if err != nil {
-		http.Error(w, "failed to fetch statistics", http.StatusInternalServerError)
-		return
-	}
 	resp := restapi.UserInfoResponse{
 		User: restapi.User{
 			Name:        user.Name,
 			LibraryUrl:  user.LibraryURL,
 			IsDeveloper: user.IsDeveloper,
 		},
-		SolvedMap: stats,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func fetchUserStatisticsREST(db *gorm.DB, userName string) (map[string]string, error) {
+// GetUserStatistics handles GET /users/{name}/statistics
+func (s *server) GetUserStatistics(w http.ResponseWriter, r *http.Request, name string) {
+	if name == "" {
+		http.Error(w, "empty name", http.StatusBadRequest)
+		return
+	}
+	stats, err := fetchUserStatisticsREST(s.db, name)
+	if err != nil {
+		http.Error(w, "failed to fetch statistics", http.StatusInternalServerError)
+		return
+	}
+	resp := restapi.UserSolvedStatisticsResponse{SolvedMap: stats}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func fetchUserStatisticsREST(db *gorm.DB, userName string) (map[string]restapi.SolvedStatus, error) {
 	statuses, err := database.FetchUserSolvedStatuses(db, userName)
 	if err != nil {
 		return nil, err
 	}
-	stats := make(map[string]string, len(statuses))
+	stats := make(map[string]restapi.SolvedStatus, len(statuses))
 	for _, status := range statuses {
 		if status.LatestAC {
-			stats[status.ProblemName] = "LATEST_AC"
+			stats[status.ProblemName] = restapi.LATESTAC
 		} else {
-			stats[status.ProblemName] = "AC"
+			stats[status.ProblemName] = restapi.AC
 		}
 	}
 	return stats, nil
