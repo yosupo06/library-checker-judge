@@ -108,17 +108,13 @@ export async function fetchUserInfo(
   return unwrap<components["schemas"]["UserInfoResponse"]>(r);
 }
 
-export async function patchUserInfo(
+export async function fetchUserStatistics(
   name: string,
-  user: components["schemas"]["User"],
-  idToken?: string | null,
-): Promise<components["schemas"]["ChangeUserInfoResponse"]> {
-  const r = await client.PATCH("/users/{name}", {
+): Promise<components["schemas"]["UserSolvedStatisticsResponse"]> {
+  const r = await client.GET("/users/{name}/statistics", {
     params: { path: { name } },
-    body: { user },
-    headers: authHeaders(idToken),
   });
-  return unwrap<components["schemas"]["ChangeUserInfoResponse"]>(r);
+  return unwrap<components["schemas"]["UserSolvedStatisticsResponse"]>(r);
 }
 
 // Submissions
@@ -129,6 +125,70 @@ export type SubmitPayload = {
   tleKnockout?: boolean;
 };
 
-// Note: submission endpoints remain gRPC for now
+export type SubmissionListQuery = {
+  problem?: string;
+  user?: string;
+  dedupUser?: boolean;
+  status?: string;
+  lang?: string;
+  order?: components["schemas"]["SubmissionOrder"];
+  skip?: number;
+  limit?: number;
+};
+
+type SubmissionListQueryParams = NonNullable<
+  paths["/submissions"]["get"]["parameters"]["query"]
+>;
+
+const dropUndefined = <T extends Record<string, unknown>>(obj: T): T => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined),
+  ) as T;
+};
+
+export async function postSubmit(
+  payload: SubmitPayload,
+  idToken?: string | null,
+): Promise<components["schemas"]["SubmitResponse"]> {
+  const body = dropUndefined<components["schemas"]["SubmitRequest"]>({
+    problem: payload.problem,
+    source: payload.source,
+    lang: payload.lang,
+    tle_knockout: payload.tleKnockout,
+  });
+  const r = await client.POST("/submit", {
+    body,
+    headers: authHeaders(idToken),
+  });
+  return unwrap<components["schemas"]["SubmitResponse"]>(r);
+}
+
+export async function fetchSubmissionList(
+  query: SubmissionListQuery,
+): Promise<components["schemas"]["SubmissionListResponse"]> {
+  const params = dropUndefined<SubmissionListQueryParams>({
+    skip: query.skip,
+    limit: query.limit,
+    problem: query.problem,
+    status: query.status,
+    user: query.user,
+    dedupUser: query.dedupUser,
+    lang: query.lang,
+    order: query.order,
+  });
+  const r = await client.GET("/submissions", {
+    params: { query: params },
+  });
+  return unwrap<components["schemas"]["SubmissionListResponse"]>(r);
+}
+
+export async function fetchSubmissionInfo(
+  id: number,
+): Promise<components["schemas"]["SubmissionInfoResponse"]> {
+  const r = await client.GET("/submissions/{id}", {
+    params: { path: { id } },
+  });
+  return unwrap<components["schemas"]["SubmissionInfoResponse"]>(r);
+}
 
 export type {};

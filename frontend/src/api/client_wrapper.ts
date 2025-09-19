@@ -17,10 +17,13 @@ import {
   HackResponse,
   MonitoringResponse,
   RejudgeRequest,
+  SubmissionCaseResult,
   SubmissionInfoResponse,
   SubmissionListResponse,
+  SubmissionOverview,
   SubmitRequest,
   SubmitResponse,
+  SolvedStatus,
   UserInfoResponse,
 } from "../proto/library_checker";
 import { useIdToken } from "../auth/auth";
@@ -34,8 +37,13 @@ import {
   registerUser,
   patchCurrentUserInfo,
   fetchUserInfo as fetchUserInfoREST,
+  fetchUserStatistics,
+  fetchSubmissionList,
+  fetchSubmissionInfo,
+  postSubmit,
 } from "./http_client";
 import type { components as OpenApi } from "../openapi/types";
+import { Timestamp as TimestampMessage } from "../proto/google/protobuf/timestamp";
 
 const currentUserKey = ["api", "currentUser"];
 export const useCurrentUser = () => {
@@ -157,15 +165,20 @@ export const useUserInfo = (
   return useQuery({
     queryKey: ["api", "userInfo", name],
     queryFn: async () => {
-      const r = await fetchUserInfoREST(name);
+      const [userInfo, stats] = await Promise.all([
+        fetchUserInfoREST(name),
+        fetchUserStatistics(name),
+      ]);
+      const solvedMap = toSolvedStatusMap(stats.solved_map ?? {});
       return {
+        isAdmin: false,
         user: {
-          name: r.user.name,
-          libraryUrl: r.user.library_url,
-          isDeveloper: r.user.is_developer,
+          name: userInfo.user.name,
+          libraryUrl: userInfo.user.library_url,
+          isDeveloper: userInfo.user.is_developer,
         },
-        solvedMap: (r.solved_map ?? {}) as Record<string, never>,
-      } as unknown as UserInfoResponse;
+        solvedMap,
+      } satisfies UserInfoResponse;
     },
     ...options,
   });
@@ -194,21 +207,26 @@ export const useSubmissionList = (
       limit,
     ],
     // Use REST endpoint
-    queryFn: async () =>
-      await client.submissionList(
-        {
-          problem: problem,
-          user: user,
-          dedupUser: dedupUser,
-          status: status,
-          lang: lang,
-          order: order,
-          skip: skip,
-          limit: limit,
-          hacked: false,
-        },
-        {},
-      ).response,
+    queryFn: async () => {
+      const orderParam =
+        order === "-id" || order === "+time"
+          ? (order as OpenApi["schemas"]["SubmissionOrder"])
+          : undefined;
+      const res = await fetchSubmissionList({
+        problem,
+        user,
+        dedupUser,
+        status,
+        lang,
+        order: orderParam,
+        skip,
+        limit,
+      });
+      return {
+        submissions: res.submissions.map(toSubmissionOverviewProto),
+        count: res.count,
+      } satisfies SubmissionListResponse;
+    },
     structuralSharing: false,
   });
 
@@ -219,16 +237,12 @@ export const useSubmissionInfo = (
     "queryKey" | "queryFn"
   >,
 ): UseQueryResult<SubmissionInfoResponse> => {
-  const bearer = useBearer();
   return useQuery({
     queryKey: ["submissionInfo", String(id)],
-    queryFn: async () =>
-      await client.submissionInfo(
-        {
-          id: id,
-        },
-        bearer.data ?? undefined,
-      ).response,
+    queryFn: async () => {
+      const res = await fetchSubmissionInfo(id);
+      return toSubmissionInfoProto(res);
+    },
     structuralSharing: false,
     ...options,
   });
@@ -240,10 +254,20 @@ export const useSubmitMutation = (
     "mutationFn"
   >,
 ) => {
-  const bearer = useBearer();
+  const idToken = useIdToken();
   return useMutation({
-    mutationFn: async (req: SubmitRequest) =>
-      await client.submit(req, bearer.data ?? undefined).response,
+    mutationFn: async (req: SubmitRequest) => {
+      const res = await postSubmit(
+        {
+          problem: req.problem,
+          source: req.source,
+          lang: req.lang,
+          tleKnockout: req.tleKnockout,
+        },
+        idToken.data ?? undefined,
+      );
+      return { id: res.id } satisfies SubmitResponse;
+    },
     ...options,
   });
 };
@@ -254,6 +278,100 @@ export const useRejudgeMutation = () => {
     mutationFn: async (req: RejudgeRequest) =>
       await client.rejudge(req, bearer.data ?? undefined).response,
   });
+};
+
+const toSubmissionInfoProto = (
+  res: OpenApi["schemas"]["SubmissionInfoResponse"],
+): SubmissionInfoResponse => {
+  const overview = toSubmissionOverviewProto(res.overview);
+  const caseResults = res.case_results?.map(toSubmissionCaseResultProto) ?? [];
+  return {
+    overview,
+    caseResults,
+    source: res.source,
+    compileError: decodeBase64(res.compile_error),
+    canRejudge: res.can_rejudge,
+  } satisfies SubmissionInfoResponse;
+};
+
+const toSubmissionOverviewProto = (
+  overview: OpenApi["schemas"]["SubmissionOverview"],
+): SubmissionOverview => {
+  return {
+    id: overview.id,
+    problemName: overview.problem_name,
+    problemTitle: overview.problem_title,
+    userName: overview.user_name ?? "",
+    lang: overview.lang,
+    isLatest: overview.is_latest,
+    status: overview.status,
+    hacked: false,
+    time: overview.time,
+    memory: BigInt(overview.memory),
+    submissionTime: overview.submission_time
+      ? TimestampMessage.fromDate(new Date(overview.submission_time))
+      : undefined,
+  } satisfies SubmissionOverview;
+};
+
+const toSubmissionCaseResultProto = (
+  res: OpenApi["schemas"]["SubmissionCaseResult"],
+): SubmissionCaseResult => {
+  return {
+    case: res.case,
+    status: res.status,
+    time: res.time,
+    memory: BigInt(res.memory),
+    stderr: decodeBase64(res.stderr),
+    checkerOut: decodeBase64(res.checker_out),
+  } satisfies SubmissionCaseResult;
+};
+
+const decodeBase64 = (value?: string | null): Uint8Array => {
+  if (!value) {
+    return new Uint8Array();
+  }
+  const globalAtob = (
+    globalThis as {
+      atob?: (data: string) => string;
+    }
+  ).atob;
+  if (typeof globalAtob === "function") {
+    const binary = globalAtob(value);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }
+  const globalBuffer = (
+    globalThis as {
+      Buffer?: { from: (data: string, encoding: string) => Uint8Array };
+    }
+  ).Buffer;
+  if (globalBuffer) {
+    return globalBuffer.from(value, "base64");
+  }
+  throw new Error("Base64 decoder is not available in this environment");
+};
+
+const toSolvedStatusMap = (
+  solvedMap: Record<string, OpenApi["schemas"]["SolvedStatus"]>,
+): Record<string, SolvedStatus> => {
+  const mapped: Record<string, SolvedStatus> = {};
+  Object.entries(solvedMap).forEach(([problem, status]) => {
+    switch (status) {
+      case "LATEST_AC":
+        mapped[problem] = SolvedStatus.LATEST_AC;
+        break;
+      case "AC":
+        mapped[problem] = SolvedStatus.AC;
+        break;
+      default:
+        mapped[problem] = SolvedStatus.UNKNOWN;
+    }
+  });
+  return mapped;
 };
 
 const useBearer = () => {
