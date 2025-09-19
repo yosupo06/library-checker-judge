@@ -258,6 +258,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserInfoResponse'
+  /users/{name}/statistics:
+    get:
+      summary: Get user solved statistics
+      operationId: getUserStatistics
+      parameters:
+        - $ref: '#/components/parameters/UserNamePath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSolvedStatisticsResponse'
 components:
   securitySchemes:
     firebaseAuth:
@@ -605,12 +618,20 @@ components:
       properties:
         user:
           $ref: '#/components/schemas/User'
+      required: [user]
+    SolvedStatus:
+      type: string
+      description: Solved status for a problem.
+      enum: ['UNKNOWN', 'LATEST_AC', 'AC']
+    UserSolvedStatisticsResponse:
+      type: object
+      additionalProperties: false
+      properties:
         solved_map:
           type: object
           additionalProperties:
-            type: string
-            description: One of UNKNOWN/LATEST_AC/AC
-      required: [user, solved_map]
+            $ref: '#/components/schemas/SolvedStatus'
+      required: [solved_map]
     SubmitRequest:
       type: object
       additionalProperties: false

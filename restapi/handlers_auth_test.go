@@ -95,7 +95,32 @@ func TestPatchCurrentUserInfo_Succeeds(t *testing.T) {
 	}
 }
 
-func TestGetUserInfo_SolvedMap(t *testing.T) {
+func TestGetUserInfo_WithoutStatistics(t *testing.T) {
+	db := setupTestDB(t)
+	if err := database.RegisterUser(db, "alice", "uid-123"); err != nil {
+		t.Fatalf("register user: %v", err)
+	}
+
+	r := chi.NewRouter()
+	_ = restapi.HandlerFromMux(&server{db: db}, r)
+	req := httptest.NewRequest(http.MethodGet, "/users/alice", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+
+	var resp restapi.UserInfoResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+	if resp.User.Name != "alice" {
+		t.Fatalf("unexpected user: %+v", resp.User)
+	}
+}
+
+func TestGetUserStatistics_SolvedMap(t *testing.T) {
 	db := setupTestDB(t)
 
 	problems := []database.Problem{
@@ -157,7 +182,7 @@ func TestGetUserInfo_SolvedMap(t *testing.T) {
 
 	r := chi.NewRouter()
 	_ = restapi.HandlerFromMux(&server{db: db}, r)
-	req := httptest.NewRequest(http.MethodGet, "/users/alice", nil)
+	req := httptest.NewRequest(http.MethodGet, "/users/alice/statistics", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -165,15 +190,15 @@ func TestGetUserInfo_SolvedMap(t *testing.T) {
 		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
 	}
 
-	var resp restapi.UserInfoResponse
+	var resp restapi.UserSolvedStatisticsResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("unmarshal response: %v", err)
 	}
 
-	if got := resp.SolvedMap["aplusb"]; got != "LATEST_AC" {
+	if got := resp.SolvedMap["aplusb"]; got != restapi.LATESTAC {
 		t.Fatalf("expected LATEST_AC for aplusb, got %q", got)
 	}
-	if got := resp.SolvedMap["aplusb_old"]; got != "AC" {
+	if got := resp.SolvedMap["aplusb_old"]; got != restapi.AC {
 		t.Fatalf("expected AC for aplusb_old, got %q", got)
 	}
 	if _, ok := resp.SolvedMap["missing"]; ok {
