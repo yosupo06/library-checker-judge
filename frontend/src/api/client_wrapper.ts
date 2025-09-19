@@ -23,6 +23,7 @@ import {
   SubmissionOverview,
   SubmitRequest,
   SubmitResponse,
+  SolvedStatus,
   UserInfoResponse,
 } from "../proto/library_checker";
 import { useIdToken } from "../auth/auth";
@@ -36,6 +37,7 @@ import {
   registerUser,
   patchCurrentUserInfo,
   fetchUserInfo as fetchUserInfoREST,
+  fetchUserStatistics,
   fetchSubmissionList,
   fetchSubmissionInfo,
   postSubmit,
@@ -163,15 +165,20 @@ export const useUserInfo = (
   return useQuery({
     queryKey: ["api", "userInfo", name],
     queryFn: async () => {
-      const r = await fetchUserInfoREST(name);
+      const [userInfo, stats] = await Promise.all([
+        fetchUserInfoREST(name),
+        fetchUserStatistics(name),
+      ]);
+      const solvedMap = toSolvedStatusMap(stats.solved_map ?? {});
       return {
+        isAdmin: false,
         user: {
-          name: r.user.name,
-          libraryUrl: r.user.library_url,
-          isDeveloper: r.user.is_developer,
+          name: userInfo.user.name,
+          libraryUrl: userInfo.user.library_url,
+          isDeveloper: userInfo.user.is_developer,
         },
-        solvedMap: (r.solved_map ?? {}) as Record<string, never>,
-      } as unknown as UserInfoResponse;
+        solvedMap,
+      } satisfies UserInfoResponse;
     },
     ...options,
   });
@@ -202,7 +209,9 @@ export const useSubmissionList = (
     // Use REST endpoint
     queryFn: async () => {
       const orderParam =
-        order === "-id" || order === "+time" ? order : undefined;
+        order === "-id" || order === "+time"
+          ? (order as OpenApi["schemas"]["SubmissionOrder"])
+          : undefined;
       const res = await fetchSubmissionList({
         problem,
         user,
@@ -344,6 +353,25 @@ const decodeBase64 = (value?: string | null): Uint8Array => {
     return globalBuffer.from(value, "base64");
   }
   throw new Error("Base64 decoder is not available in this environment");
+};
+
+const toSolvedStatusMap = (
+  solvedMap: Record<string, OpenApi["schemas"]["SolvedStatus"]>,
+): Record<string, SolvedStatus> => {
+  const mapped: Record<string, SolvedStatus> = {};
+  Object.entries(solvedMap).forEach(([problem, status]) => {
+    switch (status) {
+      case "LATEST_AC":
+        mapped[problem] = SolvedStatus.LATEST_AC;
+        break;
+      case "AC":
+        mapped[problem] = SolvedStatus.AC;
+        break;
+      default:
+        mapped[problem] = SolvedStatus.UNKNOWN;
+    }
+  });
+  return mapped;
 };
 
 const useBearer = () => {

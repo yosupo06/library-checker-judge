@@ -36,6 +36,16 @@ export interface paths {
     /** Get submission info */
     get: operations["getSubmissionInfo"];
   };
+  "/hacks": {
+    /** List hacks */
+    get: operations["getHackList"];
+    /** Submit hack test case */
+    post: operations["postHack"];
+  };
+  "/hacks/{id}": {
+    /** Get hack info */
+    get: operations["getHackInfo"];
+  };
   "/auth/register": {
     /** Register user */
     post: operations["postRegister"];
@@ -49,8 +59,10 @@ export interface paths {
   "/users/{name}": {
     /** Get user info */
     get: operations["getUserInfo"];
-    /** Change user info (self only) */
-    patch: operations["patchUserInfo"];
+  };
+  "/users/{name}/statistics": {
+    /** Get user solved statistics */
+    get: operations["getUserStatistics"];
   };
 }
 
@@ -58,8 +70,62 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    HackOverview: {
+      /** Format: int32 */
+      id: number;
+      /** Format: int32 */
+      submission_id: number;
+      status: string;
+      user_name?: string;
+      /** Format: float */
+      time?: number;
+      /** Format: int64 */
+      memory?: number;
+      /** Format: date-time */
+      hack_time: string;
+    };
+    HackListResponse: {
+      hacks: components["schemas"]["HackOverview"][];
+      /** Format: int32 */
+      count: number;
+    };
+    HackInfoResponse: {
+      overview: components["schemas"]["HackOverview"];
+      /** Format: byte */
+      test_case_txt?: string;
+      /** Format: byte */
+      test_case_cpp?: string;
+      /** Format: byte */
+      stderr?: string;
+      /** Format: byte */
+      judge_output?: string;
+    };
+    CreateHackRequest: {
+      /** Format: int32 */
+      submission: number;
+      /** Format: byte */
+      test_case_txt?: string;
+      /** Format: byte */
+      test_case_cpp?: string;
+    };
+    HackResponse: {
+      /** Format: int32 */
+      id: number;
+    };
+    /** @description Optional URL for the user's library profile. Use an empty string to keep it unset. */
+    LibraryUrl: string;
+    /** @description Problem identifier consisting of lowercase letters, digits, or underscores. */
+    ProblemName: string;
+    /**
+     * @description Sorting order for submissions.
+     * @default -id
+     * @enum {string}
+     */
+    SubmissionOrder: "-id" | "+time";
+    /** @description Unique user identifier consisting of letters, digits, hyphen, or underscore. */
+    Username: string;
     UserStatistics: {
-      name: string;
+      name: components["schemas"]["Username"];
       /** Format: int32 */
       count: number;
     };
@@ -69,7 +135,7 @@ export interface components {
       count: number;
     };
     Problem: {
-      name: string;
+      name: components["schemas"]["ProblemName"];
       title: string;
     };
     ProblemListResponse: {
@@ -77,6 +143,7 @@ export interface components {
     };
     ProblemInfoResponse: {
       title: string;
+      /** @description External reference for the problem statement. */
       source_url: string;
       /** Format: float */
       time_limit: number;
@@ -94,18 +161,18 @@ export interface components {
     };
     ProblemCategory: {
       title: string;
-      problems: string[];
+      problems: components["schemas"]["ProblemName"][];
     };
     ProblemCategoriesResponse: {
       categories: components["schemas"]["ProblemCategory"][];
     };
     User: {
-      name: string;
-      library_url: string;
+      name: components["schemas"]["Username"];
+      library_url: components["schemas"]["LibraryUrl"];
       is_developer: boolean;
     };
     RegisterRequest: {
-      name: string;
+      name: components["schemas"]["Username"];
     };
     RegisterResponse: Record<string, never>;
     CurrentUserInfoResponse: {
@@ -117,16 +184,20 @@ export interface components {
     ChangeCurrentUserInfoResponse: Record<string, never>;
     UserInfoResponse: {
       user: components["schemas"]["User"];
+    };
+    /**
+     * @description Solved status for a problem.
+     * @enum {string}
+     */
+    SolvedStatus: "LATEST_AC" | "AC";
+    UserSolvedStatisticsResponse: {
       solved_map: {
-        [key: string]: string;
+        [key: string]: components["schemas"]["SolvedStatus"];
       };
     };
-    ChangeUserInfoRequest: {
-      user: components["schemas"]["User"];
-    };
-    ChangeUserInfoResponse: Record<string, never>;
     SubmitRequest: {
-      problem: string;
+      problem: components["schemas"]["ProblemName"];
+      /** @description Source code to judge (max 1 MiB). */
       source: string;
       lang: string;
       tle_knockout?: boolean;
@@ -178,7 +249,28 @@ export interface components {
     };
   };
   responses: never;
-  parameters: never;
+  parameters: {
+    /** @description Number of ranking records to skip before collecting results. */
+    RankingSkip?: number;
+    /** @description Maximum number of ranking records to return (1-1000). */
+    RankingLimit?: number;
+    /** @description Number of submissions to skip before collecting results. */
+    SubmissionSkip?: number;
+    /** @description Maximum number of submissions to return (1-1000). */
+    SubmissionLimit?: number;
+    /** @description Number of hacks to skip before collecting results. */
+    HackSkip?: number;
+    /** @description Maximum number of hacks to return (1-1000). */
+    HackLimit?: number;
+    /** @description Submission identifier. */
+    SubmissionId: number;
+    /** @description Hack identifier. */
+    HackId: number;
+    /** @description Problem identifier. */
+    ProblemName: components["schemas"]["ProblemName"];
+    /** @description User identifier. */
+    UserNamePath: components["schemas"]["Username"];
+  };
   requestBodies: never;
   headers: never;
   pathItems: never;
@@ -193,8 +285,8 @@ export interface operations {
   getRanking: {
     parameters: {
       query?: {
-        skip?: number;
-        limit?: number;
+        skip?: components["parameters"]["RankingSkip"];
+        limit?: components["parameters"]["RankingLimit"];
       };
     };
     responses: {
@@ -221,7 +313,7 @@ export interface operations {
   getProblemInfo: {
     parameters: {
       path: {
-        name: string;
+        name: components["parameters"]["ProblemName"];
       };
     };
     responses: {
@@ -275,15 +367,15 @@ export interface operations {
   getSubmissionList: {
     parameters: {
       query?: {
-        skip?: number;
-        limit?: number;
-        problem?: string;
+        skip?: components["parameters"]["SubmissionSkip"];
+        limit?: components["parameters"]["SubmissionLimit"];
+        problem?: components["schemas"]["ProblemName"];
         status?: string;
         hacked?: boolean;
-        user?: string;
+        user?: components["schemas"]["Username"];
         dedupUser?: boolean;
         lang?: string;
-        order?: string;
+        order?: components["schemas"]["SubmissionOrder"];
       };
     };
     responses: {
@@ -299,7 +391,7 @@ export interface operations {
   getSubmissionInfo: {
     parameters: {
       path: {
-        id: number;
+        id: components["parameters"]["SubmissionId"];
       };
     };
     responses: {
@@ -307,6 +399,58 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["SubmissionInfoResponse"];
+        };
+      };
+    };
+  };
+  /** List hacks */
+  getHackList: {
+    parameters: {
+      query?: {
+        skip?: components["parameters"]["HackSkip"];
+        limit?: components["parameters"]["HackLimit"];
+        user?: string;
+        status?: string;
+        order?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["HackListResponse"];
+        };
+      };
+    };
+  };
+  /** Submit hack test case */
+  postHack: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateHackRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["HackResponse"];
+        };
+      };
+    };
+  };
+  /** Get hack info */
+  getHackInfo: {
+    parameters: {
+      path: {
+        id: components["parameters"]["HackId"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["HackInfoResponse"];
         };
       };
     };
@@ -358,7 +502,7 @@ export interface operations {
   getUserInfo: {
     parameters: {
       path: {
-        name: string;
+        name: components["parameters"]["UserNamePath"];
       };
     };
     responses: {
@@ -370,23 +514,18 @@ export interface operations {
       };
     };
   };
-  /** Change user info (self only) */
-  patchUserInfo: {
+  /** Get user solved statistics */
+  getUserStatistics: {
     parameters: {
       path: {
-        name: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ChangeUserInfoRequest"];
+        name: components["parameters"]["UserNamePath"];
       };
     };
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["ChangeUserInfoResponse"];
+          "application/json": components["schemas"]["UserSolvedStatisticsResponse"];
         };
       };
     };

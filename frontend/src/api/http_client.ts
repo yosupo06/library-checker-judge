@@ -108,17 +108,13 @@ export async function fetchUserInfo(
   return unwrap<components["schemas"]["UserInfoResponse"]>(r);
 }
 
-export async function patchUserInfo(
+export async function fetchUserStatistics(
   name: string,
-  user: components["schemas"]["User"],
-  idToken?: string | null,
-): Promise<components["schemas"]["ChangeUserInfoResponse"]> {
-  const r = await client.PATCH("/users/{name}", {
+): Promise<components["schemas"]["UserSolvedStatisticsResponse"]> {
+  const r = await client.GET("/users/{name}/statistics", {
     params: { path: { name } },
-    body: { user },
-    headers: authHeaders(idToken),
   });
-  return unwrap<components["schemas"]["ChangeUserInfoResponse"]>(r);
+  return unwrap<components["schemas"]["UserSolvedStatisticsResponse"]>(r);
 }
 
 // Submissions
@@ -135,7 +131,7 @@ export type SubmissionListQuery = {
   dedupUser?: boolean;
   status?: string;
   lang?: string;
-  order?: string;
+  order?: components["schemas"]["SubmissionOrder"];
   skip?: number;
   limit?: number;
 };
