@@ -622,7 +622,7 @@ components:
     SolvedStatus:
       type: string
       description: Solved status for a problem.
-      enum: ['UNKNOWN', 'LATEST_AC', 'AC']
+      enum: ['LATEST_AC', 'AC']
     UserSolvedStatisticsResponse:
       type: object
       additionalProperties: false
