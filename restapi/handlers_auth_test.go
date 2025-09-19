@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -91,5 +92,91 @@ func TestPatchCurrentUserInfo_Succeeds(t *testing.T) {
 	}
 	if !captured.IsDeveloper {
 		t.Fatalf("is_developer not propagated")
+	}
+}
+
+func TestGetUserInfo_SolvedMap(t *testing.T) {
+	db := setupTestDB(t)
+
+	problems := []database.Problem{
+		{
+			Name:             "aplusb",
+			Title:            "A + B",
+			SourceUrl:        "https://example.com/aplusb",
+			Timelimit:        2000,
+			TestCasesVersion: "v2",
+			Version:          "1",
+		},
+		{
+			Name:             "aplusb_old",
+			Title:            "A + B Old",
+			SourceUrl:        "https://example.com/aplusb_old",
+			Timelimit:        2000,
+			TestCasesVersion: "v5",
+			Version:          "1",
+		},
+	}
+	for _, p := range problems {
+		if err := database.SaveProblem(db, p); err != nil {
+			t.Fatalf("save problem %s: %v", p.Name, err)
+		}
+	}
+
+	if err := database.RegisterUser(db, "alice", "uid-123"); err != nil {
+		t.Fatalf("register user: %v", err)
+	}
+
+	subs := []database.Submission{
+		{
+			ProblemName:      "aplusb",
+			UserName:         sql.NullString{String: "alice", Valid: true},
+			Status:           "AC",
+			TestCasesVersion: "v1",
+			Source:           "#include <bits/stdc++.h>\nint main(){}",
+		},
+		{
+			ProblemName:      "aplusb",
+			UserName:         sql.NullString{String: "alice", Valid: true},
+			Status:           "AC",
+			TestCasesVersion: "v2",
+			Source:           "#include <bits/stdc++.h>\nint main(){}",
+		},
+		{
+			ProblemName:      "aplusb_old",
+			UserName:         sql.NullString{String: "alice", Valid: true},
+			Status:           "AC",
+			TestCasesVersion: "legacy",
+			Source:           "#include <bits/stdc++.h>\nint main(){}",
+		},
+	}
+	for i, sub := range subs {
+		if _, err := database.SaveSubmission(db, sub); err != nil {
+			t.Fatalf("save submission %d: %v", i, err)
+		}
+	}
+
+	r := chi.NewRouter()
+	_ = restapi.HandlerFromMux(&server{db: db}, r)
+	req := httptest.NewRequest(http.MethodGet, "/users/alice", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+
+	var resp restapi.UserInfoResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+
+	if got := resp.SolvedMap["aplusb"]; got != "LATEST_AC" {
+		t.Fatalf("expected LATEST_AC for aplusb, got %q", got)
+	}
+	if got := resp.SolvedMap["aplusb_old"]; got != "AC" {
+		t.Fatalf("expected AC for aplusb_old, got %q", got)
+	}
+	if _, ok := resp.SolvedMap["missing"]; ok {
+		t.Fatalf("unexpected entry for missing problem")
 	}
 }
