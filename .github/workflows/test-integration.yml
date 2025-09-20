@@ -73,7 +73,7 @@ jobs:
           docker compose down -v || true
           docker compose up -d --build --wait
 
-      - name: Seed sample problems (aplusb, unionfind)
+      - name: Seed sample problems (aplusb, point_set_range_sort_range_composite)
         env:
           PGHOST: localhost
           PGPORT: "5432"
@@ -82,7 +82,9 @@ jobs:
           PGPASSWORD: lcdummypassword
         run: |
           PROBLEMS_PATH="$(realpath ../library-checker-problems)"
-          (cd uploader && go run ./problems -dir "$PROBLEMS_PATH" "$PROBLEMS_PATH/sample/aplusb/info.toml")
+          (cd uploader && go run ./problems -dir "$PROBLEMS_PATH" \
+            "$PROBLEMS_PATH/sample/aplusb/info.toml" \
+            "$PROBLEMS_PATH/data_structure/point_set_range_sort_range_composite/info.toml")
           (cd uploader && go run ./categories -dir "$PROBLEMS_PATH")
 
       - name: Run integration tests

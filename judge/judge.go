@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
-	"path"
 	"time"
 
 	"github.com/yosupo06/library-checker-judge/executor"
@@ -59,25 +59,35 @@ func compileModelSolution(dir storage.ProblemFiles) (executor.Volume, executor.T
 func compile(dir storage.ProblemFiles, srcPath string, l langs.Lang) (v executor.Volume, t executor.TaskResult, err error) {
 	slog.Info("Compile", "lang", l.ID, "src", srcPath)
 
-	// Create map of extra files - always include these 3 files for all languages
+	publicRoot := dir.PublicFiles
+	if info, statErr := os.Stat(publicRoot); statErr != nil || !info.IsDir() {
+		if statErr != nil {
+			return executor.Volume{}, executor.TaskResult{}, statErr
+		}
+		return executor.Volume{}, executor.TaskResult{}, fmt.Errorf("public files directory is not a directory: %s", publicRoot)
+	}
+
 	extraFilePaths := map[string]string{
 		"fastio.h":   dir.PublicFilePath("common/fastio.h"),
 		"grader.cpp": dir.PublicFilePath("grader/grader.cpp"),
 		"solve.hpp":  dir.PublicFilePath("grader/solve.hpp"),
 	}
 
-	// Add include files (params.h and common directory files) using existing method
-	includeFiles, err := dir.GetIncludeFilePaths()
-	if err != nil {
-		return executor.Volume{}, executor.TaskResult{}, err
-	}
-	for _, filePath := range includeFiles {
-		filename := path.Base(filePath)
-		extraFilePaths[filename] = filePath
+	langForCompile := executor.Lang{
+		ID:              l.ID,
+		Name:            l.Name,
+		Version:         l.Version,
+		Source:          l.Source,
+		Compile:         l.Compile,
+		Exec:            l.Exec,
+		ImageName:       l.ImageName,
+		AdditionalFiles: l.AdditionalFiles,
 	}
 
-	// Use shared CompileSource function with file map
-	return executor.CompileSource(srcPath, executor.Lang{ID: l.ID, Name: l.Name, Version: l.Version, Source: l.Source, Compile: l.Compile, Exec: l.Exec, ImageName: l.ImageName, AdditionalFiles: l.AdditionalFiles}, DEFAULT_OPTIONS, COMPILE_TIMEOUT, extraFilePaths)
+	options := append([]executor.TaskInfoOption{}, DEFAULT_OPTIONS...)
+	options = append(options, executor.WithBindMount(publicRoot, "/problem", true))
+
+	return executor.CompileSource(srcPath, langForCompile, options, COMPILE_TIMEOUT, extraFilePaths)
 }
 
 func runTestCase(sourceVolume, checkerVolume executor.Volume, lang langs.Lang, timeLimit float64, inFilePath, expectFilePath string) (CaseResult, error) {
