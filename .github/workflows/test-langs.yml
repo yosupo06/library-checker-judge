@@ -31,3 +31,65 @@ jobs:
     - name: Langs module test
       run: go test -v .
       working-directory: ./langs
+
+  image-size-report:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build language images and capture sizes
+      run: |
+        set -eo pipefail
+        mkdir -p report
+        python langs/build.py all \
+          --output-json report/langs-image-sizes.json
+
+    - name: Render image size report
+      run: |
+        python - <<'PY'
+        import json
+        from pathlib import Path
+
+
+        def human(size: int) -> str:
+            if size == 0:
+                return "0 B"
+            sign = "-" if size < 0 else ""
+            size = abs(size)
+            units = ("B", "KiB", "MiB", "GiB", "TiB")
+            idx = 0
+            while size >= 1024 and idx < len(units) - 1:
+                size /= 1024
+                idx += 1
+            return f"{sign}{size:.1f} {units[idx]}"
+
+
+        report_path = Path("report/langs-image-sizes.json")
+        data = json.loads(report_path.read_text())
+        markdown_path = Path("report/langs-image-sizes.md")
+
+        lines = [
+            "### Lang Docker Image Sizes",
+            "",
+            "| Image | Size |",
+            "| --- | --- |",
+        ]
+
+        for entry in data:
+            key = entry["key"]
+            size = int(entry["size_bytes"])
+            lines.append(f"| {key} | {human(size)} |")
+
+        markdown_path.write_text("\n".join(lines) + "\n")
+        PY
+
+    - name: Create or update PR comment
+      uses: peter-evans/create-or-update-comment@v3
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        body-path: report/langs-image-sizes.md
+        comment-identifier: langs-image-size-report

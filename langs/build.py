@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +51,19 @@ def build_one(key):
     ]
     print("+", " ".join(cmd), flush=True)
     subprocess.run(cmd, check=True)
+    inspect = subprocess.run(
+        ["docker", "image", "inspect", tag, "--format", "{{.Size}}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    size = int(inspect.stdout.strip())
+    return {
+        "key": key,
+        "dockerfile": f"Dockerfile.{suffix}",
+        "tag": tag,
+        "size_bytes": size,
+    }
 
 
 def main(argv):
@@ -61,6 +75,11 @@ def main(argv):
             "Image keys to build (default: all). "
             "Examples: gcc python3 | all."
         ),
+    )
+    parser.add_argument(
+        "--output-json",
+        type=Path,
+        help="Path to write build metadata (JSON).",
     )
     parser.add_argument(
         "--list",
@@ -80,8 +99,17 @@ def main(argv):
     else:
         keys = normalize_keys(args.images)
 
+    metadata = []
     for key in keys:
-        build_one(key)
+        metadata.append(
+            build_one(key)
+        )
+    payload = json.dumps(metadata, indent=2)
+    if args.output_json:
+        args.output_json.parent.mkdir(parents=True, exist_ok=True)
+        args.output_json.write_text(payload + "\n")
+    else:
+        print(payload)
     return 0
 
 
