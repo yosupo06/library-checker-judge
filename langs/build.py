@@ -40,7 +40,7 @@ def normalize_keys(keys):
     return result
 
 
-def build_one(key, *, tag_prefix="", cleanup=False):
+def build_one(key, *, tag_prefix=""):
     suffix, tag = IMAGES[key]
     dockerfile = SCRIPT_DIR / f"Dockerfile.{suffix}"
     full_tag = f"{tag_prefix}{tag}" if tag_prefix else tag
@@ -59,8 +59,6 @@ def build_one(key, *, tag_prefix="", cleanup=False):
         text=True,
     )
     size = int(inspect.stdout.strip())
-    if cleanup:
-        subprocess.run(["docker", "image", "rm", full_tag], check=False)
     return {
         "key": key,
         "dockerfile": f"Dockerfile.{suffix}",
@@ -90,11 +88,6 @@ def main(argv):
         help="Path to write build metadata (JSON).",
     )
     parser.add_argument(
-        "--cleanup",
-        action="store_true",
-        help="Remove built images after size inspection",
-    )
-    parser.add_argument(
         "--list",
         action="store_true",
         help="List available image keys and exit",
@@ -118,7 +111,6 @@ def main(argv):
             build_one(
                 key,
                 tag_prefix=args.tag_prefix,
-                cleanup=args.cleanup,
             )
         )
     if args.output_json:

@@ -50,7 +50,6 @@ jobs:
         mkdir -p report
         python langs/build.py all \
           --tag-prefix "ci-${RUN_ID}-${RUN_ATTEMPT}-" \
-          --cleanup \
           --output-json report/langs-image-sizes.json
 
     - name: Render image size report
