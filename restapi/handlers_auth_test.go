@@ -25,7 +25,7 @@ func TestParseBearerToken(t *testing.T) {
 
 func TestGetCurrentUserInfo_Anonymous(t *testing.T) {
 	r := chi.NewRouter()
-	_ = restapi.HandlerFromMux(&server{db: nil}, r)
+	_ = restapi.HandlerFromMux(newRESTHandler(&server{db: nil}), r)
 	req := httptest.NewRequest(http.MethodGet, "/auth/current_user", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -43,7 +43,7 @@ func TestGetCurrentUserInfo_Anonymous(t *testing.T) {
 
 func TestPostRegister_Unauthorized(t *testing.T) {
 	r := chi.NewRouter()
-	_ = restapi.HandlerFromMux(&server{db: nil}, r)
+	_ = restapi.HandlerFromMux(newRESTHandler(&server{db: nil}), r)
 	req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewReader([]byte(`{"name":"alice"}`)))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -75,8 +75,9 @@ func TestPatchCurrentUserInfo_Succeeds(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer token")
 	w := httptest.NewRecorder()
-
-	s.PatchCurrentUserInfo(w, req)
+	r := chi.NewRouter()
+	_ = restapi.HandlerFromMux(newRESTHandler(s), r)
+	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("PATCH /auth/current_user status=%d body=%s", w.Code, w.Body.String())
@@ -102,7 +103,7 @@ func TestGetUserInfo_WithoutStatistics(t *testing.T) {
 	}
 
 	r := chi.NewRouter()
-	_ = restapi.HandlerFromMux(&server{db: db}, r)
+	_ = restapi.HandlerFromMux(newRESTHandler(&server{db: db}), r)
 	req := httptest.NewRequest(http.MethodGet, "/users/alice", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -181,7 +182,7 @@ func TestGetUserStatistics_SolvedMap(t *testing.T) {
 	}
 
 	r := chi.NewRouter()
-	_ = restapi.HandlerFromMux(&server{db: db}, r)
+	_ = restapi.HandlerFromMux(newRESTHandler(&server{db: db}), r)
 	req := httptest.NewRequest(http.MethodGet, "/users/alice/statistics", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)

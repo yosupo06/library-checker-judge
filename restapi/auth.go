@@ -56,3 +56,11 @@ func (s *server) uidFromRequest(r *http.Request) (string, error) {
 	}
 	return uid, nil
 }
+
+func (s *server) uidFromContext(ctx context.Context) (string, error) {
+	r, ok := httpRequestFromContext(ctx)
+	if !ok {
+		return "", errors.New("request not found in context")
+	}
+	return s.uidFromRequest(r)
+}

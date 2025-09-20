@@ -14,7 +14,7 @@ import (
 func TestGetLangList_Unit(t *testing.T) {
 	// Build chi router with our server implementation
 	r := chi.NewRouter()
-	_ = restapi.HandlerFromMux(&server{db: nil}, r)
+	_ = restapi.HandlerFromMux(newRESTHandler(&server{db: nil}), r)
 
 	// Create request
 	req := httptest.NewRequest(http.MethodGet, "/langs", nil)

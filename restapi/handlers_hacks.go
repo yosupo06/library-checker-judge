@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -18,39 +18,34 @@ const (
 	testCaseSourceLengthLimit = 1024 * 1024
 )
 
-func (s *server) PostHack(w http.ResponseWriter, r *http.Request) {
-	var req restapi.CreateHackRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
+func (s *server) PostHack(ctx context.Context, request restapi.PostHackRequestObject) (restapi.PostHackResponseObject, error) {
+	if request.Body == nil {
+		return nil, newHTTPError(http.StatusBadRequest, "invalid request")
 	}
-	if req.Submission < 0 {
-		http.Error(w, "invalid submission id", http.StatusBadRequest)
-		return
+	body := request.Body
+	if body.Submission < 0 {
+		return nil, newHTTPError(http.StatusBadRequest, "invalid submission id")
 	}
 
 	txt := []byte(nil)
-	if req.TestCaseTxt != nil {
-		txt = append(txt, (*req.TestCaseTxt)...)
+	if body.TestCaseTxt != nil {
+		txt = append(txt, (*body.TestCaseTxt)...)
 	}
 	cpp := []byte(nil)
-	if req.TestCaseCpp != nil {
-		cpp = append(cpp, (*req.TestCaseCpp)...)
+	if body.TestCaseCpp != nil {
+		cpp = append(cpp, (*body.TestCaseCpp)...)
 	}
 
 	if len(txt) > testCaseTextLengthLimit {
-		http.Error(w, "test case is too long", http.StatusBadRequest)
-		return
+		return nil, newHTTPError(http.StatusBadRequest, "test case is too long")
 	}
 	if len(cpp) > testCaseSourceLengthLimit {
-		http.Error(w, "test case generator is too long", http.StatusBadRequest)
-		return
+		return nil, newHTTPError(http.StatusBadRequest, "test case generator is too long")
 	}
 
-	uid, err := s.uidFromRequest(r)
+	uid, err := s.uidFromContext(ctx)
 	if err != nil || uid == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, newHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
 
 	var userName string
@@ -58,18 +53,16 @@ func (s *server) PostHack(w http.ResponseWriter, r *http.Request) {
 		userName = user.Name
 	}
 
-	if _, err := database.FetchSubmission(s.db, req.Submission); err != nil {
+	if _, err := database.FetchSubmission(s.db, body.Submission); err != nil {
 		if errors.Is(err, database.ErrNotExist) {
-			http.Error(w, "submission not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "failed to fetch submission", http.StatusInternalServerError)
+			return nil, newHTTPError(http.StatusNotFound, "submission not found")
 		}
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch submission")
 	}
 
 	hack := database.Hack{
 		HackTime:     time.Now(),
-		SubmissionID: req.Submission,
+		SubmissionID: body.Submission,
 		TestCaseTxt:  txt,
 		TestCaseCpp:  cpp,
 		Status:       "WJ",
@@ -85,28 +78,23 @@ func (s *server) PostHack(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(msg, "must contain") || strings.Contains(msg, "must not") {
 			status = http.StatusBadRequest
 		}
-		http.Error(w, "hack creation failed", status)
-		return
+		return nil, newHTTPError(status, "hack creation failed")
 	}
 
 	if err := database.PushHackTask(s.db, database.HackData{ID: id}, hackTaskPriority); err != nil {
-		http.Error(w, "enqueue failed", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "enqueue failed")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(restapi.HackResponse{Id: id})
+	return restapi.PostHack200JSONResponse(restapi.HackResponse{Id: id}), nil
 }
 
-func (s *server) GetHackInfo(w http.ResponseWriter, r *http.Request, id int32) {
-	h, err := database.FetchHack(s.db, id)
+func (s *server) GetHackInfo(_ context.Context, request restapi.GetHackInfoRequestObject) (restapi.GetHackInfoResponseObject, error) {
+	h, err := database.FetchHack(s.db, request.Id)
 	if err != nil {
 		if errors.Is(err, database.ErrNotExist) {
-			http.Error(w, "not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "failed to fetch hack", http.StatusInternalServerError)
+			return nil, newHTTPError(http.StatusNotFound, "not found")
 		}
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch hack")
 	}
 
 	overview := restapi.HackOverview{
@@ -149,46 +137,42 @@ func (s *server) GetHackInfo(w http.ResponseWriter, r *http.Request, id int32) {
 		resp.JudgeOutput = &b
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetHackInfo200JSONResponse(resp), nil
 }
 
-func (s *server) GetHackList(w http.ResponseWriter, r *http.Request, params restapi.GetHackListParams) {
+func (s *server) GetHackList(_ context.Context, request restapi.GetHackListRequestObject) (restapi.GetHackListResponseObject, error) {
 	skip := 0
-	if params.Skip != nil {
-		skip = int(*params.Skip)
+	if request.Params.Skip != nil {
+		skip = int(*request.Params.Skip)
 	}
 	limit := 100
-	if params.Limit != nil {
-		limit = int(*params.Limit)
+	if request.Params.Limit != nil {
+		limit = int(*request.Params.Limit)
 	}
 	if limit > 1000 {
-		http.Error(w, "limit must not be greater than 1000", http.StatusBadRequest)
-		return
+		return nil, newHTTPError(http.StatusBadRequest, "limit must not be greater than 1000")
 	}
 
 	user := ""
-	if params.User != nil {
-		user = *params.User
+	if request.Params.User != nil {
+		user = *request.Params.User
 	}
 	status := ""
-	if params.Status != nil {
-		status = *params.Status
+	if request.Params.Status != nil {
+		status = *request.Params.Status
 	}
 	order := ""
-	if params.Order != nil {
-		order = *params.Order
+	if request.Params.Order != nil {
+		order = *request.Params.Order
 	}
 
 	hacks, err := database.FetchHackList(s.db, skip, limit, user, status, order)
 	if err != nil {
-		http.Error(w, "failed to fetch hacks", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch hacks")
 	}
 	count, err := database.CountHacks(s.db, user, status)
 	if err != nil {
-		http.Error(w, "failed to count hacks", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to count hacks")
 	}
 
 	overviews := make([]restapi.HackOverview, 0, len(hacks))
@@ -217,6 +201,6 @@ func (s *server) GetHackList(w http.ResponseWriter, r *http.Request, params rest
 		overviews = append(overviews, overview)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(restapi.HackListResponse{Hacks: overviews, Count: int32(count)})
+	resp := restapi.HackListResponse{Hacks: overviews, Count: int32(count)}
+	return restapi.GetHackList200JSONResponse(resp), nil
 }

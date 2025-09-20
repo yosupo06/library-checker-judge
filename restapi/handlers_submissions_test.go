@@ -1,8 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,30 +30,24 @@ func TestPostSubmit_AssignsUserName(t *testing.T) {
 
 	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-submit"}}
 
-	body := map[string]any{
-		"problem": problem.Name,
-		"source":  "#include <bits/stdc++.h>\nint main(){return 0;}",
-		"lang":    "cpp",
-	}
-	raw, err := json.Marshal(body)
-	if err != nil {
-		t.Fatalf("marshal body: %v", err)
-	}
-
-	req := httptest.NewRequest(http.MethodPost, "/submit", bytes.NewReader(raw))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest(http.MethodPost, "/submit", nil)
 	req.Header.Set("Authorization", "Bearer token")
-	w := httptest.NewRecorder()
 
-	s.PostSubmit(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("POST /submit status=%d body=%s", w.Code, w.Body.String())
+	ctx := withHTTPRequest(context.Background(), req)
+	respObj, err := s.PostSubmit(ctx, restapi.PostSubmitRequestObject{
+		Body: &restapi.PostSubmitJSONRequestBody{
+			Problem: problem.Name,
+			Source:  "#include <bits/stdc++.h>\nint main(){return 0;}",
+			Lang:    "cpp",
+		},
+	})
+	if err != nil {
+		t.Fatalf("PostSubmit returned error: %v", err)
 	}
 
-	var resp restapi.SubmitResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("decode response: %v", err)
+	resp, ok := respObj.(restapi.PostSubmit200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type %T", respObj)
 	}
 	if resp.Id <= 0 {
 		t.Fatalf("invalid submission id: %d", resp.Id)
@@ -86,29 +79,23 @@ func TestPostSubmit_AnonymousAllowed(t *testing.T) {
 
 	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-submit"}}
 
-	body := map[string]any{
-		"problem": problem.Name,
-		"source":  "#include <bits/stdc++.h>\nint main(){return 0;}",
-		"lang":    "cpp",
-	}
-	raw, err := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/submit", nil)
+	ctx := withHTTPRequest(context.Background(), req)
+
+	respObj, err := s.PostSubmit(ctx, restapi.PostSubmitRequestObject{
+		Body: &restapi.PostSubmitJSONRequestBody{
+			Problem: problem.Name,
+			Source:  "#include <bits/stdc++.h>\nint main(){return 0;}",
+			Lang:    "cpp",
+		},
+	})
 	if err != nil {
-		t.Fatalf("marshal body: %v", err)
+		t.Fatalf("PostSubmit returned error: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/submit", bytes.NewReader(raw))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	s.PostSubmit(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("POST /submit status=%d body=%s", w.Code, w.Body.String())
-	}
-
-	var resp restapi.SubmitResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("decode response: %v", err)
+	resp, ok := respObj.(restapi.PostSubmit200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type %T", respObj)
 	}
 	if resp.Id <= 0 {
 		t.Fatalf("invalid submission id: %d", resp.Id)

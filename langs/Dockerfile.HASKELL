@@ -43,7 +43,12 @@ RUN cabal update && cabal install --lib \
     vector-0.13.0.0 \
     vector-algorithms-0.9.0.1 \
     vector-stream-0.1.0.0 \
-    vector-th-unbox-0.2.2
+    vector-th-unbox-0.2.2 \
+ && rm -rf /root/.cabal/logs \
+           /root/.cabal/packages \
+           /root/.cache \
+           /root/.ghcup/cache \
+           /root/.ghcup/logs
 
 COPY --from=init-builder /library-checker-init/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
 
