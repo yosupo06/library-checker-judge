@@ -42,7 +42,7 @@
 [[langs]]
     id = "d"
     name = "LDC2"
-    version = "ldc2 1.29.0"
+    version = "ldc2 1.36.0"
     source = "main.d"
     image_name = "library-checker-images-ldc"
     compile = ["ldc2", "-O", "-release", "main.d"]
