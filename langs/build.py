@@ -104,9 +104,12 @@ def main(argv):
         metadata.append(
             build_one(key)
         )
+    payload = json.dumps(metadata, indent=2)
     if args.output_json:
         args.output_json.parent.mkdir(parents=True, exist_ok=True)
-        args.output_json.write_text(json.dumps(metadata, indent=2) + "\n")
+        args.output_json.write_text(payload + "\n")
+    else:
+        print(payload)
     return 0
 
 
