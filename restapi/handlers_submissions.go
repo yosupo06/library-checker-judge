@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -12,88 +12,77 @@ import (
 )
 
 // PostSubmit handles POST /submit
-func (s *server) PostSubmit(w http.ResponseWriter, r *http.Request) {
-	var req restapi.SubmitRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
-		return
+func (s *server) PostSubmit(ctx context.Context, request restapi.PostSubmitRequestObject) (restapi.PostSubmitResponseObject, error) {
+	if request.Body == nil {
+		return nil, newHTTPError(http.StatusBadRequest, "invalid json")
 	}
-	if req.Problem == "" || req.Source == "" || req.Lang == "" {
-		http.Error(w, "missing required fields", http.StatusBadRequest)
-		return
+	body := request.Body
+	if body.Problem == "" || body.Source == "" || body.Lang == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "missing required fields")
 	}
-	// Validate problem exists
-	if _, err := database.FetchProblem(s.db, req.Problem); err != nil {
-		http.Error(w, "unknown problem", http.StatusBadRequest)
-		return
+	if len(body.Source) == 0 || len(body.Source) > 1024*1024 {
+		return nil, newHTTPError(http.StatusBadRequest, "invalid source length")
 	}
-	// Validate language exists
-	if _, ok := langs.GetLang(req.Lang); !ok {
-		http.Error(w, "unknown language", http.StatusBadRequest)
-		return
+	if _, err := database.FetchProblem(s.db, body.Problem); err != nil {
+		return nil, newHTTPError(http.StatusBadRequest, "unknown problem")
 	}
-	// Validate source size (<= 1MB)
-	if len(req.Source) == 0 || len(req.Source) > 1024*1024 {
-		http.Error(w, "invalid source length", http.StatusBadRequest)
-		return
+	if _, ok := langs.GetLang(body.Lang); !ok {
+		return nil, newHTTPError(http.StatusBadRequest, "unknown language")
 	}
+
 	var userName sql.NullString
-	if token := parseBearerToken(r); token != "" && s.authClient != nil {
-		uid := s.authClient.parseUID(r.Context(), token)
-		if uid != "" {
-			if user, err := database.FetchUserFromUID(s.db, uid); err != nil {
-				http.Error(w, "failed to fetch user", http.StatusInternalServerError)
-				return
-			} else if user != nil {
-				userName = sql.NullString{String: user.Name, Valid: true}
+	if req, ok := httpRequestFromContext(ctx); ok && s.authClient != nil {
+		if token := parseBearerToken(req); token != "" {
+			uid := s.authClient.parseUID(req.Context(), token)
+			if uid != "" {
+				if user, err := database.FetchUserFromUID(s.db, uid); err != nil {
+					return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch user")
+				} else if user != nil {
+					userName = sql.NullString{String: user.Name, Valid: true}
+				}
 			}
 		}
 	}
-	// Create submission and associate user when available
+
 	sub := database.Submission{
 		SubmissionTime: time.Now(),
-		ProblemName:    req.Problem,
-		Lang:           req.Lang,
+		ProblemName:    body.Problem,
+		Lang:           body.Lang,
 		Status:         "WJ",
-		Source:         req.Source,
+		Source:         body.Source,
 		MaxTime:        -1,
 		MaxMemory:      -1,
 		UserName:       userName,
 	}
 	id, err := database.SaveSubmission(s.db, sub)
 	if err != nil {
-		http.Error(w, "submit failed", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "submit failed")
 	}
 	tleKnockout := false
-	if req.TleKnockout != nil {
-		tleKnockout = *req.TleKnockout
+	if body.TleKnockout != nil {
+		tleKnockout = *body.TleKnockout
 	}
 	if err := database.PushSubmissionTask(s.db, database.SubmissionData{ID: id, TleKnockout: tleKnockout}, 45); err != nil {
-		http.Error(w, "enqueue failed", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "enqueue failed")
 	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(restapi.SubmitResponse{Id: id})
+
+	return restapi.PostSubmit200JSONResponse(restapi.SubmitResponse{Id: id}), nil
 }
 
 // GetSubmissionInfo handles GET /submissions/{id}
-func (s *server) GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id int32) {
-	sub, err := database.FetchSubmission(s.db, id)
+func (s *server) GetSubmissionInfo(_ context.Context, request restapi.GetSubmissionInfoRequestObject) (restapi.GetSubmissionInfoResponseObject, error) {
+	sub, err := database.FetchSubmission(s.db, request.Id)
 	if err != nil {
 		if err == database.ErrNotExist {
-			http.Error(w, "not found", http.StatusNotFound)
-			return
+			return nil, newHTTPError(http.StatusNotFound, "not found")
 		}
-		http.Error(w, "failed to fetch submission", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch submission")
 	}
-	cases, err := database.FetchTestcaseResults(s.db, id)
+	cases, err := database.FetchTestcaseResults(s.db, request.Id)
 	if err != nil {
-		http.Error(w, "failed to fetch cases", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch cases")
 	}
-	// Build overview
+
 	var userNamePtr *string
 	if sub.UserName.Valid {
 		v := sub.UserName.String
@@ -114,7 +103,7 @@ func (s *server) GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id in
 		t := sub.SubmissionTime
 		overview.SubmissionTime = &t
 	}
-	// Build case results
+
 	cr := make([]restapi.SubmissionCaseResult, 0, len(cases))
 	for _, c := range cases {
 		var stderr *[]byte
@@ -145,33 +134,30 @@ func (s *server) GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id in
 		Overview:     overview,
 		Source:       sub.Source,
 		CompileError: compileErr,
-		CanRejudge:   false, // no auth in REST yet
+		CanRejudge:   false,
 	}
 	if len(cr) > 0 {
 		resp.CaseResults = &cr
 	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetSubmissionInfo200JSONResponse(resp), nil
 }
 
 // GetSubmissionList handles GET /submissions
-func (s *server) GetSubmissionList(w http.ResponseWriter, r *http.Request, params restapi.GetSubmissionListParams) {
-	// Defaults
+func (s *server) GetSubmissionList(_ context.Context, request restapi.GetSubmissionListRequestObject) (restapi.GetSubmissionListResponseObject, error) {
 	skip := 0
 	limit := 100
-	if params.Skip != nil {
-		skip = int(*params.Skip)
+	if request.Params.Skip != nil {
+		skip = int(*request.Params.Skip)
 	}
-	if params.Limit != nil {
-		limit = int(*params.Limit)
+	if request.Params.Limit != nil {
+		limit = int(*request.Params.Limit)
 	}
 	if limit > 1000 {
-		http.Error(w, "limit must not be greater than 1000", http.StatusBadRequest)
-		return
+		return nil, newHTTPError(http.StatusBadRequest, "limit must not be greater than 1000")
 	}
 	order := ""
-	if params.Order != nil {
-		order = string(*params.Order)
+	if request.Params.Order != nil {
+		order = string(*request.Params.Order)
 	}
 	var dbOrder []database.SubmissionOrder
 	switch order {
@@ -180,21 +166,19 @@ func (s *server) GetSubmissionList(w http.ResponseWriter, r *http.Request, param
 	case "+time":
 		dbOrder = []database.SubmissionOrder{database.MAX_TIME_ASC, database.ID_DESC}
 	default:
-		http.Error(w, "unknown sort order", http.StatusBadRequest)
-		return
+		return nil, newHTTPError(http.StatusBadRequest, "unknown sort order")
 	}
-	problem := deref(params.Problem)
-	status := deref(params.Status)
-	lang := deref(params.Lang)
-	user := deref(params.User)
+	problem := deref(request.Params.Problem)
+	status := deref(request.Params.Status)
+	lang := deref(request.Params.Lang)
+	user := deref(request.Params.User)
 	dedup := false
-	if params.DedupUser != nil {
-		dedup = *params.DedupUser
+	if request.Params.DedupUser != nil {
+		dedup = *request.Params.DedupUser
 	}
 	list, count, err := database.FetchSubmissionList(s.db, problem, status, lang, user, dedup, dbOrder, skip, limit)
 	if err != nil {
-		http.Error(w, "failed to fetch submissions", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch submissions")
 	}
 	overviews := make([]restapi.SubmissionOverview, 0, len(list))
 	for _, sub := range list {
@@ -203,7 +187,7 @@ func (s *server) GetSubmissionList(w http.ResponseWriter, r *http.Request, param
 			v := sub.UserName.String
 			userNamePtr = &v
 		}
-		ov := restapi.SubmissionOverview{
+		overview := restapi.SubmissionOverview{
 			Id:           sub.ID,
 			ProblemName:  sub.Problem.Name,
 			ProblemTitle: sub.Problem.Title,
@@ -216,13 +200,12 @@ func (s *server) GetSubmissionList(w http.ResponseWriter, r *http.Request, param
 		}
 		if !sub.SubmissionTime.IsZero() {
 			t := sub.SubmissionTime
-			ov.SubmissionTime = &t
+			overview.SubmissionTime = &t
 		}
-		overviews = append(overviews, ov)
+		overviews = append(overviews, overview)
 	}
 	resp := restapi.SubmissionListResponse{Submissions: overviews, Count: int32(count)}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetSubmissionList200JSONResponse(resp), nil
 }
 
 func deref[T any](p *T) T {

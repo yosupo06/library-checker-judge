@@ -20,6 +20,8 @@ type server struct {
 	updateUserFn func(*gorm.DB, database.User) error
 }
 
+var _ restapi.StrictServerInterface = (*server)(nil)
+
 func getEnv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
@@ -76,7 +78,8 @@ func main() {
 	})
 
 	// Register OpenAPI handlers on chi router
-	_ = restapi.HandlerFromMux(&server{db: db, authClient: ac}, r)
+	s := &server{db: db, authClient: ac}
+	_ = restapi.HandlerFromMux(newRESTHandler(s), r)
 	r.Get("/openapi.yaml", func(w http.ResponseWriter, req *http.Request) { http.ServeFile(w, req, "openapi/openapi.yaml") })
 	r.Get("/health", func(w http.ResponseWriter, req *http.Request) { _, _ = w.Write([]byte("SERVING")) })
 
@@ -85,5 +88,32 @@ func main() {
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		slog.Error("server exit", "error", err)
 		os.Exit(1)
+	}
+}
+
+func newRESTHandler(s *server) restapi.ServerInterface {
+	middlewares := []restapi.StrictMiddlewareFunc{requestContextMiddleware}
+	return restapi.NewStrictHandlerWithOptions(s, middlewares, restapi.StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			if err == nil {
+				return
+			}
+			if httpErr, ok := getHTTPError(err); ok {
+				http.Error(w, httpErr.Error(), httpErr.Status)
+				return
+			}
+			slog.Error("handler error", "path", r.URL.Path, "error", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		},
+	})
+}
+
+func requestContextMiddleware(next restapi.StrictHandlerFunc, _ string) restapi.StrictHandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		ctx = withHTTPRequest(ctx, r)
+		return next(ctx, w, r, request)
 	}
 }

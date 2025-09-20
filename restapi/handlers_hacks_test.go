@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/yosupo06/library-checker-judge/database"
 	restapi "github.com/yosupo06/library-checker-judge/restapi/internal/api"
 	"gorm.io/gorm"
@@ -50,6 +52,8 @@ func TestPostHackAndFetch(t *testing.T) {
 	}
 
 	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-123"}}
+	r := chi.NewRouter()
+	_ = restapi.HandlerFromMux(newRESTHandler(s), r)
 
 	payload := map[string]any{
 		"submission":    submissionID,
@@ -62,7 +66,7 @@ func TestPostHackAndFetch(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer token")
 	w := httptest.NewRecorder()
 
-	s.PostHack(w, req)
+	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("POST /hacks status=%d body=%s", w.Code, w.Body.String())
@@ -84,9 +88,10 @@ func TestPostHackAndFetch(t *testing.T) {
 		t.Fatalf("expected user alice, got %+v", hack.UserName)
 	}
 
-	infoReq := httptest.NewRequest(http.MethodGet, "/hacks/", nil)
+	infoReq := httptest.NewRequest(http.MethodGet,
+		fmt.Sprintf("/hacks/%d", hackResp.Id), nil)
 	infoW := httptest.NewRecorder()
-	s.GetHackInfo(infoW, infoReq, hackResp.Id)
+	r.ServeHTTP(infoW, infoReq)
 	if infoW.Code != http.StatusOK {
 		t.Fatalf("GET /hacks/{id} status=%d body=%s", infoW.Code, infoW.Body.String())
 	}
@@ -107,7 +112,7 @@ func TestPostHackAndFetch(t *testing.T) {
 
 	listReq := httptest.NewRequest(http.MethodGet, "/hacks", nil)
 	listW := httptest.NewRecorder()
-	s.GetHackList(listW, listReq, restapi.GetHackListParams{})
+	r.ServeHTTP(listW, listReq)
 	if listW.Code != http.StatusOK {
 		t.Fatalf("GET /hacks status=%d body=%s", listW.Code, listW.Body.String())
 	}
@@ -124,6 +129,8 @@ func TestPostHack_Unauthorized(t *testing.T) {
 	db := setupTestDB(t)
 	submissionID := createTestSubmission(t, db, "aplusb-hack2")
 	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-123"}}
+	r := chi.NewRouter()
+	_ = restapi.HandlerFromMux(newRESTHandler(s), r)
 
 	payload := map[string]any{
 		"submission":    submissionID,
@@ -135,7 +142,7 @@ func TestPostHack_Unauthorized(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
-	s.PostHack(w, req)
+	r.ServeHTTP(w, req)
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", w.Code)
 	}

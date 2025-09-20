@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -18,6 +19,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
+	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
 const (
@@ -1095,6 +1097,783 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 
 	return r
+}
+
+type GetCurrentUserInfoRequestObject struct {
+}
+
+type GetCurrentUserInfoResponseObject interface {
+	VisitGetCurrentUserInfoResponse(w http.ResponseWriter) error
+}
+
+type GetCurrentUserInfo200JSONResponse CurrentUserInfoResponse
+
+func (response GetCurrentUserInfo200JSONResponse) VisitGetCurrentUserInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchCurrentUserInfoRequestObject struct {
+	Body *PatchCurrentUserInfoJSONRequestBody
+}
+
+type PatchCurrentUserInfoResponseObject interface {
+	VisitPatchCurrentUserInfoResponse(w http.ResponseWriter) error
+}
+
+type PatchCurrentUserInfo200JSONResponse ChangeCurrentUserInfoResponse
+
+func (response PatchCurrentUserInfo200JSONResponse) VisitPatchCurrentUserInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostRegisterRequestObject struct {
+	Body *PostRegisterJSONRequestBody
+}
+
+type PostRegisterResponseObject interface {
+	VisitPostRegisterResponse(w http.ResponseWriter) error
+}
+
+type PostRegister200JSONResponse RegisterResponse
+
+func (response PostRegister200JSONResponse) VisitPostRegisterResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProblemCategoriesRequestObject struct {
+}
+
+type GetProblemCategoriesResponseObject interface {
+	VisitGetProblemCategoriesResponse(w http.ResponseWriter) error
+}
+
+type GetProblemCategories200JSONResponse ProblemCategoriesResponse
+
+func (response GetProblemCategories200JSONResponse) VisitGetProblemCategoriesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetHackListRequestObject struct {
+	Params GetHackListParams
+}
+
+type GetHackListResponseObject interface {
+	VisitGetHackListResponse(w http.ResponseWriter) error
+}
+
+type GetHackList200JSONResponse HackListResponse
+
+func (response GetHackList200JSONResponse) VisitGetHackListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostHackRequestObject struct {
+	Body *PostHackJSONRequestBody
+}
+
+type PostHackResponseObject interface {
+	VisitPostHackResponse(w http.ResponseWriter) error
+}
+
+type PostHack200JSONResponse HackResponse
+
+func (response PostHack200JSONResponse) VisitPostHackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetHackInfoRequestObject struct {
+	Id HackId `json:"id"`
+}
+
+type GetHackInfoResponseObject interface {
+	VisitGetHackInfoResponse(w http.ResponseWriter) error
+}
+
+type GetHackInfo200JSONResponse HackInfoResponse
+
+func (response GetHackInfo200JSONResponse) VisitGetHackInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLangListRequestObject struct {
+}
+
+type GetLangListResponseObject interface {
+	VisitGetLangListResponse(w http.ResponseWriter) error
+}
+
+type GetLangList200JSONResponse LangListResponse
+
+func (response GetLangList200JSONResponse) VisitGetLangListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProblemsRequestObject struct {
+}
+
+type GetProblemsResponseObject interface {
+	VisitGetProblemsResponse(w http.ResponseWriter) error
+}
+
+type GetProblems200JSONResponse ProblemListResponse
+
+func (response GetProblems200JSONResponse) VisitGetProblemsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProblemInfoRequestObject struct {
+	Name ProblemName `json:"name"`
+}
+
+type GetProblemInfoResponseObject interface {
+	VisitGetProblemInfoResponse(w http.ResponseWriter) error
+}
+
+type GetProblemInfo200JSONResponse ProblemInfoResponse
+
+func (response GetProblemInfo200JSONResponse) VisitGetProblemInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRankingRequestObject struct {
+	Params GetRankingParams
+}
+
+type GetRankingResponseObject interface {
+	VisitGetRankingResponse(w http.ResponseWriter) error
+}
+
+type GetRanking200JSONResponse RankingResponse
+
+func (response GetRanking200JSONResponse) VisitGetRankingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSubmissionListRequestObject struct {
+	Params GetSubmissionListParams
+}
+
+type GetSubmissionListResponseObject interface {
+	VisitGetSubmissionListResponse(w http.ResponseWriter) error
+}
+
+type GetSubmissionList200JSONResponse SubmissionListResponse
+
+func (response GetSubmissionList200JSONResponse) VisitGetSubmissionListResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSubmissionInfoRequestObject struct {
+	Id SubmissionId `json:"id"`
+}
+
+type GetSubmissionInfoResponseObject interface {
+	VisitGetSubmissionInfoResponse(w http.ResponseWriter) error
+}
+
+type GetSubmissionInfo200JSONResponse SubmissionInfoResponse
+
+func (response GetSubmissionInfo200JSONResponse) VisitGetSubmissionInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostSubmitRequestObject struct {
+	Body *PostSubmitJSONRequestBody
+}
+
+type PostSubmitResponseObject interface {
+	VisitPostSubmitResponse(w http.ResponseWriter) error
+}
+
+type PostSubmit200JSONResponse SubmitResponse
+
+func (response PostSubmit200JSONResponse) VisitPostSubmitResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserInfoRequestObject struct {
+	Name UserNamePath `json:"name"`
+}
+
+type GetUserInfoResponseObject interface {
+	VisitGetUserInfoResponse(w http.ResponseWriter) error
+}
+
+type GetUserInfo200JSONResponse UserInfoResponse
+
+func (response GetUserInfo200JSONResponse) VisitGetUserInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserStatisticsRequestObject struct {
+	Name UserNamePath `json:"name"`
+}
+
+type GetUserStatisticsResponseObject interface {
+	VisitGetUserStatisticsResponse(w http.ResponseWriter) error
+}
+
+type GetUserStatistics200JSONResponse UserSolvedStatisticsResponse
+
+func (response GetUserStatistics200JSONResponse) VisitGetUserStatisticsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// Get current user info
+	// (GET /auth/current_user)
+	GetCurrentUserInfo(ctx context.Context, request GetCurrentUserInfoRequestObject) (GetCurrentUserInfoResponseObject, error)
+	// Change current user info
+	// (PATCH /auth/current_user)
+	PatchCurrentUserInfo(ctx context.Context, request PatchCurrentUserInfoRequestObject) (PatchCurrentUserInfoResponseObject, error)
+	// Register user
+	// (POST /auth/register)
+	PostRegister(ctx context.Context, request PostRegisterRequestObject) (PostRegisterResponseObject, error)
+	// Get problem categories
+	// (GET /categories)
+	GetProblemCategories(ctx context.Context, request GetProblemCategoriesRequestObject) (GetProblemCategoriesResponseObject, error)
+	// List hacks
+	// (GET /hacks)
+	GetHackList(ctx context.Context, request GetHackListRequestObject) (GetHackListResponseObject, error)
+	// Submit hack test case
+	// (POST /hacks)
+	PostHack(ctx context.Context, request PostHackRequestObject) (PostHackResponseObject, error)
+	// Get hack info
+	// (GET /hacks/{id})
+	GetHackInfo(ctx context.Context, request GetHackInfoRequestObject) (GetHackInfoResponseObject, error)
+	// Get language list
+	// (GET /langs)
+	GetLangList(ctx context.Context, request GetLangListRequestObject) (GetLangListResponseObject, error)
+	// Get problems
+	// (GET /problems)
+	GetProblems(ctx context.Context, request GetProblemsRequestObject) (GetProblemsResponseObject, error)
+	// Get problem info
+	// (GET /problems/{name})
+	GetProblemInfo(ctx context.Context, request GetProblemInfoRequestObject) (GetProblemInfoResponseObject, error)
+	// Get ranking
+	// (GET /ranking)
+	GetRanking(ctx context.Context, request GetRankingRequestObject) (GetRankingResponseObject, error)
+	// Get submissions list
+	// (GET /submissions)
+	GetSubmissionList(ctx context.Context, request GetSubmissionListRequestObject) (GetSubmissionListResponseObject, error)
+	// Get submission info
+	// (GET /submissions/{id})
+	GetSubmissionInfo(ctx context.Context, request GetSubmissionInfoRequestObject) (GetSubmissionInfoResponseObject, error)
+	// Submit a solution
+	// (POST /submit)
+	PostSubmit(ctx context.Context, request PostSubmitRequestObject) (PostSubmitResponseObject, error)
+	// Get user info
+	// (GET /users/{name})
+	GetUserInfo(ctx context.Context, request GetUserInfoRequestObject) (GetUserInfoResponseObject, error)
+	// Get user solved statistics
+	// (GET /users/{name}/statistics)
+	GetUserStatistics(ctx context.Context, request GetUserStatisticsRequestObject) (GetUserStatisticsResponseObject, error)
+}
+
+type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
+type StrictMiddlewareFunc = strictnethttp.StrictHTTPMiddlewareFunc
+
+type StrictHTTPServerOptions struct {
+	RequestErrorHandlerFunc  func(w http.ResponseWriter, r *http.Request, err error)
+	ResponseErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+}
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		},
+	}}
+}
+
+func NewStrictHandlerWithOptions(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc, options StrictHTTPServerOptions) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares, options: options}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+	options     StrictHTTPServerOptions
+}
+
+// GetCurrentUserInfo operation middleware
+func (sh *strictHandler) GetCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
+	var request GetCurrentUserInfoRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCurrentUserInfo(ctx, request.(GetCurrentUserInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCurrentUserInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCurrentUserInfoResponseObject); ok {
+		if err := validResponse.VisitGetCurrentUserInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PatchCurrentUserInfo operation middleware
+func (sh *strictHandler) PatchCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
+	var request PatchCurrentUserInfoRequestObject
+
+	var body PatchCurrentUserInfoJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchCurrentUserInfo(ctx, request.(PatchCurrentUserInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchCurrentUserInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchCurrentUserInfoResponseObject); ok {
+		if err := validResponse.VisitPatchCurrentUserInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostRegister operation middleware
+func (sh *strictHandler) PostRegister(w http.ResponseWriter, r *http.Request) {
+	var request PostRegisterRequestObject
+
+	var body PostRegisterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostRegister(ctx, request.(PostRegisterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostRegister")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostRegisterResponseObject); ok {
+		if err := validResponse.VisitPostRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetProblemCategories operation middleware
+func (sh *strictHandler) GetProblemCategories(w http.ResponseWriter, r *http.Request) {
+	var request GetProblemCategoriesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProblemCategories(ctx, request.(GetProblemCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProblemCategories")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetProblemCategoriesResponseObject); ok {
+		if err := validResponse.VisitGetProblemCategoriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetHackList operation middleware
+func (sh *strictHandler) GetHackList(w http.ResponseWriter, r *http.Request, params GetHackListParams) {
+	var request GetHackListRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHackList(ctx, request.(GetHackListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHackList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHackListResponseObject); ok {
+		if err := validResponse.VisitGetHackListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostHack operation middleware
+func (sh *strictHandler) PostHack(w http.ResponseWriter, r *http.Request) {
+	var request PostHackRequestObject
+
+	var body PostHackJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostHack(ctx, request.(PostHackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostHack")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostHackResponseObject); ok {
+		if err := validResponse.VisitPostHackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetHackInfo operation middleware
+func (sh *strictHandler) GetHackInfo(w http.ResponseWriter, r *http.Request, id HackId) {
+	var request GetHackInfoRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetHackInfo(ctx, request.(GetHackInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetHackInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetHackInfoResponseObject); ok {
+		if err := validResponse.VisitGetHackInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLangList operation middleware
+func (sh *strictHandler) GetLangList(w http.ResponseWriter, r *http.Request) {
+	var request GetLangListRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLangList(ctx, request.(GetLangListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLangList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLangListResponseObject); ok {
+		if err := validResponse.VisitGetLangListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetProblems operation middleware
+func (sh *strictHandler) GetProblems(w http.ResponseWriter, r *http.Request) {
+	var request GetProblemsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProblems(ctx, request.(GetProblemsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProblems")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetProblemsResponseObject); ok {
+		if err := validResponse.VisitGetProblemsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetProblemInfo operation middleware
+func (sh *strictHandler) GetProblemInfo(w http.ResponseWriter, r *http.Request, name ProblemName) {
+	var request GetProblemInfoRequestObject
+
+	request.Name = name
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProblemInfo(ctx, request.(GetProblemInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProblemInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetProblemInfoResponseObject); ok {
+		if err := validResponse.VisitGetProblemInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRanking operation middleware
+func (sh *strictHandler) GetRanking(w http.ResponseWriter, r *http.Request, params GetRankingParams) {
+	var request GetRankingRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRanking(ctx, request.(GetRankingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRanking")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRankingResponseObject); ok {
+		if err := validResponse.VisitGetRankingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSubmissionList operation middleware
+func (sh *strictHandler) GetSubmissionList(w http.ResponseWriter, r *http.Request, params GetSubmissionListParams) {
+	var request GetSubmissionListRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSubmissionList(ctx, request.(GetSubmissionListRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSubmissionList")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSubmissionListResponseObject); ok {
+		if err := validResponse.VisitGetSubmissionListResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSubmissionInfo operation middleware
+func (sh *strictHandler) GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id SubmissionId) {
+	var request GetSubmissionInfoRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSubmissionInfo(ctx, request.(GetSubmissionInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSubmissionInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSubmissionInfoResponseObject); ok {
+		if err := validResponse.VisitGetSubmissionInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostSubmit operation middleware
+func (sh *strictHandler) PostSubmit(w http.ResponseWriter, r *http.Request) {
+	var request PostSubmitRequestObject
+
+	var body PostSubmitJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostSubmit(ctx, request.(PostSubmitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostSubmit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostSubmitResponseObject); ok {
+		if err := validResponse.VisitPostSubmitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetUserInfo operation middleware
+func (sh *strictHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, name UserNamePath) {
+	var request GetUserInfoRequestObject
+
+	request.Name = name
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserInfo(ctx, request.(GetUserInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetUserInfoResponseObject); ok {
+		if err := validResponse.VisitGetUserInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetUserStatistics operation middleware
+func (sh *strictHandler) GetUserStatistics(w http.ResponseWriter, r *http.Request, name UserNamePath) {
+	var request GetUserStatisticsRequestObject
+
+	request.Name = name
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserStatistics(ctx, request.(GetUserStatisticsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserStatistics")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetUserStatisticsResponseObject); ok {
+		if err := validResponse.VisitGetUserStatisticsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

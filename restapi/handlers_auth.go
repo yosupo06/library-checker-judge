@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
 
 	"github.com/yosupo06/library-checker-judge/database"
@@ -10,82 +10,67 @@ import (
 )
 
 // PostRegister handles POST /auth/register
-func (s *server) PostRegister(w http.ResponseWriter, r *http.Request) {
-	var req restapi.RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
+func (s *server) PostRegister(ctx context.Context, request restapi.PostRegisterRequestObject) (restapi.PostRegisterResponseObject, error) {
+	if request.Body == nil || request.Body.Name == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "invalid request")
 	}
-	uid, err := s.uidFromRequest(r)
+	uid, err := s.uidFromContext(ctx)
 	if err != nil || uid == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, newHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
-	if err := database.RegisterUser(s.db, req.Name, uid); err != nil {
-		http.Error(w, "register failed", http.StatusBadRequest)
-		return
+	if err := database.RegisterUser(s.db, request.Body.Name, uid); err != nil {
+		return nil, newHTTPError(http.StatusBadRequest, "register failed")
 	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(restapi.RegisterResponse{})
+	return restapi.PostRegister200JSONResponse(restapi.RegisterResponse{}), nil
 }
 
 // GetCurrentUserInfo handles GET /auth/current_user
-func (s *server) GetCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
-	uid, err := s.uidFromRequest(r)
+func (s *server) GetCurrentUserInfo(ctx context.Context, _ restapi.GetCurrentUserInfoRequestObject) (restapi.GetCurrentUserInfoResponseObject, error) {
+	uid, err := s.uidFromContext(ctx)
 	if err != nil || uid == "" {
-		// Return empty user (not logged in)
-		_ = json.NewEncoder(w).Encode(restapi.CurrentUserInfoResponse{})
-		return
+		return restapi.GetCurrentUserInfo200JSONResponse(restapi.CurrentUserInfoResponse{}), nil
 	}
 	user, err := database.FetchUserFromUID(s.db, uid)
 	if err != nil || user == nil {
-		_ = json.NewEncoder(w).Encode(restapi.CurrentUserInfoResponse{})
-		return
+		return restapi.GetCurrentUserInfo200JSONResponse(restapi.CurrentUserInfoResponse{}), nil
 	}
 	resp := restapi.CurrentUserInfoResponse{User: &restapi.User{
 		Name:        user.Name,
 		LibraryUrl:  user.LibraryURL,
 		IsDeveloper: user.IsDeveloper,
 	}}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetCurrentUserInfo200JSONResponse(resp), nil
 }
 
 // PatchCurrentUserInfo handles PATCH /auth/current_user
-func (s *server) PatchCurrentUserInfo(w http.ResponseWriter, r *http.Request) {
-	var req restapi.ChangeCurrentUserInfoRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.User.Name == "" {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
+func (s *server) PatchCurrentUserInfo(ctx context.Context, request restapi.PatchCurrentUserInfoRequestObject) (restapi.PatchCurrentUserInfoResponseObject, error) {
+	if request.Body == nil || request.Body.User.Name == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "invalid request")
 	}
-	uid, err := s.uidFromRequest(r)
+	uid, err := s.uidFromContext(ctx)
 	if err != nil || uid == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+		return nil, newHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
-	if err := s.updateUser(s.db, database.User{
-		Name:        req.User.Name,
+	user := database.User{
+		Name:        request.Body.User.Name,
 		UID:         uid,
-		LibraryURL:  req.User.LibraryUrl,
-		IsDeveloper: req.User.IsDeveloper,
-	}); err != nil {
-		http.Error(w, "update failed", http.StatusBadRequest)
-		return
+		LibraryURL:  request.Body.User.LibraryUrl,
+		IsDeveloper: request.Body.User.IsDeveloper,
 	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(restapi.ChangeCurrentUserInfoResponse{})
+	if err := s.updateUser(s.db, user); err != nil {
+		return nil, newHTTPError(http.StatusBadRequest, "update failed")
+	}
+	return restapi.PatchCurrentUserInfo200JSONResponse(restapi.ChangeCurrentUserInfoResponse{}), nil
 }
 
 // GetUserInfo handles GET /users/{name}
-func (s *server) GetUserInfo(w http.ResponseWriter, r *http.Request, name string) {
-	if name == "" {
-		http.Error(w, "empty name", http.StatusBadRequest)
-		return
+func (s *server) GetUserInfo(_ context.Context, request restapi.GetUserInfoRequestObject) (restapi.GetUserInfoResponseObject, error) {
+	if request.Name == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "empty name")
 	}
-	user, err := database.FetchUserFromName(s.db, name)
+	user, err := database.FetchUserFromName(s.db, request.Name)
 	if err != nil || user == nil {
-		http.Error(w, "invalid user name", http.StatusBadRequest)
-		return
+		return nil, newHTTPError(http.StatusBadRequest, "invalid user name")
 	}
 	resp := restapi.UserInfoResponse{
 		User: restapi.User{
@@ -94,24 +79,20 @@ func (s *server) GetUserInfo(w http.ResponseWriter, r *http.Request, name string
 			IsDeveloper: user.IsDeveloper,
 		},
 	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetUserInfo200JSONResponse(resp), nil
 }
 
 // GetUserStatistics handles GET /users/{name}/statistics
-func (s *server) GetUserStatistics(w http.ResponseWriter, r *http.Request, name string) {
-	if name == "" {
-		http.Error(w, "empty name", http.StatusBadRequest)
-		return
+func (s *server) GetUserStatistics(_ context.Context, request restapi.GetUserStatisticsRequestObject) (restapi.GetUserStatisticsResponseObject, error) {
+	if request.Name == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "empty name")
 	}
-	stats, err := fetchUserStatisticsREST(s.db, name)
+	stats, err := fetchUserStatisticsREST(s.db, request.Name)
 	if err != nil {
-		http.Error(w, "failed to fetch statistics", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch statistics")
 	}
 	resp := restapi.UserSolvedStatisticsResponse{SolvedMap: stats}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetUserStatistics200JSONResponse(resp), nil
 }
 
 func fetchUserStatisticsREST(db *gorm.DB, userName string) (map[string]restapi.SolvedStatus, error) {
