@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -36,7 +37,19 @@ func (s *server) PostSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid source length", http.StatusBadRequest)
 		return
 	}
-	// Create anonymous submission (REST server has no auth yet)
+	var userName sql.NullString
+	if token := parseBearerToken(r); token != "" && s.authClient != nil {
+		uid := s.authClient.parseUID(r.Context(), token)
+		if uid != "" {
+			if user, err := database.FetchUserFromUID(s.db, uid); err != nil {
+				http.Error(w, "failed to fetch user", http.StatusInternalServerError)
+				return
+			} else if user != nil {
+				userName = sql.NullString{String: user.Name, Valid: true}
+			}
+		}
+	}
+	// Create submission and associate user when available
 	sub := database.Submission{
 		SubmissionTime: time.Now(),
 		ProblemName:    req.Problem,
@@ -45,6 +58,7 @@ func (s *server) PostSubmit(w http.ResponseWriter, r *http.Request) {
 		Source:         req.Source,
 		MaxTime:        -1,
 		MaxMemory:      -1,
+		UserName:       userName,
 	}
 	id, err := database.SaveSubmission(s.db, sub)
 	if err != nil {
