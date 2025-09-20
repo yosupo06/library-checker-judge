@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
 
 	"github.com/yosupo06/library-checker-judge/database"
@@ -9,35 +9,30 @@ import (
 )
 
 // GetProblems handles GET /problems
-func (s *server) GetProblems(w http.ResponseWriter, r *http.Request) {
+func (s *server) GetProblems(ctx context.Context, _ restapi.GetProblemsRequestObject) (restapi.GetProblemsResponseObject, error) {
 	rows, err := database.FetchProblemList(s.db)
 	if err != nil {
-		http.Error(w, "failed to fetch problems", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch problems")
 	}
 	problems := make([]restapi.Problem, 0, len(rows))
 	for _, p := range rows {
 		problems = append(problems, restapi.Problem{Name: p.Name, Title: p.Title})
 	}
 	resp := restapi.ProblemListResponse{Problems: problems}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetProblems200JSONResponse(resp), nil
 }
 
 // GetProblemInfo handles GET /problems/{name}
-func (s *server) GetProblemInfo(w http.ResponseWriter, r *http.Request, name string) {
-	if name == "" {
-		http.Error(w, "missing problem name", http.StatusBadRequest)
-		return
+func (s *server) GetProblemInfo(ctx context.Context, request restapi.GetProblemInfoRequestObject) (restapi.GetProblemInfoResponseObject, error) {
+	if request.Name == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "missing problem name")
 	}
-	p, err := database.FetchProblem(s.db, name)
+	p, err := database.FetchProblem(s.db, request.Name)
 	if err != nil {
 		if err == database.ErrNotExist {
-			http.Error(w, "problem not found", http.StatusNotFound)
-			return
+			return nil, newHTTPError(http.StatusNotFound, "problem not found")
 		}
-		http.Error(w, "failed to fetch problem", http.StatusInternalServerError)
-		return
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch problem")
 	}
 	resp := restapi.ProblemInfoResponse{
 		Title:            p.Title,
@@ -47,6 +42,5 @@ func (s *server) GetProblemInfo(w http.ResponseWriter, r *http.Request, name str
 		TestcasesVersion: p.TestCasesVersion,
 		OverallVersion:   p.OverallVersion,
 	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	return restapi.GetProblemInfo200JSONResponse(resp), nil
 }
