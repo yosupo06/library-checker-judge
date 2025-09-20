@@ -40,160 +40,59 @@ jobs:
       pull-requests: write
     steps:
     - uses: actions/checkout@v4
-      with:
-        path: current
-        fetch-depth: 0
 
-    - uses: actions/checkout@v4
-      with:
-        path: base
-        ref: ${{ github.event.pull_request.base.sha }}
-        fetch-depth: 0
-
-    - name: Detect changed langs files
-      id: detect
-      working-directory: current
-      run: |
-        set -eo pipefail
-        BASE_SHA="${{ github.event.pull_request.base.sha }}"
-        if [ -z "$BASE_SHA" ]; then
-          echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-        git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- langs/** > /tmp/all.txt
-        if [ ! -s /tmp/all.txt ]; then
-          echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-        git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- 'langs/Dockerfile.*' | sort -u > /tmp/changed.txt
-        git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- 'langs/**' ':!langs/Dockerfile.*' > /tmp/other.txt
-        find langs -maxdepth 1 -type f -name 'Dockerfile.*' -print | sort > /tmp/current-dockerfiles.txt
-        find ../base/langs -maxdepth 1 -type f -name 'Dockerfile.*' -print 2>/dev/null | sed 's#^../base/##' | sort > /tmp/base-dockerfiles.txt
-        cat /tmp/current-dockerfiles.txt /tmp/base-dockerfiles.txt | sort -u > /tmp/dockerfiles.txt
-        if [ -s /tmp/other.txt ]; then
-          cp /tmp/dockerfiles.txt /tmp/changed.txt
-          echo "scope=all" >> "$GITHUB_OUTPUT"
-        else
-          if [ ! -s /tmp/changed.txt ]; then
-            cp /tmp/dockerfiles.txt /tmp/changed.txt
-          fi
-          echo "scope=all" >> "$GITHUB_OUTPUT"
-        fi
-        echo "has_changes=true" >> "$GITHUB_OUTPUT"
-        {
-          echo 'dockerfiles<<EOF'
-          cat /tmp/dockerfiles.txt
-          echo 'EOF'
-        } >> "$GITHUB_OUTPUT"
-        {
-          echo 'changed<<EOF'
-          cat /tmp/changed.txt
-          echo 'EOF'
-        } >> "$GITHUB_OUTPUT"
-
-    - name: Build and compare image sizes
-      if: steps.detect.outputs.has_changes == 'true'
-      id: build
-      working-directory: current
+    - name: Build language images and capture sizes
       env:
         RUN_ID: ${{ github.run_id }}
         RUN_ATTEMPT: ${{ github.run_attempt }}
-        BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        HEAD_SHA: ${{ github.sha }}
-        CHANGED_FILES: ${{ steps.detect.outputs.changed }}
       run: |
         set -eo pipefail
-        mkdir -p ../report
-        report_file="../report/langs-image-sizes.md"
-        echo "### Lang Docker Image Sizes" > "$report_file"
-        echo "" >> "$report_file"
-        base_short="${BASE_SHA:0:7}"
-        head_short="${HEAD_SHA:0:7}"
-        echo "_Base \\`$base_short\\`, PR \\`$head_short\\`_" >> "$report_file"
-        echo "" >> "$report_file"
-        if [ "${{ steps.detect.outputs.scope }}" = "all" ]; then
-          echo "_Rebuilt all language images for comparison. Rows in **bold** had Dockerfile changes._" >> "$report_file"
-          echo "" >> "$report_file"
-        fi
-        echo "| Image | Base | PR | Δ |" >> "$report_file"
-        echo "| --- | --- | --- | --- |" >> "$report_file"
-        while IFS= read -r file; do
-          [ -z "$file" ] && continue
-          label="${file##*.}"
-          display_label="$label"
-          if [ -n "${CHANGED_FILES}" ] && printf '%s\n' "${CHANGED_FILES}" | grep -Fxq "$file"; then
-            display_label="**${label}**"
-          fi
-          tag_slug=$(echo "$label" | tr '[:upper:]' '[:lower:]')
-          base_tag=""
-          pr_tag=""
-          base_size=""
-          pr_size=""
-          if [ -f "../base/$file" ]; then
-            base_tag="lc-base-${tag_slug}-${RUN_ID}-${RUN_ATTEMPT}"
-            docker build --progress=plain --tag "$base_tag" -f "../base/$file" ../base/langs
-            base_size=$(docker image inspect "$base_tag" --format '{{.Size}}')
-          fi
-          if [ -f "$file" ]; then
-            pr_tag="lc-pr-${tag_slug}-${RUN_ID}-${RUN_ATTEMPT}"
-            docker build --progress=plain --tag "$pr_tag" -f "$file" langs
-            pr_size=$(docker image inspect "$pr_tag" --format '{{.Size}}')
-          fi
-          row=$(LC_LABEL="$display_label" LC_BASE_SIZE="$base_size" LC_PR_SIZE="$pr_size" python -c 'import os, textwrap; exec(textwrap.dedent("""
-            label = os.environ.get("LC_LABEL", "")
-            base_raw = os.environ.get("LC_BASE_SIZE") or ""
-            pr_raw = os.environ.get("LC_PR_SIZE") or ""
-            base_val = int(base_raw) if base_raw else None
-            pr_val = int(pr_raw) if pr_raw else None
+        mkdir -p report
+        python langs/build.py all \
+          --tag-prefix "ci-${RUN_ID}-${RUN_ATTEMPT}-" \
+          --cleanup \
+          --output-json report/langs-image-sizes.json
 
-            def human(value):
-                if value == 0:
-                    return "0 B"
-                sign = "-" if value < 0 else ""
-                value = abs(value)
-                units = ("B", "KiB", "MiB", "GiB", "TiB")
-                idx = 0
-                while value >= 1024 and idx < len(units) - 1:
-                    value /= 1024
-                    idx += 1
-                return f"{sign}{value:.1f} {units[idx]}"
+    - name: Render image size report
+      run: |
+        python - <<'PY'
+        import json
+        from pathlib import Path
 
 
-            def human_opt(value):
-                return human(value) if value is not None else "—"
+        def human(size: int) -> str:
+            if size == 0:
+                return "0 B"
+            sign = "-" if size < 0 else ""
+            size = abs(size)
+            units = ("B", "KiB", "MiB", "GiB", "TiB")
+            idx = 0
+            while size >= 1024 and idx < len(units) - 1:
+                size /= 1024
+                idx += 1
+            return f"{sign}{size:.1f} {units[idx]}"
 
 
-            if base_val is None and pr_val is None:
-                raise SystemExit(0)
+        report_path = Path("report/langs-image-sizes.json")
+        data = json.loads(report_path.read_text())
+        markdown_path = Path("report/langs-image-sizes.md")
 
-            if base_val is None:
-                delta = pr_val
-                delta_str = f"+{human(delta)} (new)"
-            elif pr_val is None:
-                delta = -base_val
-                delta_str = f"-{human(base_val)} (removed)"
-            else:
-                delta = pr_val - base_val
-                delta_str = human(delta)
-                if delta > 0:
-                    delta_str = "+" + delta_str
+        lines = [
+            "### Lang Docker Image Sizes",
+            "",
+            "| Image | Size |",
+            "| --- | --- |",
+        ]
 
+        for entry in data:
+            key = entry["key"]
+            size = int(entry["size_bytes"])
+            lines.append(f"| {key} | {human(size)} |")
 
-            print(f"| {label} | {human_opt(base_val)} | {human_opt(pr_val)} | {delta_str} |")
-          """))')
-          if [ -n "$row" ]; then
-            echo "$row" >> "$report_file"
-          fi
-          if [ -n "$base_tag" ]; then
-            docker image rm "$base_tag" >/dev/null 2>&1 || true
-          fi
-          if [ -n "$pr_tag" ]; then
-            docker image rm "$pr_tag" >/dev/null 2>&1 || true
-          fi
-        done <<< "${{ steps.detect.outputs.dockerfiles }}"
+        markdown_path.write_text("\n".join(lines) + "\n")
+        PY
 
     - name: Create or update PR comment
-      if: steps.detect.outputs.has_changes == 'true'
       uses: peter-evans/create-or-update-comment@v3
       with:
         issue-number: ${{ github.event.pull_request.number }}

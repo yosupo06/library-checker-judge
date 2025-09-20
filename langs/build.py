@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -39,17 +40,33 @@ def normalize_keys(keys):
     return result
 
 
-def build_one(key):
+def build_one(key, *, tag_prefix="", cleanup=False):
     suffix, tag = IMAGES[key]
     dockerfile = SCRIPT_DIR / f"Dockerfile.{suffix}"
+    full_tag = f"{tag_prefix}{tag}" if tag_prefix else tag
     cmd = [
         "docker", "build",
-        "-t", tag,
+        "-t", full_tag,
         "-f", str(dockerfile),
         str(SCRIPT_DIR),
     ]
     print("+", " ".join(cmd), flush=True)
     subprocess.run(cmd, check=True)
+    inspect = subprocess.run(
+        ["docker", "image", "inspect", full_tag, "--format", "{{.Size}}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    size = int(inspect.stdout.strip())
+    if cleanup:
+        subprocess.run(["docker", "image", "rm", full_tag], check=False)
+    return {
+        "key": key,
+        "dockerfile": f"Dockerfile.{suffix}",
+        "tag": full_tag,
+        "size_bytes": size,
+    }
 
 
 def main(argv):
@@ -61,6 +78,21 @@ def main(argv):
             "Image keys to build (default: all). "
             "Examples: gcc python3 | all."
         ),
+    )
+    parser.add_argument(
+        "--tag-prefix",
+        default="",
+        help="Prefix to prepend to image tags during build",
+    )
+    parser.add_argument(
+        "--output-json",
+        type=Path,
+        help="Path to write build metadata (JSON).",
+    )
+    parser.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="Remove built images after size inspection",
     )
     parser.add_argument(
         "--list",
@@ -80,8 +112,18 @@ def main(argv):
     else:
         keys = normalize_keys(args.images)
 
+    metadata = []
     for key in keys:
-        build_one(key)
+        metadata.append(
+            build_one(
+                key,
+                tag_prefix=args.tag_prefix,
+                cleanup=args.cleanup,
+            )
+        )
+    if args.output_json:
+        args.output_json.parent.mkdir(parents=True, exist_ok=True)
+        args.output_json.write_text(json.dumps(metadata, indent=2) + "\n")
     return 0
 
 
