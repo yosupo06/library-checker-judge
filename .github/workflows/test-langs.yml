@@ -42,14 +42,10 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Build language images and capture sizes
-      env:
-        RUN_ID: ${{ github.run_id }}
-        RUN_ATTEMPT: ${{ github.run_attempt }}
       run: |
         set -eo pipefail
         mkdir -p report
         python langs/build.py all \
-          --tag-prefix "ci-${RUN_ID}-${RUN_ATTEMPT}-" \
           --output-json report/langs-image-sizes.json
 
     - name: Render image size report

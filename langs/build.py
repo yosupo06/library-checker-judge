@@ -40,20 +40,19 @@ def normalize_keys(keys):
     return result
 
 
-def build_one(key, *, tag_prefix=""):
+def build_one(key):
     suffix, tag = IMAGES[key]
     dockerfile = SCRIPT_DIR / f"Dockerfile.{suffix}"
-    full_tag = f"{tag_prefix}{tag}" if tag_prefix else tag
     cmd = [
         "docker", "build",
-        "-t", full_tag,
+        "-t", tag,
         "-f", str(dockerfile),
         str(SCRIPT_DIR),
     ]
     print("+", " ".join(cmd), flush=True)
     subprocess.run(cmd, check=True)
     inspect = subprocess.run(
-        ["docker", "image", "inspect", full_tag, "--format", "{{.Size}}"],
+        ["docker", "image", "inspect", tag, "--format", "{{.Size}}"],
         check=True,
         capture_output=True,
         text=True,
@@ -62,7 +61,7 @@ def build_one(key, *, tag_prefix=""):
     return {
         "key": key,
         "dockerfile": f"Dockerfile.{suffix}",
-        "tag": full_tag,
+        "tag": tag,
         "size_bytes": size,
     }
 
@@ -76,11 +75,6 @@ def main(argv):
             "Image keys to build (default: all). "
             "Examples: gcc python3 | all."
         ),
-    )
-    parser.add_argument(
-        "--tag-prefix",
-        default="",
-        help="Prefix to prepend to image tags during build",
     )
     parser.add_argument(
         "--output-json",
@@ -108,10 +102,7 @@ def main(argv):
     metadata = []
     for key in keys:
         metadata.append(
-            build_one(
-                key,
-                tag_prefix=args.tag_prefix,
-            )
+            build_one(key)
         )
     if args.output_json:
         args.output_json.parent.mkdir(parents=True, exist_ok=True)
