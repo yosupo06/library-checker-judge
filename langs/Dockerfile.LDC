@@ -3,11 +3,11 @@ WORKDIR /library-checker-init
 COPY init /library-checker-init
 RUN cargo build --release --target=x86_64-unknown-linux-musl
 
-FROM alpine:3.20
+FROM ubuntu:24.04
 
-RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
- && apk add --no-cache ldc gcc musl-dev libxml2 ca-certificates \
- && update-ca-certificates
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ldc=1:1.36.0-2ubuntu2 gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=init-builder /library-checker-init/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
 
