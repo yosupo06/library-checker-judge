@@ -65,22 +65,29 @@ jobs:
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- 'langs/Dockerfile.*' | sort -u > /tmp/dockerfiles.txt
+        git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- 'langs/Dockerfile.*' | sort -u > /tmp/changed.txt
         git diff --name-only "$BASE_SHA" "$GITHUB_SHA" -- 'langs/**' ':!langs/Dockerfile.*' > /tmp/other.txt
+        find langs -maxdepth 1 -type f -name 'Dockerfile.*' -print | sort > /tmp/current-dockerfiles.txt
+        find ../base/langs -maxdepth 1 -type f -name 'Dockerfile.*' -print 2>/dev/null | sed 's#^../base/##' | sort > /tmp/base-dockerfiles.txt
+        cat /tmp/current-dockerfiles.txt /tmp/base-dockerfiles.txt | sort -u > /tmp/dockerfiles.txt
         if [ -s /tmp/other.txt ]; then
-          ls langs/Dockerfile.* | sort > /tmp/dockerfiles.txt
+          cp /tmp/dockerfiles.txt /tmp/changed.txt
           echo "scope=all" >> "$GITHUB_OUTPUT"
         else
-          echo "scope=changed" >> "$GITHUB_OUTPUT"
-        fi
-        if [ ! -s /tmp/dockerfiles.txt ]; then
-          ls langs/Dockerfile.* | sort > /tmp/dockerfiles.txt
+          if [ ! -s /tmp/changed.txt ]; then
+            cp /tmp/dockerfiles.txt /tmp/changed.txt
+          fi
           echo "scope=all" >> "$GITHUB_OUTPUT"
         fi
         echo "has_changes=true" >> "$GITHUB_OUTPUT"
         {
           echo 'dockerfiles<<EOF'
           cat /tmp/dockerfiles.txt
+          echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
+        {
+          echo 'changed<<EOF'
+          cat /tmp/changed.txt
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
 
@@ -93,6 +100,7 @@ jobs:
         RUN_ATTEMPT: ${{ github.run_attempt }}
         BASE_SHA: ${{ github.event.pull_request.base.sha }}
         HEAD_SHA: ${{ github.sha }}
+        CHANGED_FILES: ${{ steps.detect.outputs.changed }}
       run: |
         set -eo pipefail
         mkdir -p ../report
@@ -104,7 +112,7 @@ jobs:
         echo "_Base \\`$base_short\\`, PR \\`$head_short\\`_" >> "$report_file"
         echo "" >> "$report_file"
         if [ "${{ steps.detect.outputs.scope }}" = "all" ]; then
-          echo "_Detected shared resource changes; rebuilt all language images._" >> "$report_file"
+          echo "_Rebuilt all language images for comparison. Rows in **bold** had Dockerfile changes._" >> "$report_file"
           echo "" >> "$report_file"
         fi
         echo "| Image | Base | PR | Δ |" >> "$report_file"
@@ -112,6 +120,10 @@ jobs:
         while IFS= read -r file; do
           [ -z "$file" ] && continue
           label="${file##*.}"
+          display_label="$label"
+          if [ -n "${CHANGED_FILES}" ] && printf '%s\n' "${CHANGED_FILES}" | grep -Fxq "$file"; then
+            display_label="**${label}**"
+          fi
           tag_slug=$(echo "$label" | tr '[:upper:]' '[:lower:]')
           base_tag=""
           pr_tag=""
@@ -127,7 +139,7 @@ jobs:
             docker build --progress=plain --tag "$pr_tag" -f "$file" langs
             pr_size=$(docker image inspect "$pr_tag" --format '{{.Size}}')
           fi
-          row=$(LC_LABEL="$label" LC_BASE_SIZE="$base_size" LC_PR_SIZE="$pr_size" python -c 'import os, textwrap; exec(textwrap.dedent("""
+          row=$(LC_LABEL="$display_label" LC_BASE_SIZE="$base_size" LC_PR_SIZE="$pr_size" python -c 'import os, textwrap; exec(textwrap.dedent("""
             label = os.environ.get("LC_LABEL", "")
             base_raw = os.environ.get("LC_BASE_SIZE") or ""
             pr_raw = os.environ.get("LC_PR_SIZE") or ""
