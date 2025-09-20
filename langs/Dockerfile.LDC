@@ -3,24 +3,11 @@ WORKDIR /library-checker-init
 COPY init /library-checker-init
 RUN cargo build --release --target=x86_64-unknown-linux-musl
 
-FROM ubuntu:22.04 as builder
+FROM alpine:3.20
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends wget xz-utils ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-RUN wget https://github.com/ldc-developers/ldc/releases/download/v1.29.0/ldc2-1.29.0-linux-x86_64.tar.xz
-RUN tar -xf ldc2-1.29.0-linux-x86_64.tar.xz -C /opt \
- && rm -f ldc2-1.29.0-linux-x86_64.tar.xz
-
-FROM ubuntu:22.04
-
-RUN apt-get update \
- && apt-get install -y --no-install-recommends libxml2 gcc \
- && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /opt/ldc2-1.29.0-linux-x86_64/ /opt/ldc2-1.29.0-linux-x86_64/
-
-ENV PATH $PATH:/opt/ldc2-1.29.0-linux-x86_64/bin
+RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
+ && apk add --no-cache ldc gcc musl-dev libxml2 ca-certificates \
+ && update-ca-certificates
 
 COPY --from=init-builder /library-checker-init/target/x86_64-unknown-linux-musl/release/library-checker-init /usr/bin
 
