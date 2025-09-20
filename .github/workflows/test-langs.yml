@@ -127,47 +127,48 @@ jobs:
             docker build --progress=plain --tag "$pr_tag" -f "$file" langs
             pr_size=$(docker image inspect "$pr_tag" --format '{{.Size}}')
           fi
-          row=$(LC_LABEL="$label" LC_BASE_SIZE="$base_size" LC_PR_SIZE="$pr_size" python -c '
-          import os
+          row=$(LC_LABEL="$label" LC_BASE_SIZE="$base_size" LC_PR_SIZE="$pr_size" python -c 'import os, textwrap; exec(textwrap.dedent("""
+            label = os.environ.get("LC_LABEL", "")
+            base_raw = os.environ.get("LC_BASE_SIZE") or ""
+            pr_raw = os.environ.get("LC_PR_SIZE") or ""
+            base_val = int(base_raw) if base_raw else None
+            pr_val = int(pr_raw) if pr_raw else None
 
-          def human(value):
-              if value == 0:
-                  return "0 B"
-              sign = "-" if value < 0 else ""
-              value = abs(value)
-              units = ("B", "KiB", "MiB", "GiB", "TiB")
-              idx = 0
-              while value >= 1024 and idx < len(units) - 1:
-                  value /= 1024
-                  idx += 1
-              return f"{sign}{value:.1f} {units[idx]}"
+            def human(value):
+                if value == 0:
+                    return "0 B"
+                sign = "-" if value < 0 else ""
+                value = abs(value)
+                units = ("B", "KiB", "MiB", "GiB", "TiB")
+                idx = 0
+                while value >= 1024 and idx < len(units) - 1:
+                    value /= 1024
+                    idx += 1
+                return f"{sign}{value:.1f} {units[idx]}"
 
-          def human_opt(value):
-              return human(value) if value is not None else "—"
 
-          label = os.environ.get("LC_LABEL", "")
-          base_raw = os.environ.get("LC_BASE_SIZE") or ""
-          pr_raw = os.environ.get("LC_PR_SIZE") or ""
-          base_val = int(base_raw) if base_raw else None
-          pr_val = int(pr_raw) if pr_raw else None
+            def human_opt(value):
+                return human(value) if value is not None else "—"
 
-          if base_val is None and pr_val is None:
-              raise SystemExit(0)
 
-          if base_val is None:
-              delta = pr_val
-              delta_str = f"+{human(delta)} (new)"
-          elif pr_val is None:
-              delta = -base_val
-              delta_str = f"-{human(base_val)} (removed)"
-          else:
-              delta = pr_val - base_val
-              delta_str = human(delta)
-              if delta > 0:
-                  delta_str = "+" + delta_str
+            if base_val is None and pr_val is None:
+                raise SystemExit(0)
 
-          print(f"| {label} | {human_opt(base_val)} | {human_opt(pr_val)} | {delta_str} |")
-          ')
+            if base_val is None:
+                delta = pr_val
+                delta_str = f"+{human(delta)} (new)"
+            elif pr_val is None:
+                delta = -base_val
+                delta_str = f"-{human(base_val)} (removed)"
+            else:
+                delta = pr_val - base_val
+                delta_str = human(delta)
+                if delta > 0:
+                    delta_str = "+" + delta_str
+
+
+            print(f"| {label} | {human_opt(base_val)} | {human_opt(pr_val)} | {delta_str} |")
+          """))')
           if [ -n "$row" ]; then
             echo "$row" >> "$report_file"
           fi
