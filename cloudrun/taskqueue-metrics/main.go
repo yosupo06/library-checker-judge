@@ -2,17 +2,19 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	monitoringpb "cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/yosupo06/library-checker-judge/database"
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -20,7 +22,15 @@ import (
 
 const defaultMetricType = "custom.googleapis.com/judge/task_queue/pending"
 
+var projectID string
+
 func main() {
+	var err error
+	projectID, err = detectProjectID(context.Background())
+	if err != nil {
+		log.Fatalf("detectProjectID: %v", err)
+	}
+
 	http.HandleFunc("/", queueMetricsHandler)
 
 	port := envOrDefault("PORT", "8080")
@@ -32,12 +42,8 @@ func main() {
 
 func queueMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	log.Printf("request start method=%s path=%s", r.Method, r.URL.Path)
 
-	projectID := firstNonEmpty(os.Getenv("GCP_PROJECT"), os.Getenv("GOOGLE_CLOUD_PROJECT"))
-	if projectID == "" {
-		http.Error(w, "missing project id", http.StatusInternalServerError)
-		return
-	}
 	metricType := envOrDefault("METRIC_TYPE", defaultMetricType)
 
 	db := database.Connect(database.GetDSNFromEnv(), false)
@@ -111,13 +117,15 @@ func envOrDefault(key, fallback string) string {
 	return fallback
 }
 
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
+func detectProjectID(ctx context.Context) (string, error) {
+	if !metadata.OnGCE() {
+		return "", errors.New("project id not available via metadata")
 	}
-	return ""
+	id, err := metadata.ProjectIDWithContext(ctx)
+	if err != nil {
+		return "", fmt.Errorf("metadata.ProjectIDWithContext: %w", err)
+	}
+	return id, nil
 }
 
 func ensureMetricDescriptor(ctx context.Context, client *monitoring.MetricClient, projectID, metricType string) error {

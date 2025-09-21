@@ -7,10 +7,9 @@ toolchain go1.24.7
 replace github.com/yosupo06/library-checker-judge/database => ../../database
 
 require (
+	cloud.google.com/go/compute/metadata v0.8.0
 	cloud.google.com/go/monitoring v1.24.2
 	github.com/yosupo06/library-checker-judge/database v0.0.0-00010101000000-000000000000
-	google.golang.org/genproto v0.0.0-20250908214217-97024824d090
-	google.golang.org/genproto/googleapis/api v0.0.0-20250908214217-97024824d090
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.9
 )
@@ -18,7 +17,6 @@ require (
 require (
 	cloud.google.com/go/auth v0.16.4 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
-	cloud.google.com/go/compute/metadata v0.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -50,6 +48,8 @@ require (
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/api v0.247.0 // indirect
+	google.golang.org/genproto v0.0.0-20250908214217-97024824d090 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250908214217-97024824d090 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250826171959-ef028d996bc1 // indirect
 	gorm.io/driver/postgres v1.5.9 // indirect
 	gorm.io/gorm v1.25.11 // indirect
