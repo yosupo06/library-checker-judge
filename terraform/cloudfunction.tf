@@ -1,7 +1,12 @@
 resource "google_cloud_run_v2_service" "queue_metrics" {
-  name     = "queue-metrics"
-  location = local.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  name                = "queue-metrics"
+  location            = local.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
+  deletion_protection = false
+  depends_on = [
+    google_project_iam_member.sa_role,
+    google_service_account_iam_member.queue_metrics_invoker_token,
+  ]
 
   template {
     scaling {
