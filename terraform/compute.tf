@@ -79,3 +79,24 @@ resource "google_compute_instance_group_manager" "judge" {
     instance_template = google_compute_instance_template.judge.self_link_unique
   }
 }
+
+resource "google_compute_autoscaler" "judge" {
+  for_each = google_compute_instance_group_manager.judge
+
+  name   = "judge-${each.key}-autoscaler"
+  zone   = each.key
+  target = each.value.id
+
+  autoscaling_policy {
+    min_replicas    = local.judge_autoscaling[var.env].min_replicas
+    max_replicas    = local.judge_autoscaling[var.env].max_replicas
+    cooldown_period = local.judge_autoscaling[var.env].cooldown_period_seconds
+
+    metric {
+      name                       = "custom.googleapis.com/judge/task_queue/pending"
+      type                       = "GAUGE"
+      filter                     = "resource.type=\"global\""
+      single_instance_assignment = local.judge_autoscaling[var.env].single_instance_assignment
+    }
+  }
+}
