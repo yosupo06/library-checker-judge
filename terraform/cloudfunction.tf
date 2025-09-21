@@ -1,13 +1,3 @@
-resource "google_monitoring_metric_descriptor" "judge_pending_tasks" {
-  type         = "custom.googleapis.com/judge/task_queue/pending"
-  display_name = "Judge Pending Tasks"
-  metric_kind  = "GAUGE"
-  value_type   = "DOUBLE"
-  unit         = "1"
-  description  = "Pending tasks waiting in the judge queue"
-  project      = var.gcp_project_id
-}
-
 resource "google_cloud_run_v2_service" "queue_metrics" {
   name     = "queue-metrics"
   location = local.region
@@ -30,7 +20,7 @@ resource "google_cloud_run_v2_service" "queue_metrics" {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
       env {
         name  = "METRIC_TYPE"
-        value = google_monitoring_metric_descriptor.judge_pending_tasks.type
+        value = "custom.googleapis.com/judge/task_queue/pending"
       }
       env {
         name  = "PGHOST"
@@ -76,6 +66,12 @@ resource "google_cloud_run_v2_service" "queue_metrics" {
   }
 }
 
+resource "google_project_service_identity" "cloudscheduler" {
+  provider = google-beta
+  project  = var.gcp_project_id
+  service  = "cloudscheduler.googleapis.com"
+}
+
 resource "google_cloud_run_v2_service_iam_member" "queue_metrics_invoker" {
   project  = google_cloud_run_v2_service.queue_metrics.project
   location = google_cloud_run_v2_service.queue_metrics.location
@@ -87,7 +83,7 @@ resource "google_cloud_run_v2_service_iam_member" "queue_metrics_invoker" {
 resource "google_service_account_iam_member" "queue_metrics_invoker_token" {
   service_account_id = google_service_account.queue_metrics_invoker.name
   role               = "roles/iam.serviceAccountTokenCreator"
-  member             = "serviceAccount:service-${data.google_project.main.number}@gcp-sa-cloudscheduler.iam.gserviceaccount.com"
+  member             = "serviceAccount:${google_project_service_identity.cloudscheduler.email}"
 }
 
 resource "google_cloud_scheduler_job" "queue_metrics" {

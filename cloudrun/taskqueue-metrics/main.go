@@ -13,6 +13,8 @@ import (
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	monitoredrespb "google.golang.org/genproto/googleapis/api/monitoredres"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -71,6 +73,10 @@ func writePendingMetric(ctx context.Context, projectID, metricType string, value
 	}
 	defer client.Close()
 
+	if err := ensureMetricDescriptor(ctx, client, projectID, metricType); err != nil {
+		return err
+	}
+
 	series := &monitoringpb.TimeSeries{
 		Metric: &metricpb.Metric{Type: metricType},
 		Resource: &monitoredrespb.MonitoredResource{
@@ -112,4 +118,29 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func ensureMetricDescriptor(ctx context.Context, client *monitoring.MetricClient, projectID, metricType string) error {
+	name := fmt.Sprintf("projects/%s/metricDescriptors/%s", projectID, metricType)
+	if _, err := client.GetMetricDescriptor(ctx, &monitoringpb.GetMetricDescriptorRequest{Name: name}); err != nil {
+		if status.Code(err) != codes.NotFound {
+			return fmt.Errorf("GetMetricDescriptor: %w", err)
+		}
+
+		_, err = client.CreateMetricDescriptor(ctx, &monitoringpb.CreateMetricDescriptorRequest{
+			Name: fmt.Sprintf("projects/%s", projectID),
+			MetricDescriptor: &metricpb.MetricDescriptor{
+				Type:        metricType,
+				DisplayName: "Judge Pending Tasks",
+				Description: "Pending tasks waiting in the judge queue",
+				Unit:        "1",
+				MetricKind:  metricpb.MetricDescriptor_GAUGE,
+				ValueType:   metricpb.MetricDescriptor_DOUBLE,
+			},
+		})
+		if err != nil && status.Code(err) != codes.AlreadyExists {
+			return fmt.Errorf("CreateMetricDescriptor: %w", err)
+		}
+	}
+	return nil
 }
