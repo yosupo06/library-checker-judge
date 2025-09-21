@@ -1,4 +1,19 @@
 terraform {
+  required_providers {
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.5"
+    }
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 5.14.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = ">= 5.14.0"
+    }
+  }
+
   cloud {
     organization = "yosupo06-org"
 
@@ -26,6 +41,7 @@ locals {
 
   region = "asia-northeast1"
   zone = "asia-northeast1-b"
+
 }
 
 provider "google" {
