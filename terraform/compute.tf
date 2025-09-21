@@ -42,7 +42,7 @@ resource "google_compute_instance_template" "judge" {
   }
 
   metadata = {
-    env = var.env
+    env             = var.env
     enable-osconfig = "TRUE"
   }
 
@@ -68,7 +68,7 @@ resource "google_compute_instance_group_manager" "judge" {
   name = "judge-${each.key}"
 
   base_instance_name = "judge"
-  zone = each.key
+  zone               = each.key
 
   update_policy {
     type                  = "PROACTIVE"
