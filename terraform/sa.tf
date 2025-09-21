@@ -2,6 +2,10 @@ resource "google_service_account" "api_deployer" {
   account_id   = "api-deployer-sa"
   display_name = "Service Account for API deployer"
 }
+resource "google_service_account" "metrics_deployer" {
+  account_id   = "metrics-deployer-sa"
+  display_name = "Service Account for metrics deployer"
+}
 resource "google_service_account" "judge_deployer" {
   account_id   = "judge-deployer-sa"
   display_name = "Service Account for Judge deployer"
@@ -30,12 +34,28 @@ resource "google_service_account" "judge" {
   account_id   = "judge-sa"
   display_name = "Service Account for Judge"
 }
+resource "google_service_account" "queue_metrics" {
+  account_id   = "queue-metrics"
+  display_name = "Service Account for queue metrics function"
+}
+resource "google_service_account" "queue_metrics_invoker" {
+  account_id   = "queue-metrics-invoker"
+  display_name = "Service Account for queue metrics invoker"
+}
 
 locals {
   accounts = [
     {
       account = google_service_account.api_deployer
-      roles   = [
+      roles = [
+        "roles/artifactregistry.writer",
+        "roles/run.developer",
+        "roles/iam.serviceAccountUser",
+      ]
+    },
+    {
+      account = google_service_account.metrics_deployer
+      roles = [
         "roles/artifactregistry.writer",
         "roles/run.developer",
         "roles/iam.serviceAccountUser",
@@ -75,7 +95,7 @@ locals {
     },
     {
       account = google_service_account.storage_editor
-      roles   = [
+      roles = [
         // TODO: use weak permission
         "roles/storage.objectAdmin"
       ]
@@ -90,6 +110,16 @@ locals {
     },
     {
       account = google_service_account.judge
+      roles = [
+        "roles/cloudsql.client",
+        "roles/cloudsql.instanceUser",
+        "roles/secretmanager.secretAccessor",
+        "roles/monitoring.metricWriter",
+        "roles/logging.logWriter",
+      ]
+    },
+    {
+      account = google_service_account.queue_metrics
       roles = [
         "roles/cloudsql.client",
         "roles/cloudsql.instanceUser",

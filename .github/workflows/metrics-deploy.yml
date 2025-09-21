@@ -1,0 +1,82 @@
+name: Metrics deploy
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      env:
+        type: choice
+        default: dev
+        options:
+          - dev
+          - prod
+        description: Environment of deploy
+
+concurrency:
+  group: ${{ inputs.env }}-metrics-deploy
+  cancel-in-progress: true
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
+
+jobs:
+  deploy:
+    environment: ${{ inputs.env }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+    - run: terraform init
+      working-directory: ./terraform
+
+    - id: tf-output
+      run: terraform output --json
+      working-directory: ./terraform
+
+    - id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+        service_account: ${{ fromJson(steps.tf-output.outputs.stdout).metrics_deployer_sa_email.value }}
+        token_format: access_token
+
+    - uses: docker/login-action@v3
+      with:
+        registry: asia-northeast1-docker.pkg.dev
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
+
+    - uses: docker/metadata-action@v4
+      id: meta
+      with:
+        images: ${{ fromJson(steps.tf-output.outputs.stdout).metrics_image.value }}
+        tags: |
+          type=raw,value={{date 'YYYY-MM-DD-hh-mm-ss'}}
+
+    - uses: docker/build-push-action@v5
+      id: build
+      with:
+        context: .
+        push: true
+        file: Dockerfile.METRICS
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: queue-metrics
+        region: asia-northeast1
+        image: ${{ fromJson(steps.tf-output.outputs.stdout).metrics_image.value }}@${{ steps.build.outputs.digest }}

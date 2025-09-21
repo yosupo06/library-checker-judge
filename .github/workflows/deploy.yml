@@ -48,8 +48,15 @@ jobs:
     with:
       env: ${{ inputs.env }}
 
-  problems-deploy:
+  metrics-deploy:
     needs: api-deploy
+    uses: ./.github/workflows/metrics-deploy.yml
+    secrets: inherit
+    with:
+      env: ${{ inputs.env }}
+
+  problems-deploy:
+    needs: metrics-deploy
     uses: ./.github/workflows/problems-deploy.yml
     secrets: inherit
     with:
