@@ -66,10 +66,18 @@ resource "google_cloud_run_v2_service" "queue_metrics" {
   }
 }
 
+resource "google_project_service" "cloudscheduler" {
+  project            = var.gcp_project_id
+  service            = "cloudscheduler.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_project_service_identity" "cloudscheduler" {
   provider = google-beta
   project  = var.gcp_project_id
   service  = "cloudscheduler.googleapis.com"
+
+  depends_on = [google_project_service.cloudscheduler]
 }
 
 resource "google_cloud_run_v2_service_iam_member" "queue_metrics_invoker" {
@@ -84,6 +92,8 @@ resource "google_service_account_iam_member" "queue_metrics_invoker_token" {
   service_account_id = google_service_account.queue_metrics_invoker.name
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = "serviceAccount:${google_project_service_identity.cloudscheduler.email}"
+
+  depends_on = [google_project_service_identity.cloudscheduler]
 }
 
 resource "google_cloud_scheduler_job" "queue_metrics" {
@@ -101,4 +111,6 @@ resource "google_cloud_scheduler_job" "queue_metrics" {
       audience              = google_cloud_run_v2_service.queue_metrics.uri
     }
   }
+
+  depends_on = [google_project_service.cloudscheduler]
 }
