@@ -35,7 +35,7 @@ locals {
   accounts = [
     {
       account = google_service_account.api_deployer
-      roles   = [
+      roles = [
         "roles/artifactregistry.writer",
         "roles/run.developer",
         "roles/iam.serviceAccountUser",
@@ -75,7 +75,7 @@ locals {
     },
     {
       account = google_service_account.storage_editor
-      roles   = [
+      roles = [
         // TODO: use weak permission
         "roles/storage.objectAdmin"
       ]

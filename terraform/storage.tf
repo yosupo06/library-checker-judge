@@ -6,8 +6,8 @@ resource "google_storage_bucket" "public" {
   uniform_bucket_level_access = "true"
 
   cors {
-    origin = ["*"]
-    method = ["GET"]
+    origin          = ["*"]
+    method          = ["GET"]
     response_header = ["Content-Type", "Access-Control-Allow-Origin"]
     max_age_seconds = 3600
   }

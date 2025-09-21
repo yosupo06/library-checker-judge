@@ -27,7 +27,7 @@ locals {
   github_repo_owner = "yosupo06"
   github_repo_judge = "library-checker-judge"
 
-  judge_image_family = "v3-judge-image"
+  judge_image_family  = "v3-judge-image"
   judge_instance_type = "c2d-standard-8"
 
   api_domain = {
@@ -40,7 +40,7 @@ locals {
   }
 
   region = "asia-northeast1"
-  zone = "asia-northeast1-b"
+  zone   = "asia-northeast1-b"
 
 }
 
@@ -78,7 +78,7 @@ resource "google_identity_platform_config" "default" {
   project = data.google_project.main.project_id
   sign_in {
     email {
-        enabled = true
+      enabled = true
     }
   }
   authorized_domains = [

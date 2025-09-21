@@ -26,3 +26,9 @@ repos:
           ./storage/...
           ./uploader/...
           ./utils/...
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.100.0
+    hooks:
+      - id: terraform_fmt
+        args:
+          - --args=-recursive
