@@ -94,7 +94,6 @@ resource "google_compute_autoscaler" "judge" {
 
     metric {
       name                       = "custom.googleapis.com/judge/task_queue/pending"
-      type                       = "GAUGE"
       filter                     = "resource.type=\"global\""
       single_instance_assignment = local.judge_autoscaling[var.env].single_instance_assignment
     }
