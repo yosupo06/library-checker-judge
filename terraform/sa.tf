@@ -171,6 +171,7 @@ resource "google_service_account_iam_member" "workload_identity" {
   for_each = {
     for account in [
       google_service_account.api_deployer,
+      google_service_account.metrics_deployer,
       google_service_account.judge_deployer,
       google_service_account.frontend_deployer,
       google_service_account.uploader,
