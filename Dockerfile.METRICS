@@ -1,0 +1,23 @@
+FROM golang:1.24 as builder
+
+WORKDIR /workspace
+
+COPY ./cloudrun/taskqueue-metrics/go.mod ./cloudrun/taskqueue-metrics/go.sum ./cloudrun/taskqueue-metrics/
+COPY ./database/go.mod ./database/go.sum ./database/
+
+RUN cd cloudrun/taskqueue-metrics && go mod download
+
+COPY ./cloudrun/taskqueue-metrics ./cloudrun/taskqueue-metrics
+COPY ./database ./database
+
+WORKDIR /workspace/cloudrun/taskqueue-metrics
+RUN CGO_ENABLED=0 GOOS=linux go build -o /workspace/taskqueue-metrics .
+
+FROM alpine
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+COPY --from=builder /workspace/taskqueue-metrics ./taskqueue-metrics
+
+ENV PORT=8080
+ENTRYPOINT ["./taskqueue-metrics"]

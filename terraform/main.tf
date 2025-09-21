@@ -42,6 +42,21 @@ locals {
   region = "asia-northeast1"
   zone   = "asia-northeast1-b"
 
+  judge_autoscaling = {
+    dev = {
+      min_replicas               = 0
+      max_replicas               = 3
+      single_instance_assignment = 5
+      cooldown_period_seconds    = 120
+    }
+    prod = {
+      min_replicas               = 1
+      max_replicas               = 3
+      single_instance_assignment = 5
+      cooldown_period_seconds    = 120
+    }
+  }
+
 }
 
 provider "google" {

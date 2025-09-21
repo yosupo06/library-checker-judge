@@ -23,6 +23,9 @@ output "api_deployer_sa_email" {
 output "judge_deployer_sa_email" {
   value = google_service_account.judge_deployer.email
 }
+output "metrics_deployer_sa_email" {
+  value = google_service_account.metrics_deployer.email
+}
 output "frontend_deployer_sa_email" {
   value = google_service_account.frontend_deployer.email
 }
@@ -56,4 +59,8 @@ output "api_rest_image" {
 
 output "judge_image_family" {
   value = local.judge_image_family
+}
+
+output "metrics_image" {
+  value = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/metrics"
 }

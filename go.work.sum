@@ -77,6 +77,7 @@ cloud.google.com/go/maps v1.11.3/go.mod h1:4iKNrUzFISQ4RoiWCqIFEAAVtgKb2oQ09AVx8
 cloud.google.com/go/mediatranslation v0.8.9/go.mod h1:3MjXTUsEzrMC9My6e9o7TOmgIUGlyrkVAxjzcmxBUdU=
 cloud.google.com/go/memcache v1.10.9/go.mod h1:06evGxt9E1Mf/tYsXJNdXuRj5qzspVd0Tt18kXYDD5c=
 cloud.google.com/go/metastore v1.13.8/go.mod h1:2uLJBAXn5EDYJx9r7mZtxZifCKpakZUCvNfzI7ejUiE=
+cloud.google.com/go/monitoring v1.20.1 h1:XmM6uk4+mI2ZhWdI2n/2GNhJdpeQN+1VdG2UWEDhX48=
 cloud.google.com/go/monitoring v1.20.1/go.mod h1:FYSe/brgfuaXiEzOQFhTjsEsJv+WePyK71X7Y8qo6uQ=
 cloud.google.com/go/networkconnectivity v1.14.8/go.mod h1:QQ/XTMk7U5fzv1cVNUCQJEjpkVEE+nYOK7mg3hVTuiI=
 cloud.google.com/go/networkmanagement v1.13.4/go.mod h1:dGTeJfDPQv0yGDt6gncj4XAPwxktjpCn5ZxQajStW8g=
