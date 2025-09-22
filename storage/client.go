@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
@@ -77,6 +80,10 @@ func (c Client) Close() error {
 }
 
 func (c Client) downloadToFile(ctx context.Context, bucketName, objectName, destPath string) error {
+	if emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST"); emulatorHost != "" {
+		return c.downloadFromEmulator(ctx, emulatorHost, bucketName, objectName, destPath)
+	}
+
 	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
 		return err
 	}
@@ -117,6 +124,71 @@ func (c Client) uploadFile(ctx context.Context, bucketName, objectName, srcPath 
 		return fmt.Errorf("upload copy failed: %w", err)
 	}
 	return w.Close()
+}
+
+func (c Client) downloadFromEmulator(ctx context.Context, host, bucketName, objectName, destPath string) error {
+	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
+		return err
+	}
+
+	baseURL, err := parseEmulatorHost(host)
+	if err != nil {
+		return err
+	}
+
+	basePath := baseURL.Path
+	if basePath != "" && !strings.HasSuffix(basePath, "/") {
+		basePath += "/"
+	}
+	endpoint := fmt.Sprintf("%s://%s/%sdownload/storage/v1/b/%s/o/%s?alt=media",
+		baseURL.Scheme,
+		baseURL.Host,
+		strings.TrimPrefix(basePath, "/"),
+		url.PathEscape(bucketName),
+		url.PathEscape(objectName),
+	)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("emulator download %s: status=%d body=%s", objectName, resp.StatusCode, string(body))
+	}
+
+	file, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	if _, err := io.Copy(file, resp.Body); err != nil {
+		return err
+	}
+	return nil
+}
+
+func parseEmulatorHost(raw string) (*url.URL, error) {
+	if raw == "" {
+		return nil, errors.New("empty emulator host")
+	}
+	if strings.Contains(raw, "://") {
+		u, err := url.Parse(raw)
+		if err != nil {
+			return nil, err
+		}
+		return u, nil
+	}
+	return &url.URL{Scheme: "http", Host: raw}, nil
 }
 
 func ensureBucketExists(ctx context.Context, client *storage.Client, bucketName, projectID string) error {
