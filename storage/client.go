@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 )
 
 type Config struct {
@@ -40,12 +41,18 @@ func GetConfigFromEnv() Config {
 }
 
 func Connect(ctx context.Context, config Config) (Client, error) {
-	client, err := storage.NewClient(ctx)
+	var clientOptions []option.ClientOption
+	emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST")
+	if emulatorHost != "" {
+		clientOptions = append(clientOptions, option.WithoutAuthentication())
+	}
+
+	client, err := storage.NewClient(ctx, clientOptions...)
 	if err != nil {
 		return Client{}, err
 	}
 
-	if emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST"); emulatorHost != "" {
+	if emulatorHost != "" {
 		projectID := os.Getenv("STORAGE_PROJECT_ID")
 		if projectID == "" {
 			projectID = "dev-library-checker-project"
