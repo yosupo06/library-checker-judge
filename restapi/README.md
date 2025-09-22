@@ -12,7 +12,7 @@
 
 ## 1) Docker Compose で動かす（おすすめ）
 
-依存サービス（PostgreSQL, MinIO, Firebase emulator など）と一緒に立ち上げます。OpenAPI からのコード生成も Docker イメージ内で自動実行されます。
+依存サービス（PostgreSQL, Cloud Storage エミュレータ, Firebase emulator など）と一緒に立ち上げます。OpenAPI からのコード生成も Docker イメージ内で自動実行されます。
 
 ```bash
 # ルート: library-checker-judge/
@@ -36,7 +36,7 @@ curl http://localhost:12381/problems/aplusb
 個別に REST だけ起動したい場合（依存は自動解決）:
 
 ```bash
-docker compose up -d --build db db-init minio create-minio-bucket api-rest
+docker compose up -d --build db db-init gcs bootstrap-gcs api-rest
 ```
 
 ## 2) Go 単体でローカル実行（Docker なし）

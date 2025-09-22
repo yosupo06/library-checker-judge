@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/minio/minio-go/v7"
 )
 
 type Problem struct {
@@ -20,20 +19,14 @@ type Problem struct {
 func (p Problem) UploadTestCases(ctx context.Context, c Client, tarGzPath string) error {
 	remoteURL := p.testCasesKey()
 	slog.Info("Upload test cases", "remote", remoteURL)
-	if _, err := c.client.FPutObject(ctx, c.bucket, remoteURL, tarGzPath, minio.PutObjectOptions{}); err != nil {
-		return err
-	}
-	return nil
+	return c.uploadFile(ctx, c.bucket, remoteURL, tarGzPath)
 }
 
 // UploadTestCasesV4 uploads testcases tarball also to v4 private path for Phase 1 dual-write.
 func (p Problem) UploadTestCasesV4(ctx context.Context, c Client, tarGzPath string) error {
 	remoteURL := p.v4TestCasesKey()
 	slog.Info("Upload test cases (v4)", "remote", remoteURL)
-	if _, err := c.client.FPutObject(ctx, c.bucket, remoteURL, tarGzPath, minio.PutObjectOptions{}); err != nil {
-		return err
-	}
-	return nil
+	return c.uploadFile(ctx, c.bucket, remoteURL, tarGzPath)
 }
 
 func (p Problem) UploadPublicFile(ctx context.Context, c Client, localPath, key string) error {
@@ -57,10 +50,7 @@ func (p Problem) UploadPublicTestCaseV4(ctx context.Context, c Client, localPath
 
 func (p Problem) uploadAsPublic(ctx context.Context, c Client, localPath, remoteURL string) error {
 	slog.Info("Upload public file", "local", localPath, "remote", remoteURL)
-	if _, err := c.client.FPutObject(ctx, c.publicBucket, remoteURL, localPath, minio.PutObjectOptions{}); err != nil {
-		return err
-	}
-	return nil
+	return c.uploadFile(ctx, c.publicBucket, remoteURL, localPath)
 }
 
 func (p Problem) testCasesKey() string {

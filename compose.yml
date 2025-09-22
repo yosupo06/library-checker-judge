@@ -7,12 +7,15 @@ services:
     depends_on:
       db-init:
         condition: service_completed_successfully
-      create-minio-bucket:
+      bootstrap-gcs:
         condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
       - PGHOST=db
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
+      - STORAGE_PRIVATE_BUCKET=testcase
+      - STORAGE_PUBLIC_BUCKET=testcase-public
+      - STORAGE_EMULATOR_HOST=http://gcs:4443
     healthcheck:
         test: wget -q -O - localhost:12380/health || exit 1
         timeout: 10s
@@ -27,13 +30,16 @@ services:
     depends_on:
       db-init:
         condition: service_completed_successfully
-      create-minio-bucket:
+      bootstrap-gcs:
         condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
       - PGHOST=db
       - FIREBASE_PROJECT=dev-library-checker-project
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
+      - STORAGE_PRIVATE_BUCKET=testcase
+      - STORAGE_PUBLIC_BUCKET=testcase-public
+      - STORAGE_EMULATOR_HOST=http://gcs:4443
     healthcheck:
       test: wget -q -O - localhost:12381/health || exit 1
       timeout: 10s
@@ -60,36 +66,39 @@ services:
         condition: service_healthy
     environment:
       - PGHOST=db
-
-  minio:
-    image: minio/minio:RELEASE.2025-05-24T17-08-30Z
-    command: server /data --console-address :9001
+  gcs:
+    image: fsouza/fake-gcs-server:latest
+    command:
+      - -scheme
+      - http
+      - -host
+      - 0.0.0.0
+      - -port
+      - "4443"
+      - -external-url
+      - http://gcs:4443
     ports:
-      - 9000:9000
-      - 9001:9001
-    environment:
-      - MINIO_ACCESS_KEY=minio
-      - MINIO_SECRET_KEY=miniopass
+      - 4443:4443
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4443/storage/v1/b >/dev/null 2>&1"]
       interval: 1s
       timeout: 1s
       retries: 10
-  create-minio-bucket:
-    image: minio/mc:RELEASE.2025-05-21T01-59-54Z
+  bootstrap-gcs:
+    image: curlimages/curl:8.7.1
     depends_on:
-      minio:
+      gcs:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 minio miniopass;
-      /usr/bin/mc rm --recursive --force myminio/testcase;
-      /usr/bin/mc rm --recursive --force myminio/testcase-public;
-      /usr/bin/mc mb myminio/testcase;
-      /usr/bin/mc mb myminio/testcase-public;
-      /usr/bin/mc policy download myminio/testcase;
-      /usr/bin/mc policy download myminio/testcase-public;
-      /usr/bin/mc anonymous set public myminio/testcase-public;
+      set -e;
+      for bucket in testcase testcase-public; do
+        curl -fsS -X POST \
+          -H 'Content-Type: application/json' \
+          -d '{"name":"'"$bucket"'"}' \
+          'http://gcs:4443/storage/v1/b?project=dev-library-checker-project' \
+          || true;
+      done;
       exit 0;
       "
 
@@ -116,11 +125,9 @@ services:
       - PGDATABASE=librarychecker
       - PGUSER=postgres
       - PGPASSWORD=lcdummypassword
-      - MINIO_HOST=minio:9000
-      - MINIO_ID=minio
-      - MINIO_SECRET=miniopass
-      - MINIO_BUCKET=testcase
-      - MINIO_PUBLIC_BUCKET=testcase-public
+      - STORAGE_PRIVATE_BUCKET=testcase
+      - STORAGE_PUBLIC_BUCKET=testcase-public
+      - STORAGE_EMULATOR_HOST=http://gcs:4443
       - LIBRARY_CHECKER_JUDGE=1
       # Uncomment and set if you need a specific cgroup parent
       # - CGROUP_PARENT=system.slice
@@ -133,7 +140,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      create-minio-bucket:
+      bootstrap-gcs:
         condition: service_completed_successfully
       api:
         condition: service_healthy

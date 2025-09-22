@@ -1,66 +1,44 @@
 package storage
 
 import (
+	"context"
+	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
+	"cloud.google.com/go/storage"
 )
 
 type Config struct {
-	Host         string
-	ID           string
-	Secret       string
 	Bucket       string
 	PublicBucket string
-	useTLS       bool
 }
 
 var DEFAULT_CONFIG = Config{
-	Host:         "localhost:9000",
-	ID:           "minio",
-	Secret:       "miniopass",
 	Bucket:       "testcase",
 	PublicBucket: "testcase-public",
-	useTLS:       false,
 }
 
 type Client struct {
-	client       *minio.Client
+	client       *storage.Client
 	bucket       string
 	publicBucket string
 }
 
 func GetConfigFromEnv() Config {
 	config := DEFAULT_CONFIG
-	if host := os.Getenv("MINIO_HOST"); host != "" {
-		config.Host = host
-	}
-	if id := os.Getenv("MINIO_ID"); id != "" {
-		config.ID = id
-	}
-	if secret := os.Getenv("MINIO_SECRET"); secret != "" {
-		config.Secret = secret
-	}
-	if bucket := os.Getenv("MINIO_BUCKET"); bucket != "" {
+	if bucket := os.Getenv("STORAGE_PRIVATE_BUCKET"); bucket != "" {
 		config.Bucket = bucket
 	}
-	if publicBucket := os.Getenv("MINIO_PUBLIC_BUCKET"); publicBucket != "" {
+	if publicBucket := os.Getenv("STORAGE_PUBLIC_BUCKET"); publicBucket != "" {
 		config.PublicBucket = publicBucket
-	}
-	if useTLS := os.Getenv("MINIO_USE_TLS"); useTLS != "" {
-		config.useTLS = true
 	}
 	return config
 }
 
-func Connect(config Config) (Client, error) {
-	client, err := minio.New(
-		config.Host, &minio.Options{
-			Creds:  credentials.NewStaticV4(config.ID, config.Secret, ""),
-			Secure: config.useTLS,
-		},
-	)
+func Connect(ctx context.Context, config Config) (Client, error) {
+	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return Client{}, err
 	}
@@ -70,4 +48,51 @@ func Connect(config Config) (Client, error) {
 		bucket:       config.Bucket,
 		publicBucket: config.PublicBucket,
 	}, nil
+}
+
+func (c Client) Close() error {
+	return c.client.Close()
+}
+
+func (c Client) downloadToFile(ctx context.Context, bucketName, objectName, destPath string) error {
+	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
+		return err
+	}
+	reader, err := c.client.Bucket(bucketName).Object(objectName).NewReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = reader.Close()
+	}()
+
+	file, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	if _, err := io.Copy(file, reader); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c Client) uploadFile(ctx context.Context, bucketName, objectName, srcPath string) error {
+	file, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	w := c.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
+	if _, err := io.Copy(w, file); err != nil {
+		_ = w.Close()
+		return fmt.Errorf("upload copy failed: %w", err)
+	}
+	return w.Close()
 }

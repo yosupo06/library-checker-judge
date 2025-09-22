@@ -6,19 +6,10 @@ variable "image_family" {
   type = string
 }
 
-variable "minio_host" {
+variable "storage_private_bucket" {
   type = string
 }
-variable "minio_id" {
-  type = string
-}
-variable "minio_secret" {
-  type = string
-}
-variable "minio_bucket" {
-  type = string
-}
-variable "minio_public_bucket" {
+variable "storage_public_bucket" {
   type = string
 }
 
@@ -35,11 +26,8 @@ locals {
     db_connection_name = var.db_connection_name
   })
   parsed_judge_service = templatefile("judge.service.pkrtpl", {
-    minio_host = var.minio_host
-    minio_id = var.minio_id
-    minio_secret = var.minio_secret
-    minio_bucket = var.minio_bucket
-    minio_public_bucket = var.minio_public_bucket
+    storage_private_bucket = var.storage_private_bucket
+    storage_public_bucket = var.storage_public_bucket
     pg_user = var.pg_user
   })
 }
