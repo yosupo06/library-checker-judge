@@ -36,7 +36,7 @@ curl http://localhost:12381/problems/aplusb
 個別に REST だけ起動したい場合（依存は自動解決）:
 
 ```bash
-docker compose up -d --build db db-init gcs bootstrap-gcs api-rest
+docker compose up -d --build db db-init gcs api-rest
 ```
 
 ## 2) Go 単体でローカル実行（Docker なし）

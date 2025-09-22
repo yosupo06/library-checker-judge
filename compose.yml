@@ -7,8 +7,8 @@ services:
     depends_on:
       db-init:
         condition: service_completed_successfully
-      bootstrap-gcs:
-        condition: service_completed_successfully
+      gcs:
+        condition: service_healthy
     environment:
       - API_DB_LOG=true
       - PGHOST=db
@@ -16,6 +16,7 @@ services:
       - STORAGE_PRIVATE_BUCKET=testcase
       - STORAGE_PUBLIC_BUCKET=testcase-public
       - STORAGE_EMULATOR_HOST=http://gcs:4443
+      - STORAGE_PROJECT_ID=dev-library-checker-project
     healthcheck:
         test: wget -q -O - localhost:12380/health || exit 1
         timeout: 10s
@@ -30,8 +31,8 @@ services:
     depends_on:
       db-init:
         condition: service_completed_successfully
-      bootstrap-gcs:
-        condition: service_completed_successfully
+      gcs:
+        condition: service_healthy
     environment:
       - API_DB_LOG=true
       - PGHOST=db
@@ -40,6 +41,7 @@ services:
       - STORAGE_PRIVATE_BUCKET=testcase
       - STORAGE_PUBLIC_BUCKET=testcase-public
       - STORAGE_EMULATOR_HOST=http://gcs:4443
+      - STORAGE_PROJECT_ID=dev-library-checker-project
     healthcheck:
       test: wget -q -O - localhost:12381/health || exit 1
       timeout: 10s
@@ -84,24 +86,6 @@ services:
       interval: 1s
       timeout: 1s
       retries: 10
-  bootstrap-gcs:
-    image: curlimages/curl:8.7.1
-    depends_on:
-      gcs:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      set -e;
-      for bucket in testcase testcase-public; do
-        curl -fsS -X POST \
-          -H 'Content-Type: application/json' \
-          -d '{"name":"'"$bucket"'"}' \
-          'http://gcs:4443/storage/v1/b?project=dev-library-checker-project' \
-          || true;
-      done;
-      exit 0;
-      "
-
   firebase:
     build:
       dockerfile: firebase/Dockerfile
@@ -128,6 +112,7 @@ services:
       - STORAGE_PRIVATE_BUCKET=testcase
       - STORAGE_PUBLIC_BUCKET=testcase-public
       - STORAGE_EMULATOR_HOST=http://gcs:4443
+      - STORAGE_PROJECT_ID=dev-library-checker-project
       - LIBRARY_CHECKER_JUDGE=1
       # Uncomment and set if you need a specific cgroup parent
       # - CGROUP_PARENT=system.slice
@@ -140,8 +125,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      bootstrap-gcs:
-        condition: service_completed_successfully
+      gcs:
+        condition: service_healthy
       api:
         condition: service_healthy
       api-rest:

@@ -2,12 +2,14 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/googleapi"
 )
 
 type Config struct {
@@ -41,6 +43,19 @@ func Connect(ctx context.Context, config Config) (Client, error) {
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return Client{}, err
+	}
+
+	if emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST"); emulatorHost != "" {
+		projectID := os.Getenv("STORAGE_PROJECT_ID")
+		if projectID == "" {
+			projectID = "dev-library-checker-project"
+		}
+		if err := ensureBucketExists(ctx, client, config.Bucket, projectID); err != nil {
+			return Client{}, err
+		}
+		if err := ensureBucketExists(ctx, client, config.PublicBucket, projectID); err != nil {
+			return Client{}, err
+		}
 	}
 
 	return Client{
@@ -95,4 +110,22 @@ func (c Client) uploadFile(ctx context.Context, bucketName, objectName, srcPath 
 		return fmt.Errorf("upload copy failed: %w", err)
 	}
 	return w.Close()
+}
+
+func ensureBucketExists(ctx context.Context, client *storage.Client, bucketName, projectID string) error {
+	if bucketName == "" {
+		return nil
+	}
+	if _, err := client.Bucket(bucketName).Attrs(ctx); err != nil {
+		if !errors.Is(err, storage.ErrBucketNotExist) {
+			return err
+		}
+		if err := client.Bucket(bucketName).Create(ctx, projectID, nil); err != nil {
+			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 409 {
+				return nil
+			}
+			return fmt.Errorf("create bucket %s: %w", bucketName, err)
+		}
+	}
+	return nil
 }
