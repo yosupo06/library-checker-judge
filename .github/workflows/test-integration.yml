@@ -80,11 +80,12 @@ jobs:
           PGDATABASE: librarychecker
           PGUSER: postgres
           PGPASSWORD: lcdummypassword
-          STORAGE_EMULATOR_HOST: http://localhost:4443
+          STORAGE_EMULATOR_HOST: localhost:4443
           STORAGE_PRIVATE_BUCKET: testcase
           STORAGE_PUBLIC_BUCKET: testcase-public
           STORAGE_PROJECT_ID: dev-library-checker-project
         run: |
+          echo "STORAGE_EMULATOR_HOST=${STORAGE_EMULATOR_HOST}"
           PROBLEMS_PATH="$(realpath ../library-checker-problems)"
           (cd uploader && go run ./problems -dir "$PROBLEMS_PATH" \
             "$PROBLEMS_PATH/sample/aplusb/info.toml" \
@@ -99,7 +100,7 @@ jobs:
           PGDATABASE: librarychecker
           PGUSER: postgres
           PGPASSWORD: lcdummypassword
-          STORAGE_EMULATOR_HOST: http://localhost:4443
+          STORAGE_EMULATOR_HOST: localhost:4443
           STORAGE_PRIVATE_BUCKET: testcase
           STORAGE_PUBLIC_BUCKET: testcase-public
           STORAGE_PROJECT_ID: dev-library-checker-project
