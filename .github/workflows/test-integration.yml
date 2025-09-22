@@ -73,6 +73,10 @@ jobs:
           docker compose down -v || true
           docker compose up -d --build --wait
 
+      - name: Map emulator hostname for host tools
+        run: |
+          echo "127.0.0.1 gcs" | sudo tee -a /etc/hosts
+
       - name: Seed sample problems (aplusb, point_set_range_sort_range_composite)
         env:
           PGHOST: localhost
