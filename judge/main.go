@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"os"
@@ -18,7 +19,7 @@ func main() {
 	// connect db
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
-	storageClient, err := storage.Connect(storage.GetConfigFromEnv())
+	storageClient, err := storage.Connect(context.Background(), storage.GetConfigFromEnv())
 	if err != nil {
 		slog.Error("Failed to connect to storage", "err", err)
 		os.Exit(1)

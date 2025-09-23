@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -40,9 +41,9 @@ func main() {
 	db := database.Connect(database.GetDSNFromEnv(), false)
 
 	// connect storage client
-	storageClient, err := storage.Connect(storage.GetConfigFromEnv())
+	storageClient, err := storage.Connect(context.Background(), storage.GetConfigFromEnv())
 	if err != nil {
-		slog.Error("Failed to connect to Minio", "err", err)
+		slog.Error("Failed to connect to storage", "err", err)
 		os.Exit(1)
 	}
 

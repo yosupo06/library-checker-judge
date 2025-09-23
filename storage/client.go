@@ -1,68 +1,71 @@
 package storage
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 )
 
 type Config struct {
-	Host         string
-	ID           string
-	Secret       string
 	Bucket       string
 	PublicBucket string
-	useTLS       bool
 }
 
 var DEFAULT_CONFIG = Config{
-	Host:         "localhost:9000",
-	ID:           "minio",
-	Secret:       "miniopass",
 	Bucket:       "testcase",
 	PublicBucket: "testcase-public",
-	useTLS:       false,
 }
 
 type Client struct {
-	client       *minio.Client
+	client       *storage.Client
 	bucket       string
 	publicBucket string
 }
 
 func GetConfigFromEnv() Config {
 	config := DEFAULT_CONFIG
-	if host := os.Getenv("MINIO_HOST"); host != "" {
-		config.Host = host
-	}
-	if id := os.Getenv("MINIO_ID"); id != "" {
-		config.ID = id
-	}
-	if secret := os.Getenv("MINIO_SECRET"); secret != "" {
-		config.Secret = secret
-	}
-	if bucket := os.Getenv("MINIO_BUCKET"); bucket != "" {
+	if bucket := os.Getenv("STORAGE_PRIVATE_BUCKET"); bucket != "" {
 		config.Bucket = bucket
 	}
-	if publicBucket := os.Getenv("MINIO_PUBLIC_BUCKET"); publicBucket != "" {
+	if publicBucket := os.Getenv("STORAGE_PUBLIC_BUCKET"); publicBucket != "" {
 		config.PublicBucket = publicBucket
-	}
-	if useTLS := os.Getenv("MINIO_USE_TLS"); useTLS != "" {
-		config.useTLS = true
 	}
 	return config
 }
 
-func Connect(config Config) (Client, error) {
-	client, err := minio.New(
-		config.Host, &minio.Options{
-			Creds:  credentials.NewStaticV4(config.ID, config.Secret, ""),
-			Secure: config.useTLS,
-		},
-	)
+func Connect(ctx context.Context, config Config) (Client, error) {
+	var clientOptions []option.ClientOption
+	emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST")
+	if emulatorHost != "" {
+		clientOptions = append(clientOptions, option.WithoutAuthentication())
+	}
+
+	client, err := storage.NewClient(ctx, clientOptions...)
 	if err != nil {
 		return Client{}, err
+	}
+
+	if emulatorHost != "" {
+		projectID := os.Getenv("STORAGE_PROJECT_ID")
+		if projectID == "" {
+			projectID = "dev-library-checker-project"
+		}
+		if err := ensureBucketExists(ctx, client, config.Bucket, projectID); err != nil {
+			return Client{}, err
+		}
+		if err := ensureBucketExists(ctx, client, config.PublicBucket, projectID); err != nil {
+			return Client{}, err
+		}
 	}
 
 	return Client{
@@ -70,4 +73,144 @@ func Connect(config Config) (Client, error) {
 		bucket:       config.Bucket,
 		publicBucket: config.PublicBucket,
 	}, nil
+}
+
+func (c Client) Close() error {
+	return c.client.Close()
+}
+
+func (c Client) downloadToFile(ctx context.Context, bucketName, objectName, destPath string) (err error) {
+	if emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST"); emulatorHost != "" {
+		return c.downloadFromEmulator(ctx, emulatorHost, bucketName, objectName, destPath)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
+		return err
+	}
+	reader, err := c.client.Bucket(bucketName).Object(objectName).NewReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := reader.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
+	file, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
+	if _, err := io.Copy(file, reader); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c Client) uploadFile(ctx context.Context, bucketName, objectName, srcPath string) error {
+	file, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	w := c.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
+	if _, err := io.Copy(w, file); err != nil {
+		_ = w.Close()
+		return fmt.Errorf("upload copy failed: %w", err)
+	}
+	return w.Close()
+}
+
+func (c Client) downloadFromEmulator(ctx context.Context, host, bucketName, objectName, destPath string) error {
+	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
+		return err
+	}
+
+	baseURL, err := parseEmulatorHost(host)
+	if err != nil {
+		return err
+	}
+
+	downloadPath, err := url.JoinPath(baseURL.Path, "download", "storage", "v1", "b", bucketName, "o", objectName)
+	if err != nil {
+		return err
+	}
+	endpointURL := &url.URL{
+		Scheme: baseURL.Scheme,
+		Host:   baseURL.Host,
+		Path:   downloadPath,
+	}
+	query := endpointURL.Query()
+	query.Set("alt", "media")
+	endpointURL.RawQuery = query.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("emulator download %s: status=%d body=%s", objectName, resp.StatusCode, string(body))
+	}
+
+	file, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	if _, err := io.Copy(file, resp.Body); err != nil {
+		return err
+	}
+	return nil
+}
+
+func parseEmulatorHost(raw string) (*url.URL, error) {
+	if raw == "" {
+		return nil, errors.New("empty emulator host")
+	}
+	if strings.Contains(raw, "://") {
+		u, err := url.Parse(raw)
+		if err != nil {
+			return nil, err
+		}
+		return u, nil
+	}
+	return &url.URL{Scheme: "http", Host: raw}, nil
+}
+
+func ensureBucketExists(ctx context.Context, client *storage.Client, bucketName, projectID string) error {
+	if bucketName == "" {
+		return nil
+	}
+	if _, err := client.Bucket(bucketName).Attrs(ctx); err != nil {
+		if !errors.Is(err, storage.ErrBucketNotExist) {
+			return err
+		}
+		if err := client.Bucket(bucketName).Create(ctx, projectID, nil); err != nil {
+			var gErr *googleapi.Error
+			if errors.As(err, &gErr) && gErr.Code == 409 {
+				return nil
+			}
+			return fmt.Errorf("create bucket %s: %w", bucketName, err)
+		}
+	}
+	return nil
 }

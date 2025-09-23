@@ -101,12 +101,6 @@ jobs:
         service_account: ${{ fromJson(steps.tf-output.outputs.stdout).judge_deployer_sa_email.value }}
         token_format: access_token
 
-    - id: secrets
-      uses: google-github-actions/get-secretmanager-secrets@v1
-      with:
-        secrets: |-
-          minio-secret:${{ inputs.env }}-library-checker-project/storage-hmac-key/latest
-
     - uses: google-github-actions/setup-gcloud@v2
 
     - run: ./run_protoc.sh
@@ -121,11 +115,8 @@ jobs:
         packer build
         -var 'env=${{ inputs.env }}'
         -var 'image_family=${{ fromJson(steps.tf-output.outputs.stdout).judge_image_family.value }}'
-        -var 'minio_host=storage.googleapis.com'
-        -var 'minio_id=${{ fromJson(steps.tf-output.outputs.stdout).storage_hmac_id.value }}'
-        -var 'minio_secret=${{ steps.secrets.outputs.minio-secret }}'
-        -var 'minio_bucket=${{ fromJson(steps.tf-output.outputs.stdout).private_bucket_name.value }}'
-        -var 'minio_public_bucket=${{ fromJson(steps.tf-output.outputs.stdout).public_bucket_name.value }}'
+        -var 'storage_private_bucket=${{ fromJson(steps.tf-output.outputs.stdout).private_bucket_name.value }}'
+        -var 'storage_public_bucket=${{ fromJson(steps.tf-output.outputs.stdout).public_bucket_name.value }}'
         -var 'db_connection_name=${{ fromJson(steps.tf-output.outputs.stdout).main_db_connection_name.value }}'
         -var 'pg_user=${{ fromJson(steps.tf-output.outputs.stdout).judge_sa_db_name.value }}'
         .

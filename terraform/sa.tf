@@ -22,10 +22,6 @@ resource "google_service_account" "db_migrator" {
   account_id   = "db-migrator"
   display_name = "DB migrator"
 }
-resource "google_service_account" "storage_editor" {
-  account_id   = "storage-editor"
-  display_name = "Storage editor"
-}
 resource "google_service_account" "api" {
   account_id   = "api-sa"
   display_name = "Service Account for API"
@@ -84,6 +80,7 @@ locals {
         "roles/cloudsql.client",
         "roles/cloudsql.instanceUser",
         "roles/secretmanager.secretAccessor",
+        "roles/storage.objectAdmin",
       ]
     },
     {
@@ -91,13 +88,6 @@ locals {
       roles = [
         "roles/cloudsql.client",
         "roles/secretmanager.secretAccessor",
-      ]
-    },
-    {
-      account = google_service_account.storage_editor
-      roles = [
-        // TODO: use weak permission
-        "roles/storage.objectAdmin"
       ]
     },
     {
@@ -116,6 +106,7 @@ locals {
         "roles/secretmanager.secretAccessor",
         "roles/monitoring.metricWriter",
         "roles/logging.logWriter",
+        "roles/storage.objectViewer",
       ]
     },
     {

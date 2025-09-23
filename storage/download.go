@@ -8,7 +8,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/minio/minio-go/v7"
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 )
 
 type TestCaseDownloader struct {
@@ -66,7 +67,7 @@ func (t TestCaseDownloader) fetchTestCases(problem Problem) (string, error) {
 
 	if _, err := os.Stat(tarGzPath); err != nil {
 		slog.Info("Download test cases", "remote", key)
-		if err := t.client.client.FGetObject(context.Background(), t.client.bucket, key, tarGzPath, minio.GetObjectOptions{}); err != nil {
+		if err := t.client.downloadToFile(context.Background(), t.client.bucket, key, tarGzPath); err != nil {
 			return "", err
 		}
 		if err := os.MkdirAll(localDir, os.ModePerm); err != nil {
@@ -93,17 +94,28 @@ func (t TestCaseDownloader) fetchPublicFiles(problem Problem) (string, error) {
 	destDir := path.Join(t.localDir, problem.OverallVersion)
 	if _, err := os.Stat(destDir); err != nil {
 		slog.Info("Download public files", "name", problem.Name, "overall_version", problem.OverallVersion)
-		for object := range t.client.client.ListObjects(context.Background(), t.client.publicBucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true}) {
-			rel := strings.TrimPrefix(object.Key, prefix)
+		it := t.client.client.Bucket(t.client.publicBucket).Objects(context.Background(), &storage.Query{Prefix: prefix})
+		for {
+			attrs, err := it.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return "", err
+			}
+			rel := strings.TrimPrefix(attrs.Name, prefix)
 			// v4 layout includes either "common/..." or "{problem}/..."; flatten the latter
 			if strings.HasPrefix(rel, problem.Name+"/") {
 				rel = strings.TrimPrefix(rel, problem.Name+"/")
 			}
 			// guard: strip any leading slashes
 			rel = strings.TrimLeft(rel, "/")
+			if rel == "" {
+				continue
+			}
 			destPath := path.Join(destDir, rel)
-			slog.Info("Download public file", "key", object.Key, "to", destPath)
-			if err := t.client.client.FGetObject(context.Background(), t.client.publicBucket, object.Key, destPath, minio.GetObjectOptions{}); err != nil {
+			slog.Info("Download public file", "key", attrs.Name, "to", destPath)
+			if err := t.client.downloadToFile(context.Background(), t.client.publicBucket, attrs.Name, destPath); err != nil {
 				return "", err
 			}
 		}

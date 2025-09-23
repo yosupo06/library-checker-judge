@@ -45,10 +45,6 @@ output "internal_bucket_name" {
   value = google_storage_bucket.internal[local.region].name
 }
 
-output "storage_hmac_id" {
-  value = google_storage_hmac_key.main.access_id
-}
-
 output "api_image" {
   value = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/api"
 }

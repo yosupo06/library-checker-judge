@@ -61,7 +61,7 @@ build {
     inline = [
       "sudo apt-get install -y python3-pip python3 python3-dev",
       "sudo python3 -m pip install --upgrade pip",
-      "sudo python3 -m pip install minio grpcio-tools",
+      "sudo python3 -m pip install grpcio-tools",
     ]
   }
 

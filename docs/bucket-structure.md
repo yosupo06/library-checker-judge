@@ -3,8 +3,8 @@
 - 目的: Public / Private バケットの構成と、各オブジェクトキーの仕様を整理する。
 
 **バケット**
-- Private バケット: `MINIO_BUCKET`（デフォルト `testcase`）— テストケースの tarball（非公開オブジェクト）を格納。
-- Public バケット: `MINIO_PUBLIC_BUCKET`（デフォルト `testcase-public`）— 公開ファイルと例題 I/O を格納。
+- Private バケット: `STORAGE_PRIVATE_BUCKET`（デフォルト `testcase`）— テストケースの tarball（非公開オブジェクト）を格納。
+- Public バケット: `STORAGE_PUBLIC_BUCKET`（デフォルト `testcase-public`）— 公開ファイルと例題 I/O を格納。
 
 **オブジェクトキー構造（Object Keys）**
 - 現行（v3 運用 — 利用側の参照は当面こちら）
@@ -110,7 +110,6 @@
   - `Version`: 現行の選定ルール（従来の固定ファイル群）。
   - `OverallVersion`: `common/` 配下と `{problem_name}/` 配下の全ファイルをハッシュ化して算出。
 - サーバーサイドコピー（例題 I/O の使い回し向け）:
-  - MinIO: `mc cp -r my/public/v3/{problem}/testcase/{hash}/ my/public/v4/examples/{problem}/{hash}/`
   - GCS: `gsutil -m cp -r gs://<bucket>/v3/{problem}/testcase/{hash}/ gs://<bucket>/v4/examples/{problem}/{hash}/`
 - 冪等性: 上書き許容。存在チェックでスキップしても良い。
 - キャッシュ: 切替直前に v4 へ全ファイル反映→必要なら `v4/meta/{problem}.json` を最後に更新して原子的に切替（任意）。

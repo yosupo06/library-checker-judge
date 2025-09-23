@@ -38,20 +38,3 @@ resource "google_storage_bucket" "private" {
 
   public_access_prevention = "enforced"
 }
-
-resource "google_storage_hmac_key" "main" {
-  service_account_email = google_service_account.storage_editor.email
-}
-
-resource "google_secret_manager_secret" "storage_hmac_key" {
-  secret_id = "storage-hmac-key"
-
-  replication {
-    auto {}
-  }
-}
-resource "google_secret_manager_secret_version" "storage_hmac_key" {
-  secret = google_secret_manager_secret.storage_hmac_key.id
-
-  secret_data = google_storage_hmac_key.main.secret
-}
