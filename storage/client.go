@@ -79,7 +79,7 @@ func (c Client) Close() error {
 	return c.client.Close()
 }
 
-func (c Client) downloadToFile(ctx context.Context, bucketName, objectName, destPath string) error {
+func (c Client) downloadToFile(ctx context.Context, bucketName, objectName, destPath string) (err error) {
 	if emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST"); emulatorHost != "" {
 		return c.downloadFromEmulator(ctx, emulatorHost, bucketName, objectName, destPath)
 	}
@@ -92,7 +92,9 @@ func (c Client) downloadToFile(ctx context.Context, bucketName, objectName, dest
 		return err
 	}
 	defer func() {
-		_ = reader.Close()
+		if closeErr := reader.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
 	}()
 
 	file, err := os.Create(destPath)
@@ -100,7 +102,9 @@ func (c Client) downloadToFile(ctx context.Context, bucketName, objectName, dest
 		return err
 	}
 	defer func() {
-		_ = file.Close()
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
 	}()
 
 	if _, err := io.Copy(file, reader); err != nil {
@@ -136,19 +140,20 @@ func (c Client) downloadFromEmulator(ctx context.Context, host, bucketName, obje
 		return err
 	}
 
-	basePath := baseURL.Path
-	if basePath != "" && !strings.HasSuffix(basePath, "/") {
-		basePath += "/"
+	downloadPath, err := url.JoinPath(baseURL.Path, "download", "storage", "v1", "b", bucketName, "o", objectName)
+	if err != nil {
+		return err
 	}
-	endpoint := fmt.Sprintf("%s://%s/%sdownload/storage/v1/b/%s/o/%s?alt=media",
-		baseURL.Scheme,
-		baseURL.Host,
-		strings.TrimPrefix(basePath, "/"),
-		url.PathEscape(bucketName),
-		url.PathEscape(objectName),
-	)
+	endpointURL := &url.URL{
+		Scheme: baseURL.Scheme,
+		Host:   baseURL.Host,
+		Path:   downloadPath,
+	}
+	query := endpointURL.Query()
+	query.Set("alt", "media")
+	endpointURL.RawQuery = query.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointURL.String(), nil)
 	if err != nil {
 		return err
 	}
@@ -200,7 +205,8 @@ func ensureBucketExists(ctx context.Context, client *storage.Client, bucketName,
 			return err
 		}
 		if err := client.Bucket(bucketName).Create(ctx, projectID, nil); err != nil {
-			if gErr, ok := err.(*googleapi.Error); ok && gErr.Code == 409 {
+			var gErr *googleapi.Error
+			if errors.As(err, &gErr) && gErr.Code == 409 {
 				return nil
 			}
 			return fmt.Errorf("create bucket %s: %w", bucketName, err)

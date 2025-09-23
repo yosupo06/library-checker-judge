@@ -103,9 +103,6 @@ func (t TestCaseDownloader) fetchPublicFiles(problem Problem) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if attrs.Name == "" {
-				continue
-			}
 			rel := strings.TrimPrefix(attrs.Name, prefix)
 			// v4 layout includes either "common/..." or "{problem}/..."; flatten the latter
 			if strings.HasPrefix(rel, problem.Name+"/") {
