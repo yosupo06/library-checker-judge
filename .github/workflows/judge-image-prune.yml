@@ -49,6 +49,7 @@ jobs:
     strategy:
       matrix:
         env: ${{ fromJson(needs.prepare-matrix.outputs.environments) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.env == 'all' || github.event.inputs.env == matrix.env }}
     permissions:
       contents: read
       id-token: write

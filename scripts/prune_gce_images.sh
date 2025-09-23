@@ -90,8 +90,11 @@ fi
 pruned_any=false
 for (( i=KEEP; i<total; i++ )); do
   entry=${images[$i]}
-
   IFS=$'\t' read -r name timestamp <<<"$entry"
+  if [[ -z "$timestamp" ]]; then
+    name=${entry%% *}
+    timestamp=${entry#* }
+  fi
   if [[ -z "$name" || -z "$timestamp" ]]; then
     continue
   fi

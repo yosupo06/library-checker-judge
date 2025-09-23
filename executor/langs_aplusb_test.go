@@ -1,6 +1,3 @@
-//go:build langs_all
-// +build langs_all
-
 package executor
 
 import (
@@ -103,7 +100,7 @@ func TestAllLangsAplusb(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer src.Close()
+			defer func() { _ = src.Close() }()
 			srcFile := writeTempFile(t, src, path.Base(lang.Source))
 
 			// Prepare additional files
