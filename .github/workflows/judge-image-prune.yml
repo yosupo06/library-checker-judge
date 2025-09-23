@@ -1,0 +1,100 @@
+name: Prune Judge Images
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment to prune'
+        type: choice
+        default: all
+        options:
+          - all
+          - dev
+          - prod
+      dry-run:
+        description: 'Only print images that would be deleted'
+        type: boolean
+        default: false
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.set-matrix.outputs.environments }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            case "$INPUT_ENV" in
+              ""|all)
+                echo 'environments=["dev","prod"]' >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "environments=[\"$INPUT_ENV\"]" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          else
+            echo 'environments=["dev","prod"]' >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_ENV: ${{ github.event.inputs.env }}
+
+  prune:
+    needs: prepare-matrix
+    name: Prune judge images (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: ${{ fromJson(needs.prepare-matrix.outputs.environments) }}
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: judge-image-prune-${{ matrix.env }}
+      cancel-in-progress: false
+    env:
+      TF_CLOUD_ORGANIZATION: yosupo06-org
+      TF_WORKSPACE: ${{ format('{0}-library-checker', matrix.env) }}
+      PROJECT_ID: ${{ format('{0}-library-checker-project', matrix.env) }}
+      IMAGE_FAMILY: v3-judge-image
+      KEEP_COUNT: '10'
+      MIN_AGE_DAYS: '14'
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs['dry-run'] == 'true' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - run: terraform init
+        working-directory: ./terraform
+
+      - id: tf-output
+        run: terraform output --json
+        working-directory: ./terraform
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ fromJson(steps.tf-output.outputs.stdout).gh_provider_id.value }}
+          service_account: ${{ fromJson(steps.tf-output.outputs.stdout).judge_deployer_sa_email.value }}
+          token_format: access_token
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Prune images
+        run: |
+          ARGS=(
+            --project "$PROJECT_ID"
+            --family "$IMAGE_FAMILY"
+            --keep "$KEEP_COUNT"
+            --min-age-days "$MIN_AGE_DAYS"
+          )
+          if [[ "${DRY_RUN}" == "true" ]]; then
+            ARGS+=(--dry-run)
+          fi
+          ./scripts/prune_gce_images.sh "${ARGS[@]}"
