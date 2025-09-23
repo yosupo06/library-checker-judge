@@ -21,7 +21,7 @@ source "googlecompute" "judge" {
   zone = "us-east1-b"
   network = "main"
   subnetwork = "main"
-  machine_type = "c2-standard-4"
+  machine_type = "c2d-standard-8"
   disk_size = 50
   ssh_username = "ubuntu"
   temporary_key_pair_type = "ed25519"
