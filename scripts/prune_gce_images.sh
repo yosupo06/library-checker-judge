@@ -90,13 +90,16 @@ fi
 pruned_any=false
 for (( i=KEEP; i<total; i++ )); do
   entry=${images[$i]}
-  name=${entry%% *}
-  timestamp=${entry#* }
+
+  IFS=$'\t' read -r name timestamp <<<"$entry"
   if [[ -z "$name" || -z "$timestamp" ]]; then
     continue
   fi
 
-  image_epoch=$(date --date="$timestamp" +%s)
+  if ! image_epoch=$(date --date="$timestamp" +%s 2>/dev/null); then
+    echo "Skipping $name (failed to parse timestamp '$timestamp')." >&2
+    continue
+  fi
   age_seconds=$(( now_epoch - image_epoch ))
 
   if (( age_seconds < min_age_seconds )); then
