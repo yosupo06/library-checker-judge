@@ -18,38 +18,13 @@ on:
         default: false
 
 jobs:
-  prepare-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      environments: ${{ steps.set-matrix.outputs.environments }}
-    steps:
-      - id: set-matrix
-        run: |
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            envs=("$INPUT_ENV")
-            if [[ -z "${envs[0]}" ]]; then
-              envs=(dev)
-            fi
-          else
-            envs=(dev prod)
-          fi
-          printf 'environments=[' >> "$GITHUB_OUTPUT"
-          for idx in "${!envs[@]}"; do
-            (( idx > 0 )) && printf ',' >> "$GITHUB_OUTPUT"
-            printf '\"%s\"' "${envs[$idx]}" >> "$GITHUB_OUTPUT"
-          done
-          printf ']\n' >> "$GITHUB_OUTPUT"
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_ENV: ${{ github.event.inputs.env }}
-
   prune:
-    needs: prepare-matrix
     name: Prune judge images (${{ matrix.env }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        env: ${{ fromJson(needs.prepare-matrix.outputs.environments) }}
+        env: [dev, prod]
+    if: ${{ github.event_name != 'workflow_dispatch' || matrix.env == (github.event.inputs.env || 'dev') }}
     permissions:
       contents: read
       id-token: write
