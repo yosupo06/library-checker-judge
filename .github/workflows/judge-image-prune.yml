@@ -17,15 +17,13 @@ on:
         type: boolean
         default: false
 
-env:
-  IMAGE_FAMILY: v3-judge-image
-  KEEP_COUNT: '10'
-  MIN_AGE_DAYS: '14'
-  TF_CLOUD_ORGANIZATION: yosupo06-org
-
 concurrency:
   group: 'judge-image-prune-${{ inputs.env }}'
   cancel-in-progress: false
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
 
 jobs:
   prune:
@@ -59,7 +57,7 @@ jobs:
           ARGS=(
             --project "${{ inputs.env }}-library-checker-project"
             --family v3-judge-image
-            --keep 10
+            --keep 3
             --min-age-days 14
           )
           if [[ "${{ inputs.dry-run }}" == "true" ]]; then
