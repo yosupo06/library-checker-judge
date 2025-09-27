@@ -8,9 +8,8 @@ on:
       env:
         description: 'Environment to prune'
         type: choice
-        default: all
+        default: dev
         options:
-          - all
           - dev
           - prod
       dry-run:
@@ -27,17 +26,19 @@ jobs:
       - id: set-matrix
         run: |
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            case "$INPUT_ENV" in
-              ""|all)
-                echo 'environments=["dev","prod"]' >> "$GITHUB_OUTPUT"
-                ;;
-              *)
-                echo "environments=[\"$INPUT_ENV\"]" >> "$GITHUB_OUTPUT"
-                ;;
-            esac
+            envs=("$INPUT_ENV")
+            if [[ -z "${envs[0]}" ]]; then
+              envs=(dev)
+            fi
           else
-            echo 'environments=["dev","prod"]' >> "$GITHUB_OUTPUT"
+            envs=(dev prod)
           fi
+          printf 'environments=[' >> "$GITHUB_OUTPUT"
+          for idx in "${!envs[@]}"; do
+            (( idx > 0 )) && printf ',' >> "$GITHUB_OUTPUT"
+            printf '\"%s\"' "${envs[$idx]}" >> "$GITHUB_OUTPUT"
+          done
+          printf ']\n' >> "$GITHUB_OUTPUT"
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_ENV: ${{ github.event.inputs.env }}
@@ -49,7 +50,6 @@ jobs:
     strategy:
       matrix:
         env: ${{ fromJson(needs.prepare-matrix.outputs.environments) }}
-    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.env == 'all' || github.event.inputs.env == matrix.env }}
     permissions:
       contents: read
       id-token: write
@@ -98,4 +98,4 @@ jobs:
           if [[ "${DRY_RUN}" == "true" ]]; then
             ARGS+=(--dry-run)
           fi
-          ./scripts/prune_gce_images.sh "${ARGS[@]}"
+          python3 ./scripts/prune_gce_images.py "${ARGS[@]}"
