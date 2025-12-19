@@ -85,7 +85,7 @@
     version = "Nim 2.2.4"
     source = "main.nim"
     image_name = "library-checker-images-nim"
-    compile = ["nim",  "cpp", "-d:release", "--hints:off", "-o:a.out", "main.nim"]
+    compile = ["nim", "cpp", "-d:release", "--hints:off", "-o:a.out", "main.nim"]
     exec = ["./a.out"]
 [[langs]]
     id = "csharp"
