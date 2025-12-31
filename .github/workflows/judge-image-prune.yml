@@ -28,13 +28,12 @@ on:
         type: boolean
 
 concurrency:
-  group: "judge-image-prune-${{ inputs.env || 'prod' }}"
+  group: "judge-image-prune-${{ inputs.env }}"
   cancel-in-progress: false
 
 env:
-  TARGET_ENV: ${{ inputs.env || 'prod' }}
   TF_CLOUD_ORGANIZATION: "yosupo06-org"
-  TF_WORKSPACE: "${{ inputs.env || 'prod' }}-library-checker"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
 
 jobs:
   prune:
@@ -69,7 +68,7 @@ jobs:
       - name: Prune images
         run: |
           ARGS=(
-            --project "${TARGET_ENV}-library-checker-project"
+            --project "${{ inputs.env }}-library-checker-project"
             --family v3-judge-image
             --keep 3
             --min-age-days 14
