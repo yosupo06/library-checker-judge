@@ -1,8 +1,6 @@
 name: Prune Judge Images
 
 on:
-  schedule:
-    - cron: '0 18 * * *'
   workflow_dispatch:
     inputs:
       env:
@@ -16,14 +14,27 @@ on:
         description: 'Only print images that would be deleted'
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      env:
+        description: 'Environment to prune'
+        required: false
+        default: prod
+        type: string
+      dry-run:
+        description: 'Only print images that would be deleted'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
-  group: 'judge-image-prune-${{ inputs.env }}'
+  group: "judge-image-prune-${{ inputs.env || 'prod' }}"
   cancel-in-progress: false
 
 env:
+  TARGET_ENV: ${{ inputs.env || 'prod' }}
   TF_CLOUD_ORGANIZATION: "yosupo06-org"
-  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
+  TF_WORKSPACE: "${{ inputs.env || 'prod' }}-library-checker"
 
 jobs:
   prune:
@@ -58,7 +69,7 @@ jobs:
       - name: Prune images
         run: |
           ARGS=(
-            --project "${{ inputs.env }}-library-checker-project"
+            --project "${TARGET_ENV}-library-checker-project"
             --family v3-judge-image
             --keep 3
             --min-age-days 14
