@@ -1,0 +1,16 @@
+name: Scheduled Judge Image Prune
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+
+jobs:
+  call-prune:
+    uses: ./.github/workflows/judge-image-prune.yml
+    with:
+      env: prod
+      dry-run: false
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
