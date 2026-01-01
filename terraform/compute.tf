@@ -1,14 +1,8 @@
-data "google_compute_image" "ubuntu_2404" {
-  project     = "ubuntu-os-cloud"
-  family      = "ubuntu-2404-lts"
-  most_recent = true
-}
-
 resource "google_compute_image" "judge_dummy" {
   name   = "v3-judge-image-0000"
   family = local.judge_image_family
 
-  source_image = data.google_compute_image.ubuntu_2404.self_link
+  source_image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
 }
 
 data "google_compute_image" "judge" {
