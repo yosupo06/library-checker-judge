@@ -1,45 +1,47 @@
 name: Prune Judge Images
 
 on:
-  schedule:
-    - cron: '0 18 * * *'
   workflow_dispatch:
     inputs:
       env:
         description: 'Environment to prune'
         type: choice
-        default: all
+        default: dev
         options:
-          - all
           - dev
           - prod
       dry-run:
         description: 'Only print images that would be deleted'
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      env:
+        description: 'Environment to prune'
+        required: false
+        default: prod
+        type: string
+      dry-run:
+        description: 'Only print images that would be deleted'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: "judge-image-prune-${{ inputs.env }}"
+  cancel-in-progress: false
+
+env:
+  TF_CLOUD_ORGANIZATION: "yosupo06-org"
+  TF_WORKSPACE: "${{ inputs.env }}-library-checker"
 
 jobs:
   prune:
-    name: Prune judge images (${{ matrix.env }})
+    name: Prune judge images
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: [dev, prod]
-    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.env == 'all' || github.event.inputs.env == matrix.env }}
     permissions:
       contents: read
       id-token: write
-    concurrency:
-      group: judge-image-prune-${{ matrix.env }}
-      cancel-in-progress: false
-    env:
-      TF_CLOUD_ORGANIZATION: yosupo06-org
-      TF_WORKSPACE: ${{ format('{0}-library-checker', matrix.env) }}
-      PROJECT_ID: ${{ format('{0}-library-checker-project', matrix.env) }}
-      IMAGE_FAMILY: v3-judge-image
-      KEEP_COUNT: '10'
-      MIN_AGE_DAYS: '14'
-      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'true' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -66,12 +68,12 @@ jobs:
       - name: Prune images
         run: |
           ARGS=(
-            --project "$PROJECT_ID"
-            --family "$IMAGE_FAMILY"
-            --keep "$KEEP_COUNT"
-            --min-age-days "$MIN_AGE_DAYS"
+            --project "${{ inputs.env }}-library-checker-project"
+            --family v3-judge-image
+            --keep 3
+            --min-age-days 14
           )
-          if [[ "${DRY_RUN}" == "true" ]]; then
+          if [[ "${{ inputs.dry-run }}" == "true" ]]; then
             ARGS+=(--dry-run)
           fi
-          ./scripts/prune_gce_images.sh "${ARGS[@]}"
+          python3 ./scripts/prune_gce_images.py "${ARGS[@]}"
