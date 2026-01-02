@@ -4,7 +4,7 @@
     version = "GCC 15.2 + AC Library(1.6)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
-    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
+    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-DONLINE_JUDGE", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
 [[langs]]
     id = "cpp20"
@@ -12,7 +12,7 @@
     version = "GCC 15.2 + AC Library(1.6)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
-    compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
+    compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-DONLINE_JUDGE", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
 [[langs]]
     id = "cpp17"
@@ -20,7 +20,7 @@
     version = "GCC 15.2 + AC Library(1.6)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
-    compile = ["g++", "-O2", "-std=c++17", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
+    compile = ["g++", "-O2", "-std=c++17", "-DEVAL", "-DONLINE_JUDGE", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
 [[langs]]
     id = "cpp-func"
@@ -28,7 +28,7 @@
     version = "GCC 15.2 + AC Library(1.6)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
-    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
+    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-DONLINE_JUDGE", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
     additional_files = ["fastio.h", "grader.cpp", "solve.hpp"]
 [[langs]]
