@@ -8,6 +8,11 @@ resource "google_compute_image" "judge_dummy" {
   family = local.judge_image_family
 
   source_image = data.google_compute_image.debian.id
+
+  // Seed the family for the very first apply; keep the resolved Debian image pinned
+  lifecycle {
+    ignore_changes = [source_image]
+  }
 }
 
 
