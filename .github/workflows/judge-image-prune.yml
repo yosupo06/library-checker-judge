@@ -1,8 +1,6 @@
 name: Prune Judge Images
 
 on:
-  schedule:
-    - cron: '0 18 * * *'
   workflow_dispatch:
     inputs:
       env:
@@ -16,9 +14,21 @@ on:
         description: 'Only print images that would be deleted'
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      env:
+        description: 'Environment to prune'
+        required: false
+        default: prod
+        type: string
+      dry-run:
+        description: 'Only print images that would be deleted'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
-  group: 'judge-image-prune-${{ inputs.env }}'
+  group: "judge-image-prune-${{ inputs.env }}"
   cancel-in-progress: false
 
 env:

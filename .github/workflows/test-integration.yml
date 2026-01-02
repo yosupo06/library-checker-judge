@@ -73,6 +73,10 @@ jobs:
           docker compose down -v || true
           docker compose up -d --build --wait
 
+      - name: Map emulator hostname for host tools
+        run: |
+          echo "STORAGE_EMULATOR_HOST=http://127.0.0.1:4443" >> $GITHUB_ENV
+
       - name: Seed sample problems (aplusb, point_set_range_sort_range_composite)
         env:
           PGHOST: localhost
@@ -80,7 +84,12 @@ jobs:
           PGDATABASE: librarychecker
           PGUSER: postgres
           PGPASSWORD: lcdummypassword
+          STORAGE_EMULATOR_HOST: http://127.0.0.1:4443
+          STORAGE_PRIVATE_BUCKET: testcase
+          STORAGE_PUBLIC_BUCKET: testcase-public
+          STORAGE_PROJECT_ID: dev-library-checker-project
         run: |
+          echo "STORAGE_EMULATOR_HOST=${STORAGE_EMULATOR_HOST}"
           PROBLEMS_PATH="$(realpath ../library-checker-problems)"
           (cd uploader && go run ./problems -dir "$PROBLEMS_PATH" \
             "$PROBLEMS_PATH/sample/aplusb/info.toml" \
@@ -95,5 +104,9 @@ jobs:
           PGDATABASE: librarychecker
           PGUSER: postgres
           PGPASSWORD: lcdummypassword
+          STORAGE_EMULATOR_HOST: http://127.0.0.1:4443
+          STORAGE_PRIVATE_BUCKET: testcase
+          STORAGE_PUBLIC_BUCKET: testcase-public
+          STORAGE_PROJECT_ID: dev-library-checker-project
         run: |
           go test -v -timeout 20m ./...
