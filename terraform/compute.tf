@@ -1,9 +1,15 @@
+data "google_compute_image" "debian" {
+  family  = "debian-12"
+  project = "debian-cloud"
+}
+
 resource "google_compute_image" "judge_dummy" {
   name   = "v3-judge-image-0000"
   family = local.judge_image_family
 
-  source_image = "projects/ubuntu-os-cloud/global/images/ubuntu-2404-lts-amd64"
+  source_image = data.google_compute_image.debian.id
 }
+
 
 data "google_compute_image" "judge" {
   family      = local.judge_image_family
