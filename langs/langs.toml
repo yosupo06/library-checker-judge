@@ -1,16 +1,7 @@
 [[langs]]
-    id = "cpp-func"
-    name = "C++23(Function)"
-    version = "GCC 14.2 + AC Library(1.5.1)"
-    source = "main.cpp"
-    image_name = "library-checker-images-gcc"
-    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
-    exec = ["./main"]
-    additional_files = ["fastio.h", "grader.cpp", "solve.hpp"]
-[[langs]]
     id = "cpp"
     name = "C++23"
-    version = "GCC 14.2 + AC Library(1.5.1)"
+    version = "GCC 15.2 + AC Library(1.6)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
@@ -18,7 +9,7 @@
 [[langs]]
     id = "cpp20"
     name = "C++20"
-    version = "GCC 14.2 + AC Library(1.5.1)"
+    version = "GCC 15.2 + AC Library(1.6)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++20", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
@@ -26,11 +17,20 @@
 [[langs]]
     id = "cpp17"
     name = "C++17"
-    version = "GCC 14.2 + AC Library(1.5.1)"
+    version = "GCC 15.2 + AC Library(1.6)"
     source = "main.cpp"
     image_name = "library-checker-images-gcc"
     compile = ["g++", "-O2", "-std=c++17", "-DEVAL", "-march=native", "-o", "main", "main.cpp", "-I", "/opt/ac-library"]
     exec = ["./main"]
+[[langs]]
+    id = "cpp-func"
+    name = "C++23(Function)"
+    version = "GCC 15.2 + AC Library(1.6)"
+    source = "main.cpp"
+    image_name = "library-checker-images-gcc"
+    compile = ["g++", "-O2", "-std=c++23", "-DEVAL", "-march=native", "-o", "main", "grader.cpp", "main.cpp", "-I", "/opt/ac-library"]
+    exec = ["./main"]
+    additional_files = ["fastio.h", "grader.cpp", "solve.hpp"]
 [[langs]]
     id = "rust"
     name = "Rust"
