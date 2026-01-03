@@ -18,8 +18,8 @@ jobs:
   test-executor:
     runs-on: ubuntu-latest
     steps:
-      
-    # ref: https://mathio28.medium.com/squeezing-disk-space-from-github-actions-runners-an-engineers-guide-d5fbe4443692    
+
+    # ref: https://mathio28.medium.com/squeezing-disk-space-from-github-actions-runners-an-engineers-guide-d5fbe4443692
     - run: |
         sudo rm -rf /usr/lib/jvm
         sudo rm -rf /usr/share/dotnet
