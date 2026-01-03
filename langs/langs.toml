@@ -80,6 +80,14 @@
     compile = ["ghc", "main.hs", "-O2"]
     exec = ["./main"]
 [[langs]]
+    id = "nim"
+    name = "Nim"
+    version = "Nim 2.2.4"
+    source = "main.nim"
+    image_name = "library-checker-images-nim"
+    compile = ["nim", "cpp", "-d:release", "--hints:off", "-o:a.out", "main.nim"]
+    exec = ["./a.out"]
+[[langs]]
     id = "csharp"
     name = "C#"
     version = "dotnet 7.0"

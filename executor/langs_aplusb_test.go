@@ -66,6 +66,8 @@ func samplePathFor(langID string) (string, map[string]string) {
 		return "sources/aplusb/ac.lisp", nil
 	case "swift":
 		return "sources/aplusb/ac.swift", nil
+	case "nim":
+		return "sources/aplusb/ac.nim", nil
 	case "python3":
 		return "sources/aplusb/ac_numpy.py", nil
 	case "pypy3":
