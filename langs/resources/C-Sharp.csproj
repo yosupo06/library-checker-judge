@@ -2,12 +2,19 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PublishReadyToRun>true</PublishReadyToRun>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>annotations</Nullable>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <OptimizationPreference>Speed</OptimizationPreference>
+    <IlcInstructionSet>native</IlcInstructionSet>
+    <IlcMaxVectorTBitWidth>512</IlcMaxVectorTBitWidth>
+    <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+    <WarningsAsErrors>IL2104;IL3053</WarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode>true</RestoreLockedMode>
   </PropertyGroup>
 
 </Project>
