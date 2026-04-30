@@ -21,6 +21,7 @@ const Login: React.FC = () => {
   const signInMutation = useSignInMutation();
   const onSignIn = (e: React.FormEvent) => {
     e.preventDefault();
+    if (signInMutation.isPending) return;
     signInMutation.mutate(
       {
         email: email,
@@ -42,6 +43,11 @@ const Login: React.FC = () => {
         <code>yosupo@dummy.judge.yosupo.jp</code>
       </Alert>
       <form onSubmit={(e) => onSignIn(e)}>
+        {signInMutation.isError && (
+          <Alert severity="error">
+            {(signInMutation.error as Error).message}
+          </Alert>
+        )}
         <div>
           <TextField
             required
@@ -49,6 +55,7 @@ const Login: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={{ width: 300 }}
+            disabled={signInMutation.isPending}
           />
         </div>
         <div>
@@ -59,10 +66,15 @@ const Login: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ width: 300 }}
+            disabled={signInMutation.isPending}
           />
         </div>
-        <Button color="primary" type="submit">
-          Login
+        <Button
+          color="primary"
+          type="submit"
+          disabled={signInMutation.isPending}
+        >
+          {signInMutation.isPending ? "Logging in..." : "Login"}
         </Button>
       </form>
       <PasswordReset />
