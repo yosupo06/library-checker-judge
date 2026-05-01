@@ -32,3 +32,21 @@ func (s *server) GetProblemCategories(_ context.Context, _ restapi.GetProblemCat
 	resp := restapi.ProblemCategoriesResponse{Categories: result}
 	return restapi.GetProblemCategories200JSONResponse(resp), nil
 }
+
+// GetMonitoring handles GET /monitoring
+func (s *server) GetMonitoring(_ context.Context, _ restapi.GetMonitoringRequestObject) (restapi.GetMonitoringResponseObject, error) {
+	data, err := database.FetchMonitoringData(s.db)
+	if err != nil {
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch monitoring data")
+	}
+	resp := restapi.MonitoringResponse{
+		TotalUsers:       int32(data.TotalUsers),
+		TotalSubmissions: int32(data.TotalSubmissions),
+		TaskQueue: restapi.TaskQueueInfo{
+			PendingTasks: int32(data.TaskQueue.PendingTasks),
+			RunningTasks: int32(data.TaskQueue.RunningTasks),
+			TotalTasks:   int32(data.TaskQueue.TotalTasks),
+		},
+	}
+	return restapi.GetMonitoring200JSONResponse(resp), nil
+}

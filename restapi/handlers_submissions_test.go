@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -107,5 +108,63 @@ func TestPostSubmit_AnonymousAllowed(t *testing.T) {
 	}
 	if sub.UserName.Valid {
 		t.Fatalf("expected anonymous submission, got %+v", sub.UserName)
+	}
+}
+
+func TestPostRejudge_AllowsSubmissionOwner(t *testing.T) {
+	db := setupTestDB(t)
+	problem := database.Problem{
+		Name:             "aplusb-rejudge",
+		Title:            "A + B",
+		SourceUrl:        "https://example.com/aplusb",
+		Timelimit:        2000,
+		TestCasesVersion: "v1",
+		Version:          "1",
+		OverallVersion:   "1",
+	}
+	if err := database.SaveProblem(db, problem); err != nil {
+		t.Fatalf("save problem: %v", err)
+	}
+	if err := database.RegisterUser(db, "alice", "uid-rejudge"); err != nil {
+		t.Fatalf("register user: %v", err)
+	}
+	id, err := database.SaveSubmission(db, database.Submission{
+		ProblemName:      problem.Name,
+		Lang:             "cpp",
+		Status:           "AC",
+		Source:           "#include <bits/stdc++.h>\nint main(){return 0;}",
+		TestCasesVersion: "v1",
+		MaxTime:          1,
+		MaxMemory:        1,
+		UserName:         sql.NullString{String: "alice", Valid: true},
+	})
+	if err != nil {
+		t.Fatalf("save submission: %v", err)
+	}
+
+	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-rejudge"}}
+	req := httptest.NewRequest(http.MethodPost, "/submissions/1/rejudge", nil)
+	req.Header.Set("Authorization", "Bearer token")
+	ctx := withHTTPRequest(context.Background(), req)
+	respObj, err := s.PostRejudge(ctx, restapi.PostRejudgeRequestObject{Id: id})
+	if err != nil {
+		t.Fatalf("PostRejudge returned error: %v", err)
+	}
+	if _, ok := respObj.(restapi.PostRejudge200JSONResponse); !ok {
+		t.Fatalf("unexpected response type %T", respObj)
+	}
+}
+
+func TestPostRejudge_RejectsAnonymous(t *testing.T) {
+	db := setupTestDB(t)
+	s := &server{db: db}
+	req := httptest.NewRequest(http.MethodPost, "/submissions/1/rejudge", nil)
+	ctx := withHTTPRequest(context.Background(), req)
+	_, err := s.PostRejudge(ctx, restapi.PostRejudgeRequestObject{Id: 1})
+	if err == nil {
+		t.Fatalf("expected unauthorized error")
+	}
+	if httpErr, ok := getHTTPError(err); !ok || httpErr.Status != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %v", err)
 	}
 }

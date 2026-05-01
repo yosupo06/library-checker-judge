@@ -63,6 +63,31 @@ func (s *server) PatchCurrentUserInfo(ctx context.Context, request restapi.Patch
 	return restapi.PatchCurrentUserInfo200JSONResponse(restapi.ChangeCurrentUserInfoResponse{}), nil
 }
 
+// PatchUserInfo handles PATCH /users/{name}
+func (s *server) PatchUserInfo(ctx context.Context, request restapi.PatchUserInfoRequestObject) (restapi.PatchUserInfoResponseObject, error) {
+	if request.Body == nil || request.Body.User.Name == "" {
+		return nil, newHTTPError(http.StatusBadRequest, "invalid request")
+	}
+	currentUser, err := s.currentUserFromContext(ctx)
+	if err != nil || currentUser == nil {
+		return nil, newHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+	if request.Name != currentUser.Name || request.Body.User.Name != currentUser.Name {
+		return nil, newHTTPError(http.StatusForbidden, "permission denied")
+	}
+
+	user := database.User{
+		Name:        currentUser.Name,
+		UID:         currentUser.UID,
+		LibraryURL:  request.Body.User.LibraryUrl,
+		IsDeveloper: request.Body.User.IsDeveloper,
+	}
+	if err := s.updateUser(s.db, user); err != nil {
+		return nil, newHTTPError(http.StatusBadRequest, "update failed")
+	}
+	return restapi.PatchUserInfo200JSONResponse(restapi.ChangeUserInfoResponse{}), nil
+}
+
 // GetUserInfo handles GET /users/{name}
 func (s *server) GetUserInfo(_ context.Context, request restapi.GetUserInfoRequestObject) (restapi.GetUserInfoResponseObject, error) {
 	if request.Name == "" {
@@ -109,4 +134,12 @@ func fetchUserStatisticsREST(db *gorm.DB, userName string) (map[string]restapi.S
 		}
 	}
 	return stats, nil
+}
+
+func (s *server) currentUserFromContext(ctx context.Context) (*database.User, error) {
+	uid, err := s.uidFromContext(ctx)
+	if err != nil || uid == "" {
+		return nil, err
+	}
+	return database.FetchUserFromUID(s.db, uid)
 }

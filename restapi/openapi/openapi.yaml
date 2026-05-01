@@ -19,6 +19,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RankingResponse'
+  /monitoring:
+    get:
+      summary: Get monitoring data
+      operationId: getMonitoring
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringResponse'
   /problems:
     get:
       summary: Get problems
@@ -139,6 +150,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmissionInfoResponse'
+  /submissions/{id}/rejudge:
+    post:
+      summary: Rejudge a submission
+      operationId: postRejudge
+      security:
+        - firebaseAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SubmissionId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RejudgeResponse'
   /hacks:
     get:
       summary: List hacks
@@ -258,6 +284,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserInfoResponse'
+    patch:
+      summary: Change user info
+      operationId: patchUserInfo
+      security:
+        - firebaseAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserNamePath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeUserInfoRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeUserInfoResponse'
   /users/{name}/statistics:
     get:
       summary: Get user solved statistics
@@ -612,6 +658,17 @@ components:
       type: object
       additionalProperties: false
       properties: {}
+    ChangeUserInfoRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+      required: [user]
+    ChangeUserInfoResponse:
+      type: object
+      additionalProperties: false
+      properties: {}
     UserInfoResponse:
       type: object
       additionalProperties: false
@@ -659,6 +716,10 @@ components:
           format: int32
           minimum: 0
       required: [id]
+    RejudgeResponse:
+      type: object
+      additionalProperties: false
+      properties: {}
     SubmissionOverview:
       type: object
       properties:
@@ -735,3 +796,30 @@ components:
           items:
             $ref: '#/components/schemas/SubmissionCaseResult'
       required: [overview, source, can_rejudge]
+    TaskQueueInfo:
+      type: object
+      additionalProperties: false
+      properties:
+        pending_tasks:
+          type: integer
+          format: int32
+        running_tasks:
+          type: integer
+          format: int32
+        total_tasks:
+          type: integer
+          format: int32
+      required: [pending_tasks, running_tasks, total_tasks]
+    MonitoringResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        total_users:
+          type: integer
+          format: int32
+        total_submissions:
+          type: integer
+          format: int32
+        task_queue:
+          $ref: '#/components/schemas/TaskQueueInfo'
+      required: [total_users, total_submissions, task_queue]

@@ -46,6 +46,14 @@ type ChangeCurrentUserInfoRequest struct {
 // ChangeCurrentUserInfoResponse defines model for ChangeCurrentUserInfoResponse.
 type ChangeCurrentUserInfoResponse = map[string]interface{}
 
+// ChangeUserInfoRequest defines model for ChangeUserInfoRequest.
+type ChangeUserInfoRequest struct {
+	User User `json:"user"`
+}
+
+// ChangeUserInfoResponse defines model for ChangeUserInfoResponse.
+type ChangeUserInfoResponse = map[string]interface{}
+
 // CreateHackRequest defines model for CreateHackRequest.
 type CreateHackRequest struct {
 	Submission  int32   `json:"submission"`
@@ -104,6 +112,13 @@ type LangListResponse struct {
 // LibraryUrl Optional URL for the user's library profile. Use an empty string to keep it unset.
 type LibraryUrl = string
 
+// MonitoringResponse defines model for MonitoringResponse.
+type MonitoringResponse struct {
+	TaskQueue        TaskQueueInfo `json:"task_queue"`
+	TotalSubmissions int32         `json:"total_submissions"`
+	TotalUsers       int32         `json:"total_users"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Name Problem identifier consisting of lowercase letters, digits, or underscores.
@@ -156,6 +171,9 @@ type RegisterRequest struct {
 
 // RegisterResponse defines model for RegisterResponse.
 type RegisterResponse = map[string]interface{}
+
+// RejudgeResponse defines model for RejudgeResponse.
+type RejudgeResponse = map[string]interface{}
 
 // SolvedStatus Solved status for a problem.
 type SolvedStatus string
@@ -217,6 +235,13 @@ type SubmitRequest struct {
 // SubmitResponse defines model for SubmitResponse.
 type SubmitResponse struct {
 	Id int32 `json:"id"`
+}
+
+// TaskQueueInfo defines model for TaskQueueInfo.
+type TaskQueueInfo struct {
+	PendingTasks int32 `json:"pending_tasks"`
+	RunningTasks int32 `json:"running_tasks"`
+	TotalTasks   int32 `json:"total_tasks"`
 }
 
 // User defines model for User.
@@ -327,6 +352,9 @@ type PostHackJSONRequestBody = CreateHackRequest
 // PostSubmitJSONRequestBody defines body for PostSubmit for application/json ContentType.
 type PostSubmitJSONRequestBody = SubmitRequest
 
+// PatchUserInfoJSONRequestBody defines body for PatchUserInfo for application/json ContentType.
+type PatchUserInfoJSONRequestBody = ChangeUserInfoRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get current user info
@@ -353,6 +381,9 @@ type ServerInterface interface {
 	// Get language list
 	// (GET /langs)
 	GetLangList(w http.ResponseWriter, r *http.Request)
+	// Get monitoring data
+	// (GET /monitoring)
+	GetMonitoring(w http.ResponseWriter, r *http.Request)
 	// Get problems
 	// (GET /problems)
 	GetProblems(w http.ResponseWriter, r *http.Request)
@@ -368,12 +399,18 @@ type ServerInterface interface {
 	// Get submission info
 	// (GET /submissions/{id})
 	GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id SubmissionId)
+	// Rejudge a submission
+	// (POST /submissions/{id}/rejudge)
+	PostRejudge(w http.ResponseWriter, r *http.Request, id SubmissionId)
 	// Submit a solution
 	// (POST /submit)
 	PostSubmit(w http.ResponseWriter, r *http.Request)
 	// Get user info
 	// (GET /users/{name})
 	GetUserInfo(w http.ResponseWriter, r *http.Request, name UserNamePath)
+	// Change user info
+	// (PATCH /users/{name})
+	PatchUserInfo(w http.ResponseWriter, r *http.Request, name UserNamePath)
 	// Get user solved statistics
 	// (GET /users/{name}/statistics)
 	GetUserStatistics(w http.ResponseWriter, r *http.Request, name UserNamePath)
@@ -431,6 +468,12 @@ func (_ Unimplemented) GetLangList(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Get monitoring data
+// (GET /monitoring)
+func (_ Unimplemented) GetMonitoring(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Get problems
 // (GET /problems)
 func (_ Unimplemented) GetProblems(w http.ResponseWriter, r *http.Request) {
@@ -461,6 +504,12 @@ func (_ Unimplemented) GetSubmissionInfo(w http.ResponseWriter, r *http.Request,
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Rejudge a submission
+// (POST /submissions/{id}/rejudge)
+func (_ Unimplemented) PostRejudge(w http.ResponseWriter, r *http.Request, id SubmissionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Submit a solution
 // (POST /submit)
 func (_ Unimplemented) PostSubmit(w http.ResponseWriter, r *http.Request) {
@@ -470,6 +519,12 @@ func (_ Unimplemented) PostSubmit(w http.ResponseWriter, r *http.Request) {
 // Get user info
 // (GET /users/{name})
 func (_ Unimplemented) GetUserInfo(w http.ResponseWriter, r *http.Request, name UserNamePath) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Change user info
+// (PATCH /users/{name})
+func (_ Unimplemented) PatchUserInfo(w http.ResponseWriter, r *http.Request, name UserNamePath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -674,6 +729,20 @@ func (siw *ServerInterfaceWrapper) GetLangList(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// GetMonitoring operation middleware
+func (siw *ServerInterfaceWrapper) GetMonitoring(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMonitoring(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetProblems operation middleware
 func (siw *ServerInterfaceWrapper) GetProblems(w http.ResponseWriter, r *http.Request) {
 
@@ -864,6 +933,37 @@ func (siw *ServerInterfaceWrapper) GetSubmissionInfo(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// PostRejudge operation middleware
+func (siw *ServerInterfaceWrapper) PostRejudge(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id SubmissionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, FirebaseAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostRejudge(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // PostSubmit operation middleware
 func (siw *ServerInterfaceWrapper) PostSubmit(w http.ResponseWriter, r *http.Request) {
 
@@ -900,6 +1000,37 @@ func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetUserInfo(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchUserInfo operation middleware
+func (siw *ServerInterfaceWrapper) PatchUserInfo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "name" -------------
+	var name UserNamePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", chi.URLParam(r, "name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, FirebaseAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchUserInfo(w, r, name)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1072,6 +1203,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/langs", wrapper.GetLangList)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/monitoring", wrapper.GetMonitoring)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/problems", wrapper.GetProblems)
 	})
 	r.Group(func(r chi.Router) {
@@ -1087,10 +1221,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/submissions/{id}", wrapper.GetSubmissionInfo)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/submissions/{id}/rejudge", wrapper.PostRejudge)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/submit", wrapper.PostSubmit)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users/{name}", wrapper.GetUserInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/users/{name}", wrapper.PatchUserInfo)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users/{name}/statistics", wrapper.GetUserStatistics)
@@ -1232,6 +1372,22 @@ func (response GetLangList200JSONResponse) VisitGetLangListResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetMonitoringRequestObject struct {
+}
+
+type GetMonitoringResponseObject interface {
+	VisitGetMonitoringResponse(w http.ResponseWriter) error
+}
+
+type GetMonitoring200JSONResponse MonitoringResponse
+
+func (response GetMonitoring200JSONResponse) VisitGetMonitoringResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetProblemsRequestObject struct {
 }
 
@@ -1316,6 +1472,23 @@ func (response GetSubmissionInfo200JSONResponse) VisitGetSubmissionInfoResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type PostRejudgeRequestObject struct {
+	Id SubmissionId `json:"id"`
+}
+
+type PostRejudgeResponseObject interface {
+	VisitPostRejudgeResponse(w http.ResponseWriter) error
+}
+
+type PostRejudge200JSONResponse RejudgeResponse
+
+func (response PostRejudge200JSONResponse) VisitPostRejudgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type PostSubmitRequestObject struct {
 	Body *PostSubmitJSONRequestBody
 }
@@ -1344,6 +1517,24 @@ type GetUserInfoResponseObject interface {
 type GetUserInfo200JSONResponse UserInfoResponse
 
 func (response GetUserInfo200JSONResponse) VisitGetUserInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchUserInfoRequestObject struct {
+	Name UserNamePath `json:"name"`
+	Body *PatchUserInfoJSONRequestBody
+}
+
+type PatchUserInfoResponseObject interface {
+	VisitPatchUserInfoResponse(w http.ResponseWriter) error
+}
+
+type PatchUserInfo200JSONResponse ChangeUserInfoResponse
+
+func (response PatchUserInfo200JSONResponse) VisitPatchUserInfoResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -1393,6 +1584,9 @@ type StrictServerInterface interface {
 	// Get language list
 	// (GET /langs)
 	GetLangList(ctx context.Context, request GetLangListRequestObject) (GetLangListResponseObject, error)
+	// Get monitoring data
+	// (GET /monitoring)
+	GetMonitoring(ctx context.Context, request GetMonitoringRequestObject) (GetMonitoringResponseObject, error)
 	// Get problems
 	// (GET /problems)
 	GetProblems(ctx context.Context, request GetProblemsRequestObject) (GetProblemsResponseObject, error)
@@ -1408,12 +1602,18 @@ type StrictServerInterface interface {
 	// Get submission info
 	// (GET /submissions/{id})
 	GetSubmissionInfo(ctx context.Context, request GetSubmissionInfoRequestObject) (GetSubmissionInfoResponseObject, error)
+	// Rejudge a submission
+	// (POST /submissions/{id}/rejudge)
+	PostRejudge(ctx context.Context, request PostRejudgeRequestObject) (PostRejudgeResponseObject, error)
 	// Submit a solution
 	// (POST /submit)
 	PostSubmit(ctx context.Context, request PostSubmitRequestObject) (PostSubmitResponseObject, error)
 	// Get user info
 	// (GET /users/{name})
 	GetUserInfo(ctx context.Context, request GetUserInfoRequestObject) (GetUserInfoResponseObject, error)
+	// Change user info
+	// (PATCH /users/{name})
+	PatchUserInfo(ctx context.Context, request PatchUserInfoRequestObject) (PatchUserInfoResponseObject, error)
 	// Get user solved statistics
 	// (GET /users/{name}/statistics)
 	GetUserStatistics(ctx context.Context, request GetUserStatisticsRequestObject) (GetUserStatisticsResponseObject, error)
@@ -1665,6 +1865,30 @@ func (sh *strictHandler) GetLangList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetMonitoring operation middleware
+func (sh *strictHandler) GetMonitoring(w http.ResponseWriter, r *http.Request) {
+	var request GetMonitoringRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMonitoring(ctx, request.(GetMonitoringRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMonitoring")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMonitoringResponseObject); ok {
+		if err := validResponse.VisitGetMonitoringResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetProblems operation middleware
 func (sh *strictHandler) GetProblems(w http.ResponseWriter, r *http.Request) {
 	var request GetProblemsRequestObject
@@ -1793,6 +2017,32 @@ func (sh *strictHandler) GetSubmissionInfo(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// PostRejudge operation middleware
+func (sh *strictHandler) PostRejudge(w http.ResponseWriter, r *http.Request, id SubmissionId) {
+	var request PostRejudgeRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostRejudge(ctx, request.(PostRejudgeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostRejudge")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostRejudgeResponseObject); ok {
+		if err := validResponse.VisitPostRejudgeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // PostSubmit operation middleware
 func (sh *strictHandler) PostSubmit(w http.ResponseWriter, r *http.Request) {
 	var request PostSubmitRequestObject
@@ -1850,6 +2100,39 @@ func (sh *strictHandler) GetUserInfo(w http.ResponseWriter, r *http.Request, nam
 	}
 }
 
+// PatchUserInfo operation middleware
+func (sh *strictHandler) PatchUserInfo(w http.ResponseWriter, r *http.Request, name UserNamePath) {
+	var request PatchUserInfoRequestObject
+
+	request.Name = name
+
+	var body PatchUserInfoJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchUserInfo(ctx, request.(PatchUserInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchUserInfo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchUserInfoResponseObject); ok {
+		if err := validResponse.VisitPatchUserInfoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetUserStatistics operation middleware
 func (sh *strictHandler) GetUserStatistics(w http.ResponseWriter, r *http.Request, name UserNamePath) {
 	var request GetUserStatisticsRequestObject
@@ -1879,46 +2162,49 @@ func (sh *strictHandler) GetUserStatistics(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"3e/+HwAA//9bCkKajjkAAA==",
+	"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",
+	"AP///FvTE9ZAAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
