@@ -35,8 +35,8 @@ fi
 echo "Testing database..."
 cd database && go test ./... -v && cd ..
 
-echo "Testing API..."
-cd api && go test ./... -v && cd ..
+echo "Testing REST API..."
+cd restapi && go test ./... -v && cd ..
 
 echo "Testing storage..."
 cd storage && go test ./... -v && cd ..
@@ -47,12 +47,16 @@ if [[ -d "uploader" ]]; then
 fi
 
 echo "Building all components..."
-go build ./api/...
-go build ./database/...
-go build ./storage/...
+for module in restapi database storage; do
+    (cd "$module" && go build ./...)
+done
 
 echo "Running static analysis..."
-go vet ./...
+for module in restapi database storage uploader judge executor integration langs migrator utils cloudrun/taskqueue-metrics; do
+    if [[ -d "$module" ]]; then
+        (cd "$module" && go vet ./...)
+    fi
+done
 gofmt -l . | (! read)
 
 # Cleanup if we started the environment

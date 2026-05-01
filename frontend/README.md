@@ -9,9 +9,6 @@
 ```sh
 npm install # or npm ci
 
-# generate API client code from protoc
-npm run protoc
-
 # access to the API server of local (you must launch api server in local)
 npm run dev
 # access to the API server of judge.yosupo.jp

@@ -22,8 +22,6 @@ run_local_uploader() {
 
 docker --version
 
-./run_protoc.sh
-
 # Build language images (minimal by default: gcc + python3). Override with LC_LANGS.
 # Examples: LC_LANGS=all ./launch_local.sh
 echo "Building language images: ${LC_LANGS:-gcc python3}"

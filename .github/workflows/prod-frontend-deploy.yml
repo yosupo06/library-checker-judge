@@ -6,7 +6,6 @@ on:
       - master
     paths:
       - 'frontend/**'
-      - 'api/proto/**'
       - 'restapi/openapi/**'
       - '.github/workflows/frontend-deploy.yml'
       - '.github/workflows/prod-frontend-deploy.yml'

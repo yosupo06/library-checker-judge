@@ -25,7 +25,7 @@ import {
   SubmitResponse,
   SolvedStatus,
   UserInfoResponse,
-} from "../proto/library_checker";
+} from "./types";
 import { useIdToken } from "../auth/auth";
 import {
   fetchRanking,
@@ -48,7 +48,6 @@ import {
   postRejudge,
 } from "./http_client";
 import type { components as OpenApi } from "../openapi/types";
-import { Timestamp as TimestampMessage } from "../proto/google/protobuf/timestamp";
 
 const currentUserKey = ["api", "currentUser"];
 export const useCurrentUser = () => {
@@ -325,7 +324,7 @@ const toSubmissionOverviewProto = (
     time: overview.time,
     memory: BigInt(overview.memory),
     submissionTime: overview.submission_time
-      ? TimestampMessage.fromDate(new Date(overview.submission_time))
+      ? new Date(overview.submission_time)
       : undefined,
   } satisfies SubmissionOverview;
 };
@@ -460,7 +459,7 @@ const toHackOverviewProto = (
   userName: overview.user_name,
   time: overview.time,
   memory: overview.memory !== undefined ? BigInt(overview.memory) : undefined,
-  hackTime: TimestampMessage.fromDate(new Date(overview.hack_time)),
+  hackTime: new Date(overview.hack_time),
 });
 
 const toHackInfoProto = (

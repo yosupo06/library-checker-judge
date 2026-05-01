@@ -6,13 +6,11 @@ on:
       - master
     paths:
       - 'frontend/**'
-      - 'api/proto/**'
       - 'restapi/openapi/**'
       - '.github/workflows/test-frontend.yml'
   pull_request:
     paths:
       - 'frontend/**'
-      - 'api/proto/**'
       - 'restapi/openapi/**'
       - '.github/workflows/test-frontend.yml'
 
@@ -27,8 +25,6 @@ jobs:
           node-version: "18"
 
       - run: npm ci
-        working-directory: ./frontend
-      - run: npm run protoc
         working-directory: ./frontend
       - run: npm run openapi:gen
         working-directory: ./frontend

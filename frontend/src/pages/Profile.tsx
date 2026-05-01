@@ -20,8 +20,7 @@ import { useCurrentAuthUser, useUpdateEmailMutation } from "../auth/auth";
 import { User as AuthUser } from "firebase/auth";
 import EmailIcon from "@mui/icons-material/Email";
 import { Navigate } from "react-router-dom";
-import { RpcError } from "@protobuf-ts/runtime-rpc";
-import { User } from "../proto/library_checker";
+import { User } from "../api/types";
 import MainContainer from "../components/MainContainer";
 
 const Profile: React.FC = () => {
@@ -41,16 +40,12 @@ const Profile: React.FC = () => {
       <>
         {currentAuthUser.isError && (
           <Container>
-            <Alert severity="error">
-              {(currentAuthUser.error as RpcError).toString()}
-            </Alert>
+            <Alert severity="error">{currentAuthUser.error.message}</Alert>
           </Container>
         )}
         {currentUser.isError && (
           <Container>
-            <Alert severity="error">
-              {(currentUser.error as RpcError).toString()}
-            </Alert>
+            <Alert severity="error">{currentUser.error.message}</Alert>
           </Container>
         )}
       </>
@@ -97,7 +92,7 @@ const EmailSetting: React.FC<{ user: AuthUser }> = (props) => {
         <Alert severity="success">Verification email has been sent</Alert>
       )}
       {mutation.isError && (
-        <Alert severity="error">{(mutation.error as RpcError).message}</Alert>
+        <Alert severity="error">{mutation.error.message}</Alert>
       )}
       <form onSubmit={handleSubmit}>
         <List>
@@ -158,7 +153,7 @@ const GeneralSetting: React.FC<{ user: User }> = (props) => {
       <Typography variant="h4">General</Typography>
       {mutation.isSuccess && <Alert severity="success">Updated</Alert>}
       {mutation.isError && (
-        <Alert severity="error">{(mutation.error as RpcError).message}</Alert>
+        <Alert severity="error">{mutation.error.message}</Alert>
       )}
       <form onSubmit={handleSubmit}>
         <List>

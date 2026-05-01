@@ -8,9 +8,8 @@ import {
   useProblemList,
   useUserInfo,
 } from "../api/client_wrapper";
-import { SolvedStatus } from "../proto/library_checker";
+import { SolvedStatus } from "../api/types";
 import ProblemList from "../components/ProblemList";
-import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 import {
   CategorisedProblems,
@@ -49,14 +48,10 @@ const ProblemsBody: React.FC = () => {
     return (
       <Box>
         {problemListQuery.isError && (
-          <Alert severity="error">
-            {(problemListQuery.error as RpcError).toString()}
-          </Alert>
+          <Alert severity="error">{problemListQuery.error.message}</Alert>
         )}
         {problemCategoriesQuery.isError && (
-          <Alert severity="error">
-            {(problemCategoriesQuery.error as RpcError).toString()}
-          </Alert>
+          <Alert severity="error">{problemCategoriesQuery.error.message}</Alert>
         )}
       </Box>
     );
@@ -83,9 +78,7 @@ const ProblemsBody: React.FC = () => {
   return (
     <Box>
       {userInfoQuery.isError && (
-        <Alert severity="error">
-          {(userInfoQuery.error as RpcError).toString()}
-        </Alert>
+        <Alert severity="error">{userInfoQuery.error.message}</Alert>
       )}
       <ProblemsTabs
         categories={categories}

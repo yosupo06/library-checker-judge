@@ -6,9 +6,8 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
 import { Link } from "react-router-dom";
-import { HackOverview } from "../proto/library_checker";
+import { HackOverview, Timestamp } from "../api/types";
 import { styled } from "@mui/material/styles";
-import { Timestamp } from "../proto/google/protobuf/timestamp";
 
 interface Props {
   overviews: HackOverview[];
@@ -24,8 +23,7 @@ const HackTable: React.FC<Props> = (props) => {
   const { overviews } = props;
 
   const formatDate = (timestamp: Timestamp) => {
-    const date = new Date(Number(timestamp.seconds) * 1000);
-    return date.toLocaleString();
+    return timestamp.toLocaleString();
   };
 
   const formatTime = (time?: number) => {

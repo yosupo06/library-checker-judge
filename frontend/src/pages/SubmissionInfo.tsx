@@ -25,10 +25,7 @@ import {
 import CircularProgress from "@mui/material/CircularProgress";
 import { LibraryBooks } from "@mui/icons-material";
 import { Alert, Collapse, Divider, IconButton } from "@mui/material";
-import {
-  SubmissionCaseResult,
-  SubmissionInfoResponse,
-} from "../proto/library_checker";
+import { SubmissionCaseResult, SubmissionInfoResponse } from "../api/types";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import MainContainer from "../components/MainContainer";
