@@ -27,8 +27,8 @@ locals {
   })
   parsed_judge_service = templatefile("judge.service.pkrtpl", {
     storage_private_bucket = var.storage_private_bucket
-    storage_public_bucket = var.storage_public_bucket
-    pg_user = var.pg_user
+    storage_public_bucket  = var.storage_public_bucket
+    pg_user                = var.pg_user
   })
 }
 
@@ -42,18 +42,18 @@ packer {
 }
 
 source "googlecompute" "judge" {
-  project_id = "${var.env}-library-checker-project"
-  source_image_family = "v3-${var.env}-base-image"
-  zone = "us-east1-b"
-  network = "main"
-  subnetwork = "main"
-  machine_type = "c2d-standard-8"
-  disk_size = 50
-  ssh_username = "ubuntu"
+  project_id              = "${var.env}-library-checker-project"
+  source_image_family     = "v3-${var.env}-base-image"
+  zone                    = "asia-northeast1-b"
+  network                 = "main"
+  subnetwork              = "main"
+  machine_type            = "c2d-standard-8"
+  disk_size               = 50
+  ssh_username            = "ubuntu"
   temporary_key_pair_type = "ed25519"
-  image_name = "${var.image_family}-{{timestamp}}"
-  image_family = "${var.image_family}"
-  preemptible = true
+  image_name              = "${var.image_family}-{{timestamp}}"
+  image_family            = "${var.image_family}"
+  preemptible             = true
 }
 
 build {
@@ -75,7 +75,7 @@ build {
     ]
   }
   provisioner "file" {
-    content = local.parsed_cloudsql_service
+    content     = local.parsed_cloudsql_service
     destination = "/tmp/cloudsql.service"
   }
   provisioner "shell" {
@@ -87,11 +87,11 @@ build {
 
   # send judge
   provisioner "file" {
-    source = "../../judge/judge"
+    source      = "../../judge/judge"
     destination = "/tmp/judge"
   }
   provisioner "file" {
-    content = local.parsed_judge_service
+    content     = local.parsed_judge_service
     destination = "/tmp/judge.service"
   }
   provisioner "shell" {

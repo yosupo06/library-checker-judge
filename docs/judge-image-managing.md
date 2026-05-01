@@ -5,7 +5,7 @@
 - `judge-image-build.yml` はベースイメージの更新（任意）と、環境ごとのジャッジイメージ生成を常に担当します。
 - ワークフローは Terraform の出力に依存しており、Google Cloud の認証、イメージファミリー、ストレージ/データベース設定を決定します。
 - イメージは `${ENV}-library-checker-project` GCP プロジェクトに保存され、ベース層は `v3-${ENV}-base-image`、ジャッジランタイムは Terraform 出力で指定されるファミリーを利用します。
-- 古いジャッジイメージは `judge-image-prune.yml` が `scripts/prune_gce_images.py` を呼び出して最近のものを保持しつつ古いものを削除します。
+- 古いジャッジイメージは `judge-image-prune.yml` が `tools/prune_gce_images.py` を呼び出して最近のものを保持しつつ古いものを削除します。
 
 ## judge-image-build ワークフロー
 - トリガーモード: `workflow_call` による再利用（`env` 入力が必須）と、`env`（`dev` または `prod`）および `build-base` フラグを受け取る手動の `workflow_dispatch`。
@@ -29,14 +29,13 @@
 - 手順:
   1. Terraform の初期化と Google Cloud 認証を再実行し、環境固有のシークレットを取得します。
   2. Secret Manager から MinIO の HMAC シークレットを取得します（`get-secretmanager-secrets`）。
-  3. リポジトリルートで `./run_protoc.sh` を実行して gRPC スタブを再生成します（Go ビルドに必要）。
-  4. `./judge` ディレクトリ内で `go build .` を実行し、後でプロビジョニングするための `packer/judge/../../judge/judge` バイナリを生成します。
-  5. `packer/judge/` で `packer init` と `packer build` を実行し、以下のパラメータを渡します:
+  3. `./judge` ディレクトリ内で `go build .` を実行し、後でプロビジョニングするための `packer/judge/../../judge/judge` バイナリを生成します。
+  4. `packer/judge/` で `packer init` と `packer build` を実行し、以下のパラメータを渡します:
      - `env`: GCP プロジェクト（`${env}-library-checker-project`）およびベースイメージファミリー（`v3-${env}-base-image`）を選択します。
      - `image_family`: Terraform で提供されるジャッジイメージファミリー（例: `v3-judge-image`）。
      - ストレージ資格情報（`minio_host`, `minio_id`, `minio_secret`, `minio_bucket`, `minio_public_bucket`）。
      - データベース接続情報（`db_connection_name`, `pg_user`）。
-  6. Packer は最新のベースイメージファミリーを基に VM をプロビジョニングし、cloud-init の完了を待ち、Cloud SQL Proxy を配置し、systemd ユニットをインストールします。
+  5. Packer は最新のベースイメージファミリーを基に VM をプロビジョニングし、cloud-init の完了を待ち、Cloud SQL Proxy を配置し、systemd ユニットをインストールします。
      - `cloudsql.service.pkrtpl` が対象の接続名に対してプライベート IP と IAM 認証で `cloud-sql-proxy` を起動します。
      - コンパイル済みジャッジバイナリを `/root/judge` に配置し、`judge.service.pkrtpl` が MinIO と PostgreSQL の環境変数を設定してサービスを有効化します。
 - イメージは設定されたファミリー（`image_family`）にタイムスタンプ付きの名前で直接出力されます。
@@ -56,7 +55,7 @@
 
 ## イメージのクリーンアップ
 - `judge-image-prune.yml` は UTC 18:00 に毎日実行され（手動トリガーも可能）、ジャッジイメージを整理します。
-- ワークフローはビルドジョブと同じ認証手順を踏み、その後 `scripts/prune_gce_images.py` を次のパラメータで呼び出します:
+- ワークフローはビルドジョブと同じ認証手順を踏み、その後 `tools/prune_gce_images.py` を次のパラメータで呼び出します:
   - `--family v3-judge-image`
   - `--keep 3`
   - `--min-age-days 14`

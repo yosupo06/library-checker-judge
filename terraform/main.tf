@@ -30,10 +30,6 @@ locals {
   judge_image_family  = "v3-judge-image"
   judge_instance_type = "c2d-standard-8"
 
-  api_domain = {
-    "dev" : "v2.api.dev.judge.yosupo.jp",
-    "prod" : "v2.api.judge.yosupo.jp",
-  }
   api_rest_domain = {
     "dev" : "v3.api.dev.judge.yosupo.jp",
     "prod" : "v3.api.judge.yosupo.jp",

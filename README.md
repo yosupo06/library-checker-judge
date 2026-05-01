@@ -16,7 +16,8 @@ Judge server / API server のソースコードです
 ./launch_local.sh
 ```
 
-APIサーバー(localhost:50051)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
+REST API サーバー(localhost:12381)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
+問題データのアップロード先にはローカルの fake GCS (`http://localhost:4443`) を使うため、Google Cloud の認証情報や権限は不要です。
 
 言語イメージ（judge が使用）は起動前にビルドが必要です。`./launch_local.sh` は既定で最小セット（gcc + python3）をビルドしてから起動します。全言語や任意サブセットをビルドしたい場合は `LC_LANGS` を指定してください。
 
@@ -33,24 +34,26 @@ LC_LANGS=all ./launch_local.sh
 LC_LANGS="gcc python3 rust" ./launch_local.sh
 ```
 
-### 動作確認
-
-gRPC-web のAPIサーバーが起動します。
-
-- gRPC API: localhost:50051
-- gRPC-web API: localhost:12380
- - REST API (separate service): localhost:12381
- - REST (partial):
-   - GET http://localhost:12380/api/langs
-   - GET http://localhost:12380/api/problems
-
-OpenAPI (partial, for REST) is defined at:
-
-- restapi/openapi/openapi.yaml
+fake GCS の接続先やバケット名を変更する場合は、ホスト側から見える値を指定してください。
 
 ```sh
-evans --host localhost --port 50051 api/proto/library_checker.proto
+LOCAL_STORAGE_EMULATOR_HOST=http://localhost:4443 \
+LOCAL_STORAGE_PRIVATE_BUCKET=testcase \
+LOCAL_STORAGE_PUBLIC_BUCKET=testcase-public \
+./launch_local.sh
 ```
+
+### 動作確認
+
+REST API サーバーが起動します。
+
+- REST API: localhost:12381
+- GET http://localhost:12381/langs
+- GET http://localhost:12381/problems
+
+OpenAPI is defined at:
+
+- restapi/openapi/openapi.yaml
 
 ## Judge Server
 
@@ -61,7 +64,6 @@ Judge serverはGoで書かれたAPIサーバーと通信するクライアント
 ```sh
 sudo apt install postgresql-client libpq-dev python3 python3-dev python3-pip g++ cgroup-tools libcap2-bin
 pip3 install termcolor toml psycopg2 psutil
-pip3 install -r deploy/requirements.txt
 pip3 install -r ../library-checker-problems/requirements.txt
 ```
 
@@ -81,7 +83,7 @@ go run .
 
 ## Local Test
 
-- library-checker-problems / library-chcker-judge は同じディレクトリにcloneしておくこと
+- library-checker-problems / library-checker-judge は同じディレクトリにcloneしておくこと
 
 ### 全体テスト（推奨）
 
@@ -93,7 +95,7 @@ go run .
 
 このスクリプトは以下を実行します：
 - `./launch_local.sh` による環境起動（必要に応じて）
-- Database, API, Storage モジュールのテスト
+- Database, REST API, Storage モジュールのテスト
 - 静的解析（go vet, gofmt）
 - ビルド確認
 - 環境のクリーンアップ（必要に応じて）
@@ -107,7 +109,7 @@ go run .
 実行中のAPIサーバーに対してテストを実行します。
 
 ```sh
-cd api
+cd restapi
 go test . -v
 ```
 
@@ -152,4 +154,4 @@ Library Checkerで稼働するジャッジサーバーのイメージは[packer]
 
 - problems: [library-checker-problems](https://github.com/yosupo06/library-checker-problems)
 - judge: [library-checker-judge](https://github.com/yosupo06/library-checker-judge)
-- frontend: [library-checker-frontend](https://github.com/yosupo06/library-checker-frontend)
+- frontend: [library-checker-judge/frontend](https://github.com/yosupo06/library-checker-judge/tree/master/frontend)

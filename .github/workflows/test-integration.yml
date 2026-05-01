@@ -9,7 +9,6 @@ on:
       - 'compose.yml'
       - 'uploader/**'
       - 'judge/**'
-      - 'api/**'
       - 'restapi/**'
       - 'executor/**'
       - 'langs/**'
@@ -17,7 +16,6 @@ on:
       - 'database/**'
       - 'packer/**'
       - 'Dockerfile.*'
-      - 'run_protoc.sh'
       - '.github/workflows/test-integration.yml'
   pull_request:
     paths:
@@ -25,7 +23,6 @@ on:
       - 'compose.yml'
       - 'uploader/**'
       - 'judge/**'
-      - 'api/**'
       - 'restapi/**'
       - 'executor/**'
       - 'langs/**'
@@ -33,22 +30,18 @@ on:
       - 'database/**'
       - 'packer/**'
       - 'Dockerfile.*'
-      - 'run_protoc.sh'
       - '.github/workflows/test-integration.yml'
 
 jobs:
   integration:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-
-      - name: Generate protobufs
-        run: ./run_protoc.sh
 
       # Use the same docker runtime tuning as judge workflow
       # Install crun and configure Docker daemon for cgroupfs
