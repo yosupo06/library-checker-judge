@@ -140,6 +140,10 @@ type SubmissionListQueryParams = NonNullable<
   paths["/submissions"]["get"]["parameters"]["query"]
 >;
 
+type HackListQueryParams = NonNullable<
+  paths["/hacks"]["get"]["parameters"]["query"]
+>;
+
 const dropUndefined = <T extends Record<string, unknown>>(obj: T): T => {
   return Object.fromEntries(
     Object.entries(obj).filter(([, value]) => value !== undefined),
@@ -189,6 +193,92 @@ export async function fetchSubmissionInfo(
     params: { path: { id } },
   });
   return unwrap<components["schemas"]["SubmissionInfoResponse"]>(r);
+}
+
+// Hacks
+export type HackPayload = {
+  submission: number;
+  testCaseTxt?: Uint8Array;
+  testCaseCpp?: Uint8Array;
+};
+
+export type HackListQuery = {
+  user?: string;
+  status?: string;
+  order?: string;
+  skip?: number;
+  limit?: number;
+};
+
+const encodeBase64 = (value: Uint8Array): string => {
+  const globalBtoa = (
+    globalThis as {
+      btoa?: (data: string) => string;
+    }
+  ).btoa;
+  if (typeof globalBtoa === "function") {
+    let binary = "";
+    value.forEach((b) => {
+      binary += String.fromCharCode(b);
+    });
+    return globalBtoa(binary);
+  }
+  const globalBuffer = (
+    globalThis as {
+      Buffer?: {
+        from: (data: Uint8Array) => { toString: (encoding: string) => string };
+      };
+    }
+  ).Buffer;
+  if (globalBuffer) {
+    return globalBuffer.from(value).toString("base64");
+  }
+  throw new Error("Base64 encoder is not available in this environment");
+};
+
+export async function postHack(
+  payload: HackPayload,
+  idToken?: string | null,
+): Promise<components["schemas"]["HackResponse"]> {
+  const body = dropUndefined<components["schemas"]["CreateHackRequest"]>({
+    submission: payload.submission,
+    test_case_txt: payload.testCaseTxt
+      ? encodeBase64(payload.testCaseTxt)
+      : undefined,
+    test_case_cpp: payload.testCaseCpp
+      ? encodeBase64(payload.testCaseCpp)
+      : undefined,
+  });
+  const r = await client.POST("/hacks", {
+    body,
+    headers: authHeaders(idToken),
+  });
+  return unwrap<components["schemas"]["HackResponse"]>(r);
+}
+
+export async function fetchHackInfo(
+  id: number,
+): Promise<components["schemas"]["HackInfoResponse"]> {
+  const r = await client.GET("/hacks/{id}", {
+    params: { path: { id } },
+  });
+  return unwrap<components["schemas"]["HackInfoResponse"]>(r);
+}
+
+export async function fetchHackList(
+  query: HackListQuery,
+): Promise<components["schemas"]["HackListResponse"]> {
+  const params = dropUndefined<HackListQueryParams>({
+    skip: query.skip,
+    limit: query.limit,
+    user: query.user,
+    status: query.status,
+    order: query.order,
+  });
+  const r = await client.GET("/hacks", {
+    params: { query: params },
+  });
+  return unwrap<components["schemas"]["HackListResponse"]>(r);
 }
 
 export type {};
