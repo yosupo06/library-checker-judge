@@ -27,3 +27,4 @@ utils/utils.test
 terraform/.terraform/
 
 .gocache
+__pycache__/

@@ -76,4 +76,4 @@ jobs:
           if [[ "${{ inputs.dry-run }}" == "true" ]]; then
             ARGS+=(--dry-run)
           fi
-          python3 ./scripts/prune_gce_images.py "${ARGS[@]}"
+          python3 ./tools/prune_gce_images.py "${ARGS[@]}"

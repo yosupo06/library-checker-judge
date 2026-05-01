@@ -5,7 +5,7 @@
 - `judge-image-build.yml` はベースイメージの更新（任意）と、環境ごとのジャッジイメージ生成を常に担当します。
 - ワークフローは Terraform の出力に依存しており、Google Cloud の認証、イメージファミリー、ストレージ/データベース設定を決定します。
 - イメージは `${ENV}-library-checker-project` GCP プロジェクトに保存され、ベース層は `v3-${ENV}-base-image`、ジャッジランタイムは Terraform 出力で指定されるファミリーを利用します。
-- 古いジャッジイメージは `judge-image-prune.yml` が `scripts/prune_gce_images.py` を呼び出して最近のものを保持しつつ古いものを削除します。
+- 古いジャッジイメージは `judge-image-prune.yml` が `tools/prune_gce_images.py` を呼び出して最近のものを保持しつつ古いものを削除します。
 
 ## judge-image-build ワークフロー
 - トリガーモード: `workflow_call` による再利用（`env` 入力が必須）と、`env`（`dev` または `prod`）および `build-base` フラグを受け取る手動の `workflow_dispatch`。
@@ -55,7 +55,7 @@
 
 ## イメージのクリーンアップ
 - `judge-image-prune.yml` は UTC 18:00 に毎日実行され（手動トリガーも可能）、ジャッジイメージを整理します。
-- ワークフローはビルドジョブと同じ認証手順を踏み、その後 `scripts/prune_gce_images.py` を次のパラメータで呼び出します:
+- ワークフローはビルドジョブと同じ認証手順を踏み、その後 `tools/prune_gce_images.py` を次のパラメータで呼び出します:
   - `--family v3-judge-image`
   - `--keep 3`
   - `--min-age-days 14`
