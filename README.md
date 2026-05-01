@@ -64,7 +64,6 @@ Judge serverはGoで書かれたAPIサーバーと通信するクライアント
 ```sh
 sudo apt install postgresql-client libpq-dev python3 python3-dev python3-pip g++ cgroup-tools libcap2-bin
 pip3 install termcolor toml psycopg2 psutil
-pip3 install -r deploy/requirements.txt
 pip3 install -r ../library-checker-problems/requirements.txt
 ```
 
@@ -84,7 +83,7 @@ go run .
 
 ## Local Test
 
-- library-checker-problems / library-chcker-judge は同じディレクトリにcloneしておくこと
+- library-checker-problems / library-checker-judge は同じディレクトリにcloneしておくこと
 
 ### 全体テスト（推奨）
 
@@ -110,7 +109,7 @@ go run .
 実行中のAPIサーバーに対してテストを実行します。
 
 ```sh
-cd api
+cd restapi
 go test . -v
 ```
 

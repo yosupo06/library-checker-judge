@@ -3,7 +3,4 @@
 /dist
 /coverage
 
-/src/proto/*
-!/src/proto/.gitkeep
-
 .firebase/

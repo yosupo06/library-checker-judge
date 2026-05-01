@@ -1,9 +1,3 @@
-*.pb.go
-
-# API
-api/api
-api/api.test
-
 # REST API
 restapi/restapi
 restapi/restapi.test
@@ -16,12 +10,20 @@ integration/integration.test
 judge/judge
 judge/judge.test
 
+executor/executor
+executor/executor.test
+langs/langs
+langs/langs.test
 langs/init/target/
-
-deploy/__init__.py
-deploy/library_checker_pb2.py
-deploy/library_checker_pb2_grpc.py
-
+migrator/migrator
+migrator/migrator.test
+storage/storage
+storage/storage.test
 uploader/uploader
+uploader/uploader.test
+utils/utils
+utils/utils.test
+
+terraform/.terraform/
 
 .gocache
