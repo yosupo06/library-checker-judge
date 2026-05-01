@@ -1,0 +1,12 @@
+service: dev
+runtime: nodejs18
+
+handlers:
+  - url: /(.+\..+)$
+    static_files: dist/\1
+    upload: dist/(.+\..+)$
+  - url: /.*
+    static_files: dist/index.html
+    upload: dist/index.html
+    secure: always   
+    expiration: '0s'
