@@ -155,6 +155,152 @@ func TestPostRejudge_AllowsSubmissionOwner(t *testing.T) {
 	}
 }
 
+func TestGetSubmissionInfo_CanRejudgeOwner(t *testing.T) {
+	db := setupTestDB(t)
+	problem := database.Problem{
+		Name:             "aplusb-rejudge-owner",
+		Title:            "A + B",
+		SourceUrl:        "https://example.com/aplusb",
+		Timelimit:        2000,
+		TestCasesVersion: "v1",
+		Version:          "1",
+		OverallVersion:   "1",
+	}
+	if err := database.SaveProblem(db, problem); err != nil {
+		t.Fatalf("save problem: %v", err)
+	}
+	if err := database.RegisterUser(db, "alice", "uid-owner"); err != nil {
+		t.Fatalf("register user: %v", err)
+	}
+	id, err := database.SaveSubmission(db, database.Submission{
+		ProblemName:      problem.Name,
+		Lang:             "cpp",
+		Status:           "AC",
+		Source:           "#include <bits/stdc++.h>\nint main(){return 0;}",
+		TestCasesVersion: "v1",
+		MaxTime:          1,
+		MaxMemory:        1,
+		UserName:         sql.NullString{String: "alice", Valid: true},
+	})
+	if err != nil {
+		t.Fatalf("save submission: %v", err)
+	}
+
+	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-owner"}}
+	req := httptest.NewRequest(http.MethodGet, "/submissions/1", nil)
+	req.Header.Set("Authorization", "Bearer token")
+	ctx := withHTTPRequest(context.Background(), req)
+	respObj, err := s.GetSubmissionInfo(ctx, restapi.GetSubmissionInfoRequestObject{Id: id})
+	if err != nil {
+		t.Fatalf("GetSubmissionInfo returned error: %v", err)
+	}
+	resp, ok := respObj.(restapi.GetSubmissionInfo200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type %T", respObj)
+	}
+	if !resp.CanRejudge {
+		t.Fatalf("expected owner can_rejudge=true")
+	}
+}
+
+func TestGetSubmissionInfo_CanRejudgeOldAcceptedSubmission(t *testing.T) {
+	db := setupTestDB(t)
+	problem := database.Problem{
+		Name:             "aplusb-rejudge-old-ac",
+		Title:            "A + B",
+		SourceUrl:        "https://example.com/aplusb",
+		Timelimit:        2000,
+		TestCasesVersion: "v2",
+		Version:          "1",
+		OverallVersion:   "1",
+	}
+	if err := database.SaveProblem(db, problem); err != nil {
+		t.Fatalf("save problem: %v", err)
+	}
+	if err := database.RegisterUser(db, "alice", "uid-alice"); err != nil {
+		t.Fatalf("register alice: %v", err)
+	}
+	if err := database.RegisterUser(db, "bob", "uid-bob"); err != nil {
+		t.Fatalf("register bob: %v", err)
+	}
+	id, err := database.SaveSubmission(db, database.Submission{
+		ProblemName:      problem.Name,
+		Lang:             "cpp",
+		Status:           "AC",
+		Source:           "#include <bits/stdc++.h>\nint main(){return 0;}",
+		TestCasesVersion: "v1",
+		MaxTime:          1,
+		MaxMemory:        1,
+		UserName:         sql.NullString{String: "alice", Valid: true},
+	})
+	if err != nil {
+		t.Fatalf("save submission: %v", err)
+	}
+
+	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-bob"}}
+	req := httptest.NewRequest(http.MethodGet, "/submissions/1", nil)
+	req.Header.Set("Authorization", "Bearer token")
+	ctx := withHTTPRequest(context.Background(), req)
+	respObj, err := s.GetSubmissionInfo(ctx, restapi.GetSubmissionInfoRequestObject{Id: id})
+	if err != nil {
+		t.Fatalf("GetSubmissionInfo returned error: %v", err)
+	}
+	resp, ok := respObj.(restapi.GetSubmissionInfo200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type %T", respObj)
+	}
+	if !resp.CanRejudge {
+		t.Fatalf("expected old AC submission can_rejudge=true for non-owner")
+	}
+}
+
+func TestPostRejudge_RejectsNonOwnerWithoutEligibility(t *testing.T) {
+	db := setupTestDB(t)
+	problem := database.Problem{
+		Name:             "aplusb-rejudge-forbidden",
+		Title:            "A + B",
+		SourceUrl:        "https://example.com/aplusb",
+		Timelimit:        2000,
+		TestCasesVersion: "v1",
+		Version:          "1",
+		OverallVersion:   "1",
+	}
+	if err := database.SaveProblem(db, problem); err != nil {
+		t.Fatalf("save problem: %v", err)
+	}
+	if err := database.RegisterUser(db, "alice", "uid-alice"); err != nil {
+		t.Fatalf("register alice: %v", err)
+	}
+	if err := database.RegisterUser(db, "bob", "uid-bob"); err != nil {
+		t.Fatalf("register bob: %v", err)
+	}
+	id, err := database.SaveSubmission(db, database.Submission{
+		ProblemName:      problem.Name,
+		Lang:             "cpp",
+		Status:           "AC",
+		Source:           "#include <bits/stdc++.h>\nint main(){return 0;}",
+		TestCasesVersion: "v1",
+		MaxTime:          1,
+		MaxMemory:        1,
+		UserName:         sql.NullString{String: "alice", Valid: true},
+	})
+	if err != nil {
+		t.Fatalf("save submission: %v", err)
+	}
+
+	s := &server{db: db, authClient: fakeAuthClient{uid: "uid-bob"}}
+	req := httptest.NewRequest(http.MethodPost, "/submissions/1/rejudge", nil)
+	req.Header.Set("Authorization", "Bearer token")
+	ctx := withHTTPRequest(context.Background(), req)
+	_, err = s.PostRejudge(ctx, restapi.PostRejudgeRequestObject{Id: id})
+	if err == nil {
+		t.Fatalf("expected forbidden error")
+	}
+	if httpErr, ok := getHTTPError(err); !ok || httpErr.Status != http.StatusForbidden {
+		t.Fatalf("expected 403, got %v", err)
+	}
+}
+
 func TestPostRejudge_RejectsAnonymous(t *testing.T) {
 	db := setupTestDB(t)
 	s := &server{db: db}
