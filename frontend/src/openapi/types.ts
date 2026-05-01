@@ -5,77 +5,281 @@
 
 export interface paths {
   "/ranking": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get ranking */
     get: operations["getRanking"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/monitoring": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get monitoring data */
     get: operations["getMonitoring"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/problems": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get problems */
     get: operations["getProblems"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/problems/{name}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get problem info */
     get: operations["getProblemInfo"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/langs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get language list */
     get: operations["getLangList"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get problem categories */
     get: operations["getProblemCategories"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
     /** Submit a solution */
     post: operations["postSubmit"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/submissions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get submissions list */
     get: operations["getSubmissionList"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/submissions/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get submission info */
     get: operations["getSubmissionInfo"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/submissions/{id}/rejudge": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
     /** Rejudge a submission */
     post: operations["postRejudge"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/hacks": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** List hacks */
     get: operations["getHackList"];
+    put?: never;
     /** Submit hack test case */
     post: operations["postHack"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/hacks/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get hack info */
     get: operations["getHackInfo"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/auth/register": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
     /** Register user */
     post: operations["postRegister"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/auth/current_user": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get current user info */
     get: operations["getCurrentUserInfo"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
     /** Change current user info */
     patch: operations["patchCurrentUserInfo"];
+    trace?: never;
   };
   "/users/{name}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get user info */
     get: operations["getUserInfo"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   "/users/{name}/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get user solved statistics */
     get: operations["getUserStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
 }
-
 export type webhooks = Record<string, never>;
-
 export interface components {
   schemas: {
     HackOverview: {
@@ -275,17 +479,17 @@ export interface components {
   responses: never;
   parameters: {
     /** @description Number of ranking records to skip before collecting results. */
-    RankingSkip?: number;
+    RankingSkip: number;
     /** @description Maximum number of ranking records to return (1-1000). */
-    RankingLimit?: number;
+    RankingLimit: number;
     /** @description Number of submissions to skip before collecting results. */
-    SubmissionSkip?: number;
+    SubmissionSkip: number;
     /** @description Maximum number of submissions to return (1-1000). */
-    SubmissionLimit?: number;
+    SubmissionLimit: number;
     /** @description Number of hacks to skip before collecting results. */
-    HackSkip?: number;
+    HackSkip: number;
     /** @description Maximum number of hacks to return (1-1000). */
-    HackLimit?: number;
+    HackLimit: number;
     /** @description Submission identifier. */
     SubmissionId: number;
     /** @description Hack identifier. */
@@ -299,91 +503,143 @@ export interface components {
   headers: never;
   pathItems: never;
 }
-
 export type $defs = Record<string, never>;
-
-export type external = Record<string, never>;
-
 export interface operations {
-  /** Get ranking */
   getRanking: {
     parameters: {
       query?: {
+        /** @description Number of ranking records to skip before collecting results. */
         skip?: components["parameters"]["RankingSkip"];
+        /** @description Maximum number of ranking records to return (1-1000). */
         limit?: components["parameters"]["RankingLimit"];
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["RankingResponse"];
         };
       };
     };
   };
-  /** Get monitoring data */
   getMonitoring: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["MonitoringResponse"];
         };
       };
     };
   };
-  /** Get problems */
   getProblems: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["ProblemListResponse"];
         };
       };
     };
   };
-  /** Get problem info */
   getProblemInfo: {
     parameters: {
+      query?: never;
+      header?: never;
       path: {
+        /** @description Problem identifier. */
         name: components["parameters"]["ProblemName"];
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["ProblemInfoResponse"];
         };
       };
     };
   };
-  /** Get language list */
   getLangList: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["LangListResponse"];
         };
       };
     };
   };
-  /** Get problem categories */
   getProblemCategories: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["ProblemCategoriesResponse"];
         };
       };
     };
   };
-  /** Submit a solution */
   postSubmit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     requestBody: {
       content: {
         "application/json": components["schemas"]["SubmitRequest"];
@@ -392,17 +648,21 @@ export interface operations {
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["SubmitResponse"];
         };
       };
     };
   };
-  /** Get submissions list */
   getSubmissionList: {
     parameters: {
       query?: {
+        /** @description Number of submissions to skip before collecting results. */
         skip?: components["parameters"]["SubmissionSkip"];
+        /** @description Maximum number of submissions to return (1-1000). */
         limit?: components["parameters"]["SubmissionLimit"];
         problem?: components["schemas"]["ProblemName"];
         status?: string;
@@ -412,70 +672,104 @@ export interface operations {
         lang?: string;
         order?: components["schemas"]["SubmissionOrder"];
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["SubmissionListResponse"];
         };
       };
     };
   };
-  /** Get submission info */
   getSubmissionInfo: {
     parameters: {
+      query?: never;
+      header?: never;
       path: {
+        /** @description Submission identifier. */
         id: components["parameters"]["SubmissionId"];
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["SubmissionInfoResponse"];
         };
       };
     };
   };
-  /** Rejudge a submission */
   postRejudge: {
     parameters: {
+      query?: never;
+      header?: never;
       path: {
+        /** @description Submission identifier. */
         id: components["parameters"]["SubmissionId"];
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["RejudgeResponse"];
         };
       };
     };
   };
-  /** List hacks */
   getHackList: {
     parameters: {
       query?: {
+        /** @description Number of hacks to skip before collecting results. */
         skip?: components["parameters"]["HackSkip"];
+        /** @description Maximum number of hacks to return (1-1000). */
         limit?: components["parameters"]["HackLimit"];
         user?: string;
         status?: string;
         order?: string;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["HackListResponse"];
         };
       };
     };
   };
-  /** Submit hack test case */
   postHack: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     requestBody: {
       content: {
         "application/json": components["schemas"]["CreateHackRequest"];
@@ -484,30 +778,45 @@ export interface operations {
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["HackResponse"];
         };
       };
     };
   };
-  /** Get hack info */
   getHackInfo: {
     parameters: {
+      query?: never;
+      header?: never;
       path: {
+        /** @description Hack identifier. */
         id: components["parameters"]["HackId"];
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["HackInfoResponse"];
         };
       };
     };
   };
-  /** Register user */
   postRegister: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     requestBody: {
       content: {
         "application/json": components["schemas"]["RegisterRequest"];
@@ -516,25 +825,42 @@ export interface operations {
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["RegisterResponse"];
         };
       };
     };
   };
-  /** Get current user info */
   getCurrentUserInfo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["CurrentUserInfoResponse"];
         };
       };
     };
   };
-  /** Change current user info */
   patchCurrentUserInfo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     requestBody: {
       content: {
         "application/json": components["schemas"]["ChangeCurrentUserInfoRequest"];
@@ -543,38 +869,55 @@ export interface operations {
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["ChangeCurrentUserInfoResponse"];
         };
       };
     };
   };
-  /** Get user info */
   getUserInfo: {
     parameters: {
+      query?: never;
+      header?: never;
       path: {
+        /** @description User identifier. */
         name: components["parameters"]["UserNamePath"];
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["UserInfoResponse"];
         };
       };
     };
   };
-  /** Get user solved statistics */
   getUserStatistics: {
     parameters: {
+      query?: never;
+      header?: never;
       path: {
+        /** @description User identifier. */
         name: components["parameters"]["UserNamePath"];
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           "application/json": components["schemas"]["UserSolvedStatisticsResponse"];
         };
