@@ -1,25 +1,6 @@
-data "google_compute_image" "debian" {
-  family  = "debian-12"
-  project = "debian-cloud"
-}
-
-resource "google_compute_image" "judge_dummy" {
-  name   = "v3-judge-image-0000"
-  family = local.judge_image_family
-
-  source_image = data.google_compute_image.debian.id
-
-  // Seed the family for the very first apply; keep the resolved Debian image pinned
-  lifecycle {
-    ignore_changes = [source_image]
-  }
-}
-
-
 data "google_compute_image" "judge" {
   family      = local.judge_image_family
   most_recent = true
-  depends_on  = [google_compute_image.judge_dummy]
 }
 
 resource "google_compute_instance_template" "judge" {
