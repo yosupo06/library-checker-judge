@@ -25,6 +25,7 @@ cloud.google.com/go/channel v1.17.9/go.mod h1:h9emIJm+06sK1FxqC3etsWdG87tg92T24w
 cloud.google.com/go/cloudbuild v1.16.3/go.mod h1:KJYZAwTUaDKDdEHwLj/EmnpmwLkMuq+fGnBEHA1LlE4=
 cloud.google.com/go/clouddms v1.7.8/go.mod h1:KQpBMxH99ZTPK4LgXkYUntzRQ5hcNkjpGRbNSRzW9Nk=
 cloud.google.com/go/cloudtasks v1.12.10/go.mod h1:OHJzRAdE+7H00cdsINhb21ugVLDgk3Uh4r0holCB5XQ=
+cloud.google.com/go/compute v1.27.0 h1:EGawh2RUnfHT5g8f/FX3Ds6KZuIBC77hZoDrBvEZw94=
 cloud.google.com/go/compute v1.27.2 h1:5cE5hdrwJV/92ravlwIFRGnyH9CpLGhh4N0ZDVTU+BA=
 cloud.google.com/go/compute v1.27.2/go.mod h1:YQuHkNEwP3bIz4LBYQqf4DIMfFtTDtnEgnwG0mJQQ9I=
 cloud.google.com/go/compute/metadata v0.4.0/go.mod h1:SIQh1Kkb4ZJ8zJ874fqVkslA29PRXuleyj6vOzlbK7M=
