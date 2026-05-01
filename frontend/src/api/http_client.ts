@@ -39,6 +39,13 @@ export async function fetchRanking(skip = 0, limit = 100) {
   return unwrap<components["schemas"]["RankingResponse"]>(r);
 }
 
+export async function fetchMonitoring(): Promise<
+  components["schemas"]["MonitoringResponse"]
+> {
+  const r = await client.GET("/monitoring");
+  return unwrap<components["schemas"]["MonitoringResponse"]>(r);
+}
+
 export async function fetchProblemList(): Promise<
   components["schemas"]["ProblemListResponse"]
 > {
@@ -193,6 +200,17 @@ export async function fetchSubmissionInfo(
     params: { path: { id } },
   });
   return unwrap<components["schemas"]["SubmissionInfoResponse"]>(r);
+}
+
+export async function postRejudge(
+  id: number,
+  idToken?: string | null,
+): Promise<components["schemas"]["RejudgeResponse"]> {
+  const r = await client.POST("/submissions/{id}/rejudge", {
+    params: { path: { id } },
+    headers: authHeaders(idToken),
+  });
+  return unwrap<components["schemas"]["RejudgeResponse"]>(r);
 }
 
 // Hacks
