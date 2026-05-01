@@ -96,69 +96,6 @@ func TestPatchCurrentUserInfo_Succeeds(t *testing.T) {
 	}
 }
 
-func TestPatchUserInfo_SucceedsForCurrentUser(t *testing.T) {
-	db := setupTestDB(t)
-	if err := database.RegisterUser(db, "alice", "uid-123"); err != nil {
-		t.Fatalf("register user: %v", err)
-	}
-	var captured database.User
-	called := false
-	s := &server{
-		db:         db,
-		authClient: fakeAuthClient{uid: "uid-123"},
-		updateUserFn: func(_ *gorm.DB, u database.User) error {
-			called = true
-			captured = u
-			return nil
-		},
-	}
-
-	body := `{"user":{"name":"alice","library_url":"https://example.com","is_developer":false}}`
-	req := httptest.NewRequest(http.MethodPatch, "/users/alice", bytes.NewReader([]byte(body)))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer token")
-	w := httptest.NewRecorder()
-	r := chi.NewRouter()
-	_ = restapi.HandlerFromMux(newRESTHandler(s), r)
-	r.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("PATCH /users/alice status=%d body=%s", w.Code, w.Body.String())
-	}
-	if !called {
-		t.Fatalf("updateUser was not invoked")
-	}
-	if captured.UID != "uid-123" {
-		t.Fatalf("expected UID uid-123, got %q", captured.UID)
-	}
-	if captured.LibraryURL != "https://example.com" {
-		t.Fatalf("library url not propagated: %q", captured.LibraryURL)
-	}
-}
-
-func TestPatchUserInfo_RejectsOtherUser(t *testing.T) {
-	db := setupTestDB(t)
-	if err := database.RegisterUser(db, "alice", "uid-123"); err != nil {
-		t.Fatalf("register alice: %v", err)
-	}
-	if err := database.RegisterUser(db, "bob", "uid-456"); err != nil {
-		t.Fatalf("register bob: %v", err)
-	}
-
-	body := `{"user":{"name":"bob","library_url":"https://example.com","is_developer":false}}`
-	req := httptest.NewRequest(http.MethodPatch, "/users/bob", bytes.NewReader([]byte(body)))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer token")
-	w := httptest.NewRecorder()
-	r := chi.NewRouter()
-	_ = restapi.HandlerFromMux(newRESTHandler(&server{db: db, authClient: fakeAuthClient{uid: "uid-123"}}), r)
-	r.ServeHTTP(w, req)
-
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("expected 403, got %d body=%s", w.Code, w.Body.String())
-	}
-}
-
 func TestGetUserInfo_WithoutStatistics(t *testing.T) {
 	db := setupTestDB(t)
 	if err := database.RegisterUser(db, "alice", "uid-123"); err != nil {

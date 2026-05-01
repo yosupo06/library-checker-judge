@@ -284,26 +284,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserInfoResponse'
-    patch:
-      summary: Change user info
-      operationId: patchUserInfo
-      security:
-        - firebaseAuth: []
-      parameters:
-        - $ref: '#/components/parameters/UserNamePath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeUserInfoRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChangeUserInfoResponse'
   /users/{name}/statistics:
     get:
       summary: Get user solved statistics
@@ -655,17 +635,6 @@ components:
           $ref: '#/components/schemas/User'
       required: [user]
     ChangeCurrentUserInfoResponse:
-      type: object
-      additionalProperties: false
-      properties: {}
-    ChangeUserInfoRequest:
-      type: object
-      additionalProperties: false
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-      required: [user]
-    ChangeUserInfoResponse:
       type: object
       additionalProperties: false
       properties: {}
