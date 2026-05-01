@@ -20,8 +20,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - run: ./run_protoc.sh
-
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
