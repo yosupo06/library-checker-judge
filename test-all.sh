@@ -52,7 +52,7 @@ for module in restapi database storage; do
 done
 
 echo "Running static analysis..."
-for module in restapi database storage uploader judge executor integration langs migrator utils cloudrun/taskqueue-metrics; do
+for module in restapi database storage uploader judge executor integration langs migrator tools/rejudge cloudrun/taskqueue-metrics; do
     if [[ -d "$module" ]]; then
         (cd "$module" && go vet ./...)
     fi
