@@ -1,12 +1,19 @@
-name: Prod-Problems-Deploy
+name: Prod-Frontend-Deploy
 
 on:
-  repository_dispatch:
-    types: [prod-frontend-deploy]
+  push:
+    branches:
+      - master
+    paths:
+      - 'frontend/**'
+      - 'api/proto/**'
+      - 'restapi/openapi/**'
+      - '.github/workflows/frontend-deploy.yml'
+      - '.github/workflows/prod-frontend-deploy.yml'
   workflow_call:
 
 jobs:
-  problems-deploy:
+  frontend-deploy:
     uses: ./.github/workflows/frontend-deploy.yml
     secrets: inherit
     with:

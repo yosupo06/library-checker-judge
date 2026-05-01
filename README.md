@@ -162,4 +162,4 @@ Library Checkerで稼働するジャッジサーバーのイメージは[packer]
 
 - problems: [library-checker-problems](https://github.com/yosupo06/library-checker-problems)
 - judge: [library-checker-judge](https://github.com/yosupo06/library-checker-judge)
-- frontend: [library-checker-frontend](https://github.com/yosupo06/library-checker-frontend)
+- frontend: [library-checker-judge/frontend](https://github.com/yosupo06/library-checker-judge/tree/master/frontend)
