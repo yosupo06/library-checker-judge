@@ -6,8 +6,6 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
-import { LibraryCheckerServiceClient } from "../proto/library_checker.client";
-import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 import {
   ChangeCurrentUserInfoRequest,
   CurrentUserInfoResponse,
@@ -18,6 +16,7 @@ import {
   HackOverview,
   MonitoringResponse,
   RejudgeRequest,
+  RejudgeResponse,
   SubmissionCaseResult,
   SubmissionInfoResponse,
   SubmissionListResponse,
@@ -45,6 +44,8 @@ import {
   fetchHackInfo,
   fetchHackList,
   postHack,
+  fetchMonitoring,
+  postRejudge,
 } from "./http_client";
 import type { components as OpenApi } from "../openapi/types";
 import { Timestamp as TimestampMessage } from "../proto/google/protobuf/timestamp";
@@ -102,12 +103,6 @@ export const useChangeCurrentUserInfoMutation = () => {
   });
 };
 
-const transport = new GrpcWebFetchTransport({
-  baseUrl: import.meta.env.VITE_API_URL,
-});
-const client = new LibraryCheckerServiceClient(transport);
-export default client;
-
 export const useLangList = (): UseQueryResult<
   OpenApi["schemas"]["LangListResponse"]
 > =>
@@ -130,7 +125,10 @@ export const useRanking = (
 export const useMonitoring = (): UseQueryResult<MonitoringResponse> =>
   useQuery({
     queryKey: ["monitoring"],
-    queryFn: async () => await client.monitoring({}, {}).response,
+    queryFn: async () => {
+      const res = await fetchMonitoring();
+      return toMonitoringProto(res);
+    },
     refetchInterval: 30000, // Refetch every 30 seconds for real-time monitoring
   });
 
@@ -277,12 +275,26 @@ export const useSubmitMutation = (
 };
 
 export const useRejudgeMutation = () => {
-  const bearer = useBearer();
-  return useMutation({
-    mutationFn: async (req: RejudgeRequest) =>
-      await client.rejudge(req, bearer.data ?? undefined).response,
+  const idToken = useIdToken();
+  return useMutation<RejudgeResponse, Error, RejudgeRequest>({
+    mutationFn: async (req: RejudgeRequest) => {
+      await postRejudge(req.id, idToken.data ?? undefined);
+      return {};
+    },
   });
 };
+
+const toMonitoringProto = (
+  res: OpenApi["schemas"]["MonitoringResponse"],
+): MonitoringResponse => ({
+  totalUsers: res.total_users,
+  totalSubmissions: res.total_submissions,
+  taskQueue: {
+    pendingTasks: res.task_queue.pending_tasks,
+    runningTasks: res.task_queue.running_tasks,
+    totalTasks: res.task_queue.total_tasks,
+  },
+});
 
 const toSubmissionInfoProto = (
   res: OpenApi["schemas"]["SubmissionInfoResponse"],
@@ -376,23 +388,6 @@ const toSolvedStatusMap = (
     }
   });
   return mapped;
-};
-
-const useBearer = () => {
-  const idToken = useIdToken();
-  return useQuery({
-    queryKey: ["api", "bearer", idToken.data],
-    queryFn: () => {
-      return idToken.data
-        ? {
-            meta: {
-              authorization: "bearer " + idToken.data,
-            },
-          }
-        : null;
-    },
-    enabled: !idToken.isLoading,
-  });
 };
 
 export const useHackMutation = (

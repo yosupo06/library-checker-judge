@@ -8,6 +8,10 @@ export interface paths {
     /** Get ranking */
     get: operations["getRanking"];
   };
+  "/monitoring": {
+    /** Get monitoring data */
+    get: operations["getMonitoring"];
+  };
   "/problems": {
     /** Get problems */
     get: operations["getProblems"];
@@ -35,6 +39,10 @@ export interface paths {
   "/submissions/{id}": {
     /** Get submission info */
     get: operations["getSubmissionInfo"];
+  };
+  "/submissions/{id}/rejudge": {
+    /** Rejudge a submission */
+    post: operations["postRejudge"];
   };
   "/hacks": {
     /** List hacks */
@@ -206,6 +214,7 @@ export interface components {
       /** Format: int32 */
       id: number;
     };
+    RejudgeResponse: Record<string, never>;
     SubmissionOverview: {
       /** Format: int32 */
       id: number;
@@ -246,6 +255,21 @@ export interface components {
       compile_error?: string;
       can_rejudge: boolean;
       case_results?: components["schemas"]["SubmissionCaseResult"][];
+    };
+    TaskQueueInfo: {
+      /** Format: int32 */
+      pending_tasks: number;
+      /** Format: int32 */
+      running_tasks: number;
+      /** Format: int32 */
+      total_tasks: number;
+    };
+    MonitoringResponse: {
+      /** Format: int32 */
+      total_users: number;
+      /** Format: int32 */
+      total_submissions: number;
+      task_queue: components["schemas"]["TaskQueueInfo"];
     };
   };
   responses: never;
@@ -294,6 +318,17 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["RankingResponse"];
+        };
+      };
+    };
+  };
+  /** Get monitoring data */
+  getMonitoring: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["MonitoringResponse"];
         };
       };
     };
@@ -399,6 +434,22 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["SubmissionInfoResponse"];
+        };
+      };
+    };
+  };
+  /** Rejudge a submission */
+  postRejudge: {
+    parameters: {
+      path: {
+        id: components["parameters"]["SubmissionId"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["RejudgeResponse"];
         };
       };
     };
