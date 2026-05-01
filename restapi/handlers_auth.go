@@ -110,3 +110,11 @@ func fetchUserStatisticsREST(db *gorm.DB, userName string) (map[string]restapi.S
 	}
 	return stats, nil
 }
+
+func (s *server) currentUserFromContext(ctx context.Context) (*database.User, error) {
+	uid, err := s.uidFromContext(ctx)
+	if err != nil || uid == "" {
+		return nil, err
+	}
+	return database.FetchUserFromUID(s.db, uid)
+}

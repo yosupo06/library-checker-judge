@@ -104,6 +104,13 @@ type LangListResponse struct {
 // LibraryUrl Optional URL for the user's library profile. Use an empty string to keep it unset.
 type LibraryUrl = string
 
+// MonitoringResponse defines model for MonitoringResponse.
+type MonitoringResponse struct {
+	TaskQueue        TaskQueueInfo `json:"task_queue"`
+	TotalSubmissions int32         `json:"total_submissions"`
+	TotalUsers       int32         `json:"total_users"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Name Problem identifier consisting of lowercase letters, digits, or underscores.
@@ -156,6 +163,9 @@ type RegisterRequest struct {
 
 // RegisterResponse defines model for RegisterResponse.
 type RegisterResponse = map[string]interface{}
+
+// RejudgeResponse defines model for RejudgeResponse.
+type RejudgeResponse = map[string]interface{}
 
 // SolvedStatus Solved status for a problem.
 type SolvedStatus string
@@ -217,6 +227,13 @@ type SubmitRequest struct {
 // SubmitResponse defines model for SubmitResponse.
 type SubmitResponse struct {
 	Id int32 `json:"id"`
+}
+
+// TaskQueueInfo defines model for TaskQueueInfo.
+type TaskQueueInfo struct {
+	PendingTasks int32 `json:"pending_tasks"`
+	RunningTasks int32 `json:"running_tasks"`
+	TotalTasks   int32 `json:"total_tasks"`
 }
 
 // User defines model for User.
@@ -353,6 +370,9 @@ type ServerInterface interface {
 	// Get language list
 	// (GET /langs)
 	GetLangList(w http.ResponseWriter, r *http.Request)
+	// Get monitoring data
+	// (GET /monitoring)
+	GetMonitoring(w http.ResponseWriter, r *http.Request)
 	// Get problems
 	// (GET /problems)
 	GetProblems(w http.ResponseWriter, r *http.Request)
@@ -368,6 +388,9 @@ type ServerInterface interface {
 	// Get submission info
 	// (GET /submissions/{id})
 	GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id SubmissionId)
+	// Rejudge a submission
+	// (POST /submissions/{id}/rejudge)
+	PostRejudge(w http.ResponseWriter, r *http.Request, id SubmissionId)
 	// Submit a solution
 	// (POST /submit)
 	PostSubmit(w http.ResponseWriter, r *http.Request)
@@ -431,6 +454,12 @@ func (_ Unimplemented) GetLangList(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Get monitoring data
+// (GET /monitoring)
+func (_ Unimplemented) GetMonitoring(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Get problems
 // (GET /problems)
 func (_ Unimplemented) GetProblems(w http.ResponseWriter, r *http.Request) {
@@ -458,6 +487,12 @@ func (_ Unimplemented) GetSubmissionList(w http.ResponseWriter, r *http.Request,
 // Get submission info
 // (GET /submissions/{id})
 func (_ Unimplemented) GetSubmissionInfo(w http.ResponseWriter, r *http.Request, id SubmissionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Rejudge a submission
+// (POST /submissions/{id}/rejudge)
+func (_ Unimplemented) PostRejudge(w http.ResponseWriter, r *http.Request, id SubmissionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -674,6 +709,20 @@ func (siw *ServerInterfaceWrapper) GetLangList(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// GetMonitoring operation middleware
+func (siw *ServerInterfaceWrapper) GetMonitoring(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMonitoring(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetProblems operation middleware
 func (siw *ServerInterfaceWrapper) GetProblems(w http.ResponseWriter, r *http.Request) {
 
@@ -855,6 +904,37 @@ func (siw *ServerInterfaceWrapper) GetSubmissionInfo(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSubmissionInfo(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostRejudge operation middleware
+func (siw *ServerInterfaceWrapper) PostRejudge(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id SubmissionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, FirebaseAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostRejudge(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1072,6 +1152,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/langs", wrapper.GetLangList)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/monitoring", wrapper.GetMonitoring)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/problems", wrapper.GetProblems)
 	})
 	r.Group(func(r chi.Router) {
@@ -1085,6 +1168,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/submissions/{id}", wrapper.GetSubmissionInfo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/submissions/{id}/rejudge", wrapper.PostRejudge)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/submit", wrapper.PostSubmit)
@@ -1232,6 +1318,22 @@ func (response GetLangList200JSONResponse) VisitGetLangListResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetMonitoringRequestObject struct {
+}
+
+type GetMonitoringResponseObject interface {
+	VisitGetMonitoringResponse(w http.ResponseWriter) error
+}
+
+type GetMonitoring200JSONResponse MonitoringResponse
+
+func (response GetMonitoring200JSONResponse) VisitGetMonitoringResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetProblemsRequestObject struct {
 }
 
@@ -1316,6 +1418,23 @@ func (response GetSubmissionInfo200JSONResponse) VisitGetSubmissionInfoResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type PostRejudgeRequestObject struct {
+	Id SubmissionId `json:"id"`
+}
+
+type PostRejudgeResponseObject interface {
+	VisitPostRejudgeResponse(w http.ResponseWriter) error
+}
+
+type PostRejudge200JSONResponse RejudgeResponse
+
+func (response PostRejudge200JSONResponse) VisitPostRejudgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type PostSubmitRequestObject struct {
 	Body *PostSubmitJSONRequestBody
 }
@@ -1393,6 +1512,9 @@ type StrictServerInterface interface {
 	// Get language list
 	// (GET /langs)
 	GetLangList(ctx context.Context, request GetLangListRequestObject) (GetLangListResponseObject, error)
+	// Get monitoring data
+	// (GET /monitoring)
+	GetMonitoring(ctx context.Context, request GetMonitoringRequestObject) (GetMonitoringResponseObject, error)
 	// Get problems
 	// (GET /problems)
 	GetProblems(ctx context.Context, request GetProblemsRequestObject) (GetProblemsResponseObject, error)
@@ -1408,6 +1530,9 @@ type StrictServerInterface interface {
 	// Get submission info
 	// (GET /submissions/{id})
 	GetSubmissionInfo(ctx context.Context, request GetSubmissionInfoRequestObject) (GetSubmissionInfoResponseObject, error)
+	// Rejudge a submission
+	// (POST /submissions/{id}/rejudge)
+	PostRejudge(ctx context.Context, request PostRejudgeRequestObject) (PostRejudgeResponseObject, error)
 	// Submit a solution
 	// (POST /submit)
 	PostSubmit(ctx context.Context, request PostSubmitRequestObject) (PostSubmitResponseObject, error)
@@ -1665,6 +1790,30 @@ func (sh *strictHandler) GetLangList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetMonitoring operation middleware
+func (sh *strictHandler) GetMonitoring(w http.ResponseWriter, r *http.Request) {
+	var request GetMonitoringRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMonitoring(ctx, request.(GetMonitoringRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMonitoring")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMonitoringResponseObject); ok {
+		if err := validResponse.VisitGetMonitoringResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetProblems operation middleware
 func (sh *strictHandler) GetProblems(w http.ResponseWriter, r *http.Request) {
 	var request GetProblemsRequestObject
@@ -1793,6 +1942,32 @@ func (sh *strictHandler) GetSubmissionInfo(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// PostRejudge operation middleware
+func (sh *strictHandler) PostRejudge(w http.ResponseWriter, r *http.Request, id SubmissionId) {
+	var request PostRejudgeRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostRejudge(ctx, request.(PostRejudgeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostRejudge")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostRejudgeResponseObject); ok {
+		if err := validResponse.VisitPostRejudgeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // PostSubmit operation middleware
 func (sh *strictHandler) PostSubmit(w http.ResponseWriter, r *http.Request) {
 	var request PostSubmitRequestObject
@@ -1879,46 +2054,48 @@ func (sh *strictHandler) GetUserStatistics(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xbe2/cuBH/KgR7QBOc7F0nadrufz4jbdP6LoYdo0ANV+BKs7uMJVIhKV+2xn73gqQe",
-	"1HMledfwX3fW8jHzm/cM84QDHiecAVMSL55wQgSJQYEwf/2DBA+fQ/1/IchA0ERRzvDCfEc0BKboioI4",
-	"xR6m+ntC1AZ7mJEY8ALTEHtYwPeUCgjxQokUPCyDDcREH7niIiZKr2Pq/Tvs4ZgyGqcxXsw9rLYJ2J9g",
-	"DQLvdp659JLGVDXp+ZX80DsRS+MlCMRXaEOCB4kURwJUKhh6c3ZyNp/P3xakfk9BbEtaI3OwS14IK5JG",
-	"Ci/O5nOvhVh7pfl57tB+1kn7zQNNmqT/1iRZPtAELWHFBaCARxEEirI1EiDTSMkuDvSudgZaye/H+krw",
-	"ZQTxb+boOsnZj/sVwPynTwV+ErDCC/yHWamEM/urnLkkaJKuCXugbD1YA4RdjwQEXISvSBcyRvapQwv9",
-	"r0AxbtJlTKWknLX5hfLXF/cO5dWDNUQWW16RdpR87FOQGvmvQDluJQhtr1da0A3K9a9H9hn6CmYdxi7f",
-	"YwLZxYawNVykQgBTetVntuLX8D0FaVSFhCHVZJLoSvAEhKIg8WJFIgkeTpxPTziVIIbQYRAp2bizG+8L",
-	"4PjyGwQK77wu4mTCmYS91DWPE0AU6IjjMFjloVSd0abmYQVS+QGR4AdJUtm/3Cotu2yLVIKydXWH+qEG",
-	"7KgB51DbCt9E4J4h1gYNJlGqXV49/1sarsHnqUpSNQg0/gjikcLv+4jSV3/J12qtVyEIMVIuLyTJgqf7",
-	"DgwvqVTdGAY8ZapVY5taarIpvZYqiOVYELPziBBk2+DCHu1l5HSx8sWRX5UNvd9X1KZWBSshUXBivrbg",
-	"TsMJhhpDzMW2vvHjh1a8pCIqNeQ1Li/tz59ER4PVVcSJKqmwEVmv1Ebosyzp7Fclkz5UKSuY8ByIu8TT",
-	"rWUTeGzS1nbtJWHrkV7J0tKQSAdEHn4EkXv1AfBlsTbf1EVz3ShH0B8Rth5uhQagfdZnj2yllS4FEdtb",
-	"ETWTjy+JpRjdXl+iFRdIbQBpdfujRJHdhxLBVzSCU3QrARGGIE7UFlkAdYb1AJAgqlDKJKhTm9ldAlvr",
-	"ZOfdfN5itlkNMxK0XLqDqyNtYioaYDSZwO3qNgizYy+IgjUXFOREuQfFAYOFX716u1cPnCv2c7IdSX9i",
-	"d4+mvpBHhfLB8rHLvPL6Hs6ekevoMEyiyO/2Fh6WPBUB+GmbMX36oXSeHSEBKxDAAihMKqMcaU8MMTBj",
-	"J61phM4iZC8J2n/7UV7NNaJHi0MuI0kX4CNcZC4MB4kKTeVRbQx5DZR7ZPkMDztVU/fa1xAdHNofQgFn",
-	"kkpTkPIVivjvIDRcKAKlQEgPhXRNlfQQFyhlIQgZcAGy5mTPsvq5+NvTxaPWRbzA/70jJ/+bn/zVv//5",
-	"pzady9ouUx1aZ+rZn/toO9CMB8MFpKuMm3LbPjk5N/SlpNewplKBmFb0DglJTvHdEnX6aZpa697w6BHC",
-	"myJ3rbWjzK/IZoXGRZHcQWnNAqbFdocvz79+uvnqn19gD59fOJSWylN2ZS6IhGvTU2mpT4hs9znBBoIH",
-	"ELr8G1RmHSxzH1ELDkzSG1FYgpt4ZwVMxkCb0J0OYm/BHBDmCzBls8PbkvMICDOg6jI0a28NNq5WQbYE",
-	"bL2VRuCDEFwctF4vKahU7SbI7A9KxS3FFq+CVD/ihyuvnebjBOwHl9ruNX3ezTlahLaRUzQy8Ykpduqu",
-	"QdhopJcb1+Bc5ToHu/nnWi3Z5hm6C/6OirKJKpV+RFTmnpsaH2UF5PP8ReYB/c4iMl/QnUMNaxaMa3Ec",
-	"r0tQYbjOXoaqi/14d6amRdVcnk6K8/FDPcPpEs/IiqR0MHVD0N9RwEPQNa7xIuhNTH6gM/Qr/eVtIwX7",
-	"8Jc//fnjXiJVBP4D48FDFvLqytyebLpezYDTh/ikPO5ozZ3brH88hhbph/AIkf7WYfC2M5FXYb29k7L5",
-	"4TSIpudr1cu9KrFdALxU/33QWMXk0UV+aFPkicRJc4wfk6R7457Y5yaqzQlCPeyV93VyViksXqCSOYRK",
-	"dQfwYmdzbMjo99T26noqynodudkmG2C1erLmy973VpPnJ/+xBeVJe0WpfSoEqaBqe6PZt+iuqIAlkXCe",
-	"2hHoEogA8bcc6n/++2s+bTWmbn4tz94oldjZJWUrbnyCjcF5bxNd2EoCXX+6+YrOrz6jN0ZqJHrr9CMW",
-	"eH56djo3WWkCjCQUL/D70/npe2x43BhSZyRVm1lgp2d+bn9rMMqhNYaobMyP/w6qNmUzI1prS+awd/O5",
-	"VS6mwKoXSZKIBuaM2TdpGy7DprhdAz0DTK2t+y8riDSOiU6ANKUoYylTGU3szrAdbJqcXenPbbyZeP4L",
-	"D7eHY6tvBr2rWowSKeyOCXHvyLkH6Ezj8eKurut397t7VxL2ijZh7LxM90RW/5uMmcsWxbviumDJVh1H",
-	"LPXGyAtLotEDOQj4+akGdot4tSXfZeaNAcAxDb172jDU1PN2s8OcYbaY/nbxmQ+bjUMsnzzetRNcLpkV",
-	"L/l23qC19jWSXtz2/MaIx33d0ggy7fuKAmX0TlPw1l781AvjrCp+c0JDlJXRHqKhh3Q55CFTwr1taexr",
-	"HTyasjSeBwzREb3BPqw0MaDTx+jDj+X2G89xXtjDVKbdB/EutgIzuCJdMSPTBSwNb/ZEw90+68si7Xjr",
-	"+xzioyvapLzD4FGGuGL23YVCPls/pottzO+HMqOpT8kaUESlLVBm7qhpT/x4ibAxia2ChwpHsyftHXcD",
-	"GJuktZVWzP3xkZmkvXkoLRU4e4Hch0o2VBuNiPsGekAgrbz9PiqC9SnhUPRyrAxwteZ4F3jVvvxoDGsv",
-	"hQfAWH8j3ZUjON24KU/1D52yaL8KYdtOp504ML8a2r1oPy6EME1uO3K2vcRkjeYDpGwDpyxm33Gzso7Z",
-	"0lCzcd+wl4HG+bo3laiOE59hRMdOKzrmnuORcjy0+aj6y2ebrB0pua1OP144sa0NAg6Z2hIkeZSaUwzQ",
-	"2o8MyRKcFtI4Paz804mj6uHktlqtg+NCMqs+c+lD58Z9rvKaMeocHYzCS5ZPUPL3PFYjxWPOtRnu4Bne",
-	"3e/+HwAA//9bCkKajjkAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
