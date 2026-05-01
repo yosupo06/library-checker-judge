@@ -8,5 +8,5 @@ handlers:
   - url: /.*
     static_files: dist/index.html
     upload: dist/index.html
-    secure: always   
+    secure: always
     expiration: '0s'
