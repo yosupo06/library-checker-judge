@@ -15,6 +15,7 @@ import {
   HackListResponse,
   HackRequest,
   HackResponse,
+  HackOverview,
   MonitoringResponse,
   RejudgeRequest,
   SubmissionCaseResult,
@@ -41,6 +42,9 @@ import {
   fetchSubmissionList,
   fetchSubmissionInfo,
   postSubmit,
+  fetchHackInfo,
+  fetchHackList,
+  postHack,
 } from "./http_client";
 import type { components as OpenApi } from "../openapi/types";
 import { Timestamp as TimestampMessage } from "../proto/google/protobuf/timestamp";
@@ -397,10 +401,19 @@ export const useHackMutation = (
     "mutationFn"
   >,
 ) => {
-  const bearer = useBearer();
+  const idToken = useIdToken();
   return useMutation({
-    mutationFn: async (req: HackRequest) =>
-      await client.hack(req, bearer.data ?? undefined).response,
+    mutationFn: async (req: HackRequest) => {
+      const payload = {
+        submission: req.submission,
+        testCaseTxt:
+          req.testCase.oneofKind === "txt" ? req.testCase.txt : undefined,
+        testCaseCpp:
+          req.testCase.oneofKind === "cpp" ? req.testCase.cpp : undefined,
+      };
+      const res = await postHack(payload, idToken.data ?? undefined);
+      return toHackResponseProto(res);
+    },
     ...options,
   });
 };
@@ -409,16 +422,12 @@ export const useHackInfo = (
   id: number,
   options?: Omit<UseQueryOptions<HackInfoResponse>, "queryKey" | "queryFn">,
 ): UseQueryResult<HackInfoResponse> => {
-  const bearer = useBearer();
   return useQuery({
     queryKey: ["hackInfo", String(id)],
-    queryFn: async () =>
-      await client.hackInfo(
-        {
-          id: id,
-        },
-        bearer.data ?? undefined,
-      ).response,
+    queryFn: async () => {
+      const res = await fetchHackInfo(id);
+      return toHackInfoProto(res);
+    },
     ...options,
   });
 };
@@ -430,20 +439,48 @@ export const useHackList = (
   skip: number,
   limit: number,
 ): UseQueryResult<HackListResponse> => {
-  const bearer = useBearer();
   return useQuery({
     queryKey: ["hackList", user, status, order, skip, limit],
-    queryFn: async () =>
-      await client.hackList(
-        {
-          user: user,
-          status: status,
-          order: order,
-          skip: skip,
-          limit: limit,
-        },
-        bearer.data ?? undefined,
-      ).response,
+    queryFn: async () => {
+      const res = await fetchHackList({ user, status, order, skip, limit });
+      return {
+        hacks: res.hacks.map(toHackOverviewProto),
+        count: res.count,
+      } satisfies HackListResponse;
+    },
     structuralSharing: false,
   });
+};
+
+const toHackResponseProto = (
+  res: OpenApi["schemas"]["HackResponse"],
+): HackResponse => ({ id: res.id });
+
+const toHackOverviewProto = (
+  overview: OpenApi["schemas"]["HackOverview"],
+): HackOverview => ({
+  id: overview.id,
+  submissionId: overview.submission_id,
+  status: overview.status,
+  userName: overview.user_name,
+  time: overview.time,
+  memory: overview.memory !== undefined ? BigInt(overview.memory) : undefined,
+  hackTime: TimestampMessage.fromDate(new Date(overview.hack_time)),
+});
+
+const toHackInfoProto = (
+  res: OpenApi["schemas"]["HackInfoResponse"],
+): HackInfoResponse => {
+  let testCase: HackInfoResponse["testCase"] = { oneofKind: undefined };
+  if (res.test_case_txt) {
+    testCase = { oneofKind: "txt", txt: decodeBase64(res.test_case_txt) };
+  } else if (res.test_case_cpp) {
+    testCase = { oneofKind: "cpp", cpp: decodeBase64(res.test_case_cpp) };
+  }
+  return {
+    overview: toHackOverviewProto(res.overview),
+    testCase,
+    stderr: res.stderr ? decodeBase64(res.stderr) : undefined,
+    judgeOutput: res.judge_output ? decodeBase64(res.judge_output) : undefined,
+  } satisfies HackInfoResponse;
 };
