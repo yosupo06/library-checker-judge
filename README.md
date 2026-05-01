@@ -16,7 +16,7 @@ Judge server / API server のソースコードです
 ./launch_local.sh
 ```
 
-APIサーバー(localhost:50051)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
+REST API サーバー(localhost:12381)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
 問題データのアップロード先にはローカルの fake GCS (`http://localhost:4443`) を使うため、Google Cloud の認証情報や権限は不要です。
 
 言語イメージ（judge が使用）は起動前にビルドが必要です。`./launch_local.sh` は既定で最小セット（gcc + python3）をビルドしてから起動します。全言語や任意サブセットをビルドしたい場合は `LC_LANGS` を指定してください。
@@ -45,22 +45,15 @@ LOCAL_STORAGE_PUBLIC_BUCKET=testcase-public \
 
 ### 動作確認
 
-gRPC-web のAPIサーバーが起動します。
+REST API サーバーが起動します。
 
-- gRPC API: localhost:50051
-- gRPC-web API: localhost:12380
- - REST API (separate service): localhost:12381
- - REST (partial):
-   - GET http://localhost:12380/api/langs
-   - GET http://localhost:12380/api/problems
+- REST API: localhost:12381
+- GET http://localhost:12381/langs
+- GET http://localhost:12381/problems
 
-OpenAPI (partial, for REST) is defined at:
+OpenAPI is defined at:
 
 - restapi/openapi/openapi.yaml
-
-```sh
-evans --host localhost --port 50051 api/proto/library_checker.proto
-```
 
 ## Judge Server
 
@@ -103,7 +96,7 @@ go run .
 
 このスクリプトは以下を実行します：
 - `./launch_local.sh` による環境起動（必要に応じて）
-- Database, API, Storage モジュールのテスト
+- Database, REST API, Storage モジュールのテスト
 - 静的解析（go vet, gofmt）
 - ビルド確認
 - 環境のクリーンアップ（必要に応じて）

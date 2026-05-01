@@ -61,7 +61,6 @@ export const outFileURL = (
 };
 
 // Optional convenience to create ProblemVersion consistently
-// import type { ProblemInfoResponse } from "../proto/library_checker"; // keep import in caller to avoid circular deps
 export const toProblemVersion = (
   problemId: string,
   info: { version: string; overallVersion: string; testcasesVersion: string },

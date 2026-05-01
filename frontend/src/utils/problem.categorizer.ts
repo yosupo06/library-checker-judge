@@ -1,4 +1,4 @@
-import type { ProblemCategory } from "../proto/library_checker";
+import type { ProblemCategory } from "../api/types";
 import type { components as OpenApi } from "../openapi/types";
 
 export type CategorisedProblems = {

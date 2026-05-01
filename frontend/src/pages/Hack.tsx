@@ -6,7 +6,6 @@ import SourceEditor from "../components/SourceEditor";
 import { useHackMutation } from "../api/client_wrapper";
 import { Alert, Box, FormControl, Tab, Tabs, TextField } from "@mui/material";
 import { refactorTestCase } from "../utils/hack";
-import { RpcError } from "@protobuf-ts/runtime-rpc";
 import MainContainer from "../components/MainContainer";
 
 const Hack: React.FC = () => {
@@ -49,7 +48,7 @@ const Hack: React.FC = () => {
     <MainContainer title="Hack (β)">
       {mutation.isSuccess && <Alert severity="success">Hack submitted</Alert>}
       {mutation.isError && (
-        <Alert severity="error">{(mutation.error as RpcError).message}</Alert>
+        <Alert severity="error">{mutation.error.message}</Alert>
       )}
 
       <Box component="form" onSubmit={handleSubmit}>

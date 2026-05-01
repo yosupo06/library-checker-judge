@@ -1,28 +1,4 @@
 services:
-  api:
-    build:
-      dockerfile: Dockerfile.API
-    ports:
-      - 12380:12380
-    depends_on:
-      db-init:
-        condition: service_completed_successfully
-      gcs:
-        condition: service_healthy
-    environment:
-      - API_DB_LOG=true
-      - PGHOST=db
-      - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
-      - STORAGE_PRIVATE_BUCKET=testcase
-      - STORAGE_PUBLIC_BUCKET=testcase-public
-      - STORAGE_EMULATOR_HOST=http://gcs:4443
-      - STORAGE_PROJECT_ID=dev-library-checker-project
-    healthcheck:
-        test: wget -q -O - localhost:12380/health || exit 1
-        timeout: 10s
-        interval: 1s
-        retries: 30
-
   api-rest:
     build:
       dockerfile: Dockerfile.APIREST
@@ -126,8 +102,6 @@ services:
       db:
         condition: service_healthy
       gcs:
-        condition: service_healthy
-      api:
         condition: service_healthy
       api-rest:
         condition: service_healthy

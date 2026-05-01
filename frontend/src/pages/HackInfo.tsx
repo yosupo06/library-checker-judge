@@ -14,8 +14,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { HackInfoResponse, HackOverview } from "../proto/library_checker";
-import { RpcError } from "@protobuf-ts/runtime-rpc";
+import { HackInfoResponse, HackOverview } from "../api/types";
 import MainContainer from "../components/MainContainer";
 import NotFound from "./NotFound";
 
@@ -55,9 +54,7 @@ const HackInfoBody: React.FC<{
   if (hackInfoQuery.isError) {
     return (
       <Box>
-        <Alert severity="error">
-          {(hackInfoQuery.error as RpcError).toString()}
-        </Alert>
+        <Alert severity="error">{hackInfoQuery.error.message}</Alert>
       </Box>
     );
   }

@@ -11,10 +11,9 @@ import "katex/dist/katex.min.css";
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLangList } from "../api/client_wrapper";
-import { SubmissionOverview } from "../proto/library_checker";
+import { SubmissionOverview } from "../api/types";
 import KatexTypography from "./katex/KatexTypography";
 import { styled } from "@mui/material/styles";
-import { Timestamp } from "../proto/google/protobuf/timestamp";
 
 interface Props {
   overviews: SubmissionOverview[];
@@ -83,9 +82,7 @@ const SubmissionTable: React.FC<Props> = (props) => {
                 <CustomLink to={`/submission/${row.id}`}>{row.id}</CustomLink>
               </TableCell>
               <TableCell>
-                {row.submissionTime
-                  ? Timestamp.toDate(row.submissionTime).toLocaleString()
-                  : "-"}
+                {row.submissionTime ? row.submissionTime.toLocaleString() : "-"}
               </TableCell>
               <TableCell>
                 <CustomLink to={`/problem/${row.problemName}`}>

@@ -26,7 +26,6 @@ import { useTranslation } from "../utils/translations";
 import { Alert, Container } from "@mui/material";
 import Statement from "../components/Statement";
 import { useLang } from "../contexts/LangContext";
-import { RpcError } from "@protobuf-ts/runtime-rpc";
 
 import NotFound from "./NotFound";
 import { Link as RouterLink } from "react-router-dom";
@@ -54,9 +53,7 @@ const ProblemInfo: React.FC = () => {
   if (problemInfoQuery.isError) {
     return (
       <Container>
-        <Alert severity="error">
-          {(problemInfoQuery.error as RpcError).toString()}
-        </Alert>
+        <Alert severity="error">{problemInfoQuery.error.message}</Alert>
       </Container>
     );
   }
@@ -250,9 +247,7 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
   if (langListQuery.isError) {
     return (
       <Box>
-        <Alert severity="error">
-          {(langListQuery.error as RpcError).toString()}
-        </Alert>
+        <Alert severity="error">{langListQuery.error.message}</Alert>
       </Box>
     );
   }

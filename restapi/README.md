@@ -1,6 +1,6 @@
 # REST API (OpenAPI) — ranking only
 
-このディレクトリは、Library Checker の最小 REST API サーバーです。現状は Ranking API のみを実装しています（/ranking）。gRPC 本体とは別プロセスで動きます。
+このディレクトリは、Library Checker の REST API サーバーです。
 
 - デフォルトポート: `12381`（環境変数 `PORT` で変更可）
 - エンドポイント:

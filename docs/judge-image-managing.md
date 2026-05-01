@@ -29,14 +29,13 @@
 - 手順:
   1. Terraform の初期化と Google Cloud 認証を再実行し、環境固有のシークレットを取得します。
   2. Secret Manager から MinIO の HMAC シークレットを取得します（`get-secretmanager-secrets`）。
-  3. リポジトリルートで `./run_protoc.sh` を実行して gRPC スタブを再生成します（Go ビルドに必要）。
-  4. `./judge` ディレクトリ内で `go build .` を実行し、後でプロビジョニングするための `packer/judge/../../judge/judge` バイナリを生成します。
-  5. `packer/judge/` で `packer init` と `packer build` を実行し、以下のパラメータを渡します:
+  3. `./judge` ディレクトリ内で `go build .` を実行し、後でプロビジョニングするための `packer/judge/../../judge/judge` バイナリを生成します。
+  4. `packer/judge/` で `packer init` と `packer build` を実行し、以下のパラメータを渡します:
      - `env`: GCP プロジェクト（`${env}-library-checker-project`）およびベースイメージファミリー（`v3-${env}-base-image`）を選択します。
      - `image_family`: Terraform で提供されるジャッジイメージファミリー（例: `v3-judge-image`）。
      - ストレージ資格情報（`minio_host`, `minio_id`, `minio_secret`, `minio_bucket`, `minio_public_bucket`）。
      - データベース接続情報（`db_connection_name`, `pg_user`）。
-  6. Packer は最新のベースイメージファミリーを基に VM をプロビジョニングし、cloud-init の完了を待ち、Cloud SQL Proxy を配置し、systemd ユニットをインストールします。
+  5. Packer は最新のベースイメージファミリーを基に VM をプロビジョニングし、cloud-init の完了を待ち、Cloud SQL Proxy を配置し、systemd ユニットをインストールします。
      - `cloudsql.service.pkrtpl` が対象の接続名に対してプライベート IP と IAM 認証で `cloud-sql-proxy` を起動します。
      - コンパイル済みジャッジバイナリを `/root/judge` に配置し、`judge.service.pkrtpl` が MinIO と PostgreSQL の環境変数を設定してサービスを有効化します。
 - イメージは設定されたファミリー（`image_family`）にタイムスタンプ付きの名前で直接出力されます。
