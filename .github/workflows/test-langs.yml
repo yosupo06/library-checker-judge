@@ -85,7 +85,11 @@ jobs:
         markdown_path.write_text("\n".join(lines) + "\n")
         PY
 
+    - name: Add image size report to job summary
+      run: cat report/langs-image-sizes.md >> "$GITHUB_STEP_SUMMARY"
+
     - name: Create or update PR comment
+      if: github.event.pull_request.head.repo.full_name == github.repository
       uses: peter-evans/create-or-update-comment@v3
       with:
         issue-number: ${{ github.event.pull_request.number }}
