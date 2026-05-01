@@ -21,8 +21,8 @@ storage/storage
 storage/storage.test
 uploader/uploader
 uploader/uploader.test
-utils/utils
-utils/utils.test
+tools/rejudge/rejudge
+tools/rejudge/rejudge.test
 
 terraform/.terraform/
 

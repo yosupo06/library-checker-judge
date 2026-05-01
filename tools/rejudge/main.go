@@ -2,19 +2,22 @@ package main
 
 import (
 	"log"
+	"os"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/yosupo06/library-checker-judge/database"
 )
 
 var (
-	rejudgeCmd         = app.Command("r", "Rejudge")
-	rejudgeSubmissions = rejudgeCmd.Arg("id", "Submission ID").Required().Int32List()
+	app                  = kingpin.New("rejudge", "Queue submissions for rejudge")
+	rejudgeSubmissionIDs = app.Arg("id", "Submission ID").Required().Int32List()
 )
 
-func execRejudgeCmd() {
+func main() {
+	kingpin.MustParse(app.Parse(os.Args[1:]))
 	db := database.Connect(database.GetDSNFromEnv(), true)
 
-	for _, id := range *rejudgeSubmissions {
+	for _, id := range *rejudgeSubmissionIDs {
 		log.Print("rejudge:", id)
 		if err := database.PushSubmissionTask(db, database.SubmissionData{
 			ID: id,

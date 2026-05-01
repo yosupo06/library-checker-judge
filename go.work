@@ -9,6 +9,6 @@ use (
 	./migrator
 	./restapi
 	./storage
+	./tools/rejudge
 	./uploader
-	./utils
 )
