@@ -17,6 +17,7 @@ Judge server / API server のソースコードです
 ```
 
 APIサーバー(localhost:50051)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
+問題データのアップロード先にはローカルの fake GCS (`http://localhost:4443`) を使うため、Google Cloud の認証情報や権限は不要です。
 
 言語イメージ（judge が使用）は起動前にビルドが必要です。`./launch_local.sh` は既定で最小セット（gcc + python3）をビルドしてから起動します。全言語や任意サブセットをビルドしたい場合は `LC_LANGS` を指定してください。
 
@@ -31,6 +32,15 @@ LC_LANGS=all ./launch_local.sh
 
 # 任意サブセット
 LC_LANGS="gcc python3 rust" ./launch_local.sh
+```
+
+fake GCS の接続先やバケット名を変更する場合は、ホスト側から見える値を指定してください。
+
+```sh
+LOCAL_STORAGE_EMULATOR_HOST=http://localhost:4443 \
+LOCAL_STORAGE_PRIVATE_BUCKET=testcase \
+LOCAL_STORAGE_PUBLIC_BUCKET=testcase-public \
+./launch_local.sh
 ```
 
 ### 動作確認
