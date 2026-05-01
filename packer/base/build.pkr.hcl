@@ -16,17 +16,17 @@ packer {
 }
 
 source "googlecompute" "judge" {
-  project_id = "${var.env}-library-checker-project"
-  source_image_family = "ubuntu-2204-lts"
-  zone = "us-east1-b"
-  network = "main"
-  subnetwork = "main"
-  machine_type = "c2d-standard-8"
-  disk_size = 50
-  ssh_username = "ubuntu"
+  project_id              = "${var.env}-library-checker-project"
+  source_image_family     = "ubuntu-2204-lts"
+  zone                    = "asia-northeast1-b"
+  network                 = "main"
+  subnetwork              = "main"
+  machine_type            = "c2d-standard-8"
+  disk_size               = 50
+  ssh_username            = "ubuntu"
   temporary_key_pair_type = "ed25519"
-  image_name = "${var.image_name}"
-  preemptible = true
+  image_name              = "${var.image_name}"
+  preemptible             = true
 }
 
 build {
@@ -67,7 +67,7 @@ build {
 
   # install crun
   provisioner "file" {
-    source = "crun-install.sh"
+    source      = "crun-install.sh"
     destination = "/tmp/crun-install.sh"
   }
   provisioner "shell" {
@@ -78,7 +78,7 @@ build {
 
   # install docker
   provisioner "file" {
-    source = "docker-install.sh"
+    source      = "docker-install.sh"
     destination = "/tmp/docker-install.sh"
   }
   provisioner "shell" {
@@ -89,7 +89,7 @@ build {
 
   # build our images
   provisioner "file" {
-    source = "../../langs"
+    source      = "../../langs"
     destination = "/tmp"
   }
   provisioner "shell" {
@@ -109,7 +109,7 @@ build {
     ]
   }
   provisioner "file" {
-    source = "docker-daemon.json"
+    source      = "docker-daemon.json"
     destination = "/tmp/daemon.json"
   }
   provisioner "shell" {
@@ -121,11 +121,11 @@ build {
 
   # prepare systemctl files
   provisioner "file" {
-    source = "prepare-docker.service"
+    source      = "prepare-docker.service"
     destination = "/tmp/prepare-docker.service"
   }
   provisioner "file" {
-    source = "prepare-docker.sh"
+    source      = "prepare-docker.sh"
     destination = "/tmp/prepare-docker.sh"
   }
   provisioner "shell" {
@@ -137,7 +137,7 @@ build {
   }
 
   provisioner "file" {
-    source = "docker-drop-in.conf"
+    source      = "docker-drop-in.conf"
     destination = "/tmp/docker-drop-in.conf"
   }
   provisioner "shell" {
