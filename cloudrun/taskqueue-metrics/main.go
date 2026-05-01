@@ -53,7 +53,11 @@ func queueMetricsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "db failure", http.StatusInternalServerError)
 		return
 	}
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("sqlDB.Close: %v", err)
+		}
+	}()
 
 	stats, err := database.FetchMonitoringData(db)
 	if err != nil {
@@ -69,7 +73,9 @@ func queueMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "pending_tasks=%d", stats.TaskQueue.PendingTasks)
+	if _, err := fmt.Fprintf(w, "pending_tasks=%d", stats.TaskQueue.PendingTasks); err != nil {
+		log.Printf("write response: %v", err)
+	}
 }
 
 func writePendingMetric(ctx context.Context, projectID, metricType string, value float64) error {
@@ -77,7 +83,11 @@ func writePendingMetric(ctx context.Context, projectID, metricType string, value
 	if err != nil {
 		return fmt.Errorf("NewMetricClient: %w", err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("MetricClient.Close: %v", err)
+		}
+	}()
 
 	if err := ensureMetricDescriptor(ctx, client, projectID, metricType); err != nil {
 		return err
