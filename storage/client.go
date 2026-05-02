@@ -40,12 +40,19 @@ func GetConfigFromEnv() Config {
 }
 
 func Connect(ctx context.Context, config Config) (Client, error) {
-	client, err := storage.NewClient(ctx)
+	var client *storage.Client
+	var err error
+	emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST")
+	if emulatorHost != "" {
+		client, err = storage.NewClient(ctx, storage.WithJSONReads())
+	} else {
+		client, err = storage.NewClient(ctx)
+	}
 	if err != nil {
 		return Client{}, err
 	}
 
-	if os.Getenv("STORAGE_EMULATOR_HOST") != "" {
+	if emulatorHost != "" {
 		projectID := os.Getenv("STORAGE_PROJECT_ID")
 		if projectID == "" {
 			projectID = "dev-library-checker-project"
