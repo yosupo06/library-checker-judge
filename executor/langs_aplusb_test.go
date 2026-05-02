@@ -50,6 +50,10 @@ func samplePathFor(langID string) (string, map[string]string) {
 		return "sources/aplusb/ac.rs", nil
 	case "java":
 		return "sources/aplusb/ac.java", nil
+	case "javascript":
+		return "sources/aplusb/ac.js", nil
+	case "typescript":
+		return "sources/aplusb/ac.ts", nil
 	case "go":
 		return "sources/aplusb/go/ac.go", nil
 	case "haskell":

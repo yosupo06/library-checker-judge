@@ -7,7 +7,8 @@ import (
 func TestAllSupportedLangs(t *testing.T) {
 	expectedLangs := []string{
 		"cpp", "cpp-func", "rust", "haskell", "csharp", "lisp",
-		"python3", "pypy3", "d", "java", "go", "crystal", "ruby",
+		"python3", "pypy3", "d", "java", "javascript", "typescript",
+		"go", "crystal", "ruby",
 	}
 
 	for _, langID := range expectedLangs {
