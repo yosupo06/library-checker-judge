@@ -77,3 +77,10 @@ jobs:
     secrets: inherit
     with:
       env: ${{ inputs.env }}
+
+  frontend-deploy:
+    needs: terraform-apply
+    uses: ./.github/workflows/frontend-deploy.yml
+    secrets: inherit
+    with:
+      env: ${{ inputs.env }}
