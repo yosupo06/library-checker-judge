@@ -3,7 +3,7 @@ WORKDIR /library-checker-init
 COPY init /library-checker-init
 RUN cargo build --release --target=x86_64-unknown-linux-musl
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
 ENV DOTNET_EnableWriteXorExecute=0
 RUN dotnet new console -o /opt/C-Sharp
