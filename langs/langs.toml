@@ -90,7 +90,7 @@
 [[langs]]
     id = "haskell"
     name = "GHC"
-    version = "ghc 9.0.2"
+    version = "ghc 9.6.7"
     source = "main.hs"
     image_name = "library-checker-images-haskell"
     compile = ["ghc", "main.hs", "-O2"]
