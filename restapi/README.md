@@ -1,6 +1,6 @@
 # REST API (OpenAPI) — ranking only
 
-このディレクトリは、Library Checker の最小 REST API サーバーです。現状は Ranking API のみを実装しています（/ranking）。gRPC 本体とは別プロセスで動きます。
+このディレクトリは、Library Checker の REST API サーバーです。
 
 - デフォルトポート: `12381`（環境変数 `PORT` で変更可）
 - エンドポイント:
@@ -101,7 +101,7 @@ curl "http://localhost:12381/ranking?skip=0&limit=100"
 
 ## フロントエンドから叩く
 - フロントの環境変数 `VITE_REST_API_URL` に REST の URL（例: `http://localhost:12381`）を設定します。
-- 例: `library-checker-frontend/.env.development` には既に `VITE_REST_API_URL=http://localhost:12381` が入っています。
+- 例: `frontend/.env.development` には既に `VITE_REST_API_URL=http://localhost:12381` が入っています。
 
 ## よくあるハマりどころ / トラブルシュート
 - ビルド時に `missing go.sum entry for ... oapi-codegen ...` と出る

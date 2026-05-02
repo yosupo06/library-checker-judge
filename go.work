@@ -1,7 +1,7 @@
 go 1.24.7
 
 use (
-	./api
+	./cloudrun/taskqueue-metrics
 	./database
 	./executor
 	./integration
@@ -10,6 +10,6 @@ use (
 	./migrator
 	./restapi
 	./storage
+	./tools/rejudge
 	./uploader
-	./utils
 )

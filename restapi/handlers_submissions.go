@@ -70,7 +70,7 @@ func (s *server) PostSubmit(ctx context.Context, request restapi.PostSubmitReque
 }
 
 // GetSubmissionInfo handles GET /submissions/{id}
-func (s *server) GetSubmissionInfo(_ context.Context, request restapi.GetSubmissionInfoRequestObject) (restapi.GetSubmissionInfoResponseObject, error) {
+func (s *server) GetSubmissionInfo(ctx context.Context, request restapi.GetSubmissionInfoRequestObject) (restapi.GetSubmissionInfoResponseObject, error) {
 	sub, err := database.FetchSubmission(s.db, request.Id)
 	if err != nil {
 		if err == database.ErrNotExist {
@@ -136,10 +136,35 @@ func (s *server) GetSubmissionInfo(_ context.Context, request restapi.GetSubmiss
 		CompileError: compileErr,
 		CanRejudge:   false,
 	}
+	if currentUser, err := s.currentUserFromContext(ctx); err == nil && currentUser != nil {
+		resp.CanRejudge = canRejudgeREST(*currentUser, sub)
+	}
 	if len(cr) > 0 {
 		resp.CaseResults = &cr
 	}
 	return restapi.GetSubmissionInfo200JSONResponse(resp), nil
+}
+
+// PostRejudge handles POST /submissions/{id}/rejudge
+func (s *server) PostRejudge(ctx context.Context, request restapi.PostRejudgeRequestObject) (restapi.PostRejudgeResponseObject, error) {
+	currentUser, err := s.currentUserFromContext(ctx)
+	if err != nil || currentUser == nil {
+		return nil, newHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+	sub, err := database.FetchSubmission(s.db, request.Id)
+	if err != nil {
+		if err == database.ErrNotExist {
+			return nil, newHTTPError(http.StatusNotFound, "not found")
+		}
+		return nil, newHTTPError(http.StatusInternalServerError, "failed to fetch submission")
+	}
+	if !canRejudgeREST(*currentUser, sub) {
+		return nil, newHTTPError(http.StatusForbidden, "permission denied")
+	}
+	if err := database.PushSubmissionTask(s.db, database.SubmissionData{ID: request.Id, TleKnockout: false}, 40); err != nil {
+		return nil, newHTTPError(http.StatusInternalServerError, "rejudge failed")
+	}
+	return restapi.PostRejudge200JSONResponse(restapi.RejudgeResponse{}), nil
 }
 
 // GetSubmissionList handles GET /submissions
@@ -214,4 +239,14 @@ func deref[T any](p *T) T {
 		return zero
 	}
 	return *p
+}
+
+func canRejudgeREST(currentUser database.User, submission database.Submission) bool {
+	if currentUser.Name == "" {
+		return false
+	}
+	if submission.UserName.Valid && currentUser.Name == submission.UserName.String {
+		return true
+	}
+	return submission.TestCasesVersion != submission.Problem.TestCasesVersion && submission.Status == "AC"
 }

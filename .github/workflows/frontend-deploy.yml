@@ -6,9 +6,6 @@ on:
       env:
         type: string
         required: true
-      frontend-branch:
-        type: string
-        default: master
   workflow_dispatch:
     inputs:
       env:
@@ -18,13 +15,9 @@ on:
           - dev
           - prod
         description: environment of deploy
-      frontend-branch:
-        type: string
-        default: master
-        description: branch of library-checker-frontend
 
 concurrency:
-  group: dev-frontend-deploy
+  group: ${{ inputs.env }}-frontend-deploy
   cancel-in-progress: true
 
 env:
@@ -40,11 +33,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
-          repository: yosupo06/library-checker-frontend
-          path: library-checker-frontend
-          ref: ${{ inputs.frontend-branch }}
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -66,15 +54,11 @@ jobs:
       - run: npm install -g firebase-tools
 
       - run: npm ci
-        working-directory: ./library-checker-frontend
-      - run: npm run protoc
-        env:
-          PROTO_PATH: ../api/proto
-        working-directory: ./library-checker-frontend
+        working-directory: ./frontend
       - run: npm run build -- --mode ${{ (inputs.env == 'prod' && 'production') || 'staging' }}
-        working-directory: ./library-checker-frontend
+        working-directory: ./frontend
 
       - run: firebase use ${{ inputs.env }}
-        working-directory: ./library-checker-frontend
+        working-directory: ./frontend
       - run: firebase deploy
-        working-directory: ./library-checker-frontend
+        working-directory: ./frontend

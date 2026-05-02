@@ -1,64 +1,62 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+cd "$SCRIPT_DIR"
+
+CLEANUP_NEEDED=false
+
+cleanup() {
+    if [[ "$CLEANUP_NEEDED" == true ]]; then
+        echo "Cleaning up local environment..."
+        docker compose down
+    fi
+}
+trap cleanup EXIT
+
+is_local_environment_running() {
+    docker compose ps --services --status running | grep -qx "db" &&
+        docker compose ps --services --status running | grep -qx "api-rest" &&
+        docker compose ps --services --status running | grep -qx "gcs"
+}
 
 echo "=== Testing Library Checker Judge Components ==="
 
 # Launch local development environment
 echo "Starting local development environment..."
-if ! docker ps | grep -q postgres; then
-    echo "PostgreSQL not running, starting local environment..."
-    ./launch_local.sh &
-    LAUNCH_PID=$!
-
-    # Wait for PostgreSQL to be ready
-    echo "Waiting for PostgreSQL to be ready..."
-    timeout=60
-    while ! docker ps | grep -q postgres && [ $timeout -gt 0 ]; do
-        sleep 1
-        ((timeout--))
-    done
-
-    if [ $timeout -eq 0 ]; then
-        echo "Timeout waiting for PostgreSQL to start"
-        exit 1
-    fi
-
-    # Additional wait for PostgreSQL to accept connections
-    sleep 10
-    echo "PostgreSQL is ready"
+if ! is_local_environment_running; then
+    echo "Local compose environment not running, starting it..."
     CLEANUP_NEEDED=true
+    ./launch_local.sh
 else
-    echo "PostgreSQL already running"
-    CLEANUP_NEEDED=false
+    echo "Local compose environment already running"
 fi
 
 echo "Testing database..."
-cd database && go test ./... -v && cd ..
+(cd database && go test ./... -v)
 
-echo "Testing API..."
-cd api && go test ./... -v && cd ..
+echo "Testing REST API..."
+(cd restapi && go test ./... -v)
 
 echo "Testing storage..."
-cd storage && go test ./... -v && cd ..
+(cd storage && go test ./... -v)
 
 echo "Testing uploader..."
 if [[ -d "uploader" ]]; then
-    cd uploader && go test ./... -v && cd ..
+    (cd uploader && go test ./... -v)
 fi
 
 echo "Building all components..."
-go build ./api/...
-go build ./database/...
-go build ./storage/...
+for module in restapi database storage; do
+    (cd "$module" && go build ./...)
+done
 
 echo "Running static analysis..."
-go vet ./...
+for module in restapi database storage uploader judge executor integration langs migrator tools/rejudge cloudrun/taskqueue-metrics; do
+    if [[ -d "$module" ]]; then
+        (cd "$module" && go vet ./...)
+    fi
+done
 gofmt -l . | (! read)
-
-# Cleanup if we started the environment
-if [ "$CLEANUP_NEEDED" = true ]; then
-    echo "Cleaning up local environment..."
-    docker compose down
-fi
 
 echo "=== All tests passed! ==="

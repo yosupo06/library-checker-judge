@@ -1,0 +1,30 @@
+name: Test Rejudge Tool
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'tools/rejudge/**'
+      - 'database/**'  # rejudge tool depends on database
+      - '.github/workflows/test-rejudge-tool.yml'
+  pull_request:
+    paths:
+      - 'tools/rejudge/**'
+      - 'database/**'  # rejudge tool depends on database
+      - '.github/workflows/test-rejudge-tool.yml'
+
+jobs:
+  test-rejudge-tool:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Rejudge tool module test
+      run: go test . -v
+      working-directory: ./tools/rejudge

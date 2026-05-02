@@ -13,9 +13,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate API protos (optional)
-        run: ./run_protoc.sh
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
