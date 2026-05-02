@@ -7,7 +7,7 @@ services:
     depends_on:
       db-init:
         condition: service_completed_successfully
-      gcs:
+      gcs-proxy:
         condition: service_healthy
     environment:
       - API_DB_LOG=true
@@ -16,7 +16,7 @@ services:
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
       - STORAGE_PRIVATE_BUCKET=testcase
       - STORAGE_PUBLIC_BUCKET=testcase-public
-      - STORAGE_EMULATOR_HOST=http://gcs:4443
+      - STORAGE_EMULATOR_HOST=http://gcs-proxy:4443
       - STORAGE_PROJECT_ID=dev-library-checker-project
     healthcheck:
       test: wget -q -O - localhost:12381/health || exit 1
@@ -54,11 +54,44 @@ services:
       - -port
       - "4443"
       - -public-host
-      - localhost:4443
+      - gcs:4443
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4443/storage/v1/b >/dev/null 2>&1"]
+      interval: 1s
+      timeout: 1s
+      retries: 10
+  # Keep fake-gcs-server's single public-host stable while allowing access from
+  # both the host (localhost:4443) and Docker services (gcs-proxy:4443). The Go
+  # storage SDK's default NewReader path uses the XML-style /bucket/object API,
+  # which fake-gcs-server routes based on the Host header matching public-host.
+  # The proxy normalizes that Host header to gcs:4443 for every caller.
+  gcs-proxy:
+    image: nginx:1.27-alpine
     ports:
       - 4443:4443
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cat >/etc/nginx/conf.d/default.conf <<'EOF'
+        server {
+          listen 4443;
+          client_max_body_size 0;
+
+          location / {
+            proxy_pass http://gcs:4443;
+            proxy_set_header Host gcs:4443;
+            proxy_http_version 1.1;
+            proxy_request_buffering off;
+          }
+        }
+        EOF
+        nginx -g 'daemon off;'
+    depends_on:
+      gcs:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:4443/storage/v1/b >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4443/storage/v1/b >/dev/null 2>&1"]
       interval: 1s
       timeout: 1s
       retries: 10
@@ -87,7 +120,7 @@ services:
       - PGPASSWORD=lcdummypassword
       - STORAGE_PRIVATE_BUCKET=testcase
       - STORAGE_PUBLIC_BUCKET=testcase-public
-      - STORAGE_EMULATOR_HOST=http://gcs:4443
+      - STORAGE_EMULATOR_HOST=http://gcs-proxy:4443
       - STORAGE_PROJECT_ID=dev-library-checker-project
       - LIBRARY_CHECKER_JUDGE=1
       # Uncomment and set if you need a specific cgroup parent
@@ -101,7 +134,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      gcs:
+      gcs-proxy:
         condition: service_healthy
       api-rest:
         condition: service_healthy

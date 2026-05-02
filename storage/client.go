@@ -40,14 +40,8 @@ func GetConfigFromEnv() Config {
 }
 
 func Connect(ctx context.Context, config Config) (Client, error) {
-	var client *storage.Client
-	var err error
 	emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST")
-	if emulatorHost != "" {
-		client, err = storage.NewClient(ctx, storage.WithJSONReads())
-	} else {
-		client, err = storage.NewClient(ctx)
-	}
+	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return Client{}, err
 	}
