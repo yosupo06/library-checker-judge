@@ -18,6 +18,7 @@ Judge server / API server のソースコードです
 
 REST API サーバー(localhost:12381)とSQL(PostgreSQL)がDocker Composeで立ち上がり、`aplusb, unionfind`がデプロイされる。
 問題データのアップロード先にはローカルの fake GCS (`http://localhost:4443`) を使うため、Google Cloud の認証情報や権限は不要です。
+Docker Compose の `gcs-init` サービスが fake GCS のバケットを初期化します。
 
 言語イメージ（judge が使用）は起動前にビルドが必要です。`./launch_local.sh` は既定で最小セット（gcc + python3）をビルドしてから起動します。全言語や任意サブセットをビルドしたい場合は `LC_LANGS` を指定してください。
 

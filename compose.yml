@@ -7,17 +7,17 @@ services:
     depends_on:
       db-init:
         condition: service_completed_successfully
-      gcs-proxy:
-        condition: service_healthy
+      gcs-init:
+        condition: service_completed_successfully
     environment:
       - API_DB_LOG=true
       - PGHOST=db
       - FIREBASE_PROJECT=dev-library-checker-project
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
-      - STORAGE_PRIVATE_BUCKET=testcase
-      - STORAGE_PUBLIC_BUCKET=testcase-public
+      - STORAGE_PRIVATE_BUCKET=${LOCAL_STORAGE_PRIVATE_BUCKET:-testcase}
+      - STORAGE_PUBLIC_BUCKET=${LOCAL_STORAGE_PUBLIC_BUCKET:-testcase-public}
       - STORAGE_EMULATOR_HOST=http://gcs-proxy:4443
-      - STORAGE_PROJECT_ID=dev-library-checker-project
+      - STORAGE_PROJECT_ID=${LOCAL_STORAGE_PROJECT_ID:-dev-library-checker-project}
     healthcheck:
       test: wget -q -O - localhost:12381/health || exit 1
       timeout: 10s
@@ -95,6 +95,32 @@ services:
       interval: 1s
       timeout: 1s
       retries: 10
+  gcs-init:
+    image: curlimages/curl:8.10.1
+    depends_on:
+      gcs-proxy:
+        condition: service_healthy
+    environment:
+      - STORAGE_PRIVATE_BUCKET=${LOCAL_STORAGE_PRIVATE_BUCKET:-testcase}
+      - STORAGE_PUBLIC_BUCKET=${LOCAL_STORAGE_PUBLIC_BUCKET:-testcase-public}
+      - STORAGE_PROJECT_ID=${LOCAL_STORAGE_PROJECT_ID:-dev-library-checker-project}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        create_bucket() {
+          bucket="$1"
+          if curl -fsS "http://gcs-proxy:4443/storage/v1/b/$${bucket}" >/dev/null; then
+            return
+          fi
+          curl -fsS -X POST \
+            -H 'Content-Type: application/json' \
+            -d "{\"name\":\"$${bucket}\"}" \
+            "http://gcs-proxy:4443/storage/v1/b?project=$${STORAGE_PROJECT_ID}" >/dev/null
+        }
+        create_bucket "$${STORAGE_PRIVATE_BUCKET}"
+        create_bucket "$${STORAGE_PUBLIC_BUCKET}"
   firebase:
     build:
       dockerfile: firebase/Dockerfile
@@ -118,10 +144,10 @@ services:
       - PGDATABASE=librarychecker
       - PGUSER=postgres
       - PGPASSWORD=lcdummypassword
-      - STORAGE_PRIVATE_BUCKET=testcase
-      - STORAGE_PUBLIC_BUCKET=testcase-public
+      - STORAGE_PRIVATE_BUCKET=${LOCAL_STORAGE_PRIVATE_BUCKET:-testcase}
+      - STORAGE_PUBLIC_BUCKET=${LOCAL_STORAGE_PUBLIC_BUCKET:-testcase-public}
       - STORAGE_EMULATOR_HOST=http://gcs-proxy:4443
-      - STORAGE_PROJECT_ID=dev-library-checker-project
+      - STORAGE_PROJECT_ID=${LOCAL_STORAGE_PROJECT_ID:-dev-library-checker-project}
       - LIBRARY_CHECKER_JUDGE=1
       # Uncomment and set if you need a specific cgroup parent
       # - CGROUP_PARENT=system.slice
@@ -134,8 +160,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      gcs-proxy:
-        condition: service_healthy
+      gcs-init:
+        condition: service_completed_successfully
       api-rest:
         condition: service_healthy
     restart: unless-stopped
