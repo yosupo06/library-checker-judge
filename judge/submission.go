@@ -276,7 +276,7 @@ func aggregateResults(results []CaseResult) CaseResult {
 		Memory: -1,
 	}
 	for _, res := range results {
-		if res.Status != "AC" {
+		if statusPriority(ans.Status) < statusPriority(res.Status) {
 			ans.Status = res.Status
 		}
 		if ans.Time < res.Time {
@@ -287,4 +287,19 @@ func aggregateResults(results []CaseResult) CaseResult {
 		}
 	}
 	return ans
+}
+
+func statusPriority(status string) int {
+	switch status {
+	case "AC":
+		return 0
+	case "WA":
+		return 1
+	case "RE", "TLE", "PE":
+		return 2
+	case "Fail", "IE":
+		return 3
+	default:
+		return 4
+	}
 }
