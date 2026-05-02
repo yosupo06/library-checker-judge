@@ -88,10 +88,20 @@ jobs:
     - name: Add image size report to job summary
       run: cat report/langs-image-sizes.md >> "$GITHUB_STEP_SUMMARY"
 
-    - name: Create or update PR comment
+    - name: Find existing PR comment
       if: github.event.pull_request.head.repo.full_name == github.repository
-      uses: peter-evans/create-or-update-comment@v3
+      uses: peter-evans/find-comment@v4
+      id: find-comment
       with:
         issue-number: ${{ github.event.pull_request.number }}
+        comment-author: github-actions[bot]
+        body-includes: '### Lang Docker Image Sizes'
+
+    - name: Create or update PR comment
+      if: github.event.pull_request.head.repo.full_name == github.repository
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
         body-path: report/langs-image-sizes.md
-        comment-identifier: langs-image-size-report
+        edit-mode: replace

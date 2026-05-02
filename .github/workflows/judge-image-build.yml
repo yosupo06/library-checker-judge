@@ -63,15 +63,15 @@ jobs:
     - run: packer init build.pkr.hcl
       working-directory: ./packer/base
     - id: image-name
-      run: echo "name=v3-tmp-base-image-$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
+      run: echo "name=v3-tmp-base-image-$(date +'%Y-%m-%d-%H-%M-%S')" >> "$GITHUB_OUTPUT"
     - name: Build image
       run: packer build -var 'env=${{ inputs.env }}' -var 'image_name=${{ steps.image-name.outputs.name }}' .
       working-directory: ./packer/base
     # TODO: test
     - name: Deploy image
       run: >
-        gcloud compute images create v3-${{ inputs.env }}-base-image-$(date +'%Y-%m-%d-%H-%M-%S')
-        --source-image ${{ steps.image-name.outputs.name }}
+        gcloud compute images create "v3-${{ inputs.env }}-base-image-$(date +'%Y-%m-%d-%H-%M-%S')"
+        --source-image "${{ steps.image-name.outputs.name }}"
         --family v3-${{ inputs.env }}-base-image
 
   judge:
