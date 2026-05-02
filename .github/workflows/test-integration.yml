@@ -68,7 +68,7 @@ jobs:
 
       - name: Map emulator hostname for host tools
         run: |
-          echo "STORAGE_EMULATOR_HOST=http://127.0.0.1:4443" >> $GITHUB_ENV
+          echo "STORAGE_EMULATOR_HOST=http://127.0.0.1:4443" >> "$GITHUB_ENV"
 
       - name: Seed sample problems (aplusb, point_set_range_sort_range_composite)
         env:
