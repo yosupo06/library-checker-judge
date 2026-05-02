@@ -24,6 +24,7 @@ IMAGES = {
     "ruby": ("RUBY", "library-checker-images-ruby"),
     "swift": ("SWIFT", "library-checker-images-swift"),
     "nim": ("NIM", "library-checker-images-nim"),
+    "deno": ("DENO", "library-checker-images-deno"),
 }
 
 
