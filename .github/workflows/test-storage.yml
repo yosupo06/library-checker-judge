@@ -31,3 +31,6 @@ jobs:
     - name: Storage module test
       run: go test . -v
       working-directory: ./storage
+      env:
+        STORAGE_EMULATOR_HOST: http://127.0.0.1:4443
+        STORAGE_PROJECT_ID: dev-library-checker-project
