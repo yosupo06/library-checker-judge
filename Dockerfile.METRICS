@@ -11,7 +11,7 @@ COPY ./cloudrun/taskqueue-metrics ./cloudrun/taskqueue-metrics
 COPY ./database ./database
 
 WORKDIR /workspace/cloudrun/taskqueue-metrics
-RUN CGO_ENABLED=0 GOOS=linux go build -o /workspace/taskqueue-metrics .
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -o /workspace/taskqueue-metrics .
 
 FROM alpine
 RUN apk --no-cache add ca-certificates

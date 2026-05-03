@@ -29,5 +29,5 @@ jobs:
       run: docker compose up -d --build --wait
 
     - name: REST API module test
-      run: go test . -v
+      run: go test -mod=readonly . -v
       working-directory: ./restapi

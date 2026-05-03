@@ -19,11 +19,8 @@ COPY ./restapi/. /go/src/github.com/yosupo06/library-checker-judge/restapi/
 COPY ./database/. /go/src/github.com/yosupo06/library-checker-judge/database/
 COPY ./langs/. /go/src/github.com/yosupo06/library-checker-judge/langs/
 
-# Generate server/types from OpenAPI before build (single source of truth)
-RUN go generate ./... && go mod tidy
-
 # Build static binary
-RUN CGO_ENABLED=0 GOOS=linux go build .
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly .
 
 FROM alpine
 RUN apk --no-cache add ca-certificates

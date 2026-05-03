@@ -1,0 +1,62 @@
+name: Test OpenAPI Codegen
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'restapi/openapi/**'
+      - 'restapi/go.mod'
+      - 'restapi/go.sum'
+      - 'restapi/internal/api/api.gen.go'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/src/openapi/types.ts'
+      - '.github/workflows/test-openapi-codegen.yml'
+  pull_request:
+    paths:
+      - 'restapi/openapi/**'
+      - 'restapi/go.mod'
+      - 'restapi/go.sum'
+      - 'restapi/internal/api/api.gen.go'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/src/openapi/types.ts'
+      - '.github/workflows/test-openapi-codegen.yml'
+
+jobs:
+  restapi-openapi-codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Generate REST API bindings
+        run: go generate ./...
+        working-directory: ./restapi
+
+      - name: Check generated REST API files
+        run: git diff --exit-code -- restapi
+
+  frontend-openapi-codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - run: npm ci
+        working-directory: ./frontend
+
+      - name: Generate frontend OpenAPI types
+        run: npm run openapi:gen
+        working-directory: ./frontend
+
+      - name: Check generated frontend OpenAPI types
+        run: git diff --exit-code -- frontend/src/openapi/types.ts
