@@ -1,0 +1,31 @@
+name: Test Dockerfiles
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'Dockerfile.*'
+      - 'firebase/Dockerfile'
+      - 'langs/Dockerfile.*'
+      - 'tools/check-dockerfiles.sh'
+      - '.github/workflows/test-dockerfiles.yml'
+  pull_request:
+    paths:
+      - 'Dockerfile.*'
+      - 'firebase/Dockerfile'
+      - 'langs/Dockerfile.*'
+      - 'tools/check-dockerfiles.sh'
+      - '.github/workflows/test-dockerfiles.yml'
+
+jobs:
+  dockerfile-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Dockerfile build checks
+        run: tools/check-dockerfiles.sh
