@@ -25,7 +25,7 @@ services:
       retries: 30
 
   db:
-    image: postgres:11.3
+    image: postgres:15
     ports:
       - 5432:5432
     environment:

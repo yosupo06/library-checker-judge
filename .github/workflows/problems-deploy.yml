@@ -80,7 +80,7 @@ jobs:
       - name: Download Cloud SQL Proxy
         working-directory: ./uploader
         run: |
-          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.2/cloud-sql-proxy.linux.amd64
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.3/cloud-sql-proxy.linux.amd64
           chmod +x ./cloud-sql-proxy
       - name: Deploy Shard ${{ matrix.shard }}
         working-directory: ./uploader
@@ -126,7 +126,7 @@ jobs:
       - name: Download Cloud SQL Proxy
         working-directory: ./uploader
         run: |
-          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.2/cloud-sql-proxy.linux.amd64
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.3/cloud-sql-proxy.linux.amd64
           chmod +x ./cloud-sql-proxy
       - name: Upload Categories
         working-directory: ./uploader

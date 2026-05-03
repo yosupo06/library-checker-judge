@@ -10,7 +10,7 @@ repos:
       - id: check-added-large-files
   - repo: https://github.com/golangci/golangci-lint
     # Pin to a specific golangci-lint release tag
-    rev: v2.4.0
+    rev: v2.11.4
     hooks:
       - id: golangci-lint-config-verify
       - id: golangci-lint-full
