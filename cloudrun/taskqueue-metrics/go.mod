@@ -2,7 +2,7 @@ module github.com/yosupo06/library-checker-judge/cloudrun/taskqueue-metrics
 
 go 1.24.0
 
-toolchain go1.24.7
+toolchain go1.25.9
 
 replace github.com/yosupo06/library-checker-judge/database => ../../database
 

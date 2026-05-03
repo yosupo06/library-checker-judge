@@ -41,7 +41,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.25'
 
       # Use the same docker runtime tuning as judge workflow
       # Install crun and configure Docker daemon for cgroupfs
