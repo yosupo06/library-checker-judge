@@ -66,8 +66,11 @@ RUN apt-get update \
         libgmp-dev \
         libnuma-dev \
         libtinfo-dev \
+        llvm-11 \
         make \
         zlib1g-dev \
+ && ln -s /usr/bin/llc-11 /usr/local/bin/llc \
+ && ln -s /usr/bin/opt-11 /usr/local/bin/opt \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=haskell-builder /opt/ghc/9.6.7 /opt/ghc/9.6.7
