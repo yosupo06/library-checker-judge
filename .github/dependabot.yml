@@ -1,0 +1,86 @@
+version: 2
+
+updates:
+  - package-ecosystem: "gomod"
+    directories:
+      - "/cloudrun/taskqueue-metrics"
+      - "/database"
+      - "/executor"
+      - "/integration"
+      - "/judge"
+      - "/langs"
+      - "/migrator"
+      - "/restapi"
+      - "/storage"
+      - "/tools/rejudge"
+      - "/uploader"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 3
+    groups:
+      go-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 2
+    groups:
+      frontend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/"
+      - "/firebase"
+      - "/langs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 3
+    groups:
+      docker-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:30"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 2
+    groups:
+      compose-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 2
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
