@@ -96,6 +96,14 @@
     compile = ["ghc", "main.hs", "-O2"]
     exec = ["./main"]
 [[langs]]
+    id = "haskell-llvm"
+    name = "GHC (LLVM)"
+    version = "ghc 9.6.7 + LLVM 11"
+    source = "main.hs"
+    image_name = "library-checker-images-haskell"
+    compile = ["ghc", "main.hs", "-O2", "-fllvm"]
+    exec = ["./main"]
+[[langs]]
     id = "nim"
     name = "Nim"
     version = "Nim 2.2.4"
