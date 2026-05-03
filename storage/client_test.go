@@ -17,10 +17,15 @@ func TestClientUploadDownloadWithEmulator(t *testing.T) {
 	t.Setenv("STORAGE_PROJECT_ID", "dev-library-checker-project")
 
 	suffix := time.Now().UnixNano()
-	client, err := Connect(context.Background(), Config{
+	config := Config{
 		Bucket:       fmt.Sprintf("testcase-%d", suffix),
 		PublicBucket: fmt.Sprintf("testcase-public-%d", suffix),
-	})
+	}
+	if err := EnsureBuckets(context.Background(), config, "dev-library-checker-project"); err != nil {
+		t.Fatal(err)
+	}
+
+	client, err := Connect(context.Background(), config)
 	if err != nil {
 		t.Fatal(err)
 	}

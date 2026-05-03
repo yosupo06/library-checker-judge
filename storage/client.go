@@ -40,23 +40,9 @@ func GetConfigFromEnv() Config {
 }
 
 func Connect(ctx context.Context, config Config) (Client, error) {
-	emulatorHost := os.Getenv("STORAGE_EMULATOR_HOST")
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return Client{}, err
-	}
-
-	if emulatorHost != "" {
-		projectID := os.Getenv("STORAGE_PROJECT_ID")
-		if projectID == "" {
-			projectID = "dev-library-checker-project"
-		}
-		if err := ensureBucketExists(ctx, client, config.Bucket, projectID); err != nil {
-			return Client{}, err
-		}
-		if err := ensureBucketExists(ctx, client, config.PublicBucket, projectID); err != nil {
-			return Client{}, err
-		}
 	}
 
 	return Client{
@@ -115,6 +101,28 @@ func (c Client) uploadFile(ctx context.Context, bucketName, objectName, srcPath 
 		return fmt.Errorf("upload copy failed: %w", err)
 	}
 	return w.Close()
+}
+
+func EnsureBuckets(ctx context.Context, config Config, projectID string) error {
+	if projectID == "" {
+		return fmt.Errorf("project ID is required")
+	}
+
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = client.Close()
+	}()
+
+	if err := ensureBucketExists(ctx, client, config.Bucket, projectID); err != nil {
+		return err
+	}
+	if err := ensureBucketExists(ctx, client, config.PublicBucket, projectID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func ensureBucketExists(ctx context.Context, client *storage.Client, bucketName, projectID string) error {
