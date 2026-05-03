@@ -14,7 +14,7 @@ COPY ./storage ./storage
 COPY ./langs ./langs
 
 WORKDIR /go/src/github.com/yosupo06/library-checker-judge/judge
-RUN CGO_ENABLED=0 GOOS=linux go build -o /out/judge .
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -o /out/judge .
 
 # Use docker CLI image so the judge can call `docker` against the host daemon
 FROM docker:27-cli

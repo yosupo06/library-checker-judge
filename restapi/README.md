@@ -12,7 +12,7 @@
 
 ## 1) Docker Compose で動かす（おすすめ）
 
-依存サービス（PostgreSQL, Cloud Storage エミュレータ, Firebase emulator など）と一緒に立ち上げます。OpenAPI からのコード生成も Docker イメージ内で自動実行されます。
+依存サービス（PostgreSQL, Cloud Storage エミュレータ, Firebase emulator など）と一緒に立ち上げます。OpenAPI から生成されたコードはコミット済みのビルド入力として使います。
 
 ```bash
 # ルート: library-checker-judge/
@@ -41,23 +41,14 @@ docker compose up -d --build db db-init gcs api-rest
 
 ## 2) Go 単体でローカル実行（Docker なし）
 
-OpenAPI のコード生成が必要です。生成後は普通に `go run` で起動できます。
+OpenAPI 定義を変更した場合はコード生成が必要です。生成後は普通に `go run` で起動できます。
 
 ### 前提
 - Go 1.24+
 - PostgreSQL が動いていること（DB 初期化が未実施なら後述のマイグレーションを実行）
 
-### OpenAPI コード生成（補完を効かせたい人向け）
-エディタで補完を効かせるには、生成コード（`internal/api/api.gen.go`）が手元に存在する必要があります。以下のいずれかを実行してください。
-
-- シンプル: `make gen`
-
-```bash
-cd library-checker-judge/restapi
-make gen   # = go generate ./... && go mod tidy
-```
-
-- 直接 `go generate` を使う:
+### OpenAPI コード生成
+`restapi/openapi/openapi.yaml` を変更したら、生成コード（`internal/api/api.gen.go`）も更新してコミットしてください。
 
 ```bash
 cd library-checker-judge/restapi
@@ -105,7 +96,7 @@ curl "http://localhost:12381/ranking?skip=0&limit=100"
 
 ## よくあるハマりどころ / トラブルシュート
 - ビルド時に `missing go.sum entry for ... oapi-codegen ...` と出る
-  - 上記「OpenAPI コード生成」後に `go mod tidy` を実行してください。
+  - 上記「OpenAPI コード生成」後に `go mod tidy` を実行し、`go.mod` / `go.sum` の差分を確認してください。
 - DB 接続に失敗する
   - `PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD` が正しいか確認してください。
   - Docker Compose を使っている場合は `PGHOST=db`（デフォルト）になります。
