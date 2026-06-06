@@ -39,6 +39,11 @@ func execSubmissionTask(db *gorm.DB, downloader storage.TestCaseDownloader, task
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := os.RemoveAll(files.TestCases); err != nil {
+			slog.Error("Failed to remove test cases", "dir", files.TestCases, "err", err)
+		}
+	}()
 	data := SubmissionTaskData{
 		task:           NewTaskData(db, taskID),
 		files:          files,

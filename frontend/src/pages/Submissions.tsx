@@ -9,7 +9,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import ListSubheader from "@mui/material/ListSubheader";
 import React from "react";
-import { useLocation } from "react-use";
+import { useLocation } from "react-router-dom";
 import CachedIcon from "@mui/icons-material/Cached";
 import {
   useLangList,
