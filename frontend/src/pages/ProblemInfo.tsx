@@ -12,7 +12,6 @@ import Stack from "@mui/material/Stack";
 import InputLabel from "@mui/material/InputLabel";
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useLocalStorage } from "react-use";
 import {
   useCurrentUser,
   useLangList,
@@ -222,13 +221,20 @@ const SubmitForm: React.FC<{ problemId: string }> = (props) => {
   const { problemId } = props;
   const navigate = useNavigate();
   const [source, setSource] = useState("");
-  const [progLang, setProgLang] = useLocalStorage("programming-lang", "");
+  const [progLang, setProgLangState] = useState(
+    () => localStorage.getItem("programming-lang") ?? "",
+  );
   const [tleKnockout, setTleKnockout] = useState(true);
 
   const lang = useLang();
   const t = useTranslation(lang);
 
   const langListQuery = useLangList();
+
+  const setProgLang = (value: string) => {
+    localStorage.setItem("programming-lang", value);
+    setProgLangState(value);
+  };
 
   const submitMutation = useSubmitMutation({
     onSuccess: (resp) => {
