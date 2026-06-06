@@ -78,8 +78,15 @@ jobs:
     with:
       env: ${{ inputs.env }}
 
-  frontend-deploy:
+  monitoring-discord-webhook-deploy:
     needs: terraform-apply
+    uses: ./.github/workflows/monitoring-discord-webhook-deploy.yml
+    secrets: inherit
+    with:
+      env: ${{ inputs.env }}
+
+  frontend-deploy:
+    needs: monitoring-discord-webhook-deploy
     uses: ./.github/workflows/frontend-deploy.yml
     secrets: inherit
     with:

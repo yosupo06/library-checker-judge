@@ -1,0 +1,21 @@
+FROM golang:1.25 AS builder
+
+WORKDIR /workspace
+
+COPY ./cloudrun/monitoring-discord-webhook/go.mod ./cloudrun/monitoring-discord-webhook/
+
+RUN cd cloudrun/monitoring-discord-webhook && go mod download
+
+COPY ./cloudrun/monitoring-discord-webhook ./cloudrun/monitoring-discord-webhook
+
+WORKDIR /workspace/cloudrun/monitoring-discord-webhook
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -o /workspace/monitoring-discord-webhook .
+
+FROM alpine
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+COPY --from=builder /workspace/monitoring-discord-webhook ./monitoring-discord-webhook
+
+ENV PORT=8080
+ENTRYPOINT ["./monitoring-discord-webhook"]
