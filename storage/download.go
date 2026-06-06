@@ -48,6 +48,9 @@ func (t TestCaseDownloader) Fetch(problem Problem) (ProblemFiles, error) {
 	}
 	publicFiles, err := t.fetchPublicFiles(problem)
 	if err != nil {
+		if removeErr := os.RemoveAll(testCases); removeErr != nil {
+			slog.Error("Failed to remove test cases", "dir", testCases, "err", removeErr)
+		}
 		return ProblemFiles{}, err
 	}
 
@@ -60,26 +63,37 @@ func (t TestCaseDownloader) Fetch(problem Problem) (ProblemFiles, error) {
 func (t TestCaseDownloader) fetchTestCases(problem Problem) (string, error) {
 	slog.Info("Download test cases", "name", problem.Name, "hash", problem.TestCaseVersion)
 
-	tarGzPath := path.Join(t.localDir, problem.TestCaseVersion+".tar.gz")
-	localDir := path.Join(t.localDir, problem.TestCaseVersion)
+	localDir, err := os.MkdirTemp(t.localDir, "testcase-"+problem.Name+"-"+problem.TestCaseVersion+"-")
+	if err != nil {
+		return "", err
+	}
+	cleanupOnError := true
+	defer func() {
+		if cleanupOnError {
+			if removeErr := os.RemoveAll(localDir); removeErr != nil {
+				slog.Error("Failed to remove test cases", "dir", localDir, "err", removeErr)
+			}
+		}
+	}()
+
+	tarGzPath := path.Join(localDir, "testcase.tar.gz")
 	// Phase 2: use v4 path for private testcases tarball
 	key := problem.v4TestCasesKey()
 
-	if _, err := os.Stat(tarGzPath); err != nil {
-		slog.Info("Download test cases", "remote", key)
-		if err := t.client.downloadToFile(context.Background(), t.client.bucket, key, tarGzPath); err != nil {
-			return "", err
-		}
-		if err := os.MkdirAll(localDir, os.ModePerm); err != nil {
-			return "", err
-		}
-		cmd := exec.Command("tar", "-xf", tarGzPath, "-C", localDir)
-		if err := cmd.Run(); err != nil {
-			slog.Error("failed to expand tar.gz")
-			return "", err
-		}
+	slog.Info("Download test cases", "remote", key)
+	if err := t.client.downloadToFile(context.Background(), t.client.bucket, key, tarGzPath); err != nil {
+		return "", err
+	}
+	cmd := exec.Command("tar", "-xf", tarGzPath, "-C", localDir)
+	if err := cmd.Run(); err != nil {
+		slog.Error("failed to expand tar.gz")
+		return "", err
+	}
+	if err := os.Remove(tarGzPath); err != nil {
+		slog.Error("Failed to remove test cases archive", "path", tarGzPath, "err", err)
 	}
 
+	cleanupOnError = false
 	return localDir, nil
 }
 
