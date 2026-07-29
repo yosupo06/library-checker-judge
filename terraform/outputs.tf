@@ -56,3 +56,7 @@ output "judge_image_family" {
 output "metrics_image" {
   value = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/metrics"
 }
+
+output "monitoring_discord_webhook_image" {
+  value = "${google_artifact_registry_repository.main.location}-docker.pkg.dev/${var.gcp_project_id}/main/monitoring-discord-webhook"
+}

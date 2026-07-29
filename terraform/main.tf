@@ -69,6 +69,19 @@ resource "google_secret_manager_secret" "discord_announcement_webhook" {
   }
 }
 
+resource "google_secret_manager_secret" "discord_alert_webhook" {
+  secret_id = "discord-alert-webhook"
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "discord_alert_webhook" {
+  secret      = google_secret_manager_secret.discord_alert_webhook.id
+  secret_data = var.discord_alert_webhook_url
+}
+
 resource "google_artifact_registry_repository" "main" {
   location      = local.region
   repository_id = "main"

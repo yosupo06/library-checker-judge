@@ -38,6 +38,10 @@ resource "google_service_account" "queue_metrics_invoker" {
   account_id   = "queue-metrics-invoker"
   display_name = "Service Account for queue metrics invoker"
 }
+resource "google_service_account" "monitoring_discord_webhook" {
+  account_id   = "monitoring-discord"
+  display_name = "Service Account for Monitoring Discord webhook"
+}
 
 locals {
   accounts = [
@@ -116,6 +120,13 @@ locals {
         "roles/cloudsql.instanceUser",
         "roles/secretmanager.secretAccessor",
         "roles/monitoring.metricWriter",
+        "roles/logging.logWriter",
+      ]
+    },
+    {
+      account = google_service_account.monitoring_discord_webhook
+      roles = [
+        "roles/secretmanager.secretAccessor",
         "roles/logging.logWriter",
       ]
     },

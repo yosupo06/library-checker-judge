@@ -1,6 +1,7 @@
 go 1.25.0
 
 use (
+	./cloudrun/monitoring-discord-webhook
 	./cloudrun/taskqueue-metrics
 	./database
 	./executor
