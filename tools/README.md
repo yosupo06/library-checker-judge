@@ -11,7 +11,7 @@ Examples:
 
 - `check-dockerfiles.sh`: Docker BuildKit build checks for Dockerfiles.
 - `rejudge/`: operator CLI for queueing existing submissions for rejudge.
-- `prune_gce_images.py`: housekeeping script for removing old judge VM images.
+- `prune_gce_images.py`: housekeeping script for removing old custom GCE images.
 
 Do not put deploy/runtime components here. Components such as `migrator/`,
 `uploader/`, `restapi/`, `judge/`, and `cloudrun/taskqueue-metrics/` are part of

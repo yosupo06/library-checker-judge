@@ -67,13 +67,28 @@ jobs:
 
       - name: Prune images
         run: |
-          ARGS=(
-            --project "${{ inputs.env }}-library-checker-project"
-            --family v3-judge-image
-            --keep 3
-            --min-age-days 14
-          )
+          DRY_RUN_ARGS=()
           if [[ "${{ inputs.dry-run }}" == "true" ]]; then
-            ARGS+=(--dry-run)
+            DRY_RUN_ARGS+=(--dry-run)
           fi
-          python3 ./tools/prune_gce_images.py "${ARGS[@]}"
+
+          python3 ./tools/prune_gce_images.py \
+            --project "${{ inputs.env }}-library-checker-project" \
+            --family v3-judge-image \
+            --keep 3 \
+            --min-age-days 14 \
+            "${DRY_RUN_ARGS[@]}"
+
+          python3 ./tools/prune_gce_images.py \
+            --project "${{ inputs.env }}-library-checker-project" \
+            --family "v3-${{ inputs.env }}-base-image" \
+            --keep 3 \
+            --min-age-days 14 \
+            "${DRY_RUN_ARGS[@]}"
+
+          python3 ./tools/prune_gce_images.py \
+            --project "${{ inputs.env }}-library-checker-project" \
+            --name-regex '^v3-tmp-base-image-' \
+            --keep 0 \
+            --min-age-days 14 \
+            "${DRY_RUN_ARGS[@]}"
