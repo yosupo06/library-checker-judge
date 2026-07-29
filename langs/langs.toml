@@ -37,7 +37,7 @@
     version = "rustc(1.94.1 edition 2024)"
     source = "main.rs"
     image_name = "library-checker-images-rust"
-    compile = ["rustc", "--edition", "2024", "-C", "opt-level=3", "main.rs"]
+    compile = ["rustc", "--edition", "2024", "-C", "opt-level=3", "-C", "target-cpu=native", "main.rs"]
     exec = ["./main"]
 [[langs]]
     id = "d"
