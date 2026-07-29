@@ -33,10 +33,12 @@ class ImageEntry:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Delete old images from a GCE image family",
+        description="Delete old GCE images matching a family or name regex",
     )
     parser.add_argument("--project", required=True, help="GCP project ID")
-    parser.add_argument("--family", required=True, help="GCE image family name")
+    selector = parser.add_mutually_exclusive_group(required=True)
+    selector.add_argument("--family", help="GCE image family name")
+    selector.add_argument("--name-regex", help="GCE image name regex")
     parser.add_argument("--keep", type=int, default=10,
                         help="Number of most recent images to keep (default: 10)")
     parser.add_argument("--min-age-days", type=int, default=14,
@@ -53,14 +55,26 @@ def validate_args(args: argparse.Namespace) -> None:
         sys.exit("--min-age-days must be a non-negative integer")
 
 
-def run_gcloud_list(project: str, family: str) -> List[ImageEntry]:
+def image_filter(args: argparse.Namespace) -> str:
+    if args.family:
+        return f"family={args.family}"
+    return f"name~{args.name_regex}"
+
+
+def selector_label(args: argparse.Namespace) -> str:
+    if args.family:
+        return f"family '{args.family}'"
+    return f"name regex '{args.name_regex}'"
+
+
+def run_gcloud_list(project: str, filter_expr: str) -> List[ImageEntry]:
     cmd = [
         "gcloud",
         "compute",
         "images",
         "list",
         f"--project={project}",
-        f"--filter=family={family}",
+        f"--filter={filter_expr}",
         "--no-standard-images",
         "--format=value(name,creationTimestamp)",
         "--sort-by=~creationTimestamp",
@@ -95,15 +109,15 @@ def run_gcloud_list(project: str, family: str) -> List[ImageEntry]:
 
 def prune_images(entries: Iterable[ImageEntry], keep: int,
                  min_age_days: int, dry_run: bool,
-                 project: str, family: str) -> None:
+                 project: str, label: str) -> None:
     entries_list = list(entries)
     total = len(entries_list)
     if total == 0:
-        print(f"No images found for family '{family}' in project '{project}'.")
+        print(f"No images found for {label} in project '{project}'.")
         return
 
     print(
-        f"Found {total} images for family '{family}' in project '{project}'. "
+        f"Found {total} images for {label} in project '{project}'. "
         f"Keeping the latest {keep} images."
     )
     if total <= keep:
@@ -154,14 +168,14 @@ def prune_images(entries: Iterable[ImageEntry], keep: int,
 def main() -> None:
     args = parse_args()
     validate_args(args)
-    entries = run_gcloud_list(args.project, args.family)
+    entries = run_gcloud_list(args.project, image_filter(args))
     prune_images(
         entries,
         args.keep,
         args.min_age_days,
         args.dry_run,
         args.project,
-        args.family,
+        selector_label(args),
     )
 
 
