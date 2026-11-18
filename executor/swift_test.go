@@ -21,14 +21,14 @@ func TestSwiftLibraries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer source.Close()
+	defer func() { _ = source.Close() }()
 	srcFile := writeTempFile(t, source, lang.Source)
 	opts := []TaskInfoOption{WithMemoryLimitMB(1024), WithPidsLimit(100), WithUnlimitedStackLimit()}
 	vol, compRes, err := CompileSource(srcFile, executorLangFrom(lang), opts, 30*time.Second, map[string]string{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer vol.Remove()
+	defer func() { _ = vol.Remove() }()
 	if compRes.ExitCode != 0 {
 		t.Fatalf("compile failed: exit=%d, stderr=%s", compRes.ExitCode, compRes.Stderr)
 	}
