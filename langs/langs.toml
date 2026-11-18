@@ -154,8 +154,8 @@
 [[langs]]
     id = "swift"
     name = "Swift"
-    version = "swift 6.1.2"
+    version = "swift 6.4.2 (Collections 1.7.6, Algorithms 1.2.1)"
     source = "main.swift"
     image_name = "library-checker-images-swift"
-    compile = ["swiftc", "-O", "-o", "a.out", "main.swift"]
+    compile = ["swiftc", "-swift-version", "6", "-default-isolation", "MainActor", "-O", "-I", "/opt/swift-libraries/modules", "-I", "/opt/swift-libraries/include", "-L", "/opt/swift-libraries/lib", "-lJudgeLibraries", "-lm", "-o", "a.out", "main.swift"]
     exec = ["./a.out"]
