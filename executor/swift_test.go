@@ -47,7 +47,7 @@ func TestSwiftLibraries(t *testing.T) {
 	if res.ExitCode != 0 {
 		t.Fatalf("execution failed: exit=%d, stderr=%s", res.ExitCode, res.Stderr)
 	}
-	const expected = "1 4\n1 4\n3 1 2\n[3, 7, 5]\n6\n9223372036854775808"
+	const expected = "1 4\n1 4\n3 1 2\n[3, 7, 5]\n6\n9223372036854775808\n15"
 	if got := strings.TrimSpace(stdout.String()); got != expected {
 		t.Fatalf("wrong output: want %q, got %q", expected, got)
 	}

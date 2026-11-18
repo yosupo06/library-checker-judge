@@ -8,10 +8,11 @@ contains the archive, Swift modules, Numerics' Clang module and headers, and the
 packages' license files. Submissions can use `import Collections`, individual
 collection modules such as `HeapModule`, and `import Algorithms`.
 
-Submissions are still compiled directly with `swiftc -O`; no package resolution
-or network access occurs during judging. The default Swift language mode is
-preserved (Swift 5); upgrading the compiler does not force submitted sources
-into Swift 6 concurrency checking. No experimental Collections traits are enabled.
+Submissions are still compiled directly with `swiftc -swift-version 6 -default-isolation MainActor -O`; no package resolution
+or network access occurs during judging. Submissions use Swift 6 language mode, including its concurrency checks.
+MainActor is the default isolation (SE-0466), so ordinary functions can access
+top-level variables without adding `nonisolated(unsafe)`.
+No experimental Collections traits are enabled.
 
 Build and verify from the repository root:
 
