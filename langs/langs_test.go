@@ -8,7 +8,7 @@ func TestAllSupportedLangs(t *testing.T) {
 	expectedLangs := []string{
 		"cpp", "cpp-func", "rust", "haskell", "haskell-llvm", "csharp", "lisp",
 		"python3", "pypy3", "d", "java", "javascript", "typescript",
-		"go", "crystal", "ruby",
+		"go", "crystal", "ruby", "swift",
 	}
 
 	for _, langID := range expectedLangs {
